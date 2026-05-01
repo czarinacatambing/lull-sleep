@@ -1,0 +1,11 @@
+{
+    "Simulator Target Bundle": "com.lull.app",
+    "aps": {
+        "alert": {
+            "title": "Boring story",
+            "body": "A slow drift through somewhere ordinary. Close your eyes."
+        },
+        "sound": "default",
+        "category": "BEDTIME_REMINDER"
+    }
+}

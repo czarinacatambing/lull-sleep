@@ -1,0 +1,11 @@
+{
+    "Simulator Target Bundle": "com.lull.app",
+    "aps": {
+        "alert": {
+            "title": "Good morning",
+            "body": "How did you sleep? One tap to log it."
+        },
+        "sound": "default",
+        "category": "MORNING_CHECKIN"
+    }
+}

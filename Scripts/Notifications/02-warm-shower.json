@@ -1,0 +1,11 @@
+{
+    "Simulator Target Bundle": "com.lull.app",
+    "aps": {
+        "alert": {
+            "title": "Warm shower time",
+            "body": "A 10-min warm shower now will drop your core temp by bedtime."
+        },
+        "sound": "default",
+        "category": "BEDTIME_REMINDER"
+    }
+}

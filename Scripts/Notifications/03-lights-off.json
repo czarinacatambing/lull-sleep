@@ -1,0 +1,11 @@
+{
+    "Simulator Target Bundle": "com.lull.app",
+    "aps": {
+        "alert": {
+            "title": "Lights off",
+            "body": "Get into bed. From here it's all audio — eyes can stay closed."
+        },
+        "sound": "default",
+        "category": "BEDTIME_REMINDER"
+    }
+}

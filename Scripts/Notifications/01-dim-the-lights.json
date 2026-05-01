@@ -1,0 +1,11 @@
+{
+    "Simulator Target Bundle": "com.lull.app",
+    "aps": {
+        "alert": {
+            "title": "Dim the lights",
+            "body": "Start winding down — reduce screen and room brightness now."
+        },
+        "sound": "default",
+        "category": "BEDTIME_REMINDER"
+    }
+}
