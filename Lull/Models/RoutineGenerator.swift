@@ -89,10 +89,27 @@ enum NightlyStepKind: Equatable {
         case .brightnessCheck:          return 1
         case .temperatureLog:           return 1
         case .brainDump:                return 2
-        case .boringStory:              return 8
+        case .boringStory:              return 20
         case .fourSevenEightBreathing:  return 5
-        case .existingHabit:            return 3
+        case .existingHabit(let label):
+            switch label {
+            case "Warm shower or bath": return 10
+            case "Reading (physical book)": return 20
+            case "Dimming the lights": return 5
+            default: return 5
+            }
         case .avoidReminder:            return 0
+        }
+    }
+
+    static func forLabel(_ label: String) -> NightlyStepKind? {
+        switch label {
+        case "Dim the lights":      return .brightnessCheck
+        case "Temperature check":   return .temperatureLog
+        case "Brain dump":          return .brainDump
+        case "Boring story":        return .boringStory
+        case "4-7-8 breathing":     return .fourSevenEightBreathing
+        default:                    return nil
         }
     }
 

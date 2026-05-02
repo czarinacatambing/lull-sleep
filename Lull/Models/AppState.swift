@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import UserNotifications
 
 class AppState: ObservableObject {
 
@@ -27,16 +28,20 @@ class AppState: ObservableObject {
     @Published var showMidSleepMode = false
     @Published var showMorningCheckIn = false
 
-    // MARK: - Routine data (simulated)
-    var todaysSuggestion = "Dim the lights 30 min before bed."
-    var tonightVariable = "Dim the lights 30 min before bed."
-    var variableNight = 3
-    var variableScore = "+0.6"
+    // MARK: - Routine data
     var historicalScores = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 9, 8, 7, 9]
+
+    var experimentStatus: ExperimentEngine.Status? {
+        ExperimentEngine.evaluate(logs: sleepLogs, coreRoutine: coreRoutine)
+    }
+    var tonightVariable: String { experimentStatus?.variable ?? "No experiment running" }
+    var variableNight:   Int    { experimentStatus?.night ?? 0 }
+    var variableScore:   String { experimentStatus?.scoreDeltaString ?? "—" }
     @Published var coreRoutine: [RoutineStep] = [
         RoutineStep(order: 1, label: "Dim the lights", mode: .reminderOnly),
         RoutineStep(order: 2, label: "Brain dump", mode: .inSequence),
         RoutineStep(order: 3, label: "Boring story", mode: .inSequence),
+        RoutineStep(order: 4, label: "Magnesium glycinate · 30 min before bed", mode: .experiment),
     ]
 
     // MARK: - Generated routine (set during onboarding)
@@ -52,8 +57,7 @@ class AppState: ObservableObject {
     }
 
     // MARK: - Nightly walkthrough state
-    @Published var nightlyStep = 0          // 0=brightness 1=temp 2=braindump 3=boringstory
-    @Published var useBreathingInstead = false
+    @Published var nightlyStep = 0          // index into nightlyFlowSteps
     @Published var selectedTemp = 1         // 0=cool 1=justright 2=warm 3=hot
     @Published var brainDumpSeconds = 0
     @Published var brainDumpRecording = false
@@ -71,18 +75,71 @@ class AppState: ObservableObject {
         hasCompletedOnboarding = true
     }
 
+    // Saves today's morning score and advances the experiment if 5 nights are complete.
+    func logMorningScore() {
+        if let idx = sleepLogs.firstIndex(where: { $0.isToday }) {
+            sleepLogs[idx].score    = morningScore
+            sleepLogs[idx].variable = tonightVariable
+        } else {
+            sleepLogs.append(SleepLogEntry(date: Date(), score: morningScore, variable: tonightVariable))
+        }
+        advanceExperiment()
+    }
+
+    func advanceExperiment() {
+        guard let status = experimentStatus else { return }
+        switch status.decision {
+        case .keepTesting: return
+        case .promote:
+            // Graduate the experiment step into the core sequence
+            if let idx = coreRoutine.firstIndex(where: { $0.mode == .experiment }) {
+                coreRoutine[idx].mode = .inSequence
+            }
+        case .drop:
+            coreRoutine.removeAll { $0.mode == .experiment }
+        }
+        // Queue the next candidate as the new experiment
+        if let next = status.nextCandidate {
+            coreRoutine.append(RoutineStep(order: coreRoutine.count + 1, label: next, mode: .experiment))
+        }
+    }
+
+    // Schedules a mid-sleep check notification ~3 hours after bedtime.
+    // Called at the end of the nightly wind-down flow.
+    func scheduleMidSleepNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["mid_sleep_check"])
+
+        let content = UNMutableNotificationContent()
+        content.title = "Still awake?"
+        content.body = "Lull can help you drift back. One tap, no decisions."
+        content.sound = .none
+        content.categoryIdentifier = "MID_SLEEP_CHECK"
+
+        // Fire 3 hours after bedtime
+        let fireDate = Calendar.current.date(byAdding: .hour, value: 3, to: typicalBedtime) ?? typicalBedtime
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+
+        let request = UNNotificationRequest(identifier: "mid_sleep_check", content: content, trigger: trigger)
+        center.add(request)
+    }
+
     // MARK: - Canonical schedule
     // Single source of truth used by both Dashboard and My Routine.
     // reminderOnly steps use evidence-based lead times relative to bedtime.
     // inSequence steps are packed into the sleep-onset window before bedtime.
 
     static let prepLeadTimes: [String: Int] = [
-        "Dim the lights":   90,
-        "No screens":       60,
-        "Warm shower":      90,
-        "Finish workouts": 180,
-        "No heavy snacks": 120,
-        "Magnesium":        60,
+        "Dim the lights":       90,
+        "Dimming the lights":   90,
+        "No screens":           60,
+        "Warm shower":          90,
+        "Warm shower or bath":  90,
+        "Finish workouts":     180,
+        "No heavy snacks":     120,
+        "Magnesium":            60,
+        "Reading (physical book)": 30,
     ]
 
     var scheduledRoutine: [ScheduledStep] {
@@ -91,13 +148,9 @@ class AppState: ObservableObject {
 
         // Pack inSequence steps backwards from bedtime within the sleep window
         let inSeq = coreRoutine.filter { $0.mode == .inSequence }
-        let seqDurations: [String: Int] = [
-            "Brain dump":   2,
-            "Boring story": 20,
-        ]
         var seqOffset = 0
         var seqSteps: [ScheduledStep] = inSeq.reversed().map { step in
-            let dur = seqDurations[step.label] ?? 5
+            let dur = NightlyStepKind.forLabel(step.label)?.estimatedMinutes ?? 5
             seqOffset += dur
             let time = cal.date(byAdding: .minute, value: -seqOffset, to: bed) ?? bed
             return ScheduledStep(step: step, time: time, badge: "~\(dur) min")
@@ -121,11 +174,31 @@ class AppState: ObservableObject {
             .map { step in
                 let mins = Self.prepLeadTimes[step.label] ?? 90
                 let time = cal.date(byAdding: .minute, value: -mins, to: bed) ?? bed
-                let badge = step.mode == .experiment ? "This week ↑" : "Reminder · \(mins) min before bed"
+                let badge = step.mode == .experiment ? "\(mins) min before bed" : "Reminder · \(mins) min before bed"
                 return ScheduledStep(step: step, time: time, badge: badge)
             }
 
         return (prepSteps + seqSteps).sorted { $0.time < $1.time }
+    }
+
+    // Ordered list of interactive steps to run in the nightly flow, derived from coreRoutine.
+    // avoidReminder steps (evening cutoff notifications) are excluded — they're not interactive.
+    var nightlyFlowSteps: [NightlyStepKind] {
+        coreRoutine.compactMap { step in
+            if let kind = NightlyStepKind.forLabel(step.label) {
+                if case .avoidReminder = kind { return nil }
+                return kind
+            }
+            guard step.mode == .inSequence || step.mode == .experiment else { return nil }
+            return .existingHabit(label: step.label)
+        }
+    }
+
+    var nightlyStepTotal: Int { nightlyFlowSteps.count }
+
+    // Scheduled display time for a named step, e.g. "Brain dump" → "10:50".
+    func scheduledTime(for label: String) -> String? {
+        scheduledRoutine.first { $0.step.label == label }?.timeString
     }
 
     var sleepDurationString: String {
@@ -193,10 +266,11 @@ struct SleepLogEntry: Identifiable {
 
     // 14 placeholder nights — last entry = today (no score yet)
     static let placeholders: [SleepLogEntry] = {
+        let exp = "Magnesium glycinate · 30 min before bed"
         let variables = ["Dim the lights", "Dim the lights", "No screens", "Dim the lights",
-                         "No screens", "Dim the lights", "Magnesium", "Dim the lights",
-                         "No screens", "Dim the lights", "Magnesium", "No screens", "Dim the lights"]
-        let scores    = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 9, 8, 7]
+                         "No screens", "Dim the lights", "Dim the lights", "Dim the lights",
+                         "No screens", "Dim the lights", exp, exp, exp]
+        let scores    = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 8, 9, 9]
         let cal = Calendar.current
         var entries: [SleepLogEntry] = zip(scores, variables).enumerated().map { i, pair in
             let (score, variable) = pair
@@ -204,7 +278,7 @@ struct SleepLogEntry: Identifiable {
             return SleepLogEntry(date: date, score: score, variable: variable)
         }
         // Today's entry — not yet rated
-        entries.append(SleepLogEntry(date: Date(), score: 0, variable: "Dim the lights"))
+        entries.append(SleepLogEntry(date: Date(), score: 0, variable: exp))
         return entries
     }()
 }

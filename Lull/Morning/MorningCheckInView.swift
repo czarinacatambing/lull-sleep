@@ -96,35 +96,51 @@ struct MorningCheckInView: View {
 
                 Spacer()
 
-                // Pattern reflection card
-                VStack(alignment: .leading, spacing: 8) {
-                    Kicker(text: "What we're learning", color: .lullAmberSoft)
-                    HStack(spacing: 0) {
-                        Text("Nights with a ")
-                            .font(.system(size: 13))
-                            .foregroundColor(.lullInk1)
-                        Text("warm shower at 9pm")
-                            .font(.system(size: 13))
-                            .foregroundColor(.lullAmber)
-                        Text(" score on average ")
-                            .font(.system(size: 13))
-                            .foregroundColor(.lullInk1)
-                        Text("+0.7")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.lullInk0)
-                        Text(" higher. We'll keep testing.")
-                            .font(.system(size: 13))
-                            .foregroundColor(.lullInk1)
+                // Experiment insight card
+                if let status = state.experimentStatus {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Kicker(text: "What we're learning", color: .lullAmberSoft)
+                            Spacer()
+                            Text("Night \(status.night) of 5")
+                                .font(.mono(9.5))
+                                .kerning(1)
+                                .foregroundColor(.lullInk4)
+                        }
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(status.variable)
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullAmber)
+                            Text("·")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullInk3)
+                            Text(status.insightLine)
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullInk1)
+                        }
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        if status.decision == .promote {
+                            Text("↑ Adding to core routine")
+                                .font(.mono(10)).kerning(0.8)
+                                .foregroundColor(.lullAmber)
+                                .padding(.top, 2)
+                        } else if status.decision == .drop, let next = status.nextCandidate {
+                            Text("Next up: \(next)")
+                                .font(.mono(10)).kerning(0.8)
+                                .foregroundColor(.lullInk3)
+                                .padding(.top, 2)
+                        }
                     }
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(16)
+                    .lullCard(radius: 18)
+                    .padding(.horizontal, 22)
                 }
-                .padding(16)
-                .lullCard(radius: 18)
-                .padding(.horizontal, 22)
 
                 VStack(spacing: 0) {
                     PrimaryCTA(title: "Log this morning") {
+                        state.logMorningScore()
                         dismiss()
                     }
                     GhostButton(title: "Add a note · woke at 4am") {}

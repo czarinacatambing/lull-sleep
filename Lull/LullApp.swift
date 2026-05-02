@@ -15,7 +15,11 @@ struct LullApp: App {
         let morningCategory = UNNotificationCategory(
             identifier: "MORNING_CHECKIN", actions: [logAction], intentIdentifiers: [], options: [])
 
-        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory])
+        let midSleepAction = UNNotificationAction(identifier: "OPEN_MID_SLEEP", title: "Open Lull", options: [.foreground])
+        let midSleepCategory = UNNotificationCategory(
+            identifier: "MID_SLEEP_CHECK", actions: [midSleepAction], intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory])
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
@@ -43,12 +47,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let category = response.notification.request.content.categoryIdentifier
-        if category == "MORNING_CHECKIN" {
-            DispatchQueue.main.async {
-                // Find today's log entry and open it
+        DispatchQueue.main.async {
+            if category == "MORNING_CHECKIN" {
                 if let index = self.state?.sleepLogs.firstIndex(where: { $0.isToday }) {
                     self.state?.selectedDotIndex = index
                 }
+            } else if category == "MID_SLEEP_CHECK" {
+                self.state?.showMidSleepMode = true
             }
         }
         completionHandler()

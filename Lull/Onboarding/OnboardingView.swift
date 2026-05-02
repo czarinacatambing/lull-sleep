@@ -745,31 +745,12 @@ struct OnbEnvironmentView: View {
 struct OnbRoutineReadyView: View {
     @EnvironmentObject var state: AppState
 
-    // Work backwards from bedtime to assign a start time to each step.
-    // reminderOnly steps are pinned 15 min before the first sequenced step.
-    private var scheduledSteps: [(time: String, label: String)] {
-        guard let routine = state.generatedRoutine else { return [] }
-        let fmt = DateFormatter(); fmt.dateFormat = "h:mm a"
-        let cal = Calendar.current
-        var cursor = state.typicalBedtime
-        var pairs: [(Date, NightlyStepKind)] = []
-        for step in routine.steps.reversed() {
-            cursor = cal.date(byAdding: .minute, value: -step.estimatedMinutes, to: cursor) ?? cursor
-            pairs.insert((cursor, step), at: 0)
-        }
-        let routineStart = pairs.first(where: { $0.1.routineMode != .reminderOnly })?.0 ?? cursor
-        return pairs.map { time, step in
-            let displayTime = step.routineMode == .reminderOnly
-                ? (cal.date(byAdding: .minute, value: -15, to: routineStart) ?? routineStart)
-                : time
-            let durationSuffix = step.estimatedMinutes > 1 ? " · \(step.estimatedMinutes) min" : ""
-            return (fmt.string(from: displayTime), step.displayLabel + durationSuffix)
-        }
-    }
-
     private var headlineSub: String {
-        let total = state.generatedRoutine?.totalMinutes ?? 10
-        return "\(total) minutes. \(scheduledSteps.count) steps. We kept what works and quietly dropped what doesn't."
+        let windDownMins = state.coreRoutine
+            .filter { $0.mode == .inSequence }
+            .reduce(0) { $0 + (NightlyStepKind.forLabel($1.label)?.estimatedMinutes ?? 5) }
+        let count = state.scheduledRoutine.count
+        return "\(windDownMins) min wind-down. \(count) steps. We kept what works and quietly dropped what doesn't."
     }
 
     var body: some View {
@@ -808,21 +789,26 @@ struct OnbRoutineReadyView: View {
 
                     // Personalized routine card
                     VStack(spacing: 0) {
-                        ForEach(Array(scheduledSteps.enumerated()), id: \.offset) { i, row in
+                        ForEach(Array(state.scheduledRoutine.enumerated()), id: \.offset) { i, row in
                             HStack(spacing: 14) {
-                                Text(row.time)
+                                Text(row.timeString)
                                     .font(.mono(11))
                                     .kerning(0.6)
                                     .foregroundColor(.lullInk3)
-                                    .frame(width: 64, alignment: .leading)
+                                    .frame(width: 50, alignment: .leading)
                                 Ember(size: 5)
-                                Text(row.label)
+                                Text(row.step.label)
                                     .font(.system(size: 14))
                                     .foregroundColor(.lullInk1)
                                 Spacer()
+                                Text(row.badge)
+                                    .font(.mono(9))
+                                    .kerning(0.4)
+                                    .foregroundColor(.lullInk4)
+                                    .lineLimit(1)
                             }
                             .padding(.vertical, 12)
-                            if i < scheduledSteps.count - 1 {
+                            if i < state.scheduledRoutine.count - 1 {
                                 Divider().background(Color.lullLine)
                             }
                         }

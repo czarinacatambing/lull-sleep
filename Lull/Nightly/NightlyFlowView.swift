@@ -8,20 +8,21 @@ struct NightlyFlowView: View {
 
     var body: some View {
         ZStack {
-            switch state.nightlyStep {
-            case 0: NightlyBrightnessView()
-            case 1: NightlyTemperatureView()
-            case 2: NightlyBrainDumpView()
-            case 3:
-                if state.useBreathingInstead {
-                    NightlyBreathingView()
-                } else {
-                    NightlyBoringStoryView()
+            let steps = state.nightlyFlowSteps
+            if state.nightlyStep < steps.count {
+                switch steps[state.nightlyStep] {
+                case .brightnessCheck:          NightlyBrightnessView()
+                case .temperatureLog:           NightlyTemperatureView()
+                case .brainDump:                NightlyBrainDumpView()
+                case .boringStory:              NightlyBoringStoryView()
+                case .fourSevenEightBreathing:  NightlyBreathingView()
+                case .existingHabit(let label): NightlyGenericStepView(label: label)
+                case .avoidReminder:            EmptyView()
                 }
-            default:
-                // Done — dismiss
+            } else {
                 Color.lullBg.ignoresSafeArea()
                     .onAppear {
+                        state.scheduleMidSleepNotification()
                         state.nightlyStep = 0
                         dismiss()
                     }
@@ -42,7 +43,7 @@ struct NightlyBrightnessView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                NightlyStepHeader(step: 1, total: 4, label: "Brightness", time: "10:25 PM")
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "Brightness", time: "10:25 PM")
 
                 VStack(spacing: 12) {
                     Kicker(text: "Auto-detected")
@@ -108,8 +109,8 @@ struct NightlyBrightnessView: View {
                 Spacer()
 
                 VStack(spacing: 0) {
-                    PrimaryCTA(title: "I've dimmed them") { state.nightlyStep = 1 }
-                    GhostButton(title: "Skip · keep them bright") { state.nightlyStep = 1 }
+                    PrimaryCTA(title: "I've dimmed them") { state.nightlyStep += 1 }
+                    GhostButton(title: "Skip · keep them bright") { state.nightlyStep += 1 }
                         .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 22)
@@ -156,7 +157,7 @@ struct NightlyTemperatureView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                NightlyStepHeader(step: 2, total: 4, label: "Temperature", time: "10:32 PM")
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "Temperature", time: "10:32 PM")
 
                 VStack(alignment: .leading, spacing: 10) {
                     Kicker(text: "Quick log")
@@ -218,7 +219,7 @@ struct NightlyTemperatureView: View {
 
                 Spacer()
 
-                PrimaryCTA(title: "Continue") { state.nightlyStep = 2 }
+                PrimaryCTA(title: "Continue") { state.nightlyStep += 1 }
                     .padding(.horizontal, 22)
                     .padding(.bottom, 36)
             }
@@ -274,8 +275,8 @@ struct NightlyLightsOffView: View {
                 Spacer()
 
                 VStack(spacing: 0) {
-                    PrimaryCTA(title: "Lights are off") { state.nightlyStep = 3 }
-                    GhostButton(title: "Skip · leave them on") { state.nightlyStep = 3 }
+                    PrimaryCTA(title: "Lights are off") { state.nightlyStep += 1 }
+                    GhostButton(title: "Skip · leave them on") { state.nightlyStep += 1 }
                         .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 22)
@@ -299,7 +300,7 @@ struct NightlyBrainDumpView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                NightlyStepHeader(step: 3, total: 4, label: "Brain Dump", time: "10:50 PM")
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "Brain Dump", time: "10:50 PM")
 
                 // Permission denied state
                 if recorder.permission == .denied {
@@ -433,13 +434,12 @@ struct NightlyBrainDumpView: View {
 
     private func handleDone() {
         if showDoneMessage {
-            state.nightlyStep = 3
+            state.nightlyStep += 1
         } else {
             recorder.stopAndDiscard()
             withAnimation { showDoneMessage = true }
-            // Auto-advance after 3 seconds so user has time to read the message
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                state.nightlyStep = 3
+                state.nightlyStep += 1
             }
         }
     }
@@ -510,7 +510,7 @@ struct NightlyBoringStoryView: View {
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                NightlyStepHeader(step: 4, total: 4, label: "Boring Story", time: "11:02 PM")
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "Boring Story", time: "11:02 PM")
 
                 VStack(spacing: 14) {
                     Kicker(text: "Eyes closed · audio only")
@@ -608,7 +608,7 @@ struct NightlyBoringStoryView: View {
     private func finish() {
         tts.stop()
         clockTimer?.invalidate()
-        state.nightlyStep = 4
+        state.nightlyStep += 1
     }
 
     private func timeString(_ s: Int) -> String {
@@ -629,7 +629,7 @@ struct NightlyBreathingView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                NightlyStepHeader(step: 3, total: 3, label: "4 · 7 · 8 Breathing")
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "4 · 7 · 8 Breathing")
 
                 VStack(spacing: 16) {
                     Kicker(text: "Cycle \(state.breathingCycle) of 4")
@@ -703,13 +703,94 @@ struct NightlyBreathingView: View {
                 .padding(.horizontal, 28)
                 .padding(.top, 40)
 
-                GhostButton(title: "End early · I'm calm") { state.nightlyStep = 5 }
+                GhostButton(title: "End early · I'm calm") { state.nightlyStep += 1 }
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
                     .padding(.top, 50)
                     .padding(.bottom, 36)
             }
         }
+        .onAppear { startTimer() }
         .onDisappear { timer?.invalidate() }
+    }
+
+    private func startTimer() {
+        state.breathingPhase = .inhale
+        state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
+        state.breathingCycle = 1
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in tick() }
+        }
+    }
+
+    private func tick() {
+        if state.breathingSecondsRemaining > 1 {
+            state.breathingSecondsRemaining -= 1
+            return
+        }
+        // Advance phase
+        switch state.breathingPhase {
+        case .inhale:
+            state.breathingPhase = .hold
+            state.breathingSecondsRemaining = BreathingPhase.hold.seconds
+        case .hold:
+            state.breathingPhase = .exhale
+            state.breathingSecondsRemaining = BreathingPhase.exhale.seconds
+        case .exhale:
+            if state.breathingCycle >= 4 {
+                timer?.invalidate()
+                state.nightlyStep += 1
+            } else {
+                state.breathingCycle += 1
+                state.breathingPhase = .inhale
+                state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
+            }
+        }
+    }
+}
+
+// MARK: - Generic Step (existing habits from generated routine)
+
+struct NightlyGenericStepView: View {
+    @EnvironmentObject var state: AppState
+    var label: String
+
+    var body: some View {
+        LullScreen(glow: false) {
+            AmberGlow(x: 0.5, y: 0.3, radius: 220, opacity: 0.4)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                Spacer().frame(height: 16)
+                NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: label)
+
+                VStack(spacing: 14) {
+                    Kicker(text: "Your habit")
+                    Text(label)
+                        .font(.serif(32))
+                        .foregroundColor(.lullAmber)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 36)
+
+                Spacer()
+
+                ZStack {
+                    Circle().stroke(Color.lullLine, lineWidth: 1).frame(width: 160, height: 160)
+                    Ember(size: 8)
+                }
+
+                Spacer()
+
+                VStack(spacing: 0) {
+                    PrimaryCTA(title: "Done") { state.nightlyStep += 1 }
+                    GhostButton(title: "Skip") { state.nightlyStep += 1 }
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 22)
+                .padding(.bottom, 36)
+            }
+        }
     }
 }

@@ -2,9 +2,10 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject var state: AppState
-
+    @State private var showMenu = false
 
     var body: some View {
+        ZStack {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: -0.05, radius: 260, opacity: 0.7)
                 .ignoresSafeArea()
@@ -16,7 +17,7 @@ struct DashboardView: View {
                     HStack {
                         BrandMark()
                         Spacer()
-                        Button(action: {}) {
+                        Button(action: { withAnimation(.easeOut(duration: 0.18)) { showMenu.toggle() } }) {
                             ZStack {
                                 Circle()
                                     .strokeBorder(Color.lullLine, lineWidth: 1)
@@ -159,5 +160,45 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $state.showNightlyFlow) {
             NightlyFlowView()
         }
+
+        if showMenu {
+            Color.clear
+                .contentShape(Rectangle())
+                .ignoresSafeArea()
+                .onTapGesture { withAnimation(.easeOut(duration: 0.18)) { showMenu = false } }
+
+            VStack(alignment: .trailing, spacing: 0) {
+                Button(action: {
+                    withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        state.showMidSleepMode = true
+                    }
+                }) {
+                    HStack(spacing: 12) {
+                        Ember(size: 5)
+                        Text("Mid-Sleep Mode")
+                            .font(.system(size: 14))
+                            .foregroundColor(.lullInk1)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                }
+                .buttonStyle(.plain)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(hex: "#1a1310"))
+                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.5), radius: 16, y: 8)
+            )
+            .frame(width: 190)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .padding(.top, 68)
+            .padding(.trailing, 22)
+            .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+            .zIndex(10)
+        }
+        } // ZStack
     }
 }
