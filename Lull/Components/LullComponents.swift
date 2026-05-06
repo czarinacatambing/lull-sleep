@@ -21,9 +21,6 @@ struct LullScreen<Content: View>: View {
                     .ignoresSafeArea()
             }
 
-            GrainOverlay()
-                .ignoresSafeArea()
-
             content
         }
         .foregroundColor(.lullInk1)
@@ -52,15 +49,6 @@ struct AmberGlow: View {
             .frame(width: w, height: h)
         }
         .allowsHitTesting(false)
-    }
-}
-
-// MARK: - GrainOverlay
-
-struct GrainOverlay: View {
-    var body: some View {
-        Color.white.opacity(0)
-            .allowsHitTesting(false)
     }
 }
 
@@ -216,7 +204,7 @@ struct ChoiceRow: View {
                     if selected {
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(Color(hex: "#1a0d06"))
+                            .foregroundColor(.lullBgDeep)
                     }
                 }
                 .frame(width: 22, height: 22)
@@ -256,6 +244,61 @@ struct ChoiceRow: View {
     }
 }
 
+// MARK: - SleepScoreSelector
+// 5-circle 1–5 rating used in MorningCheckInView and SleepLogDetailView.
+// score == 0 means "not yet selected". Pass disabled: true for read-only past entries.
+
+struct SleepScoreSelector: View {
+    @Binding var score: Int
+    var disabled: Bool = false
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .center, spacing: 0) {
+                ForEach(1...5, id: \.self) { n in
+                    let selected = score == n
+                    let baseSize: CGFloat = 36 + CGFloat(n) * 6  // 42 → 66 pt
+
+                    Button(action: {
+                        guard !disabled else { return }
+                        score = n
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(selected
+                                    ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep],
+                                                                    center: .center, startRadius: 0, endRadius: baseSize / 2))
+                                    : AnyShapeStyle(Color.clear))
+                                .overlay(Circle().strokeBorder(
+                                    selected ? Color.clear : Color.white.opacity(0.12 + Double(n) * 0.04),
+                                    lineWidth: 1.2))
+                                .frame(width: baseSize, height: baseSize)
+                                .shadow(color: selected ? .lullAmberGlow : .clear, radius: 11)
+
+                            if selected {
+                                Text("\(n)")
+                                    .font(.serif(22))
+                                    .foregroundColor(.lullBgDeep)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .disabled(disabled)
+                }
+            }
+            .padding(.horizontal, 28)
+
+            HStack {
+                Text("WRECKED").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk4)
+                Spacer()
+                Text("FANTASTIC").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk4)
+            }
+            .padding(.horizontal, 32)
+        }
+    }
+}
+
 // MARK: - PrimaryCTA
 
 struct PrimaryCTA: View {
@@ -267,7 +310,7 @@ struct PrimaryCTA: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(hex: "#1a0d06"))
+                .foregroundColor(.lullBgDeep)
                 .frame(maxWidth: .infinity)
                 .frame(height: Lull.buttonHeight)
                 .background(

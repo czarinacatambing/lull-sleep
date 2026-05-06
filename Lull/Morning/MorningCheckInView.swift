@@ -43,56 +43,8 @@ struct MorningCheckInView: View {
 
                 Spacer()
 
-                // 5 score circles — growing size
-                VStack(spacing: 14) {
-                    HStack(alignment: .center, spacing: 0) {
-                        ForEach(1...5, id: \.self) { n in
-                            let selected = state.morningScore == n
-                            let baseSize: CGFloat = 36 + CGFloat(n) * 6  // 42, 48, 54, 60, 66
-
-                            Button(action: { state.morningScore = n }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(selected
-                                            ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep],
-                                                                            center: .center, startRadius: 0, endRadius: baseSize / 2))
-                                            : AnyShapeStyle(Color.clear))
-                                        .overlay(
-                                            Circle().strokeBorder(
-                                                selected ? Color.clear : Color.white.opacity(0.12 + Double(n) * 0.04),
-                                                lineWidth: 1.2)
-                                        )
-                                        .frame(width: baseSize, height: baseSize)
-                                        .shadow(color: selected ? .lullAmberGlow : .clear, radius: 11)
-                                        .shadow(color: selected ? Color.lullAmber.opacity(0.10) : .clear, radius: 0)
-
-                                    if selected {
-                                        Text("\(n)")
-                                            .font(.serif(22))
-                                            .foregroundColor(Color(hex: "#1a0d06"))
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.horizontal, 28)
-
-                    HStack {
-                        Text("WRECKED")
-                            .font(.mono(9.5))
-                            .kerning(1.4)
-                            .foregroundColor(.lullInk4)
-                        Spacer()
-                        Text("FANTASTIC")
-                            .font(.mono(9.5))
-                            .kerning(1.4)
-                            .foregroundColor(.lullInk4)
-                    }
-                    .padding(.horizontal, 32)
-                }
-                .padding(.top, 50)
+                SleepScoreSelector(score: $state.morningScore)
+                    .padding(.top, 50)
 
                 Spacer()
 
@@ -139,10 +91,11 @@ struct MorningCheckInView: View {
                 }
 
                 VStack(spacing: 0) {
-                    PrimaryCTA(title: "Log this morning") {
+                    PrimaryCTA(title: "Log this morning", disabled: state.morningScore == 0) {
                         state.logMorningScore()
                         dismiss()
                     }
+                    .opacity(state.morningScore == 0 ? 0.45 : 1)
                     GhostButton(title: "Add a note · woke at 4am") {}
                         .frame(maxWidth: .infinity)
                 }

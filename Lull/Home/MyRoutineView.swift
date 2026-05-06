@@ -11,14 +11,6 @@ struct MyRoutineView: View {
         return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
     }
 
-    private var preWindDownSteps: [RoutineStep] {
-        state.coreRoutine.filter { $0.mode == .reminderOnly || $0.mode == .experiment }
-    }
-
-    private var windDownSteps: [RoutineStep] {
-        state.coreRoutine.filter { $0.mode == .inSequence }
-    }
-
     // Looks up the scheduled badge for a step from the canonical AppState schedule.
     private func badgeText(for step: RoutineStep) -> String {
         state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? step.mode.label
@@ -50,13 +42,13 @@ struct MyRoutineView: View {
                             Text("Start Tonight's Routine")
                                 .font(.system(size: 15, weight: .semibold))
                         }
-                        .foregroundColor(Color(hex: "#0c0807"))
+                        .foregroundColor(Color.lullBg)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(LinearGradient(
-                                    colors: [Color.lullAmber, Color(hex: "#c8923a")],
+                                    colors: [Color.lullAmber, Color.lullAmberDeep],
                                     startPoint: .topLeading, endPoint: .bottomTrailing))
                         )
                         .shadow(color: Color.lullAmberGlow.opacity(0.5), radius: 12, y: 4)
@@ -91,7 +83,7 @@ struct MyRoutineView: View {
                         }) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color(hex: "#0c0807").opacity(0.6))
+                                    .fill(Color.lullBg.opacity(0.6))
                                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -124,12 +116,12 @@ struct MyRoutineView: View {
                         .padding(.bottom, 10)
 
                     VStack(spacing: 0) {
-                        ForEach(Array(preWindDownSteps.enumerated()), id: \.element.id) { i, step in
+                        ForEach(Array(state.preWindDownSteps.enumerated()), id: \.element.id) { i, step in
                             PreWindDownRow(
                                 step: step,
                                 badgeText: badgeText(for: step)
                             )
-                            if i < preWindDownSteps.count - 1 {
+                            if i < state.preWindDownSteps.count - 1 {
                                 Divider()
                                     .background(Color.lullLine)
                                     .padding(.leading, 36)
@@ -147,9 +139,9 @@ struct MyRoutineView: View {
                         .padding(.bottom, 10)
 
                     VStack(spacing: 0) {
-                        ForEach(Array(windDownSteps.enumerated()), id: \.element.id) { i, step in
+                        ForEach(Array(state.windDownSteps.enumerated()), id: \.element.id) { i, step in
                             WindDownRow(number: i + 1, step: step)
-                            if i < windDownSteps.count - 1 {
+                            if i < state.windDownSteps.count - 1 {
                                 Divider()
                                     .background(Color.lullLine)
                                     .padding(.leading, 52)

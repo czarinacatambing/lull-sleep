@@ -29,7 +29,6 @@ class AppState: ObservableObject {
     @Published var showMorningCheckIn = false
 
     // MARK: - Routine data
-    var historicalScores = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 9, 8, 7, 9]
 
     // Remedy scores derived from onboarding answers — used by the experiment engine
     // to weight the next-variable suggestion.
@@ -75,7 +74,7 @@ class AppState: ObservableObject {
     @Published var breathingSecondsRemaining = 7
 
     // MARK: - Morning check-in
-    @Published var morningScore = 4         // 1–5
+    @Published var morningScore = 0         // 1–5; 0 = not yet selected
     @Published var selectedDotIndex: Int? = nil
     @Published var sleepLogs: [SleepLogEntry] = SleepLogEntry.placeholders
 
@@ -129,9 +128,9 @@ class AppState: ObservableObject {
         content.sound = .none
         content.categoryIdentifier = "MID_SLEEP_CHECK"
 
-        // Fire 3 hours after bedtime
+        // Fire 3 hours after tonight's bedtime — include date so it fires once, not nightly.
         let fireDate = Calendar.current.date(byAdding: .hour, value: 3, to: typicalBedtime) ?? typicalBedtime
-        let comps = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
 
         let request = UNNotificationRequest(identifier: "mid_sleep_check", content: content, trigger: trigger)
@@ -183,6 +182,16 @@ class AppState: ObservableObject {
             }
 
         return (prepSteps + seqSteps).sorted { $0.time < $1.time }
+    }
+
+    // Pre-wind-down steps (reminders + active experiment) — shown in the "Pre-Wind Down" section.
+    var preWindDownSteps: [RoutineStep] {
+        coreRoutine.filter { $0.mode == .reminderOnly || $0.mode == .experiment }
+    }
+
+    // In-sequence wind-down steps — shown in the "Wind Down" section.
+    var windDownSteps: [RoutineStep] {
+        coreRoutine.filter { $0.mode == .inSequence }
     }
 
     // Ordered list of interactive steps to run in the nightly flow, derived from coreRoutine.

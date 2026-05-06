@@ -296,6 +296,7 @@ struct NightlyBrainDumpView: View {
     @StateObject private var recorder = AudioRecordingService()
     @State private var showDoneMessage = false
     @State private var pulsePhase: CGFloat = 0
+    @State private var pulseTimer: Timer?
 
     var body: some View {
         LullScreen(glow: false) {
@@ -359,12 +360,12 @@ struct NightlyBrainDumpView: View {
                                                                      center: .center, startRadius: 0, endRadius: 44)))
                                 .frame(width: 88, height: 88)
                                 .shadow(color: .lullAmberGlow, radius: showDoneMessage ? 8 : 20)
-                                .overlay(Circle().strokeBorder(Color(hex: "#0c0807").opacity(0.5), lineWidth: 6))
+                                .overlay(Circle().strokeBorder(Color.lullBg.opacity(0.5), lineWidth: 6))
                                 .animation(.easeInOut(duration: 0.4), value: showDoneMessage)
 
                             Image(systemName: showDoneMessage ? "checkmark" : (recorder.recordingState == .recording ? "stop.fill" : "mic.fill"))
                                 .font(.system(size: 28, weight: .regular))
-                                .foregroundColor(Color(hex: "#1a0d06"))
+                                .foregroundColor(.lullBgDeep)
                                 .animation(.easeInOut(duration: 0.2), value: showDoneMessage)
                         }
                         .onTapGesture {
@@ -379,7 +380,7 @@ struct NightlyBrainDumpView: View {
                     .frame(width: 200, height: 200)
 
                     VStack(spacing: 6) {
-                        Text(timeString(recorder.duration))
+                        Text(recorder.duration.lullTimeString)
                             .font(.serif(38))
                             .foregroundColor(.lullInk0)
                             .kerning(-1)
@@ -411,7 +412,7 @@ struct NightlyBrainDumpView: View {
                         Button(action: handleDone) {
                             Text(showDoneMessage ? "Continue →" : "I'm done")
                                 .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(Color(hex: "#1a0d06"))
+                                .foregroundColor(.lullBgDeep)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
                                 .background(Capsule().fill(Color.lullAmber))
@@ -428,10 +429,13 @@ struct NightlyBrainDumpView: View {
         }
         .task { await recorder.checkPermission() }
         .onAppear {
-            // Pulse animation tick
-            Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            pulseTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
                 pulsePhase += 0.08
             }
+        }
+        .onDisappear {
+            pulseTimer?.invalidate()
+            pulseTimer = nil
         }
     }
 
@@ -445,11 +449,6 @@ struct NightlyBrainDumpView: View {
                 state.nightlyStep += 1
             }
         }
-    }
-
-    private func timeString(_ t: TimeInterval) -> String {
-        let s = Int(t)
-        return String(format: "%d:%02d", s / 60, s % 60)
     }
 }
 
@@ -541,7 +540,7 @@ struct NightlyBoringStoryView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    Text("\(timeString(elapsedSeconds)) / ~20:00")
+                    Text("\(elapsedSeconds.lullTimeString) / ~20:00")
                         .font(.mono(11))
                         .kerning(1.6)
                         .foregroundColor(.lullInk3)
@@ -613,10 +612,6 @@ struct NightlyBoringStoryView: View {
         clockTimer?.invalidate()
         state.nightlyStep += 1
     }
-
-    private func timeString(_ s: Int) -> String {
-        String(format: "%d:%02d", s / 60, s % 60)
-    }
 }
 
 // MARK: - Alt: 4-7-8 Breathing
@@ -671,14 +666,14 @@ struct NightlyBreathingView: View {
 
                         Text("\(state.breathingSecondsRemaining)")
                             .font(.serif(80))
-                            .foregroundColor(Color(hex: "#fff5e0"))
+                            .foregroundColor(.lullInk0)
                             .kerning(-3)
                             .shadow(color: Color.black.opacity(0.3), radius: 4, y: 2)
 
                         Text("SECONDS")
                             .font(.mono(11))
                             .kerning(1.8)
-                            .foregroundColor(Color(hex: "#1a0d06").opacity(0.7))
+                            .foregroundColor(.lullBgDeep.opacity(0.7))
                             .offset(y: 48)
                     }
                 }

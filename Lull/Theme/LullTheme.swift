@@ -18,6 +18,8 @@ extension Color {
     static let lullLine      = Color(red: 1, green: 0.863, blue: 0.745).opacity(0.08)
     static let lullLineStrong = Color(red: 1, green: 0.863, blue: 0.745).opacity(0.14)
     static let lullAmberGlow = Color(hex: "#f0b96b").opacity(0.45)
+    // Dark warm brown — used as text colour on amber buttons/fills.
+    static let lullBgDeep    = Color(hex: "#1a0d06")
 
     init(hex: String) {
         let h = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -59,4 +61,17 @@ enum Lull {
     static let cardRadius: CGFloat = 22
     static let buttonHeight: CGFloat = 56
     static let buttonRadius: CGFloat = 999
+}
+
+// MARK: - Time formatting
+
+extension Int {
+    /// Formats seconds as "m:ss" for use in timer displays throughout the app.
+    var lullTimeString: String {
+        String(format: "%d:%02d", self / 60, self % 60)
+    }
+}
+
+extension TimeInterval {
+    var lullTimeString: String { Int(self).lullTimeString }
 }
