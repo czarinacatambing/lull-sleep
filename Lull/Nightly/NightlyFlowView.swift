@@ -710,7 +710,7 @@ struct NightlyBreathingView: View {
                     .padding(.bottom, 36)
             }
         }
-        .onAppear { startTimer() }
+        .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { startTimer() } }
         .onDisappear { timer?.invalidate() }
     }
 

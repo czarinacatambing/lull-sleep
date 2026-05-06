@@ -28,6 +28,7 @@
 		BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = C839CE47A7EBAE076B7BF096 /* BundledStories.swift */; };
 		C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
+		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */; };
 		F9147C3EE6EB7C0898A38E93 /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B96F9D7A41B8D164E87290B /* LullComponents.swift */; };
 		F925DA874E2FC8346941100A /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F27EAE09500318E6960113 /* AppState.swift */; };
@@ -57,6 +58,7 @@
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
+		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				85F27EAE09500318E6960113 /* AppState.swift */,
+				F22F2E8574F38842A81E664B /* ExperimentEngine.swift */,
 				0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */,
 			);
 			path = Models;
@@ -278,6 +281,7 @@
 				12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */,
 				0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */,
 				60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */,
+				CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */,
 				30C48EF1D2833AD03BC1935B /* GetUpPromptView.swift in Sources */,
 				6B13AEE4C552544EAAEFF3B6 /* HomeTabView.swift in Sources */,
 				2A8BFC6FBA480460BA7E0DF5 /* LullApp.swift in Sources */,

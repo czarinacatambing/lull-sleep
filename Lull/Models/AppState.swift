@@ -86,6 +86,11 @@ class AppState: ObservableObject {
         advanceExperiment()
     }
 
+    func changeExperimentVariable(to label: String) {
+        coreRoutine.removeAll { $0.mode == .experiment }
+        coreRoutine.append(RoutineStep(order: coreRoutine.count + 1, label: label, mode: .experiment))
+    }
+
     func advanceExperiment() {
         guard let status = experimentStatus else { return }
         switch status.decision {

@@ -2,6 +2,14 @@ import SwiftUI
 
 struct MyRoutineView: View {
     @EnvironmentObject var state: AppState
+    @State private var showChangeConfirm = false
+    @State private var showCandidatePicker = false
+    @State private var pendingCandidate: String? = nil
+
+    private var candidates: [String] {
+        let inRoutine = Set(state.coreRoutine.map(\.label))
+        return ExperimentEngine.candidatePool.filter { !inRoutine.contains($0) }
+    }
 
     private var preWindDownSteps: [RoutineStep] {
         state.coreRoutine.filter { $0.mode == .reminderOnly || $0.mode == .experiment }
@@ -74,18 +82,41 @@ struct MyRoutineView: View {
                             }
                         }
                         Spacer()
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color(hex: "#0c0807").opacity(0.6))
-                                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
-                                .frame(width: 44, height: 44)
-                            Ember(size: 10)
+                        Button(action: {
+                            if state.variableNight > 0 {
+                                showChangeConfirm = true
+                            } else {
+                                showCandidatePicker = true
+                            }
+                        }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color(hex: "#0c0807").opacity(0.6))
+                                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.lullInk2)
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
                     .padding(18)
                     .lullCard(radius: 20, accent: true)
                     .padding(.horizontal, 22)
                     .padding(.bottom, 24)
+                    .alert("Change experiment?", isPresented: $showChangeConfirm) {
+                        Button("Keep testing") { }
+                        Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
+                    } message: {
+                        Text("You've only tested "\(state.tonightVariable)" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
+                    }
+                    .sheet(isPresented: $showCandidatePicker) {
+                        CandidatePickerSheet(candidates: candidates) { chosen in
+                            state.changeExperimentVariable(to: chosen)
+                            showCandidatePicker = false
+                        }
+                    }
 
                     // Pre-Wind Down section
                     RoutineSectionHeader(title: "Pre-Wind Down")
@@ -272,5 +303,63 @@ struct WindDownRow: View {
                 .padding(.trailing, 14)
         }
         .padding(.vertical, 13)
+    }
+}
+
+// MARK: - Candidate Picker Sheet
+
+struct CandidatePickerSheet: View {
+    var candidates: [String]
+    var onSelect: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        LullScreen(glow: false) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("PICK NEXT VARIABLE")
+                        .font(.mono(10.5)).kerning(1.4).foregroundColor(.lullInk4)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14)).foregroundColor(.lullInk3)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 20)
+
+                Text("Choose what to test next. Lull will track it for 5 nights and tell you if it moves the needle.")
+                    .font(.system(size: 13.5))
+                    .foregroundColor(.lullInk3)
+                    .lineSpacing(3)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 10) {
+                        ForEach(candidates, id: \.self) { candidate in
+                            Button(action: { onSelect(candidate) }) {
+                                HStack(spacing: 14) {
+                                    Ember(size: 5)
+                                    Text(candidate)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.lullInk0)
+                                        .multilineTextAlignment(.leading)
+                                    Spacer()
+                                    Text("›")
+                                        .font(.system(size: 20, weight: .light))
+                                        .foregroundColor(.lullInk3)
+                                }
+                                .padding(.horizontal, 20).padding(.vertical, 18)
+                                .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.025)))
+                                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                }
+            }
+        }
     }
 }

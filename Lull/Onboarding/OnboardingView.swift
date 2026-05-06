@@ -86,7 +86,7 @@ struct OnbSleepProblemView: View {
                     .padding(.horizontal, 20)
 
                     VStack(spacing: 0) {
-                        PrimaryCTA(title: "Continue") { step = 2 }
+                        PrimaryCTA(title: "Continue", disabled: state.selectedSleepProblems.isEmpty) { step = 2 }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 32)
@@ -149,7 +149,7 @@ struct OnbWhatWakesView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    PrimaryCTA(title: "Continue") { step = 3 }
+                    PrimaryCTA(title: "Continue", disabled: state.selectedWakes.isEmpty) { step = 3 }
                         .padding(.horizontal, 20)
                         .padding(.top, 32)
                         .padding(.bottom, 36)
@@ -491,7 +491,7 @@ struct OnbPreBedView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    PrimaryCTA(title: "Continue") { step = 6 }
+                    PrimaryCTA(title: "Continue", disabled: state.selectedPreBedActivities.isEmpty) { step = 6 }
                         .padding(.horizontal, 20)
                         .padding(.top, 32)
                         .padding(.bottom, 36)
@@ -550,7 +550,7 @@ struct OnbTriedView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    PrimaryCTA(title: "Continue") { step = 7 }
+                    PrimaryCTA(title: "Continue", disabled: state.selectedTriedThings.isEmpty) { step = 7 }
                         .padding(.horizontal, 20)
                         .padding(.top, 32)
                         .padding(.bottom, 36)
