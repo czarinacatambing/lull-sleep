@@ -569,7 +569,12 @@ struct NightlyBoringStoryView: View {
                         finish()
                     }
                 }
-                .padding(.bottom, 52)
+                .padding(.bottom, 16)
+
+                GhostButton(title: "Skip") { finish() }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 36)
             }
         }
         .onAppear {

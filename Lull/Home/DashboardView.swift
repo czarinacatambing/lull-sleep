@@ -106,7 +106,9 @@ struct DashboardView: View {
                         }
 
                         VStack(spacing: 8) {
-                            ForEach(state.scheduledRoutine) { row in
+                            ForEach(state.scheduledRoutine.filter {
+                                $0.step.label != "Brightness check" && $0.step.label != "Temperature check"
+                            }) { row in
                                 HStack(spacing: 12) {
                                     Text(row.timeString)
                                         .font(.mono(11))
