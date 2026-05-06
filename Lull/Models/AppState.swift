@@ -31,17 +31,25 @@ class AppState: ObservableObject {
     // MARK: - Routine data
     var historicalScores = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 9, 8, 7, 9]
 
+    // Remedy scores derived from onboarding answers — used by the experiment engine
+    // to weight the next-variable suggestion.
+    var remedyScores: [String: Int] {
+        scoreRemedies(from: OnboardingAnswers(from: self))
+    }
+
     var experimentStatus: ExperimentEngine.Status? {
-        ExperimentEngine.evaluate(logs: sleepLogs, coreRoutine: coreRoutine)
+        ExperimentEngine.evaluate(logs: sleepLogs, coreRoutine: coreRoutine, remedyScores: remedyScores)
     }
     var tonightVariable: String { experimentStatus?.variable ?? "No experiment running" }
     var variableNight:   Int    { experimentStatus?.night ?? 0 }
     var variableScore:   String { experimentStatus?.scoreDeltaString ?? "—" }
     @Published var coreRoutine: [RoutineStep] = [
-        RoutineStep(order: 1, label: "Dim the lights", mode: .reminderOnly),
-        RoutineStep(order: 2, label: "Brain dump", mode: .inSequence),
-        RoutineStep(order: 3, label: "Boring story", mode: .inSequence),
-        RoutineStep(order: 4, label: "Magnesium glycinate · 30 min before bed", mode: .experiment),
+        RoutineStep(order: 1, label: R.dimTheLights,  mode: .reminderOnly),
+        RoutineStep(order: 2, label: "Brightness check", mode: .inSequence),
+        RoutineStep(order: 3, label: "Temperature check", mode: .inSequence),
+        RoutineStep(order: 4, label: R.brainDump,     mode: .inSequence),
+        RoutineStep(order: 5, label: R.boringStory,   mode: .inSequence),
+        RoutineStep(order: 6, label: R.magnesium,     mode: .experiment),
     ]
 
     // MARK: - Generated routine (set during onboarding)
@@ -135,17 +143,8 @@ class AppState: ObservableObject {
     // reminderOnly steps use evidence-based lead times relative to bedtime.
     // inSequence steps are packed into the sleep-onset window before bedtime.
 
-    static let prepLeadTimes: [String: Int] = [
-        "Dim the lights":       90,
-        "Dimming the lights":   90,
-        "No screens":           60,
-        "Warm shower":          90,
-        "Warm shower or bath":  90,
-        "Finish workouts":     180,
-        "No heavy snacks":     120,
-        "Magnesium":            60,
-        "Reading (physical book)": 30,
-    ]
+    // Lead times for reminderOnly / experiment steps, sourced from the remedy system.
+    static var prepLeadTimes: [String: Int] { remedyLeadTimes }
 
     var scheduledRoutine: [ScheduledStep] {
         let cal = Calendar.current

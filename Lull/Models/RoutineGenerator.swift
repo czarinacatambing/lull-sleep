@@ -1,24 +1,174 @@
 import Foundation
 
+// MARK: - Canonical remedy name constants
+// These string values are used as keys throughout the scoring system,
+// as RoutineStep labels, and as SleepLogEntry.variable values.
+// They must match NightlyStepKind.displayLabel exactly for Wind Down steps.
+
+enum R {
+    // Wind Down interactive steps
+    static let brainDump        = "Brain dump"
+    static let boringStory      = "Boring story"
+    static let breathing478     = "4-7-8 breathing"
+    static let gratitudeJournal = "Gratitude journal"
+    static let gentleStretching = "Gentle stretching"
+    static let pmr              = "Progressive muscle relaxation"
+    static let readingBook      = "Reading (physical book)"
+
+    // Bedtime Prep reminder steps
+    static let dimTheLights    = "Dim the lights"
+    static let noScreens       = "No screens"
+    static let appBlocking     = "App blocking"
+    static let finishWorkouts  = "Finish workouts"
+    static let noHeavySnacks   = "No heavy snacks"
+    static let noAlcohol       = "No alcohol"
+    static let noCaffeine      = "No caffeine"
+    static let coldRoomPrep    = "Cold room prep"
+    static let warmShower      = "Warm shower or bath"
+    static let magnesium       = "Magnesium glycinate"
+    static let herbalTea       = "Herbal tea"
+    static let weightedBlanket = "Weighted blanket"
+}
+
+// MARK: - Remedy lead times (minutes before bed)
+// Used by both the generator and AppState.scheduledRoutine.
+let remedyLeadTimes: [String: Int] = [
+    R.noAlcohol:       180,
+    R.noCaffeine:      360,
+    R.noScreens:        75,
+    R.appBlocking:      75,
+    R.finishWorkouts:  180,
+    R.noHeavySnacks:   120,
+    R.dimTheLights:     75,
+    R.coldRoomPrep:     90,
+    R.warmShower:       90,
+    R.magnesium:        45,
+    R.herbalTea:        45,
+    R.weightedBlanket:  30,
+]
+
+// All wind down candidate labels (compete for the 2 variable Wind Down slots)
+let allWindDownRemedies: [String] = [
+    R.brainDump, R.boringStory, R.breathing478,
+    R.gratitudeJournal, R.gentleStretching, R.pmr, R.readingBook,
+]
+
+// All bedtime prep remedy labels
+let allBedroomPrepRemedies: [String] = Array(remedyLeadTimes.keys)
+
+// MARK: - Nightly Step Kind
+
+enum NightlyStepKind: Equatable {
+    case brightnessCheck
+    case temperatureLog
+    case brainDump
+    case boringStory
+    case fourSevenEightBreathing
+    case gratitudeJournal
+    case gentleStretching
+    case progressiveMuscleRelaxation
+    case existingHabit(label: String)
+    // Evening reminder to stop a habit X minutes before bed.
+    case avoidReminder(label: String, minutesBefore: Int)
+
+    var displayLabel: String {
+        switch self {
+        case .brightnessCheck:            return "Brightness check"
+        case .temperatureLog:             return "Temperature check"
+        case .brainDump:                  return R.brainDump
+        case .boringStory:                return R.boringStory
+        case .fourSevenEightBreathing:    return R.breathing478
+        case .gratitudeJournal:           return R.gratitudeJournal
+        case .gentleStretching:           return R.gentleStretching
+        case .progressiveMuscleRelaxation: return R.pmr
+        case .existingHabit(let label):   return label
+        case .avoidReminder(let label, _): return label
+        }
+    }
+
+    var estimatedMinutes: Int {
+        switch self {
+        case .brightnessCheck:            return 1
+        case .temperatureLog:             return 1
+        case .brainDump:                  return 2
+        case .gratitudeJournal:           return 3
+        case .gentleStretching:           return 5
+        case .fourSevenEightBreathing:    return 5
+        case .progressiveMuscleRelaxation: return 5
+        case .boringStory:                return 20
+        case .existingHabit(let label):
+            switch label {
+            case R.readingBook:           return 20
+            case R.warmShower:            return 10
+            default:                      return 5
+            }
+        case .avoidReminder:              return 0
+        }
+    }
+
+    // Converts a stored RoutineStep label back to a NightlyStepKind.
+    static func forLabel(_ label: String) -> NightlyStepKind? {
+        switch label {
+        case "Brightness check":          return .brightnessCheck
+        case "Temperature check":         return .temperatureLog
+        case R.brainDump:                 return .brainDump
+        case R.boringStory:               return .boringStory
+        case R.breathing478:              return .fourSevenEightBreathing
+        case R.gratitudeJournal:          return .gratitudeJournal
+        case R.gentleStretching:          return .gentleStretching
+        case R.pmr:                       return .progressiveMuscleRelaxation
+        default:                          return nil
+        }
+    }
+
+    var routineMode: RoutineMode {
+        switch self {
+        case .avoidReminder: return .reminderOnly
+        default:             return .inSequence
+        }
+    }
+
+    func toRoutineStep(order: Int) -> RoutineStep {
+        RoutineStep(order: order, label: displayLabel, mode: routineMode)
+    }
+
+    func scheduledDate(bedtime: Date, sequenceOffset: Int) -> Date {
+        let cal = Calendar.current
+        if case .avoidReminder(_, let minutesBefore) = self {
+            return cal.date(byAdding: .minute, value: -minutesBefore, to: bedtime) ?? bedtime
+        }
+        return cal.date(byAdding: .minute, value: -sequenceOffset, to: bedtime) ?? bedtime
+    }
+}
+
+// MARK: - Generated Routine
+
+struct GeneratedRoutine {
+    var steps: [NightlyStepKind]          // Wind Down sequence (inSequence)
+    var avoidReminders: [NightlyStepKind] // Bedtime Prep reminders (reminderOnly)
+    var explanation: String
+    var keptHabitLabels: [String]
+    var shouldStartImmediately: Bool
+
+    var totalMinutes: Int { steps.reduce(0) { $0 + $1.estimatedMinutes } }
+
+    func toCoreRoutineSteps() -> [RoutineStep] {
+        (avoidReminders + steps).enumerated().map { i, kind in kind.toRoutineStep(order: i + 1) }
+    }
+}
+
 // MARK: - Onboarding Answer Mapping
 
 struct OnboardingAnswers {
-    // Screen 1 — sleep problems: 0=can't fall asleep, 1=brain races, 2=wakes at night, 3=unrefreshed
     let sleepProblems: Set<Int>
-    // Screen 2 — waking factors: 0=new parent, 1=shift, 2=founder, 3=ADHD, 4=anxiety, 5=physical, 6=medical, 7=none
     let wakingFactors: Set<Int>
-    // Screen 3 — window in minutes: 7, 15, 25, 35
     let mainWindowMinutes: Int
-    // Screen 4 — bedtime / wake
     let typicalBedtime: Date
     let typicalWakeTime: Date
-    // Screen 5 — pre-bed: 0=phone, 1=TV, 2=book, 3=talk, 4=dim lights, 5=shower, 6=exercise, 7=eat, 8=nothing
     let preBedActivities: Set<Int>
-    // Screen 6 — tried before: 0=melatonin, 1=meditation, 2=light dinner, 3=journaling, 4=therapy, 5=CBT-I, 6=warm bath
     let triedBefore: Set<Int>
-    // Screen 7 — environment
     let bedroomTempF: Double
-    let lightsLevel: Int  // 0=Bright 1=Half-dim 2=Warm dim 3=Mostly dark
+    let lightsLevel: Int
 
     init(from state: AppState) {
         sleepProblems     = state.selectedSleepProblems
@@ -32,8 +182,6 @@ struct OnboardingAnswers {
         lightsLevel       = state.lightsLevel
     }
 
-    // Minutes until the user's typical bedtime (from right now).
-    // Returns 0 if bedtime passed within the last 30 min — treat that as "start now".
     var timeToTargetBedtimeMinutes: Int {
         let now = Date()
         let cal = Calendar.current
@@ -46,321 +194,309 @@ struct OnboardingAnswers {
         let diff = upcoming.timeIntervalSince(now)
         return diff < 0 ? 0 : Int(diff / 60)
     }
-
-    // Convenience flags used by the generator
-    var brainRaces: Bool        { sleepProblems.contains(1) }
-    var wakesAtNight: Bool      { sleepProblems.contains(2) }
-    var hasADHD: Bool           { wakingFactors.contains(3) }
-    var hasAnxiety: Bool        { wakingFactors.contains(4) }
-    var isNewParent: Bool       { wakingFactors.contains(0) }
-    var isFounder: Bool         { wakingFactors.contains(2) }
-    var roomIsTooWarm: Bool     { bedroomTempF >= 71 }
-    var lightsAreTooHard: Bool  { lightsLevel <= 1 }
 }
 
-// MARK: - Nightly Step (generator-level type)
+// MARK: - Remedy ↔ Onboarding Mapping
 
-enum NightlyStepKind: Equatable {
-    case brightnessCheck
-    case temperatureLog
-    case brainDump
-    case boringStory
-    case fourSevenEightBreathing
-    case existingHabit(label: String)
-    // An evening reminder to stop a habit X minutes before bed.
-    // minutesBefore is evidence-based (screens=60, exercise=180, eating=120).
-    case avoidReminder(label: String, minutesBefore: Int)
-
-    var displayLabel: String {
-        switch self {
-        case .brightnessCheck:                  return "Dim the lights"
-        case .temperatureLog:                   return "Temperature check"
-        case .brainDump:                        return "Brain dump"
-        case .boringStory:                      return "Boring story"
-        case .fourSevenEightBreathing:          return "4-7-8 breathing"
-        case .existingHabit(let label):         return label
-        case .avoidReminder(let label, _):      return label
-        }
-    }
-
-    // avoidReminders are not timed steps in the bedtime sequence
-    var estimatedMinutes: Int {
-        switch self {
-        case .brightnessCheck:          return 1
-        case .temperatureLog:           return 1
-        case .brainDump:                return 2
-        case .boringStory:              return 20
-        case .fourSevenEightBreathing:  return 5
-        case .existingHabit(let label):
-            switch label {
-            case "Warm shower or bath": return 10
-            case "Reading (physical book)": return 20
-            case "Dimming the lights": return 5
-            default: return 5
-            }
-        case .avoidReminder:            return 0
-        }
-    }
-
-    static func forLabel(_ label: String) -> NightlyStepKind? {
-        switch label {
-        case "Dim the lights":      return .brightnessCheck
-        case "Temperature check":   return .temperatureLog
-        case "Brain dump":          return .brainDump
-        case "Boring story":        return .boringStory
-        case "4-7-8 breathing":     return .fourSevenEightBreathing
-        default:                    return nil
-        }
-    }
-
-    var routineMode: RoutineMode {
-        switch self {
-        case .brightnessCheck, .temperatureLog, .avoidReminder:  return .reminderOnly
-        case .existingHabit:                                      return .experiment
-        default:                                                  return .inSequence
-        }
-    }
-
-    func toRoutineStep(order: Int) -> RoutineStep {
-        RoutineStep(order: order, label: displayLabel, mode: routineMode)
-    }
-
-    // Scheduled time relative to bedtime. avoidReminders use their own offset;
-    // all others are computed by the caller from the sequential flow.
-    func scheduledDate(bedtime: Date, sequenceOffset: Int) -> Date {
-        let cal = Calendar.current
-        if case .avoidReminder(_, let minutesBefore) = self {
-            return cal.date(byAdding: .minute, value: -minutesBefore, to: bedtime) ?? bedtime
-        }
-        return cal.date(byAdding: .minute, value: -sequenceOffset, to: bedtime) ?? bedtime
-    }
+// (screen, answerIndex) → remedy labels that score points for this answer.
+// Screen 5 (pre-bed activities) carries 2x weight in scoreRemedies().
+private struct AnswerKey: Hashable {
+    let screen: Int
+    let index: Int
 }
 
-// MARK: - Generated Routine
+private let remedyMapping: [AnswerKey: [String]] = [
+    // Screen 1 — Sleep Problems (+1 per selection)
+    AnswerKey(screen: 1, index: 0): [R.dimTheLights, R.noScreens, R.warmShower,
+                                      R.breathing478, R.brainDump, R.boringStory],
+    AnswerKey(screen: 1, index: 1): [R.dimTheLights, R.noScreens, R.gratitudeJournal,
+                                      R.brainDump, R.breathing478, R.pmr, R.boringStory],
+    AnswerKey(screen: 1, index: 2): [R.coldRoomPrep, R.herbalTea, R.weightedBlanket,
+                                      R.breathing478, R.brainDump],
+    AnswerKey(screen: 1, index: 3): [R.coldRoomPrep, R.warmShower, R.magnesium, R.weightedBlanket],
 
-struct GeneratedRoutine {
-    // The bedtime sequence — steps the user actively does at night
-    var steps: [NightlyStepKind]
-    // Evening reminders to stop harmful habits before the routine even starts
-    var avoidReminders: [NightlyStepKind]
-    var explanation: String
-    var keptHabitLabels: [String]
-    var shouldStartImmediately: Bool
+    // Screen 2 — Waking Factors / Situation (+1 per selection)
+    AnswerKey(screen: 2, index: 0): [R.dimTheLights, R.herbalTea, R.gentleStretching,
+                                      R.warmShower, R.brainDump, R.breathing478],
+    AnswerKey(screen: 2, index: 1): [R.coldRoomPrep, R.dimTheLights, R.noCaffeine,
+                                      R.magnesium, R.boringStory],
+    AnswerKey(screen: 2, index: 2): [R.dimTheLights, R.noScreens, R.brainDump,
+                                      R.breathing478, R.pmr],
+    AnswerKey(screen: 2, index: 3): [R.dimTheLights, R.noScreens, R.brainDump,
+                                      R.breathing478, R.pmr, R.boringStory],
+    AnswerKey(screen: 2, index: 4): [R.dimTheLights, R.herbalTea, R.breathing478,
+                                      R.brainDump, R.pmr],
+    AnswerKey(screen: 2, index: 5): [R.coldRoomPrep, R.warmShower, R.gentleStretching,
+                                      R.pmr, R.weightedBlanket],
 
-    var totalMinutes: Int { steps.reduce(0) { $0 + $1.estimatedMinutes } }
+    // Screen 5 — Pre-Bed Activities (+2 per selection, "Screen 4" 2x weight in spec)
+    AnswerKey(screen: 5, index: 0): [R.dimTheLights, R.noScreens, R.brainDump, R.appBlocking],
+    AnswerKey(screen: 5, index: 1): [R.dimTheLights, R.noScreens, R.readingBook,
+                                      R.boringStory, R.appBlocking],
+    AnswerKey(screen: 5, index: 2): [R.readingBook],
+    // index 3 ("Talk or socialize") — no CSV mapping
+    AnswerKey(screen: 5, index: 4): [R.dimTheLights],
+    AnswerKey(screen: 5, index: 5): [R.warmShower],
+    AnswerKey(screen: 5, index: 6): [R.finishWorkouts],
+    AnswerKey(screen: 5, index: 7): [R.noHeavySnacks, R.herbalTea],
+    AnswerKey(screen: 5, index: 8): [R.dimTheLights, R.brainDump, R.breathing478, R.boringStory],
+]
 
-    // Converts to RoutineStep structs for AppState.coreRoutine.
-    // avoidReminders come first (Pre-Wind Down), then the bedtime sequence.
-    func toCoreRoutineSteps() -> [RoutineStep] {
-        (avoidReminders + steps).enumerated().map { i, kind in kind.toRoutineStep(order: i + 1) }
+// Pre-bed activities that are positive sleep habits worth keeping in Wind Down.
+// index → remedy label
+private let keptHabitMap: [Int: String] = [
+    2: R.readingBook,  // "Read a physical book"
+    4: R.dimTheLights, // "Dim the lights or use warm lighting"
+    5: R.warmShower,   // "Have a shower or bath"
+]
+
+// Wind Down difficulty (lower = easier = shown first in routine)
+private let windDownDifficulty: [String: Int] = [
+    R.boringStory:      1,
+    R.readingBook:      2,
+    R.gratitudeJournal: 3,
+    R.brainDump:        4,
+    R.gentleStretching: 5,
+    R.breathing478:     6,
+    R.pmr:              7,
+]
+
+// MARK: - Scoring
+
+/// Scores every remedy against the user's onboarding answers.
+/// - Screen 1 & 2 selections → +1 per mapped remedy
+/// - Screen 5 selections (pre-bed activities) → +2 per mapped remedy
+/// - "Dim the lights" always gets +3 extra
+/// - Up to 2 kept positive habits each get +2
+func scoreRemedies(from answers: OnboardingAnswers) -> [String: Int] {
+    var scores: [String: Int] = [:]
+
+    for idx in answers.sleepProblems {
+        for remedy in remedyMapping[AnswerKey(screen: 1, index: idx)] ?? [] {
+            scores[remedy, default: 0] += 1
+        }
     }
+
+    for idx in answers.wakingFactors {
+        for remedy in remedyMapping[AnswerKey(screen: 2, index: idx)] ?? [] {
+            scores[remedy, default: 0] += 1
+        }
+    }
+
+    for idx in answers.preBedActivities {
+        for remedy in remedyMapping[AnswerKey(screen: 5, index: idx)] ?? [] {
+            scores[remedy, default: 0] += 2
+        }
+    }
+
+    scores[R.dimTheLights, default: 0] += 3
+
+    let keptHabits = answers.preBedActivities
+        .compactMap { keptHabitMap[$0] }
+        .prefix(2)
+    for habit in keptHabits {
+        scores[habit, default: 0] += 2
+    }
+
+    return scores
 }
 
-// MARK: - Main Entry Point
+// MARK: - Routine Generator
+//
+// Gentle Reset philosophy for the first routine:
+// • Bedtime Prep: Dim the lights always + max 1 additional. App Blocking never shown.
+// • Wind Down: 2 fixed checks + existing positive habits (up to 2) + at most 1 new method.
+//   A new method is only added when the user has no Wind Down habits already AND the
+//   scoring produced at least one Wind Down candidate (i.e. a real sleep-onset signal).
 
 func generateStartingRoutine(from answers: OnboardingAnswers) -> GeneratedRoutine {
     let isCloseToBedtime = answers.timeToTargetBedtimeMinutes <= 60
-    var steps: [NightlyStepKind] = []
+    let scores = scoreRemedies(from: answers)
 
-    // 1. Environmental checks only when bedtime is imminent
-    if isCloseToBedtime {
-        if answers.lightsAreTooHard { steps.append(.brightnessCheck) }
-        if answers.roomIsTooWarm   { steps.append(.temperatureLog) }
-    }
+    // Stable iteration order for kept habits (Set order is non-deterministic)
+    let keptHabitLabels = answers.preBedActivities
+        .sorted()
+        .compactMap { keptHabitMap[$0] }
+        .prefix(2)
+        .map { $0 }
 
-    // 2. Keep up to 2 high-value existing habits (the "Gentle Reset" anchor)
-    let keptHabits = selectTopExistingHabits(from: answers, max: 2)
-    steps += keptHabits.map { NightlyStepKind.existingHabit(label: $0) }
+    let prepSteps    = buildInitialPrepSteps(scores: scores)
+    let windDownSteps = buildInitialWindDownSteps(scores: scores, keptHabitLabels: Array(keptHabitLabels))
 
-    // 3. Primary wind-down — the single highest-impact addition
-    let primary = determinePrimaryWindDown(from: answers)
-    steps.append(primary)
-
-    // 4. Secondary wind-down if the window allows it
-    if answers.mainWindowMinutes >= 10,
-       let secondary = determineSecondaryWindDown(from: answers, excluding: primary) {
-        steps.append(secondary)
-    }
-
-    // 5. Trim to fit the time window the user said they have
-    let maxSteps: Int
-    switch answers.mainWindowMinutes {
-    case ..<10:    maxSteps = 3
-    case 10..<20:  maxSteps = 4
-    default:       maxSteps = steps.count
-    }
-    if steps.count > maxSteps { steps = Array(steps.prefix(maxSteps)) }
-
-    // 6. Build avoid reminders (separate from bedtime steps — these fire earlier in the evening)
-    let avoidReminders = buildAvoidReminders(from: answers)
-
-    // 7. Build the Gentle Reset explanation
-    let explanation = buildExplanation(answers: answers, steps: steps, keptHabits: keptHabits, avoidReminders: avoidReminders)
+    let explanation = buildGentleExplanation(
+        windDown: windDownSteps,
+        prep: prepSteps,
+        keptHabits: Array(keptHabitLabels)
+    )
 
     return GeneratedRoutine(
-        steps: steps,
-        avoidReminders: avoidReminders,
+        steps: windDownSteps,
+        avoidReminders: prepSteps,
         explanation: explanation,
-        keptHabitLabels: keptHabits,
+        keptHabitLabels: Array(keptHabitLabels),
         shouldStartImmediately: isCloseToBedtime
     )
 }
 
-// MARK: - Habit Ranking
+// Bedtime Prep cap: Dim the lights (always) + at most 1 more. App Blocking excluded.
+private func buildInitialPrepSteps(scores: [String: Int]) -> [NightlyStepKind] {
+    var steps: [NightlyStepKind] = [
+        .avoidReminder(label: R.dimTheLights, minutesBefore: remedyLeadTimes[R.dimTheLights]!)
+    ]
 
-// Index → human label (matches OnboardingView Screen 5 order)
-private let habitLabels: [Int: String] = [
-    0: "Phone / scrolling",
-    1: "TV / screens",
-    2: "Reading (physical book)",
-    3: "Socialising",
-    4: "Dimming the lights",
-    5: "Warm shower or bath",
-    6: "Evening exercise",
-    7: "Light snack",
-    8: "Gentle wind-down",
-]
-
-// Positive score = sleep-friendly anchor worth keeping.
-// Negative = harmful, gets an avoidReminder instead.
-private let habitScore: [Int: Int] = [
-    0: -2,  // phone — blue light + mental stimulation
-    1: -2,  // TV — same
-    2:  3,  // physical book — excellent cognitive off-ramp
-    3:  1,  // socialising — ok if calm
-    4:  3,  // dim lights — proven melatonin anchor
-    5:  3,  // shower — triggers core-temp drop
-    6: -1,  // exercise — fine in general, but timing within 3h disrupts sleep
-    7: -1,  // snack — digestion disrupts sleep onset within 2h
-    8:  0,  // "nothing specific" — no concrete anchor to keep
-]
-
-private func selectTopExistingHabits(from answers: OnboardingAnswers, max: Int) -> [String] {
-    answers.preBedActivities
-        .filter { (habitScore[$0] ?? 0) > 0 }
-        .sorted { (habitScore[$0] ?? 0) > (habitScore[$1] ?? 0) }
-        .prefix(max)
-        .compactMap { habitLabels[$0] }
-}
-
-// MARK: - Avoid Reminders
-
-// Evidence-based cutoffs for habits that interfere with sleep onset
-private struct AvoidConfig {
-    let label: String
-    let minutesBefore: Int
-    let reason: String
-}
-
-private let avoidConfigs: [Int: AvoidConfig] = [
-    // Screens: blue light suppresses melatonin for ~60 min; mental stimulation adds more
-    0: AvoidConfig(label: "No screens",         minutesBefore: 60,  reason: "screens delay melatonin by about 30–60 minutes"),
-    1: AvoidConfig(label: "No screens",         minutesBefore: 60,  reason: "screens delay melatonin by about 30–60 minutes"),
-    // Exercise: cortisol and adrenaline take ~2–3h to clear
-    6: AvoidConfig(label: "Finish workouts",    minutesBefore: 180, reason: "intense exercise raises cortisol, which takes 2–3 hours to drop"),
-    // Eating: digestion raises core temp and disrupts sleep onset within 2h
-    7: AvoidConfig(label: "No heavy snacks",    minutesBefore: 120, reason: "digestion raises body temperature, which works against sleep onset"),
-]
-
-private func buildAvoidReminders(from answers: OnboardingAnswers) -> [NightlyStepKind] {
-    var seen = Set<String>()  // deduplicate by label (phone + TV both → one "No screens")
-    var reminders: [NightlyStepKind] = []
-
-    // Sort by minutesBefore descending so the earliest reminder appears first
-    let indices = answers.preBedActivities
-        .compactMap { i -> (Int, AvoidConfig)? in
-            guard let config = avoidConfigs[i] else { return nil }
-            return (i, config)
+    let extra = allBedroomPrepRemedies
+        .filter { $0 != R.dimTheLights && $0 != R.appBlocking }
+        .compactMap { remedy -> (label: String, score: Int, leadTime: Int)? in
+            guard let score = scores[remedy], score > 0,
+                  let leadTime = remedyLeadTimes[remedy] else { return nil }
+            return (remedy, score, leadTime)
         }
-        .sorted { $0.1.minutesBefore > $1.1.minutesBefore }
+        .max { $0.score < $1.score }
 
-    for (_, config) in indices {
-        guard !seen.contains(config.label) else { continue }
-        seen.insert(config.label)
-        reminders.append(.avoidReminder(label: config.label, minutesBefore: config.minutesBefore))
+    if let extra {
+        steps.append(.avoidReminder(label: extra.label, minutesBefore: extra.leadTime))
     }
 
-    return reminders
+    return steps.sorted { lhs, rhs in
+        guard case .avoidReminder(_, let a) = lhs,
+              case .avoidReminder(_, let b) = rhs else { return false }
+        return a > b  // largest lead time first = earliest reminder in the evening
+    }
 }
 
-// MARK: - Wind-Down Selection
+// Wind Down cap: 2 fixed checks + existing Wind Down habits (up to 2) OR 1 new method.
+// A new method is added only when the user has no Wind Down habits and scoring signals
+// a sleep-onset issue (at least one Wind Down remedy scored > 0).
+private func buildInitialWindDownSteps(
+    scores: [String: Int],
+    keptHabitLabels: [String]
+) -> [NightlyStepKind] {
+    var steps: [NightlyStepKind] = [.brightnessCheck, .temperatureLog]
 
-private func determinePrimaryWindDown(from answers: OnboardingAnswers) -> NightlyStepKind {
-    // Racing brain / ADHD / founder → Brain Dump clears the queue before sleep
-    if answers.brainRaces || answers.hasADHD || answers.isFounder { return .brainDump }
-    // Anxiety → 4-7-8 is a direct nervous-system downshift
-    if answers.hasAnxiety { return .fourSevenEightBreathing }
-    // Default: boring story occupies the narrative brain without stimulating it
-    return .boringStory
+    // Only readingBook lives in allWindDownRemedies; warmShower and dimTheLights are Bedtime Prep.
+    let windDownKeptHabits = keptHabitLabels.filter { allWindDownRemedies.contains($0) }
+    for label in windDownKeptHabits {
+        steps.append(.existingHabit(label: label))
+    }
+
+    // If the user already has Wind Down habits, don't pile on anything new.
+    guard windDownKeptHabits.isEmpty else { return steps }
+
+    // Use the scoring pool as the signal check: if nothing mapped to a Wind Down remedy,
+    // there's nothing meaningful to add for this user right now.
+    let hasSignal = allWindDownRemedies.contains { (scores[$0] ?? 0) > 0 }
+    guard hasSignal else { return steps }
+
+    // Add exactly one new method — top scorer, easiest on a tie-break.
+    let topCandidate = allWindDownRemedies
+        .compactMap { remedy -> (label: String, score: Int)? in
+            guard let score = scores[remedy], score > 0 else { return nil }
+            return (remedy, score)
+        }
+        .sorted { lhs, rhs in
+            if lhs.score != rhs.score { return lhs.score > rhs.score }
+            return (windDownDifficulty[lhs.label] ?? 99) < (windDownDifficulty[rhs.label] ?? 99)
+        }
+        .first
+
+    if let candidate = topCandidate, let kind = nightlyStepKind(for: candidate.label) {
+        steps.append(kind)
+    }
+
+    return steps
 }
 
-private func determineSecondaryWindDown(
-    from answers: OnboardingAnswers,
-    excluding primary: NightlyStepKind
-) -> NightlyStepKind? {
-    switch primary {
-    case .brainDump:
-        return .boringStory
-    case .fourSevenEightBreathing:
-        return .boringStory
-    case .boringStory where answers.brainRaces || answers.hasADHD:
-        return .brainDump
-    default:
-        return nil
+// Converts a scored remedy name to its NightlyStepKind.
+private func nightlyStepKind(for remedy: String) -> NightlyStepKind? {
+    switch remedy {
+    case R.brainDump:        return .brainDump
+    case R.boringStory:      return .boringStory
+    case R.breathing478:     return .fourSevenEightBreathing
+    case R.gratitudeJournal: return .gratitudeJournal
+    case R.gentleStretching: return .gentleStretching
+    case R.pmr:              return .progressiveMuscleRelaxation
+    case R.readingBook:      return .existingHabit(label: R.readingBook)
+    default:                 return nil
     }
 }
 
 // MARK: - Explanation Builder
 
-private func buildExplanation(
-    answers: OnboardingAnswers,
-    steps: [NightlyStepKind],
-    keptHabits: [String],
-    avoidReminders: [NightlyStepKind]
+private func buildGentleExplanation(
+    windDown: [NightlyStepKind],
+    prep: [NightlyStepKind],
+    keptHabits: [String]
 ) -> String {
-    var parts: [String] = []
+    var parts: [String] = ["We kept things super simple for your first few nights."]
 
-    if !keptHabits.isEmpty {
-        let list = keptHabits.joined(separator: " and ")
-        parts.append("We kept your \(list) — you already do this well.")
+    for habit in keptHabits {
+        switch habit {
+        case R.readingBook:
+            parts.append("You already read before bed — that's one of the best things you can do, so we kept it in.")
+        case R.dimTheLights:
+            parts.append("You already dim the lights before bed. That's already working for you.")
+        case R.warmShower:
+            parts.append("You already shower before bed — the temperature drop afterward is a genuine sleep trigger.")
+        default:
+            parts.append("We kept your \(habit) habit — you already do this well.")
+        }
     }
 
-    for step in steps {
+    // New Wind Down method (anything beyond the two fixed checks and existing habits)
+    let newSteps = windDown.dropFirst(2).filter {
+        if case .existingHabit = $0 { return false }
+        return true
+    }
+    for step in newSteps {
         switch step {
         case .brainDump:
-            let reason: String
-            if answers.hasADHD         { reason = "your mind tends to stay busy" }
-            else if answers.isFounder  { reason = "you're carrying a lot at end of day" }
-            else                       { reason = "your brain races when you lie down" }
-            parts.append("Added Brain Dump because \(reason) — two minutes to empty the queue.")
+            parts.append("We added one thing: a quick Brain Dump. Two minutes to empty your head before you close your eyes.")
         case .boringStory:
-            parts.append("Added Boring Story to replace the mental chatter with something calm and forgettable.")
+            parts.append("We added one thing: a Boring Story. It gives your mind something mild to follow instead of looping on the day.")
         case .fourSevenEightBreathing:
-            parts.append("Added 4-7-8 Breathing — a direct signal to your nervous system to downshift.")
-        case .brightnessCheck:
-            parts.append("Starting with a light check — bright light at this hour delays melatonin by up to 30 minutes.")
-        case .temperatureLog:
-            parts.append("Your room is on the warm side. Cooling it down helps trigger the core-temperature drop that starts sleep.")
+            parts.append("We added one thing: 4-7-8 Breathing. Five minutes to signal your nervous system that it's safe to rest.")
+        case .gratitudeJournal:
+            parts.append("We added one thing: a quick Gratitude note. It shifts focus off the day's noise before you sleep.")
+        case .gentleStretching:
+            parts.append("We added one thing: a short stretch. A few minutes to release physical tension before you lie down.")
+        case .progressiveMuscleRelaxation:
+            parts.append("We added one thing: a short body relaxation. Tense and release — it quiets the body surprisingly fast.")
         default:
             break
         }
     }
 
-    // Reference avoid reminders by name so the explanation connects to the Pre-Wind Down badges
-    for reminder in avoidReminders {
-        guard case .avoidReminder(let label, let minutesBefore) = reminder else { continue }
-        let hours = minutesBefore >= 60 ? "\(minutesBefore / 60)h" : "\(minutesBefore) min"
+    for step in prep {
+        guard case .avoidReminder(let label, let minutesBefore) = step else { continue }
+        let timeLabel = minutesBefore >= 60 ? "\(minutesBefore / 60)h" : "\(minutesBefore) min"
         switch label {
-        case "No screens":
-            parts.append("We set a \(hours) screen cutoff — blue light and scrolling keep the brain alert long after you put the phone down.")
-        case "Finish workouts":
-            parts.append("Added a \(hours) workout cutoff — cortisol from exercise takes a few hours to clear before your body can settle.")
-        case "No heavy snacks":
-            parts.append("Added a \(hours) snack cutoff — digestion raises your core temperature, which works against sleep onset.")
+        case R.dimTheLights:
+            parts.append("Dim the lights \(timeLabel) before bed — it tells your brain the day is ending.")
+        case R.noScreens:
+            parts.append("Put screens away \(timeLabel) before bed. Blue light delays melatonin by up to 30 minutes.")
+        case R.finishWorkouts:
+            parts.append("Finish workouts \(timeLabel) before bed — cortisol from exercise takes a few hours to clear.")
+        case R.noHeavySnacks:
+            parts.append("No heavy snacks \(timeLabel) before bed — digestion raises core temperature and works against sleep onset.")
+        case R.noAlcohol:
+            parts.append("Skip alcohol \(timeLabel) before bed — even one drink fragments sleep in the second half of the night.")
+        case R.noCaffeine:
+            parts.append("Cut off caffeine \(timeLabel) before bed — it has a long half-life and stays active longer than most people expect.")
+        case R.coldRoomPrep:
+            parts.append("Cool your room \(timeLabel) before bed — a drop in core temperature is a key trigger for sleep onset.")
+        case R.warmShower:
+            parts.append("Time your shower \(timeLabel) before bed — the post-shower temperature drop helps trigger sleep.")
+        case R.magnesium:
+            parts.append("Take Magnesium glycinate \(timeLabel) before bed — it's one of the better-evidenced supplements for sleep quality.")
+        case R.herbalTea:
+            parts.append("Herbal tea \(timeLabel) before bed — the ritual and mild calming effects both help signal wind-down.")
+        case R.weightedBlanket:
+            parts.append("Use your weighted blanket — the gentle pressure activates the parasympathetic nervous system.")
         default:
             break
         }
     }
 
+    parts.append("Once this feels easy, we'll layer in more.")
     return parts.joined(separator: " ")
 }

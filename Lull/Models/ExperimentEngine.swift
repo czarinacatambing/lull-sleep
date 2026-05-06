@@ -1,25 +1,11 @@
 import Foundation
 
-// Pure logic — no SwiftUI. Reads sleep logs + coreRoutine, returns what to do next.
 struct ExperimentEngine {
 
-    // Variables queued for testing, in priority order.
-    // Anything already in coreRoutine is skipped when picking the next candidate.
-    static let candidatePool: [String] = [
-        "Magnesium glycinate · 30 min before bed",
-        "No caffeine after 2 pm",
-        "Cold room · target 65°F",
-        "Consistent wake time",
-        "White noise",
-        "Journaling · 10 min",
-        "No alcohol",
-        "Morning sunlight · 10 min",
-    ]
-
     enum Decision: Equatable {
-        case keepTesting   // fewer than 5 scored nights
-        case promote       // meaningful positive impact → add to core routine
-        case drop          // neutral or negative → discard
+        case keepTesting  // fewer than 5 scored nights
+        case promote      // meaningful positive impact → add to core routine
+        case drop         // neutral or negative → discard and try something new
     }
 
     struct Status {
@@ -51,8 +37,13 @@ struct ExperimentEngine {
         }
     }
 
-    // Main evaluation entry point.
-    static func evaluate(logs: [SleepLogEntry], coreRoutine: [RoutineStep]) -> Status? {
+    // MARK: - Promote / Drop evaluation (runs every morning after logging a score)
+
+    static func evaluate(
+        logs: [SleepLogEntry],
+        coreRoutine: [RoutineStep],
+        remedyScores: [String: Int]
+    ) -> Status? {
         guard let experimentStep = coreRoutine.first(where: { $0.mode == .experiment }) else { return nil }
         let variable = experimentStep.label
 
@@ -61,12 +52,10 @@ struct ExperimentEngine {
 
         let night = min(experimentLogs.count, 5)
 
-        // Baseline: average score on non-experiment nights
         let baseline: Double = baselineLogs.isEmpty
             ? 0
             : Double(baselineLogs.map(\.score).reduce(0, +)) / Double(baselineLogs.count)
 
-        // Experiment average (last 5 scored nights)
         let recentExp = experimentLogs.suffix(5)
         let expAvg: Double = recentExp.isEmpty
             ? baseline
@@ -74,17 +63,75 @@ struct ExperimentEngine {
 
         let delta = baseline == 0 ? 0 : expAvg - baseline
 
-        let decision: Decision
-        if experimentLogs.count < 5 {
-            decision = .keepTesting
-        } else {
-            decision = delta > 0.3 ? .promote : .drop
-        }
+        let decision: Decision = experimentLogs.count < 5
+            ? .keepTesting
+            : (delta > 0.3 ? .promote : .drop)
 
-        let inRoutine = Set(coreRoutine.map(\.label))
-        let next = candidatePool.first { !inRoutine.contains($0) && $0 != variable }
+        let next = suggestNextVariable(
+            logs: logs,
+            coreRoutine: coreRoutine,
+            remedyScores: remedyScores
+        )
 
         return Status(variable: variable, night: night, scoreDelta: delta,
                       decision: decision, nextCandidate: next)
+    }
+
+    // MARK: - Weighted next-variable suggestion
+
+    /// Scores every possible remedy candidate and returns the label of the best one.
+    ///
+    /// Formula: totalScore = (historicalScore × 0.7) + (onboardingScore × 0.2) + smartAdjustments
+    ///
+    /// - historicalScore (0–10): normalised average improvement on nights where this variable was tested.
+    ///   If no history exists, score is 0 (first suggestion falls back to onboarding match).
+    /// - onboardingScore (0–10): raw remedy score from scoreRemedies(), capped at 10.
+    /// - smartAdjustments: flat additive bonuses/penalties.
+    static func suggestNextVariable(
+        logs: [SleepLogEntry],
+        coreRoutine: [RoutineStep],
+        remedyScores: [String: Int]
+    ) -> String? {
+        let inRoutine = Set(coreRoutine.map(\.label))
+        // Only Bedtime Prep remedies are experimented with — they're passive and schedulable.
+        // Wind Down steps are determined once at onboarding and stay in the inSequence section.
+        let allCandidates = allBedroomPrepRemedies
+
+        let scored: [(label: String, total: Double)] = allCandidates.map { candidate in
+            // Historical score
+            let experimentLogs = logs.filter { $0.variable == candidate && $0.score > 0 }
+            let baselineLogs   = logs.filter { $0.variable != candidate && $0.score > 0 }
+            let historicalScore: Double
+            if experimentLogs.isEmpty {
+                historicalScore = 0
+            } else {
+                let baseline: Double = baselineLogs.isEmpty
+                    ? 0
+                    : Double(baselineLogs.map(\.score).reduce(0, +)) / Double(baselineLogs.count)
+                let expAvg = Double(experimentLogs.suffix(5).map(\.score).reduce(0, +))
+                           / Double(min(experimentLogs.count, 5))
+                let delta = baseline == 0 ? 0 : expAvg - baseline
+                // Normalise: delta 0 → 5, delta +2.5 → 10, delta −2.5 → 0
+                historicalScore = min(10, max(0, delta * 2 + 5))
+            }
+
+            // Onboarding match score (0–10)
+            let onboardingScore = min(10.0, Double(remedyScores[candidate] ?? 0))
+
+            // Smart adjustments
+            var adjustments: Double = 0
+            if candidate == R.dimTheLights || candidate == R.coldRoomPrep { adjustments += 3 }
+            if inRoutine.contains(candidate) { adjustments -= 10 }
+            let isBedtimePrep = remedyLeadTimes[candidate] != nil
+            if isBedtimePrep && logs.count < 15 { adjustments += 2 }
+
+            let total = historicalScore * 0.7 + onboardingScore * 0.2 + adjustments
+            return (candidate, total)
+        }
+
+        return scored
+            .filter { !inRoutine.contains($0.label) }
+            .max(by: { $0.total < $1.total })?
+            .label
     }
 }

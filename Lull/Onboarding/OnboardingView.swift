@@ -14,8 +14,7 @@ struct OnboardingView: View {
             case 4: OnbBedtimeView(step: $step)
             case 5: OnbPreBedView(step: $step)
             case 6: OnbTriedView(step: $step)
-            case 7: OnbEnvironmentView(step: $step)
-            case 8: OnbRoutineReadyView()
+            case 7: OnbRoutineReadyView()
             default: EmptyView()
             }
         }
@@ -44,8 +43,8 @@ struct OnbSleepProblemView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 1, total: 7, showBack: false)
-                    StepProgress(step: 1, total: 7)
+                    OnbTopBar(step: 1, total: 6, showBack: false)
+                    StepProgress(step: 1, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step one")
@@ -121,8 +120,8 @@ struct OnbWhatWakesView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 2, total: 7, onBack: { step = 1 })
-                    StepProgress(step: 2, total: 7)
+                    OnbTopBar(step: 2, total: 6, onBack: { step = 1 })
+                    StepProgress(step: 2, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step two")
@@ -175,8 +174,8 @@ struct OnbWindowView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 3, total: 7, onBack: { step = 2 })
-                    StepProgress(step: 3, total: 7)
+                    OnbTopBar(step: 3, total: 6, onBack: { step = 2 })
+                    StepProgress(step: 3, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step three")
@@ -243,8 +242,8 @@ struct OnbBedtimeView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                OnbTopBar(step: 4, total: 7, onBack: { step = 3 })
-                StepProgress(step: 4, total: 7)
+                OnbTopBar(step: 4, total: 6, onBack: { step = 3 })
+                StepProgress(step: 4, total: 6)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Kicker(text: "Step four")
@@ -463,8 +462,8 @@ struct OnbPreBedView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 5, total: 7, onBack: { step = 4 })
-                    StepProgress(step: 5, total: 7)
+                    OnbTopBar(step: 5, total: 6, onBack: { step = 4 })
+                    StepProgress(step: 5, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step five")
@@ -522,8 +521,8 @@ struct OnbTriedView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 6, total: 7, onBack: { step = 5 })
-                    StepProgress(step: 6, total: 7)
+                    OnbTopBar(step: 6, total: 6, onBack: { step = 5 })
+                    StepProgress(step: 6, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step six")
@@ -550,192 +549,16 @@ struct OnbTriedView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    PrimaryCTA(title: "Continue", disabled: state.selectedTriedThings.isEmpty) { step = 7 }
+                    PrimaryCTA(title: "Build my routine", disabled: state.selectedTriedThings.isEmpty) {
+                        let answers = OnboardingAnswers(from: state)
+                        state.applyGeneratedRoutine(generateStartingRoutine(from: answers))
+                        step = 7
+                    }
                         .padding(.horizontal, 20)
                         .padding(.top, 32)
                         .padding(.bottom, 36)
                 }
             }
-        }
-    }
-}
-
-// MARK: - Screen 6: Environment Check (evening)
-
-struct OnbEnvironmentView: View {
-    @Binding var step: Int
-    @EnvironmentObject var state: AppState
-
-    private let lightLabels = ["Bright", "Half-dim", "Warm dim", "Mostly dark"]
-    private let lightColors: [Color] = [
-        Color(hex: "#f5e7d7"),
-        Color(hex: "#d99a4a"),
-        Color(hex: "#a66a2a"),
-        Color(hex: "#3a2317"),
-    ]
-
-    var body: some View {
-        LullScreen(glow: false) {
-            AmberGlow(x: 0.8, y: 0.0, radius: 250, opacity: 0.6)
-                .ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 16)
-                    OnbTopBar(step: 7, total: 7, onBack: { step = 6 })
-                    StepProgress(step: 7, total: 7)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Kicker(text: "Last step · evening check")
-                        Group {
-                            Text("One quick read of ")
-                                .foregroundColor(.lullInk0)
-                            + Text("tonight's room.")
-                                .foregroundColor(.lullAmber)
-                        }
-                        .font(.serif(28))
-                        .padding(.top, 10)
-
-                        Text("Lull will use this to dial in tonight's routine — and learn what works for your body over time.")
-                            .font(.system(size: 13.5))
-                            .foregroundColor(.lullInk2)
-                            .lineSpacing(3)
-                    }
-                    .padding(.horizontal, Lull.horizontalPad)
-                    .padding(.top, 10)
-                    .padding(.bottom, 22)
-
-                    // Temperature card
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .lastTextBaseline) {
-                            Kicker(text: "Bedroom temperature")
-                            Spacer()
-                            Text("°F")
-                                .font(.mono(11))
-                                .foregroundColor(.lullInk3)
-                        }
-
-                        HStack(alignment: .lastTextBaseline, spacing: 10) {
-                            Text("\(Int(state.bedroomTempF))")
-                                .font(.serif(56))
-                                .foregroundColor(.lullInk0)
-                                .kerning(-1.5)
-                            Text(tempLabel)
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullInk3)
-                                .padding(.bottom, 12)
-                        }
-
-                        // Slider
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(hex: "#78a0c8").opacity(0.25),
-                                            Color.lullAmber.opacity(0.4),
-                                            Color(hex: "#dc5a3c").opacity(0.35),
-                                        ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(height: 2)
-
-                            GeometryReader { geo in
-                                let pct = (state.bedroomTempF - 60) / (75 - 60)
-                                Circle()
-                                    .fill(Color.lullAmber)
-                                    .frame(width: 16, height: 16)
-                                    .shadow(color: .lullAmberGlow, radius: 9)
-                                    .shadow(color: Color(hex: "#0c0807").opacity(0.9), radius: 0)
-                                    .offset(x: geo.size.width * CGFloat(pct) - 8, y: -5)
-                            }
-                            .frame(height: 6)
-                        }
-                        .frame(height: 10)
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { v in
-                                    let cardW = UIScreen.main.bounds.width - 88
-                                    let pct = min(1, max(0, v.location.x / cardW))
-                                    state.bedroomTempF = 60 + pct * 15
-                                }
-                        )
-
-                        HStack {
-                            ForEach(["60°", "65°", "70°", "75°"], id: \.self) { t in
-                                Text(t).font(.mono(10)).foregroundColor(.lullInk4).kerning(1)
-                                if t != "75°" { Spacer() }
-                            }
-                        }
-                        .padding(.top, 8)
-                    }
-                    .padding(22)
-                    .lullCard(radius: 22)
-                    .padding(.horizontal, 20)
-
-                    // Lights card
-                    VStack(alignment: .leading, spacing: 14) {
-                        Kicker(text: "Lights right now")
-
-                        HStack(spacing: 8) {
-                            ForEach(0..<4) { i in
-                                let active = state.lightsLevel == i
-                                Button(action: { state.lightsLevel = i }) {
-                                    VStack(spacing: 8) {
-                                        Circle()
-                                            .fill(lightColors[i])
-                                            .frame(width: 16, height: 16)
-                                            .shadow(color: active ? .lullAmberGlow : .clear, radius: 5)
-                                        Text(lightLabels[i])
-                                            .font(.system(size: 12))
-                                            .foregroundColor(active ? .lullInk0 : .lullInk2)
-                                            .multilineTextAlignment(.center)
-                                    }
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 6)
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(active ? Color.lullAmber.opacity(0.10) : Color.clear)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .strokeBorder(active ? Color.lullAmber.opacity(0.5) : Color.lullLine, lineWidth: 1)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    .padding(20)
-                    .lullCard(radius: 22)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 14)
-
-                    VStack(spacing: 0) {
-                        PrimaryCTA(title: "Build my routine") {
-                            let answers = OnboardingAnswers(from: state)
-                            state.applyGeneratedRoutine(generateStartingRoutine(from: answers))
-                            step = 8
-                        }
-                        GhostButton(title: "Ask me again at bedtime") {}
-                            .frame(maxWidth: .infinity)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 28)
-                    .padding(.bottom, 36)
-                }
-            }
-        }
-    }
-
-    private var tempLabel: String {
-        switch state.bedroomTempF {
-        case ..<63: return "a bit cool"
-        case 63..<69: return "about right"
-        case 69..<73: return "slightly warm"
-        default:     return "pretty warm"
         }
     }
 }
@@ -788,8 +611,11 @@ struct OnbRoutineReadyView: View {
                     .padding(.bottom, 8)
 
                     // Personalized routine card
+                    let displayRoutine = state.scheduledRoutine.filter {
+                        $0.step.label != "Brightness check" && $0.step.label != "Temperature check"
+                    }
                     VStack(spacing: 0) {
-                        ForEach(Array(state.scheduledRoutine.enumerated()), id: \.offset) { i, row in
+                        ForEach(Array(displayRoutine.enumerated()), id: \.offset) { i, row in
                             HStack(spacing: 14) {
                                 Text(row.timeString)
                                     .font(.mono(11))
@@ -808,7 +634,7 @@ struct OnbRoutineReadyView: View {
                                     .lineLimit(1)
                             }
                             .padding(.vertical, 12)
-                            if i < state.scheduledRoutine.count - 1 {
+                            if i < displayRoutine.count - 1 {
                                 Divider().background(Color.lullLine)
                             }
                         }

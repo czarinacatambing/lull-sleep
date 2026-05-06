@@ -8,7 +8,7 @@ struct MyRoutineView: View {
 
     private var candidates: [String] {
         let inRoutine = Set(state.coreRoutine.map(\.label))
-        return ExperimentEngine.candidatePool.filter { !inRoutine.contains($0) }
+        return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
     }
 
     private var preWindDownSteps: [RoutineStep] {
@@ -109,7 +109,7 @@ struct MyRoutineView: View {
                         Button("Keep testing") { }
                         Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
                     } message: {
-                        Text("You've only tested "\(state.tonightVariable)" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
+                        Text("You've only tested \"\(state.tonightVariable)\" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
                     }
                     .sheet(isPresented: $showCandidatePicker) {
                         CandidatePickerSheet(candidates: candidates) { chosen in

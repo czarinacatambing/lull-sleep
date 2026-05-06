@@ -186,85 +186,68 @@ A mid-sleep check notification is also scheduled programmatically (3 hours after
 
 ## How the Initial Routine Is Built
 
-When the user taps **Build my routine** on onboarding screen 7, `generateStartingRoutine(from:)` runs synchronously and returns a `GeneratedRoutine`. Here is every decision it makes, in order.
+When the user taps **Build my routine** on onboarding screen 7, `generateStartingRoutine(from:)` runs synchronously and returns a `GeneratedRoutine`. The algorithm scores every candidate remedy against the user's onboarding answers, then splits them into two pools: **Bedtime Prep** (passive reminders) and **Wind Down** (interactive steps).
 
-### Step 1 — Decide whether bedtime is imminent
+### Step 1 — Score all remedies from onboarding answers
 
-`timeToTargetBedtimeMinutes` computes how many minutes remain until the user's typical bedtime (treating anything within the last 30 min as "now"). If that value is ≤ 60:
+`scoreRemedies(from:)` builds a `[String: Int]` dictionary. Each remedy starts at 0 and accumulates points based on which screens and answers triggered it:
 
-- Environmental steps (brightness check, temperature log) are added to the front of the sequence — they're only useful if the user is about to go to bed.
-- The Routine Ready payoff CTA changes to **"Start Routine Now"** instead of "Try it tonight".
+| Source | Weight | Answers |
+|--------|--------|---------|
+| Screen 1 — sleep problems | +1 per remedy | "Struggle to fall asleep", "Brain races", "Wake at night", "Wake unrefreshed" |
+| Screen 2 — waking factors | +1 per remedy | "New parent", "Shift work", "Founder/high-stress", "ADHD", "Anxiety", "Physical discomfort" |
+| Screen 5 — pre-bed activities | +2 per remedy | "Phone/scroll", "TV/screens", "Evening exercise", "Eating/snacking", "Nothing specific" |
+| Always | +3 | "Dim the lights" (universal melatonin anchor, regardless of answers) |
+| Kept positive habits | +2 | Physical book (index 2), Dim the lights (index 4), Warm shower (index 5) — pre-bed habits with positive sleep value |
 
-### Step 2 — Score pre-bed habits and keep the good ones
+The full answer → remedy mapping is encoded as a static `[AnswerKey: [String]]` table in `RoutineGenerator.swift`.
 
-Every habit the user selected on screen 5 is scored:
+### Step 2 — Build Bedtime Prep reminders
 
-| Habit | Score | Reasoning |
-|-------|-------|-----------|
-| Dim the lights | +3 | Proven melatonin anchor |
-| Physical book | +3 | Excellent cognitive off-ramp |
-| Warm shower / bath | +3 | Triggers core-temperature drop |
-| Socialising | +1 | Fine if calm |
-| Evening exercise | −1 | Cortisol takes 2–3h to clear |
-| Snack / eating | −1 | Digestion raises core temp |
-| Phone / scrolling | −2 | Blue light + mental stimulation |
-| TV / screens | −2 | Same as phone |
-| "Nothing specific" | 0 | No concrete anchor |
+Every Bedtime Prep remedy that scored ≥ 1 is added as a `reminderOnly` step. These are passive — they fire earlier in the evening and appear in the **Pre-Wind Down** section of My Routine. They do not appear in the nightly flow sequence.
 
-Habits with a **positive score** are ranked highest-first and the top 2 are kept as `existingHabit` steps in the routine — the things the user already does well that Lull keeps rather than replaces.
+| Remedy | Lead time before bed |
+|--------|---------------------|
+| No alcohol | 180 min |
+| No caffeine | 360 min |
+| No screens | 75 min |
+| App blocking | 75 min |
+| Finish workouts | 180 min |
+| No heavy snacks | 120 min |
+| Dim the lights | 75 min |
+| Cold room prep | 90 min |
+| Warm shower or bath | 90 min |
+| Magnesium glycinate | 45 min |
+| Herbal tea | 45 min |
+| Weighted blanket | 30 min |
 
-Habits with a **negative score** are not kept; instead they generate **avoid reminder** steps (see step 4).
+### Step 3 — Build the Wind Down sequence
 
-### Step 3 — Choose the primary wind-down step
+The sequence always starts with two fixed environmental checks, regardless of the user's profile:
 
-One highest-impact step is chosen based on the user's profile signals:
+1. **Brightness check** — confirm lights are dimmed
+2. **Temperature log** — confirm room is cool
 
-| Condition | Primary step chosen |
-|-----------|-------------------|
-| Brain races (screen 1) **or** ADHD (screen 2) **or** Founder/high-stress (screen 2) | **Brain Dump** — empties the cognitive queue before sleep |
-| Anxiety (screen 2) | **4-7-8 Breathing** — direct nervous-system downshift |
-| None of the above | **Boring Story** — occupies the narrative mind without stimulating it |
+Then up to 2 additional scored Wind Down candidates are appended from the ranked pool. Candidates are selected by highest remedy score first; ties are broken by difficulty rank (easiest → hardest, so the user always gets the most accessible first).
 
-### Step 4 — Add a secondary wind-down (if the sleep window allows)
+| Wind Down remedy | Difficulty rank | Est. duration |
+|-----------------|-----------------|---------------|
+| Boring Story | 1 — easiest | 20 min |
+| Reading physical book | 2 | 20 min |
+| Gratitude Journal | 3 | 3 min |
+| Brain Dump | 4 | 2 min |
+| Gentle Stretching | 5 | 5 min |
+| 4-7-8 Breathing | 6 | 5 min |
+| Progressive Muscle Relaxation | 7 — hardest | 5 min |
 
-If `sleepWindowMinutes ≥ 10`, a complementary second step is added:
+The final Wind Down sequence is capped at **4 steps total** (2 fixed + 2 scored). This is intentional — a short, achievable sequence the user will actually complete.
 
-| Primary | Secondary |
-|---------|-----------|
-| Brain Dump | Boring Story |
-| 4-7-8 Breathing | Boring Story |
-| Boring Story + brain races / ADHD | Brain Dump |
-| Boring Story (no racing mind) | Nothing |
-
-### Step 5 — Trim to fit the stated time window
-
-| Window | Max steps kept |
-|--------|---------------|
-| Under 10 min | 3 |
-| 10–20 min | 4 |
-| 20+ min | All steps |
-
-Steps are trimmed from the end (least-essential last).
-
-### Step 6 — Build avoid-reminder steps
-
-Harmful habits from screen 5 become **pre-wind-down reminder** steps that fire earlier in the evening, not during the bedtime sequence itself:
-
-| Habit selected | Reminder label | Lead time | Why |
-|----------------|---------------|-----------|-----|
-| Phone / scrolling | No screens | 60 min | Blue light delays melatonin ~30–60 min |
-| TV / screens | No screens | 60 min | Same (deduplicated — one "No screens" even if both selected) |
-| Evening exercise | Finish workouts | 180 min | Cortisol takes 2–3h to clear |
-| Snack / eating | No heavy snacks | 120 min | Digestion raises core temp |
-
-These steps get `mode = .reminderOnly` and appear in the **Pre-Wind Down** section of My Routine. They do not appear in the nightly flow sequence.
-
-### Step 7 — Generate the plain-English explanation
+### Step 4 — Generate the plain-English explanation
 
 A narrative explanation is assembled sentence-by-sentence:
-- One sentence per kept habit: "We kept your [habit] — you already do this well."
-- One sentence per added wind-down step, tied to the profile signal that triggered it.
-- One sentence per avoid reminder, citing the lead time and the science behind it.
+- One sentence per kept positive habit: "We noticed you already dim the lights before bed — we've kept that."
+- One sentence per added Wind Down step, tied to the profile signal that earned its score.
+- One sentence per Bedtime Prep reminder, citing the lead time and the reason.
 
 This text is shown on the Routine Ready payoff screen and stored in `AppState.routineExplanation`.
 
@@ -273,7 +256,7 @@ This text is shown on the Routine Ready payoff screen and stored in `AppState.ro
 `AppState.scheduledRoutine` is a computed property that converts `coreRoutine` into a sorted list of `ScheduledStep` with clock times:
 
 - **inSequence steps** are packed backwards from the user's typical bedtime, each step offset by its estimated duration (Brain Dump = 2 min, Boring Story = 20 min, 4-7-8 = 5 min, etc.). If the total sequence is shorter than `sleepWindowMinutes`, the whole block is shifted earlier to fill the window.
-- **reminderOnly / experiment steps** use a fixed lead-time lookup (`AppState.prepLeadTimes`) — e.g. "Dim the lights" fires 90 min before bed, "No screens" fires 60 min before bed.
+- **reminderOnly steps** use a fixed lead-time lookup (`AppState.prepLeadTimes`, which delegates to `remedyLeadTimes` in RoutineGenerator.swift) — e.g. "Dim the lights" fires 75 min before bed, "No screens" fires 75 min before bed.
 - All steps are then sorted by time ascending. This sorted list is what both the Dashboard "What's coming" list and the My Routine view display.
 
 ---
@@ -284,28 +267,45 @@ Lull runs a rolling A/B-style experiment: one variable is tested at a time for 5
 
 ### The candidate pool
 
-Variables are pre-ranked by expected impact (evidence-based ordering). Any variable already in the user's `coreRoutine` is automatically skipped when picking the next candidate.
+Experiment candidates are drawn exclusively from the **Bedtime Prep** remedy set — the 12 passive-reminder remedies (No alcohol, No caffeine, No screens, App blocking, Finish workouts, No heavy snacks, Dim the lights, Cold room prep, Warm shower or bath, Magnesium glycinate, Herbal tea, Weighted blanket). Wind Down steps are excluded from experiments because they are already interactive guided experiences in the nightly flow.
+
+Any candidate already in `coreRoutine` is hard-excluded (−10 score penalty).
+
+### Scoring formula
+
+`ExperimentEngine.suggestNextVariable()` scores every candidate with a weighted formula:
 
 ```
-1. Magnesium glycinate · 30 min before bed
-2. No caffeine after 2 pm
-3. Cold room · target 65°F
-4. Consistent wake time
-5. White noise
-6. Journaling · 10 min
-7. No alcohol
-8. Morning sunlight · 10 min
+totalScore = (historicalScore × 0.7) + (onboardingScore × 0.2) + smartAdjustments
 ```
+
+**historicalScore** (0–10 scale):
+- Looks up past `SleepLogEntry` records where `variable == candidate.label`.
+- Computes `expAvg − baseline` (same experiment vs. baseline split used in `evaluate()`).
+- Normalizes to 0–10: `min(10, max(0, delta × 2 + 5))` — delta 0 → score 5, delta +2.5 → score 10, delta −2.5 → score 0.
+- If the candidate has never been tested: historicalScore = 0 (selection falls back entirely to onboarding match + adjustments).
+
+**onboardingScore** (0–10 scale):
+- Uses the raw remedy score accumulated during onboarding scoring (Step 1 of routine generation).
+- Normalizes: `min(10, Double(rawScore))`.
+
+**smartAdjustments** (flat additive):
+
+| Condition | Adjustment |
+|-----------|-----------|
+| Candidate is "Dim the lights" or "Cold room prep" | +3 (evidence-based universal benefit) |
+| Candidate already in `coreRoutine` | −10 (hard exclude) |
+| Bedtime Prep candidate AND fewer than 15 sleep logs on record | +2 (lower friction — easier to adopt early) |
 
 ### How a night is scored
 
-Each morning, the user rates their sleep 1–5. `logMorningScore()` saves that score against the current date and tags it with `tonightVariable` (the label of the active experiment step). This is the raw data the engine reads.
+Each morning, the user rates their sleep 1–5. `logMorningScore()` saves that score against the current date and tags it with `tonightVariable` (the label of the active experiment variable). This is the raw data the engine reads.
 
 ### Evaluation logic (ExperimentEngine.evaluate)
 
 Runs every time `logMorningScore()` is called. It:
 
-1. Finds the active experiment step in `coreRoutine` (the one with `mode == .experiment`).
+1. Finds the active experiment variable from `tonightVariable` in `AppState`.
 2. Splits the full sleep log into two groups:
    - **Experiment nights** — entries where `variable == currentExperimentLabel` and `score > 0`.
    - **Baseline nights** — all other scored entries.
@@ -317,31 +317,32 @@ Runs every time `logMorningScore()` is called. It:
    - Fewer than 5 experiment nights → **Keep testing** (no change).
    - 5+ nights, `delta > 0.3` → **Promote** (meaningful positive impact).
    - 5+ nights, `delta ≤ 0.3` → **Drop** (neutral or negative).
+5. On any terminal decision (promote or drop), calls `suggestNextVariable()` to pick and queue the next highest-scoring candidate.
 
 ### What happens on promote
 
-- The experiment step's `mode` changes from `.experiment` to `.inSequence`.
-- It moves from the Pre-Wind Down section to the Wind Down sequence in My Routine.
-- The next untested candidate from the pool becomes the new experiment step (`mode = .experiment`).
+- The experiment step's `mode` changes from `.experiment` to `.reminderOnly` (it becomes a permanent Bedtime Prep reminder).
+- It remains in the Pre-Wind Down section of My Routine with a scheduled time instead of an "EXPERIMENT" badge.
+- The next highest-scoring untested candidate becomes the new experiment variable.
 
 ### What happens on drop
 
 - The experiment step is removed from `coreRoutine` entirely.
-- The next untested candidate from the pool becomes the new experiment step.
-- If the pool is exhausted (all candidates either in-routine or already tested), no new experiment step is added and the Tonight's Variable card shows "No experiment running".
+- The next highest-scoring untested candidate becomes the new experiment variable.
+- If no scoreable candidates remain (all are in-routine or exhausted), no new experiment is queued and the Tonight's Variable card shows "No experiment running".
 
 ### Where the experiment state surfaces in the UI
 
 | Surface | What's shown |
 |---------|-------------|
 | My Routine — variable card | Active variable, "Night N of 5", score delta so far |
-| My Routine — Pre-Wind Down list | Experiment step with an amber "↑ THIS WEEK" badge |
+| My Routine — Pre-Wind Down list | Experiment step with an amber "EXPERIMENT" badge |
 | Morning Check-In — insight card | Variable name + insight line ("3 more nights of data before we decide." / "Scores up +0.8…" / "No benefit detected…") + promotion/drop announcement |
 | Sleep Log Detail — past entry | "VARIABLE TESTED" label shows what was being tested that night |
 
 ### Manual override
 
-The user can swap the variable at any time via the ↻ button on the My Routine variable card. If a test is in progress (at least 1 night logged), a confirmation alert warns that switching loses the accumulated data. Confirming opens the Candidate Picker sheet, which lists all pool candidates not already in the routine. Selecting one immediately replaces the experiment step and resets the night counter.
+The user can swap the variable at any time via the ↻ button on the My Routine variable card. If a test is in progress (at least 1 night logged), a confirmation alert warns that switching loses the accumulated data. Confirming opens the Candidate Picker sheet, which lists all Bedtime Prep candidates not already in the routine. Selecting one immediately replaces the experiment variable and resets the night counter.
 
 ---
 

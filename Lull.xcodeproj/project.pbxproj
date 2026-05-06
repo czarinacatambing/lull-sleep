@@ -17,16 +17,19 @@
 		2A8BFC6FBA480460BA7E0DF5 /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518622E3CFB58A6544BC915C /* LullApp.swift */; };
 		30C48EF1D2833AD03BC1935B /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */; };
 		52496FFD9E414733A0B2C35B /* JetBrainsMono-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8796F041C3D5B0A73379488D /* JetBrainsMono-VariableFont_wght.ttf */; };
+		52B9009E37E5E54D7A2511DD /* NightlyGentleStretchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */; };
 		60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD08D7A04346C513E351B8 /* DashboardView.swift */; };
 		6B13AEE4C552544EAAEFF3B6 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */; };
 		6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */; };
 		908F5B9B12AD92424F3B31C1 /* LullTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDBFDA7720439DD74C23B7 /* LullTheme.swift */; };
 		90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B0DDCB101CFACF018241D3 /* OnboardingView.swift */; };
 		A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD947544D9101E2AC407DBAB /* Assets.xcassets */; };
+		A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */; };
 		A9A3802E174F3057EF6EC4AD /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B11A89266A2BB853502200 /* MidSleepModeView.swift */; };
 		AC496C0EE12D5E143D032EAE /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
 		BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = C839CE47A7EBAE076B7BF096 /* BundledStories.swift */; };
 		C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */; };
@@ -38,6 +41,7 @@
 		040F13461C755DE8FF434700 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
 		099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
 		0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
+		129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
 		16FDBFDA7720439DD74C23B7 /* LullTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullTheme.swift; sourceTree = "<group>"; };
 		2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
 		3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
@@ -54,10 +58,12 @@
 		9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
 		9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
 		A6B11A89266A2BB853502200 /* MidSleepModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MidSleepModeView.swift; sourceTree = "<group>"; };
+		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
 		C839CE47A7EBAE076B7BF096 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
+		DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
 		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
@@ -68,6 +74,9 @@
 			isa = PBXGroup;
 			children = (
 				099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */,
+				DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */,
+				B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */,
+				129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */,
 			);
 			path = Nightly;
 			sourceTree = "<group>";
@@ -291,6 +300,9 @@
 				F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */,
 				0CFE2F405676712622D674B6 /* MyRoutineView.swift in Sources */,
 				6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */,
+				52B9009E37E5E54D7A2511DD /* NightlyGentleStretchingView.swift in Sources */,
+				C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */,
+				A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */,
 				90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */,
 				12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */,
 				0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */,

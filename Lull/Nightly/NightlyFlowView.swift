@@ -11,13 +11,16 @@ struct NightlyFlowView: View {
             let steps = state.nightlyFlowSteps
             if state.nightlyStep < steps.count {
                 switch steps[state.nightlyStep] {
-                case .brightnessCheck:          NightlyBrightnessView()
-                case .temperatureLog:           NightlyTemperatureView()
-                case .brainDump:                NightlyBrainDumpView()
-                case .boringStory:              NightlyBoringStoryView()
-                case .fourSevenEightBreathing:  NightlyBreathingView()
-                case .existingHabit(let label): NightlyGenericStepView(label: label)
-                case .avoidReminder:            EmptyView()
+                case .brightnessCheck:               NightlyBrightnessView()
+                case .temperatureLog:                NightlyTemperatureView()
+                case .brainDump:                     NightlyBrainDumpView()
+                case .boringStory:                   NightlyBoringStoryView()
+                case .fourSevenEightBreathing:       NightlyBreathingView()
+                case .gratitudeJournal:              NightlyGratitudeJournalView()
+                case .gentleStretching:              NightlyGentleStretchingView()
+                case .progressiveMuscleRelaxation:   NightlyProgressiveMuscleRelaxationView()
+                case .existingHabit(let label):      NightlyGenericStepView(label: label)
+                case .avoidReminder:                 EmptyView()
                 }
             } else {
                 Color.lullBg.ignoresSafeArea()
