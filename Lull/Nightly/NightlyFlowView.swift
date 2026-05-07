@@ -501,6 +501,8 @@ struct NightlyBoringStoryView: View {
     @State private var elapsedSeconds = 0
     @State private var clockTimer: Timer?
     @State private var story = ""
+    @State private var hasFinished = false
+    @State private var isActive = false
 
     var body: some View {
         LullScreen(glow: false) {
@@ -578,9 +580,16 @@ struct NightlyBoringStoryView: View {
             }
         }
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { startStory() }
+            isActive = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                guard isActive, !hasFinished else { return }
+                startStory()
+            }
         }
-        .onDisappear { finish() }
+        .onDisappear {
+            isActive = false
+            cleanupStory()
+        }
     }
 
     private func controlButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
@@ -599,6 +608,8 @@ struct NightlyBoringStoryView: View {
     }
 
     private func startStory() {
+        guard !hasFinished else { return }
+
         // Chain 4 unique stories to fill ~20 minutes at the slow TTS rate
         var indices = Array(0..<BundledStories.all.count).shuffled()
         story = (0..<4).map { _ in BundledStories.all[indices.removeFirst()] }.joined(separator: "\n\n")
@@ -612,9 +623,16 @@ struct NightlyBoringStoryView: View {
         }
     }
 
-    private func finish() {
+    private func cleanupStory() {
         tts.stop()
         clockTimer?.invalidate()
+        clockTimer = nil
+    }
+
+    private func finish() {
+        guard !hasFinished else { return }
+        hasFinished = true
+        cleanupStory()
         state.nightlyStep += 1
     }
 }

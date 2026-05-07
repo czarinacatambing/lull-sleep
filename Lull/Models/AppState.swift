@@ -277,13 +277,14 @@ struct SleepLogEntry: Identifiable {
         Calendar.current.isDateInToday(date)
     }
 
-    // 14 placeholder nights — last entry = today (no score yet)
+    // 14 placeholder nights — last entry = today (no score yet).
+    // Scores use the same 1-5 scale as SleepScoreSelector.
     static let placeholders: [SleepLogEntry] = {
-        let exp = "Magnesium glycinate · 30 min before bed"
+        let exp = R.magnesium
         let variables = ["Dim the lights", "Dim the lights", "No screens", "Dim the lights",
                          "No screens", "Dim the lights", "Dim the lights", "Dim the lights",
                          "No screens", "Dim the lights", exp, exp, exp]
-        let scores    = [6, 7, 5, 8, 7, 9, 8, 7, 6, 8, 8, 9, 9]
+        let scores    = [3, 4, 3, 4, 4, 5, 4, 4, 3, 4, 4, 5, 5]
         let cal = Calendar.current
         var entries: [SleepLogEntry] = zip(scores, variables).enumerated().map { i, pair in
             let (score, variable) = pair
