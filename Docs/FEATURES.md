@@ -11,7 +11,7 @@ Lull is a sleep-coaching iOS app built in SwiftUI. It personalizes a nightly win
 ### 1. Welcome Screen
 A full-screen branded splash — the amber dot and "lull" wordmark fade in, then a "Get started" button appears. First-time users land here; returning users go straight to the Dashboard.
 
-### 2. Onboarding (7 screens + payoff)
+### 2. Onboarding (6 screens + payoff)
 
 Collects everything needed to generate a personalized routine. All screens support a Back button except the first.
 
@@ -22,9 +22,8 @@ Collects everything needed to generate a personalized routine. All screens suppo
 | 3 — Sleep Window | Single-select: how long the user typically has to fall asleep (< 10 min / 10–20 / 20–30 / 30+ min). Maps to a numeric `sleepWindowMinutes` that controls routine length. |
 | 4 — Sleep Schedule | Interactive arc clock — drag moon/sun handles to set typical bedtime and wake time. Live duration display. |
 | 5 — Pre-Bed Activities | Multi-select: what the user does the hour before bed (phone, TV, book, socialising, dim lights, shower, exercise, eat, nothing). |
-| 6 — What You've Tried | Multi-select: prior sleep interventions (melatonin, meditation, CBT-I, journaling, etc.). Seeds the experiment engine's exclusion list. |
-| 7 — Environment Check | Bedroom temperature (60–75°F, custom drag slider) + current light level (4 swatches: Bright → Mostly dark). |
-| 8 — Routine Ready (payoff) | Shows the generated routine as a timed schedule. Widget nudge ("Add the lock-screen widget"). Two CTAs: "Start Routine Now" (if bedtime is within an hour) or "Try it tonight" / "Customize first". |
+| 6 — What You've Tried | Multi-select: prior sleep interventions (melatonin, meditation, CBT-I, journaling, etc.). Seeds the experiment engine's exclusion list. "Build my routine" CTA on this screen triggers routine generation. |
+| 7 — Routine Ready (payoff) | Shows the generated routine as a timed schedule. Brightness check and Temperature check are hidden from this list. Two CTAs: "Start Routine Now" (if bedtime is within an hour) or "Try it tonight". |
 
 **Routine generator logic (RoutineGenerator.swift):**
 - Positive pre-bed habits (book, dim lights, shower) are kept as "existing habit" steps (up to 2).
@@ -49,60 +48,28 @@ The main screen shown after onboarding completes.
 
 ### 4. Nightly Flow
 
-A forward-only full-screen walkthrough. Step count and step types are dynamically determined from the user's `coreRoutine` (set during onboarding or as the experiment engine runs). Steps auto-advance; there is no back button.
+The nightly flow is forward-only and intentionally short during the first 5 nights.
+Typical Night 1 Sequence (3–4 steps):
 
-#### Step: Brightness Check
-- Displays a hardcoded simulated brightness reading (78% now, 35% target).
-- Radial glow visualizer + arc progress indicator.
-- **"I've dimmed them"** → advance. **"Skip · keep them bright"** → also advance.
+Brightness Check (mostly automatic / quick confirmation)
+Temperature Log
+(Optional) One core Wind Down method — Brain Dump (for racing mind) or 4-7-8 Breathing (for anxiety)
+Boring Story (only if the user has a longer sleep window)
 
-#### Step: Temperature Log
-- 4-option selector: Cool / Just right / Warm / Hot.
-- Selected option stored in `AppState.selectedTemp`.
-- **"Continue"** → advance (always enabled; a selection is pre-set).
-
-#### Step: Lights Off *(defined but not currently wired into the dynamic step list)*
-- Full-screen moon icon, instruction to turn off lights.
-- **"Lights are off"** or **"Skip · leave them on"** → advance.
-
-#### Step: Brain Dump (voice recorder)
-- Mic permission checked on appear.
-- **Tap mic** to start recording; mic button shows a live pulse animation.
-- **Pause/Resume** button while recording.
-- **"I'm done"** or tapping the stop icon → stops recording, shows "It's recorded." confirmation for 3 seconds, then auto-advances.
-- **"Continue →"** button after confirmation also advances immediately.
-
-#### Step: Boring Story (TTS)
-- 2-second delay before audio starts.
-- 4 bundled stories chained (from `BundledStories`) to fill ~20 min.
-- Elapsed time display + progress bar (0–20:00).
-- **Pause/play** and **dismiss (×)** controls.
-- Closing or finishing the step advances the flow.
-
-#### Step: 4-7-8 Breathing
-- 4 full cycles (inhale 4s → hold 7s → exhale 8s) with an animated pulsing orb.
-- Countdown timer visible inside the orb.
-- Phase chips at the bottom highlight the active phase.
-- Completes automatically after 4 cycles; **"End early · I'm calm"** skips to the next step at any time.
-
-#### Step: Existing Habit (generic)
-- Displays a custom label from the user's routine.
-- **"Done"** or **"Skip"** → advance.
-
-#### Flow completion
-- After the last step, `scheduleMidSleepNotification()` fires (schedules a "Still awake?" notification 3 hours after the user's typical bedtime), `nightlyStep` resets to 0, and the sheet dismisses.
+The flow is designed to feel achievable even when the user is exhausted. After the first 5 nights, more steps may be added based on experiment results.
 
 ---
 
 ### 5. My Routine (Routine tab)
 
-A persistent view of the user's current routine and experiment state.
+My Routine is the command center of the app.
 
-- **Start Tonight's Routine** button — launches the Nightly Flow (same as Dashboard CTA).
-- **Tonight's Variable card** — shows the active experiment step, night count (e.g. "Night 3 of 5"), and score delta so far. Swap button (↻) to change the variable.
-- **Pre-Wind Down section** — `reminderOnly` and `experiment` steps with their scheduled time badges.
-- **Wind Down section** — `inSequence` steps numbered in order, each labeled "IN SEQUENCE".
-- **Last 14 nights** — a row of 14 dots. Dot opacity reflects score; today's dot is highlighted amber with a glow ring. Unrated today shows "·". Tapping any dot opens the Sleep Log Detail sheet.
+Start Tonight’s Routine button (prominent)
+Tonight’s Variable card — shows the active 5-night experiment (if any)
+Bedtime Prep section — passive reminders that fire earlier in the evening (e.g. Dim the lights 75 min before, Warm shower, No screens, etc.)
+Wind Down Ritual section — the short sequential in-app flow (Brightness Check, Temperature Log, + 0–2 active steps)
+
+This clear separation helps users understand what happens when vs. what they do right before bed.
 
 #### Candidate Picker Sheet
 - Opens when the user taps the swap button on the variable card.
@@ -158,98 +125,87 @@ Accessible from the Dashboard hamburger menu (or via a lock-screen notification 
 
 ### 9. Experiment Engine
 
-Pure logic layer (`ExperimentEngine.swift`) that runs on every morning log.
+The experiment engine only begins suggesting new variables after the first 5 nights.
 
-- **Candidate pool** (in priority order): Magnesium glycinate, No caffeine after 2pm, Cold room (65°F), Consistent wake time, White noise, Journaling, No alcohol, Morning sunlight.
-- Compares average score on experiment nights vs. baseline nights.
-- After 5 scored nights: promotes (delta > 0.3) → graduates the step from `experiment` to `inSequence`; or drops → removes it and queues the next candidate.
-- Fewer than 5 nights: returns `keepTesting`.
+It runs a lightweight one-variable test at a time.
+After 5 scored nights, it decides to promote (meaningful improvement) or drop the variable.
+New suggestions are chosen using a combination of:
+Historical performance (average sleep score improvement)
+Onboarding signals (with Screen 4 = 2x weight)
+Smart rules (prefer Bedtime Prep early on, avoid repeats)
+
+
+This creates a true “personal sleep scientist” experience that evolves with the user over weeks and months.
 
 ---
 
-### 10. Push Notifications (simulator-driven)
+### 10. Local Notifications
 
-Six canned notification payloads in `Scripts/Notifications/`:
+All notifications are scheduled via `UNUserNotificationCenter` using `UNCalendarNotificationTrigger`. Permission is requested on first launch (`LullApp.init`). Three notification categories are registered: `BEDTIME_REMINDER`, `MORNING_CHECKIN`, `MID_SLEEP_CHECK`.
 
-| File | Title | Action |
-|------|-------|--------|
-| `01-dim-the-lights.json` | Dim the lights | Mark done |
-| `02-warm-shower.json` | Warm shower | Mark done |
-| `03-lights-off.json` | Lights off | Mark done |
-| `04-brain-dump.json` | Brain dump | Mark done |
-| `05-boring-story.json` | Boring story | Mark done |
-| `06-rate-your-sleep.json` | Rate your sleep | Log it → opens Morning Check-In |
+#### Bedtime Prep Reminders
 
-A mid-sleep check notification is also scheduled programmatically (3 hours after bedtime, category `MID_SLEEP_CHECK`).
+Scheduled by `AppState.scheduleBedtimePrepNotifications()`. One notification per `reminderOnly` step in `coreRoutine`, firing at `typicalBedtime − leadTimeMins` on a daily repeating schedule.
+
+| Example | Lead time | Fire time (10 PM bed) |
+|---------|-----------|----------------------|
+| Dim the lights | 75 min | 8:45 PM |
+| No screens | 75 min | 8:45 PM |
+| Warm shower or bath | 90 min | 8:30 PM |
+| No heavy snacks | 120 min | 8:00 PM |
+| No caffeine | 360 min | 4:00 PM |
+
+Category: `BEDTIME_REMINDER` with a "Mark done" action. Notifications are re-scheduled whenever the routine changes (`applyGeneratedRoutine`, `changeExperimentVariable`, `advanceExperiment`).
+
+#### Sleep Rating Reminders
+
+Scheduled by `AppState.scheduleMorningRatingNotifications()`. Two daily repeating notifications:
+
+1. **Primary** — fires 30 minutes after `typicalWakeTime`. Title: "How did you sleep?"
+2. **Noon fallback** — fires at 12:00 PM every day. Title: "Still time to log your sleep." Only relevant if the user hasn't logged a score yet.
+
+When the user logs a morning score via `logMorningScore()`, the pending noon notification is cancelled and immediately rescheduled (so it resets to tomorrow).
+
+Category: `MORNING_CHECKIN` with a "Log it" foreground action that opens Morning Check-In.
+
+#### Mid-Sleep Check
+
+Scheduled by `AppState.scheduleMidSleepNotification()` as a one-time notification firing 3 hours after `typicalBedtime`. Title: "Still awake?" Category: `MID_SLEEP_CHECK` with an "Open Lull" action that opens Mid-Sleep Mode.
+
+#### Scheduling Lifecycle
+
+- Notifications are scheduled after onboarding completes (`applyGeneratedRoutine`).
+- On every app launch, if a saved routine exists, all notifications are rescheduled (in case the OS cleared them).
+- Bedtime Prep notifications are rescheduled whenever the `coreRoutine` changes.
+- Morning rating notifications are rescheduled whenever a score is logged.
+
+> Legacy test payloads in `Scripts/Notifications/` are kept for manual simulator testing only and are not used by the app at runtime.
 
 ---
 
 ## How the Initial Routine Is Built
 
-When the user taps **Build my routine** on onboarding screen 7, `generateStartingRoutine(from:)` runs synchronously and returns a `GeneratedRoutine`. The algorithm scores every candidate remedy against the user's onboarding answers, then splits them into two pools: **Bedtime Prep** (passive reminders) and **Wind Down** (interactive steps).
+Routine Generator Logic — "Gentle Reset"
+The generator is intentionally very conservative for the first 5 nights to maximize completion rate and build trust.
+Core Rules for Night 1–5:
 
-### Step 1 — Score all remedies from onboarding answers
+Bedtime Prep (background reminders): Max 2 items total (including the universal “Dim the lights”).
+Wind Down Ritual (interactive sequential flow): Max 3 steps total, which always includes:
+Brightness Check
+Temperature Log
+At most 1 core wind-down method (Brain Dump or 4-7-8 Breathing)
 
-`scoreRemedies(from:)` builds a `[String: Int]` dictionary. Each remedy starts at 0 and accumulates points based on which screens and answers triggered it:
 
-| Source | Weight | Answers |
-|--------|--------|---------|
-| Screen 1 — sleep problems | +1 per remedy | "Struggle to fall asleep", "Brain races", "Wake at night", "Wake unrefreshed" |
-| Screen 2 — waking factors | +1 per remedy | "New parent", "Shift work", "Founder/high-stress", "ADHD", "Anxiety", "Physical discomfort" |
-| Screen 5 — pre-bed activities | +2 per remedy | "Phone/scroll", "TV/screens", "Evening exercise", "Eating/snacking", "Nothing specific" |
-| Always | +3 | "Dim the lights" (universal melatonin anchor, regardless of answers) |
-| Kept positive habits | +2 | Physical book (index 2), Dim the lights (index 4), Warm shower (index 5) — pre-bed habits with positive sleep value |
+A core Wind Down method is only added if the user has very few existing habits and strong signals from Screen 1 or 2 (e.g. racing mind, anxiety).
+Scoring Logic (still runs):
 
-The full answer → remedy mapping is encoded as a static `[AnswerKey: [String]]` table in `RoutineGenerator.swift`.
+Every selected onboarding answer adds points to relevant remedies.
+Screen 4 answers (current habits) get 2x weight.
+“Dim the lights” gets a permanent +3 boost.
+Up to 2 existing habits from Screen 4 are kept and boosted.
+Remedies are then sorted Easiest → Hardest within each section.
 
-### Step 2 — Build Bedtime Prep reminders
-
-Every Bedtime Prep remedy that scored ≥ 1 is added as a `reminderOnly` step. These are passive — they fire earlier in the evening and appear in the **Pre-Wind Down** section of My Routine. They do not appear in the nightly flow sequence.
-
-| Remedy | Lead time before bed |
-|--------|---------------------|
-| No alcohol | 180 min |
-| No caffeine | 360 min |
-| No screens | 75 min |
-| App blocking | 75 min |
-| Finish workouts | 180 min |
-| No heavy snacks | 120 min |
-| Dim the lights | 75 min |
-| Cold room prep | 90 min |
-| Warm shower or bath | 90 min |
-| Magnesium glycinate | 45 min |
-| Herbal tea | 45 min |
-| Weighted blanket | 30 min |
-
-### Step 3 — Build the Wind Down sequence
-
-The sequence always starts with two fixed environmental checks, regardless of the user's profile:
-
-1. **Brightness check** — confirm lights are dimmed
-2. **Temperature log** — confirm room is cool
-
-Then up to 2 additional scored Wind Down candidates are appended from the ranked pool. Candidates are selected by highest remedy score first; ties are broken by difficulty rank (easiest → hardest, so the user always gets the most accessible first).
-
-| Wind Down remedy | Difficulty rank | Est. duration |
-|-----------------|-----------------|---------------|
-| Boring Story | 1 — easiest | 20 min |
-| Reading physical book | 2 | 20 min |
-| Gratitude Journal | 3 | 3 min |
-| Brain Dump | 4 | 2 min |
-| Gentle Stretching | 5 | 5 min |
-| 4-7-8 Breathing | 6 | 5 min |
-| Progressive Muscle Relaxation | 7 — hardest | 5 min |
-
-The final Wind Down sequence is capped at **4 steps total** (2 fixed + 2 scored). This is intentional — a short, achievable sequence the user will actually complete.
-
-### Step 4 — Generate the plain-English explanation
-
-A narrative explanation is assembled sentence-by-sentence:
-- One sentence per kept positive habit: "We noticed you already dim the lights before bed — we've kept that."
-- One sentence per added Wind Down step, tied to the profile signal that earned its score.
-- One sentence per Bedtime Prep reminder, citing the lead time and the reason.
-
-This text is shown on the Routine Ready payoff screen and stored in `AppState.routineExplanation`.
+After the first 5 nights, the Improvement Engine gradually introduces more variables through the experiment loop.
 
 ### How the schedule is computed
 
