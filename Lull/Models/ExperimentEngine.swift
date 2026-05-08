@@ -46,9 +46,19 @@ struct ExperimentEngine {
     ) -> Status? {
         guard let experimentStep = coreRoutine.first(where: { $0.mode == .experiment }) else { return nil }
         let variable = experimentStep.label
+        let remedyId = experimentStep.remedyId
 
-        let experimentLogs = logs.filter { $0.variable == variable && $0.score > 0 }
-        let baselineLogs   = logs.filter { $0.variable != variable && $0.score > 0 }
+        // Prefer stable RemedyID comparison; fall back to display string for old records.
+        let experimentLogs = logs.filter { entry in
+            guard entry.score > 0 else { return false }
+            if let eid = entry.variableRemedyId, let rid = remedyId { return eid == rid }
+            return entry.variable == variable
+        }
+        let baselineLogs = logs.filter { entry in
+            guard entry.score > 0 else { return false }
+            if let eid = entry.variableRemedyId, let rid = remedyId { return eid != rid }
+            return entry.variable != variable
+        }
 
         let night = min(experimentLogs.count, 5)
 
@@ -98,9 +108,18 @@ struct ExperimentEngine {
         let allCandidates = allBedroomPrepRemedies
 
         let scored: [(label: String, total: Double)] = allCandidates.map { candidate in
-            // Historical score
-            let experimentLogs = logs.filter { $0.variable == candidate && $0.score > 0 }
-            let baselineLogs   = logs.filter { $0.variable != candidate && $0.score > 0 }
+            // Historical score — prefer RemedyID match for newer records
+            let candidateId = RemedyID.fromLabel(candidate)
+            let experimentLogs = logs.filter { entry in
+                guard entry.score > 0 else { return false }
+                if let eid = entry.variableRemedyId, let cid = candidateId { return eid == cid }
+                return entry.variable == candidate
+            }
+            let baselineLogs = logs.filter { entry in
+                guard entry.score > 0 else { return false }
+                if let eid = entry.variableRemedyId, let cid = candidateId { return eid != cid }
+                return entry.variable != candidate
+            }
             let historicalScore: Double
             if experimentLogs.isEmpty {
                 historicalScore = 0

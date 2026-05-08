@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		006744F385C7F5CC19798978 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 91F441E8041BBA5C851D941F /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		BB1111111111111111111111 /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1111111111111111111111 /* RemedyID.swift */; };
+		BB2222222222222222222222 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2222222222222222222222 /* PersistedState.swift */; };
+		BB3333333333333333333333 /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3333333333333333333333 /* PersistenceStore.swift */; };
+		BB4444444444444444444444 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4444444444444444444444 /* AmbientLightService.swift */; };
 		0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF78A2B998193B94B990E54E /* ContentView.swift */; };
 		08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040F13461C755DE8FF434700 /* AudioRecordingService.swift */; };
 		0CFE2F405676712622D674B6 /* MyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80F43006C39DB668F529235 /* MyRoutineView.swift */; };
@@ -67,6 +71,10 @@
 		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		AA1111111111111111111111 /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
+		AA2222222222222222222222 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		AA3333333333333333333333 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
+		AA4444444444444444444444 /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -94,6 +102,7 @@
 			children = (
 				85F27EAE09500318E6960113 /* AppState.swift */,
 				F22F2E8574F38842A81E664B /* ExperimentEngine.swift */,
+				AA1111111111111111111111 /* RemedyID.swift */,
 				0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */,
 			);
 			path = Models;
@@ -102,12 +111,22 @@
 		455604E026B5EE2AC3B7BDA2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				AA4444444444444444444444 /* AmbientLightService.swift */,
 				040F13461C755DE8FF434700 /* AudioRecordingService.swift */,
 				C839CE47A7EBAE076B7BF096 /* BundledStories.swift */,
 				D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */,
 				5D820BF460AB3C918823A264 /* TTSService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000001 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				AA2222222222222222222222 /* PersistedState.swift */,
+				AA3333333333333333333333 /* PersistenceStore.swift */,
+			);
+			path = Persistence;
 			sourceTree = "<group>";
 		};
 		6E08A71543323A3D0E55B93E /* Home */ = {
@@ -132,6 +151,7 @@
 				87B9CC12A3E456D67ED7A2A2 /* Morning */,
 				1F36B2AF949245399F032553 /* Nightly */,
 				B2418C89F574340784D8FB34 /* Onboarding */,
+				CC0000000000000000000001 /* Persistence */,
 				F3F7A8DF1539BC59FC9B5357 /* Resources */,
 				455604E026B5EE2AC3B7BDA2 /* Services */,
 				723E82AD5C5A691159771561 /* Theme */,
@@ -284,10 +304,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB4444444444444444444444 /* AmbientLightService.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
 				BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */,
 				12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */,
+				BB2222222222222222222222 /* PersistedState.swift in Sources */,
+				BB3333333333333333333333 /* PersistenceStore.swift in Sources */,
 				0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */,
 				60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */,
 				CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */,
@@ -304,6 +327,7 @@
 				C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */,
 				A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */,
 				90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */,
+				BB1111111111111111111111 /* RemedyID.swift in Sources */,
 				12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */,
 				0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */,
 				CA356A11A099E60F3920F72A /* TTSService.swift in Sources */,

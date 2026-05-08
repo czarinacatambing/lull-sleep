@@ -3,6 +3,21 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var state: AppState
     @State private var showMenu = false
+    @State private var currentDate = Date()
+
+    private static let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEEE · h:mm a"; return f
+    }()
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: currentDate)
+        switch hour {
+        case 5..<12:  return "Good morning,"
+        case 12..<17: return "Good afternoon,"
+        case 17..<22: return "Good evening,"
+        default:      return "Hi,"
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -33,9 +48,9 @@ struct DashboardView: View {
 
                     // Greeting
                     VStack(alignment: .leading, spacing: 14) {
-                        Kicker(text: "Tuesday · 10:14 PM")
+                        Kicker(text: DashboardView.dateFmt.string(from: currentDate))
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Good evening,")
+                            Text(greeting)
                                 .font(.serif(32))
                                 .foregroundColor(.lullInk0)
                             Text("let's wind down.")
@@ -59,21 +74,37 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Kicker(text: "Tonight's routine", color: .lullAmberSoft)
 
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Brain-dump night —")
-                                    .font(.serif(22))
-                                    .foregroundColor(.lullInk0)
+                            if let status = state.experimentStatus {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text("\(status.variable) —")
+                                        .font(.serif(22))
+                                        .foregroundColor(.lullInk0)
+                                        .padding(.top, 8)
+                                    Text("\(state.sleepWindowMinutes) minutes total.")
+                                        .font(.serifItalic(22))
+                                        .foregroundColor(.lullAmber)
+                                }
+                                Text(status.insightLine)
+                                    .font(.system(size: 12.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(3)
                                     .padding(.top, 8)
-                                Text("\(state.sleepWindowMinutes) minutes total.")
-                                    .font(.serifItalic(22))
-                                    .foregroundColor(.lullAmber)
+                            } else {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text("Building your routine —")
+                                        .font(.serif(22))
+                                        .foregroundColor(.lullInk0)
+                                        .padding(.top, 8)
+                                    Text("\(state.sleepWindowMinutes) minutes total.")
+                                        .font(.serifItalic(22))
+                                        .foregroundColor(.lullAmber)
+                                }
+                                Text("Complete a few nights to start personalizing your sleep routine.")
+                                    .font(.system(size: 12.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(3)
+                                    .padding(.top, 8)
                             }
-
-                            Text("Stress signal was high today. Tonight's leaning on cognitive offload before breath work.")
-                                .font(.system(size: 12.5))
-                                .foregroundColor(.lullInk2)
-                                .lineSpacing(3)
-                                .padding(.top, 8)
 
                             PrimaryCTA(title: "Start routine") { state.showNightlyFlow = true }
                                 .padding(.top, 22)
@@ -162,6 +193,7 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $state.showNightlyFlow) {
             NightlyFlowView()
         }
+        .onAppear { currentDate = Date() }
 
         if showMenu {
             Color.clear

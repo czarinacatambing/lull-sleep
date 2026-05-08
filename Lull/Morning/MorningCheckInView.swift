@@ -3,6 +3,11 @@ import SwiftUI
 struct MorningCheckInView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
+    @State private var currentDate = Date()
+
+    private static let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE · h:mm a"; return f
+    }()
 
     var body: some View {
         LullScreen(glow: false) {
@@ -15,13 +20,14 @@ struct MorningCheckInView: View {
                 HStack {
                     BrandMark()
                     Spacer()
-                    Text("WED · 6:42 AM")
+                    Text(MorningCheckInView.dateFmt.string(from: currentDate))
                         .font(.mono(10.5))
                         .kerning(1.4)
                         .foregroundColor(.lullInk3)
                 }
                 .padding(.horizontal, Lull.horizontalPad)
                 .padding(.bottom, 8)
+                .onAppear { currentDate = Date() }
 
                 VStack(alignment: .leading, spacing: 12) {
                     Kicker(text: "Morning check-in")

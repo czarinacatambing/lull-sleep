@@ -11,6 +11,25 @@ struct MyRoutineView: View {
         return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
     }
 
+    private var avgScoreText: String? {
+        let scored = state.sleepLogs.filter { $0.score > 0 }
+        guard !scored.isEmpty else { return nil }
+        let avg = Double(scored.map(\.score).reduce(0, +)) / Double(scored.count)
+        return String(format: "AVG %.1f", avg)
+    }
+
+    // Pads or trims sleep log entries to exactly 14 display slots.
+    // Slots with nil represent days with no data (shown as skeleton dots).
+    private var displaySlots: [SleepLogEntry?] {
+        let logs = state.sleepLogs
+        if logs.count >= 14 {
+            return logs.suffix(14).map { Optional($0) }
+        } else {
+            let padding: [SleepLogEntry?] = Array(repeating: nil, count: 14 - logs.count)
+            return padding + logs.map { Optional($0) }
+        }
+    }
+
     // Looks up the scheduled badge for a step from the canonical AppState schedule.
     private func badgeText(for step: RoutineStep) -> String {
         state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? step.mode.label
@@ -158,32 +177,50 @@ struct MyRoutineView: View {
                         HStack {
                             Kicker(text: "Last 14 nights")
                             Spacer()
-                            Text("AVG 7.2")
-                                .font(.mono(10))
-                                .kerning(1)
-                                .foregroundColor(.lullInk3)
+                            if let avg = avgScoreText {
+                                Text(avg)
+                                    .font(.mono(10))
+                                    .kerning(1)
+                                    .foregroundColor(.lullInk3)
+                            }
                         }
 
                         HStack(spacing: 6) {
-                            ForEach(Array(state.sleepLogs.enumerated()), id: \.offset) { i, entry in
-                                let isToday = entry.isToday
-                                let unrated = isToday && entry.score == 0
-                                VStack(spacing: 4) {
-                                    Circle()
-                                        .fill(isToday
-                                            ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep], center: .center, startRadius: 0, endRadius: 10))
-                                            : AnyShapeStyle(Color.lullAmber.opacity(0.3 + Double(entry.score) * 0.05)))
-                                        .frame(maxWidth: .infinity)
-                                        .aspectRatio(1, contentMode: .fit)
-                                        .shadow(color: isToday ? .lullAmberGlow : .clear, radius: 7)
-                                        .overlay(
-                                            isToday ? Circle().strokeBorder(Color.lullAmber.opacity(0.6), lineWidth: 1.5) : nil
-                                        )
-                                    Text(unrated ? "·" : "\(entry.score)")
-                                        .font(.mono(8))
-                                        .foregroundColor(isToday ? .lullAmber : .lullInk4)
+                            ForEach(Array(displaySlots.enumerated()), id: \.offset) { i, maybeEntry in
+                                if let entry = maybeEntry {
+                                    let isToday = entry.isToday
+                                    let unrated = isToday && entry.score == 0
+                                    let realIdx = state.sleepLogs.firstIndex(where: { $0.id == entry.id })
+                                    VStack(spacing: 4) {
+                                        Circle()
+                                            .fill(isToday
+                                                ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep], center: .center, startRadius: 0, endRadius: 10))
+                                                : AnyShapeStyle(Color.lullAmber.opacity(0.3 + Double(entry.score) * 0.05)))
+                                            .frame(maxWidth: .infinity)
+                                            .aspectRatio(1, contentMode: .fit)
+                                            .shadow(color: isToday ? .lullAmberGlow : .clear, radius: 7)
+                                            .overlay(
+                                                isToday ? Circle().strokeBorder(Color.lullAmber.opacity(0.6), lineWidth: 1.5) : nil
+                                            )
+                                        Text(unrated ? "·" : "\(entry.score)")
+                                            .font(.mono(8))
+                                            .foregroundColor(isToday ? .lullAmber : .lullInk4)
+                                    }
+                                    .onTapGesture {
+                                        if let idx = realIdx { state.selectedDotIndex = idx }
+                                    }
+                                } else {
+                                    // Skeleton dot — no data for this day
+                                    VStack(spacing: 4) {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.06))
+                                            .frame(maxWidth: .infinity)
+                                            .aspectRatio(1, contentMode: .fit)
+                                        Text("·")
+                                            .font(.mono(8))
+                                            .foregroundColor(.lullInk4)
+                                    }
                                 }
-                                .onTapGesture { state.selectedDotIndex = i }
                             }
                         }
                     }

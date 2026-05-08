@@ -18,6 +18,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Lull briefly checks your room's lighting at the start of your wind-down. The camera is never recorded or shown on screen.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared.</string>
 	<key>UIAppFonts</key>

@@ -5,6 +5,11 @@ struct MidSleepModeView: View {
     @Environment(\.dismiss) var dismiss
     @State private var showBoringStory = false
     @State private var showBodyScan = false
+    @State private var currentDate = Date()
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f
+    }()
 
     private let toolkit: [(primary: String, sub: String, featured: Bool)] = [
         ("4·7·8 breath",  "IN · HOLD · OUT",  true),
@@ -31,7 +36,7 @@ struct MidSleepModeView: View {
                         .foregroundColor(.lullInk4)
                     Spacer()
                     Ember(size: 5)
-                    Text("03:14")
+                    Text(MidSleepModeView.timeFmt.string(from: currentDate))
                         .font(.mono(10.5))
                         .kerning(1)
                         .foregroundColor(.lullInk4)
@@ -147,6 +152,7 @@ struct MidSleepModeView: View {
         }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
         .fullScreenCover(isPresented: $showBodyScan)    { MidSleepBodyScanView() }
+        .onAppear { currentDate = Date() }
     }
 }
 

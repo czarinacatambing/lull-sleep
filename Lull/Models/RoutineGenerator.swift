@@ -129,7 +129,7 @@ enum NightlyStepKind: Equatable {
     }
 
     func toRoutineStep(order: Int) -> RoutineStep {
-        RoutineStep(order: order, label: displayLabel, mode: routineMode)
+        RoutineStep(order: order, label: displayLabel, mode: routineMode, remedyId: RemedyID.fromLabel(displayLabel))
     }
 
     func scheduledDate(bedtime: Date, sequenceOffset: Int) -> Date {
@@ -167,8 +167,6 @@ struct OnboardingAnswers {
     let typicalWakeTime: Date
     let preBedActivities: Set<Int>
     let triedBefore: Set<Int>
-    let bedroomTempF: Double
-    let lightsLevel: Int
 
     init(from state: AppState) {
         sleepProblems     = state.selectedSleepProblems
@@ -178,8 +176,6 @@ struct OnboardingAnswers {
         typicalWakeTime   = state.typicalWakeTime
         preBedActivities  = state.selectedPreBedActivities
         triedBefore       = state.selectedTriedThings
-        bedroomTempF      = state.bedroomTempF
-        lightsLevel       = state.lightsLevel
     }
 
     var timeToTargetBedtimeMinutes: Int {

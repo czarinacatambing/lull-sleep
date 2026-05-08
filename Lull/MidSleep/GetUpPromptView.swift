@@ -1,8 +1,16 @@
 import SwiftUI
+import UserNotifications
 
 struct GetUpPromptView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f
+    }()
+
+    private var buzzTime: Date { Date().addingTimeInterval(20 * 60) }
+    private var buzzTimeString: String { GetUpPromptView.timeFmt.string(from: buzzTime) }
 
     var body: some View {
         LullScreen(glow: false) {
@@ -18,7 +26,7 @@ struct GetUpPromptView: View {
                         .kerning(1.4)
                         .foregroundColor(.lullInk4)
                     Spacer()
-                    Text("03:34 · 20 MIN AWAKE")
+                    Text("\(GetUpPromptView.timeFmt.string(from: Date())) · 20 MIN AWAKE")
                         .font(.mono(10.5))
                         .kerning(1)
                         .foregroundColor(.lullInk4)
@@ -38,7 +46,7 @@ struct GetUpPromptView: View {
                 }
                 .padding(.top, 20)
 
-                Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Lull will call you back when it's time.")
+                Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Check your phone at \(buzzTimeString) — if you see a notification, it's time to go back.")
                     .font(.system(size: 13.5))
                     .foregroundColor(.lullInk2)
                     .multilineTextAlignment(.center)
@@ -58,7 +66,7 @@ struct GetUpPromptView: View {
                 // Timer pill
                 HStack(spacing: 10) {
                     Ember(size: 5)
-                    Text("I'LL GENTLY BUZZ AT 03:49")
+                    Text("SILENT NOTIF AT \(buzzTimeString)")
                         .font(.mono(12))
                         .kerning(0.8)
                         .foregroundColor(.lullInk2)
@@ -70,7 +78,10 @@ struct GetUpPromptView: View {
                 .padding(.top, 20)
 
                 VStack(spacing: 0) {
-                    PrimaryCTA(title: "I'm getting up") { dismiss() }
+                    PrimaryCTA(title: "I'm getting up") {
+                        scheduleGetUpNotification()
+                        dismiss()
+                    }
                     GhostButton(title: "I'd rather stay · try a story") { dismiss() }
                         .frame(maxWidth: .infinity)
                 }
@@ -79,6 +90,23 @@ struct GetUpPromptView: View {
                 .padding(.bottom, 36)
             }
         }
+    }
+
+    private func scheduleGetUpNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["get_up_return"])
+
+        let content = UNMutableNotificationContent()
+        content.title = "Time to come back."
+        content.body = "You've been up 20 minutes. Your bed is waiting — lie back down."
+        content.sound = nil
+        content.interruptionLevel = .passive
+
+        let fireDate = buzzTime
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        let request = UNNotificationRequest(identifier: "get_up_return", content: content, trigger: trigger)
+        center.add(request)
     }
 }
 
@@ -124,12 +152,10 @@ struct GetUpIllustration: View {
                 Path(roundedRect: CGRect(x: chairX, y: chairY, width: w * 0.2, height: h * 0.31), cornerRadius: 3),
                 with: .color(bg2)
             )
-            // Chair seat edge
             context.fill(
                 Path(roundedRect: CGRect(x: chairX - 2, y: chairY, width: w * 0.2 + 4, height: h * 0.04), cornerRadius: 2),
                 with: .color(Color(hex: "#231612"))
             )
-            // Chair legs
             for xOffset in [chairX, chairX + w * 0.15] {
                 context.fill(
                     Path(roundedRect: CGRect(x: xOffset, y: chairY + h * 0.3, width: w * 0.03, height: h * 0.11), cornerRadius: 1),

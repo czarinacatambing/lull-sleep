@@ -5,6 +5,7 @@ import UserNotifications
 struct LullApp: App {
     @StateObject private var state = AppState()
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let doneAction = UNNotificationAction(identifier: "MARK_DONE", title: "Mark done", options: [])
@@ -29,6 +30,9 @@ struct LullApp: App {
                 .environmentObject(state)
                 .onAppear { appDelegate.state = state }
         }
+        .onChange(of: scenePhase, perform: { phase in
+            if phase == .background { state.persist() }
+        })
     }
 }
 
@@ -42,7 +46,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
 
-    // Called when user taps a notification (or its action) while app is backgrounded or closed.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
