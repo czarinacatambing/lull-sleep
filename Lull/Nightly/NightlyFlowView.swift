@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 
 // Nightly walkthrough coordinator — forward-only, no back button.
 struct NightlyFlowView: View {
@@ -629,10 +630,78 @@ struct NightlyBoringStoryView: View {
 
 // MARK: - Alt: 4-7-8 Breathing
 
+private enum AudioBreathPhase: Equatable {
+    case intro, inhale, hold, exhale, rest, windDown
+
+    var label: String {
+        switch self {
+        case .intro:               return "Listen and breathe"
+        case .inhale:              return "Breathe in"
+        case .hold:                return "Hold"
+        case .exhale:              return "Breathe out"
+        case .rest:                return "Rest"
+        case .windDown:            return "Let go"
+        }
+    }
+
+    var orbTarget: CGFloat {
+        switch self {
+        case .inhale:              return 1.18
+        case .hold:                return 1.18
+        case .exhale:              return 0.82
+        case .intro, .rest, .windDown: return 1.0
+        }
+    }
+}
+
+private struct BreathCue {
+    let time: Double
+    let phase: AudioBreathPhase
+    let cycle: Int  // 0 = between cycles
+
+    // Derived from Whisper word-level transcription of 478-breathing-revised.mp3
+    static let all: [BreathCue] = [
+        // Cycle 1 — intro breath, voice counts 1–8 across inhale + hold
+        .init(time:  92.2, phase: .inhale,   cycle: 1),
+        .init(time:  97.0, phase: .hold,     cycle: 1),
+        .init(time: 104.2, phase: .exhale,   cycle: 1),
+        .init(time: 108.5, phase: .rest,     cycle: 0),
+        // Cycle 2
+        .init(time: 112.8, phase: .inhale,   cycle: 2),
+        .init(time: 117.6, phase: .hold,     cycle: 2),
+        .init(time: 128.6, phase: .exhale,   cycle: 2),
+        .init(time: 143.9, phase: .rest,     cycle: 0),
+        // Cycle 3
+        .init(time: 157.1, phase: .inhale,   cycle: 3),
+        .init(time: 160.9, phase: .hold,     cycle: 3),
+        .init(time: 172.4, phase: .exhale,   cycle: 3),
+        .init(time: 186.2, phase: .rest,     cycle: 0),
+        // Cycle 4
+        .init(time: 208.2, phase: .inhale,   cycle: 4),
+        .init(time: 214.1, phase: .hold,     cycle: 4),
+        .init(time: 225.9, phase: .exhale,   cycle: 4),
+        .init(time: 239.2, phase: .rest,     cycle: 0),
+        // Cycle 5
+        .init(time: 257.9, phase: .inhale,   cycle: 5),
+        .init(time: 261.9, phase: .hold,     cycle: 5),
+        .init(time: 271.1, phase: .exhale,   cycle: 5),
+        .init(time: 282.0, phase: .rest,     cycle: 0),
+        // Cycle 6
+        .init(time: 285.5, phase: .inhale,   cycle: 6),
+        .init(time: 289.7, phase: .hold,     cycle: 6),
+        .init(time: 300.5, phase: .exhale,   cycle: 6),
+        .init(time: 315.6, phase: .windDown, cycle: 0),
+    ]
+}
+
 struct NightlyBreathingView: View {
     @EnvironmentObject var state: AppState
+    @State private var player: AVAudioPlayer?
+    @State private var pollTimer: Timer?
+    @State private var currentPhase: AudioBreathPhase = .intro
+    @State private var currentCycle = 0
     @State private var orbScale: CGFloat = 1.0
-    @State private var timer: Timer? = nil
+    @State private var secondsRemaining = 0
 
     var body: some View {
         LullScreen(glow: false) {
@@ -643,10 +712,15 @@ struct NightlyBreathingView: View {
                 NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "4 · 7 · 8 Breathing")
 
                 VStack(spacing: 16) {
-                    Kicker(text: "Cycle \(state.breathingCycle) of 4")
-                    Text(state.breathingPhase.label)
+                    if currentCycle > 0 {
+                        Kicker(text: "Cycle \(currentCycle) of 6")
+                    } else {
+                        Kicker(text: currentPhase == .windDown ? "Winding down" : "Follow along")
+                    }
+                    Text(currentPhase.label)
                         .font(.serifItalic(32))
                         .foregroundColor(.lullAmber)
+                        .animation(.easeInOut(duration: 0.4), value: currentPhase.label)
                 }
                 .padding(.horizontal, 28)
                 .multilineTextAlignment(.center)
@@ -673,46 +747,40 @@ struct NightlyBreathingView: View {
                             .frame(width: 220, height: 220)
                             .shadow(color: .lullAmberGlow, radius: 40)
                             .scaleEffect(orbScale)
-                            .animation(Animation.easeInOut(duration: Double(state.breathingPhase.seconds)).repeatForever(autoreverses: true), value: orbScale)
-                            .onAppear { orbScale = 1.08 }
 
-                        Text("\(state.breathingSecondsRemaining)")
-                            .font(.serif(80))
-                            .foregroundColor(.lullInk0)
-                            .kerning(-3)
-                            .shadow(color: Color.black.opacity(0.3), radius: 4, y: 2)
-
-                        Text("SECONDS")
-                            .font(.mono(11))
-                            .kerning(1.8)
-                            .foregroundColor(.lullBgDeep.opacity(0.7))
-                            .offset(y: 48)
+                        if secondsRemaining > 0 && (currentPhase == .inhale || currentPhase == .hold || currentPhase == .exhale) {
+                            Text("\(secondsRemaining)")
+                                .font(.serif(80))
+                                .foregroundColor(.lullInk0)
+                                .kerning(-3)
+                                .shadow(color: Color.black.opacity(0.3), radius: 4, y: 2)
+                            Text("SECONDS")
+                                .font(.mono(11))
+                                .kerning(1.8)
+                                .foregroundColor(.lullBgDeep.opacity(0.7))
+                                .offset(y: 48)
+                        }
                     }
                 }
 
                 Spacer()
 
                 HStack(spacing: 10) {
-                    ForEach([BreathingPhase.inhale, .hold, .exhale], id: \.label) { phase in
-                        let active = state.breathingPhase == phase
-                        HStack(spacing: 8) {
-                            Text(phase.label)
-                                .font(.system(size: 13))
-                                .foregroundColor(active ? .lullInk0 : .lullInk2)
-                            Text("\(phase.seconds)s")
-                                .font(.mono(10))
-                                .foregroundColor(active ? .lullAmberSoft : .lullInk4)
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 10)
-                        .background(Capsule().fill(active ? Color.lullAmber.opacity(0.10) : Color.clear))
-                        .overlay(Capsule().strokeBorder(active ? Color.lullAmber.opacity(0.5) : Color.lullLine, lineWidth: 1))
+                    ForEach([("In", AudioBreathPhase.inhale), ("Hold", .hold), ("Out", .exhale)], id: \.0) { label, phase in
+                        Text(label)
+                            .font(.system(size: 13))
+                            .foregroundColor(currentPhase == phase ? .lullInk0 : .lullInk2)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .background(Capsule().fill(currentPhase == phase ? Color.lullAmber.opacity(0.10) : Color.clear))
+                            .overlay(Capsule().strokeBorder(currentPhase == phase ? Color.lullAmber.opacity(0.5) : Color.lullLine, lineWidth: 1))
                     }
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 40)
 
                 GhostButton(title: "End early · I'm calm") {
+                    stopSession()
                     state.recordCurrentStepAttempt(status: .completed)
                     state.nightlyStep += 1
                 }
@@ -722,43 +790,111 @@ struct NightlyBreathingView: View {
                 .padding(.bottom, 36)
             }
         }
-        .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { startTimer() } }
-        .onDisappear { timer?.invalidate() }
+        .onAppear { startSession() }
+        .onDisappear { stopSession() }
     }
 
-    private func startTimer() {
-        state.breathingPhase = .inhale
-        state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
-        state.breathingCycle = 1
-
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            Task { @MainActor in tick() }
+    private func startSession() {
+        guard let url = Bundle.main.url(forResource: "478-breathing-revised", withExtension: "mp3") else {
+            startFallbackTimer(); return
+        }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.play()
+        } catch {
+            startFallbackTimer(); return
+        }
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            Task { @MainActor in poll() }
         }
     }
 
-    private func tick() {
+    private func stopSession() {
+        pollTimer?.invalidate(); pollTimer = nil
+        player?.stop(); player = nil
+    }
+
+    @MainActor
+    private func poll() {
+        guard let player else { return }
+        let t = player.currentTime
+        let cues = BreathCue.all
+        let activeCue = cues.last(where: { $0.time <= t })
+        let nextCue   = cues.first(where: { $0.time > t })
+
+        let newPhase = activeCue?.phase ?? .intro
+        let newCycle = activeCue?.cycle ?? 0
+
+        if newPhase == .inhale || newPhase == .hold || newPhase == .exhale, let next = nextCue {
+            secondsRemaining = max(1, Int(ceil(next.time - t)))
+        } else {
+            secondsRemaining = 0
+        }
+
+        if newPhase != currentPhase {
+            let phaseDuration = nextCue.map { $0.time - t } ?? 4.0
+            currentPhase = newPhase
+            currentCycle = newCycle
+            withAnimation(.easeInOut(duration: phaseDuration)) {
+                orbScale = newPhase.orbTarget
+            }
+        } else if currentCycle != newCycle {
+            currentCycle = newCycle
+        }
+
+        if !player.isPlaying && t > 360 {
+            stopSession()
+            state.recordCurrentStepAttempt(status: .completed)
+            state.nightlyStep += 1
+        }
+    }
+
+    // Fallback: original 4-cycle timer-based version if audio file is missing
+    private func startFallbackTimer() {
+        state.breathingPhase = .inhale
+        state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
+        state.breathingCycle = 1
+        currentPhase = .inhale; currentCycle = 1
+        secondsRemaining = BreathingPhase.inhale.seconds
+
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in tickFallback() }
+        }
+    }
+
+    @MainActor
+    private func tickFallback() {
         if state.breathingSecondsRemaining > 1 {
             state.breathingSecondsRemaining -= 1
+            secondsRemaining = state.breathingSecondsRemaining
             return
         }
         switch state.breathingPhase {
         case .inhale:
             state.breathingPhase = .hold
             state.breathingSecondsRemaining = BreathingPhase.hold.seconds
+            currentPhase = .hold
+            withAnimation(.easeInOut(duration: Double(BreathingPhase.hold.seconds))) { orbScale = 1.18 }
         case .hold:
             state.breathingPhase = .exhale
             state.breathingSecondsRemaining = BreathingPhase.exhale.seconds
+            currentPhase = .exhale
+            withAnimation(.easeInOut(duration: Double(BreathingPhase.exhale.seconds))) { orbScale = 0.82 }
         case .exhale:
             if state.breathingCycle >= 4 {
-                timer?.invalidate()
+                pollTimer?.invalidate()
                 state.recordCurrentStepAttempt(status: .completed)
-                state.nightlyStep += 1
-            } else {
-                state.breathingCycle += 1
-                state.breathingPhase = .inhale
-                state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
+                state.nightlyStep += 1; return
             }
+            state.breathingCycle += 1
+            state.breathingPhase = .inhale
+            state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
+            currentCycle = state.breathingCycle; currentPhase = .inhale
+            withAnimation(.easeInOut(duration: Double(BreathingPhase.inhale.seconds))) { orbScale = 1.18 }
         }
+        secondsRemaining = state.breathingSecondsRemaining
     }
 }
 

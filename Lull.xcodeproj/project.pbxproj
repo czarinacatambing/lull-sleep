@@ -28,6 +28,7 @@
 		908F5B9B12AD92424F3B31C1 /* LullTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDBFDA7720439DD74C23B7 /* LullTheme.swift */; };
 		90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B0DDCB101CFACF018241D3 /* OnboardingView.swift */; };
 		A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD947544D9101E2AC407DBAB /* Assets.xcassets */; };
+		EE478AAA0001000000000001 /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */; };
 		A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */; };
 		A9A3802E174F3057EF6EC4AD /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B11A89266A2BB853502200 /* MidSleepModeView.swift */; };
 		AC496C0EE12D5E143D032EAE /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
@@ -65,6 +66,7 @@
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
 		C839CE47A7EBAE076B7BF096 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
 		DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
@@ -212,10 +214,19 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
+		EE478GGG0001000000000001 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
 		F3F7A8DF1539BC59FC9B5357 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				CD947544D9101E2AC407DBAB /* Assets.xcassets */,
+				EE478GGG0001000000000001 /* Audio */,
 				DC3DACA822328A4904D4CBAC /* Fonts */,
 			);
 			path = Resources;
@@ -290,6 +301,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */,
+				EE478AAA0001000000000001 /* 478-breathing-revised.mp3 in Resources */,
 				C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				006744F385C7F5CC19798978 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				AC496C0EE12D5E143D032EAE /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */,
