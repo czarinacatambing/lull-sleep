@@ -79,6 +79,12 @@ struct MyRoutineView: View {
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.lullAmber)
                             }
+                            if let suggestion = suggestedVariable, suggestion != state.tonightVariable {
+                                Text("Lull suggests: \(suggestion)")
+                                    .font(.system(size: 11.5))
+                                    .foregroundColor(.lullInk3)
+                                    .padding(.top, 2)
+                            }
                         }
                         Spacer()
                         Button(action: {
