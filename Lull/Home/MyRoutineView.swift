@@ -11,6 +11,17 @@ struct MyRoutineView: View {
         return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
     }
 
+    // App's top recommendation — computed without the current experiment step so that
+    // variable is eligible again (i.e. the user can "reset" back to it).
+    private var suggestedVariable: String? {
+        let routineWithoutExperiment = state.coreRoutine.filter { $0.mode != .experiment }
+        return ExperimentEngine.suggestNextVariable(
+            logs: state.sleepLogs,
+            coreRoutine: routineWithoutExperiment,
+            remedyScores: state.remedyScores
+        )
+    }
+
     private var avgScoreText: String? {
         let scored = state.sleepLogs.filter { $0.score > 0 }
         guard !scored.isEmpty else { return nil }
@@ -100,7 +111,11 @@ struct MyRoutineView: View {
                         Text("You've only tested \"\(state.tonightVariable)\" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
                     }
                     .sheet(isPresented: $showCandidatePicker) {
-                        CandidatePickerSheet(candidates: candidates) { chosen in
+                        CandidatePickerSheet(
+                            candidates: candidates,
+                            suggestedVariable: suggestedVariable,
+                            currentVariable: state.tonightVariable
+                        ) { chosen in
                             state.changeExperimentVariable(to: chosen)
                             showCandidatePicker = false
                         }
@@ -343,8 +358,23 @@ struct WindDownRow: View {
 
 struct CandidatePickerSheet: View {
     var candidates: [String]
+    var suggestedVariable: String? = nil
+    var currentVariable: String = ""
     var onSelect: (String) -> Void
     @Environment(\.dismiss) var dismiss
+
+    // The suggestion is only shown as a distinct "Lull's pick" row when it differs
+    // from what the user is already testing, and is available in the candidate list.
+    private var surfacedSuggestion: String? {
+        guard let s = suggestedVariable,
+              s != currentVariable,
+              candidates.contains(s) else { return nil }
+        return s
+    }
+
+    private var otherCandidates: [String] {
+        candidates.filter { $0 != surfacedSuggestion }
+    }
 
     var body: some View {
         LullScreen(glow: false) {
@@ -369,28 +399,71 @@ struct CandidatePickerSheet: View {
                     .padding(.bottom, 24)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 10) {
-                        ForEach(candidates, id: \.self) { candidate in
-                            Button(action: { onSelect(candidate) }) {
+                    VStack(spacing: 0) {
+
+                        // Lull's recommendation
+                        if let suggestion = surfacedSuggestion {
+                            Text("LULL'S PICK")
+                                .font(.mono(9)).kerning(1.4)
+                                .foregroundColor(.lullAmberSoft)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 22)
+                                .padding(.bottom, 10)
+
+                            Button(action: { onSelect(suggestion) }) {
                                 HStack(spacing: 14) {
                                     Ember(size: 5)
-                                    Text(candidate)
+                                    Text(suggestion)
                                         .font(.system(size: 15))
                                         .foregroundColor(.lullInk0)
                                         .multilineTextAlignment(.leading)
                                     Spacer()
                                     Text("›")
                                         .font(.system(size: 20, weight: .light))
-                                        .foregroundColor(.lullInk3)
+                                        .foregroundColor(.lullAmber)
                                 }
                                 .padding(.horizontal, 20).padding(.vertical, 18)
-                                .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.025)))
-                                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
+                                .background(RoundedRectangle(cornerRadius: 16).fill(Color.lullAmber.opacity(0.06)))
+                                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullAmber.opacity(0.3), lineWidth: 1))
                             }
                             .buttonStyle(.plain)
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 24)
+
+                            if !otherCandidates.isEmpty {
+                                Text("ALL OPTIONS")
+                                    .font(.mono(9)).kerning(1.4)
+                                    .foregroundColor(.lullInk4)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 22)
+                                    .padding(.bottom, 10)
+                            }
                         }
+
+                        // All other candidates
+                        VStack(spacing: 10) {
+                            ForEach(otherCandidates, id: \.self) { candidate in
+                                Button(action: { onSelect(candidate) }) {
+                                    HStack(spacing: 14) {
+                                        Ember(size: 5)
+                                        Text(candidate)
+                                            .font(.system(size: 15))
+                                            .foregroundColor(.lullInk0)
+                                            .multilineTextAlignment(.leading)
+                                        Spacer()
+                                        Text("›")
+                                            .font(.system(size: 20, weight: .light))
+                                            .foregroundColor(.lullInk3)
+                                    }
+                                    .padding(.horizontal, 20).padding(.vertical, 18)
+                                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.025)))
+                                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 22)
                     }
-                    .padding(.horizontal, 22)
                 }
             }
         }
