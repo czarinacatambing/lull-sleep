@@ -53,29 +53,6 @@ struct MyRoutineView: View {
                     .padding(.horizontal, Lull.horizontalPad)
                     .padding(.bottom, 16)
 
-                    // Start CTA
-                    Button(action: { state.showNightlyFlow = true }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "moon.stars.fill")
-                                .font(.system(size: 14))
-                            Text("Start Tonight's Routine")
-                                .font(.system(size: 15, weight: .semibold))
-                        }
-                        .foregroundColor(Color.lullBg)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(LinearGradient(
-                                    colors: [Color.lullAmber, Color.lullAmberDeep],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                        )
-                        .shadow(color: Color.lullAmberGlow.opacity(0.5), radius: 12, y: 4)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 20)
-
                     // Tonight's variable
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 8) {
@@ -172,7 +149,24 @@ struct MyRoutineView: View {
                     .padding(.horizontal, 22)
                     .padding(.bottom, 28)
 
-                    // History dots
+                    // Section divider
+                    HStack(spacing: 12) {
+                        Rectangle()
+                            .fill(Color.lullLine)
+                            .frame(height: 1)
+                        Text("SLEEP HISTORY")
+                            .font(.mono(9))
+                            .kerning(1.4)
+                            .foregroundColor(.lullInk4)
+                            .fixedSize()
+                        Rectangle()
+                            .fill(Color.lullLine)
+                            .frame(height: 1)
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 24)
+
+                    // History dots — oldest on left, today on right
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Kicker(text: "Last 14 nights")
@@ -186,31 +180,41 @@ struct MyRoutineView: View {
                         }
 
                         HStack(spacing: 6) {
-                            ForEach(Array(displaySlots.enumerated()), id: \.offset) { i, maybeEntry in
+                            ForEach(Array(displaySlots.enumerated()), id: \.offset) { _, maybeEntry in
                                 if let entry = maybeEntry {
                                     let isToday = entry.isToday
-                                    let unrated = isToday && entry.score == 0
+                                    let rated   = entry.score > 0
                                     let realIdx = state.sleepLogs.firstIndex(where: { $0.id == entry.id })
                                     VStack(spacing: 4) {
-                                        Circle()
-                                            .fill(isToday
-                                                ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep], center: .center, startRadius: 0, endRadius: 10))
-                                                : AnyShapeStyle(Color.lullAmber.opacity(0.3 + Double(entry.score) * 0.05)))
-                                            .frame(maxWidth: .infinity)
-                                            .aspectRatio(1, contentMode: .fit)
-                                            .shadow(color: isToday ? .lullAmberGlow : .clear, radius: 7)
-                                            .overlay(
-                                                isToday ? Circle().strokeBorder(Color.lullAmber.opacity(0.6), lineWidth: 1.5) : nil
-                                            )
-                                        Text(unrated ? "·" : "\(entry.score)")
+                                        ZStack {
+                                            if isToday {
+                                                // Outer ring
+                                                Circle()
+                                                    .strokeBorder(Color.lullAmber, lineWidth: 1.5)
+                                                    .frame(maxWidth: .infinity)
+                                                    .aspectRatio(1, contentMode: .fit)
+                                                // Inner filled dot
+                                                Circle()
+                                                    .fill(Color.lullAmber)
+                                                    .scaleEffect(0.38)
+                                            } else {
+                                                // Solid amber for scored past days
+                                                Circle()
+                                                    .fill(Color.lullAmber.opacity(0.65))
+                                                    .frame(maxWidth: .infinity)
+                                                    .aspectRatio(1, contentMode: .fit)
+                                            }
+                                        }
+                                        .shadow(color: isToday ? .lullAmberGlow : .clear, radius: 6)
+                                        Text(rated ? "\(entry.score)" : "·")
                                             .font(.mono(8))
-                                            .foregroundColor(isToday ? .lullAmber : .lullInk4)
+                                            .foregroundColor(isToday ? .lullAmber : .lullInk3)
                                     }
                                     .onTapGesture {
                                         if let idx = realIdx { state.selectedDotIndex = idx }
                                     }
                                 } else {
-                                    // Skeleton dot — no data for this day
+                                    // Skeleton — no data for this day
                                     VStack(spacing: 4) {
                                         Circle()
                                             .fill(Color.white.opacity(0.06))
