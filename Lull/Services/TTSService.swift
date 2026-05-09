@@ -8,23 +8,16 @@ class TTSService: NSObject, ObservableObject {
     @Published var isSpeaking = false
     @Published var isPaused = false
 
-    // Gordon (AU) is the deepest voice Apple offers; Daniel (GB) is a deep British fallback;
-    // Evan (US) is the deepest US male. Each tries enhanced then compact quality.
+    // Karen (AU) is a default iPhone voice — no download needed. Enhanced if available, compact fallback.
     static let calmingVoice: AVSpeechSynthesisVoice? = {
         let candidates = [
-            "com.apple.voice.enhanced.en-AU.Gordon",
-            "com.apple.ttsbundle.Gordon-premium",
-            "com.apple.voice.compact.en-AU.Gordon",
-            "com.apple.ttsbundle.Gordon-compact",
-            "com.apple.voice.enhanced.en-GB.Daniel",
-            "com.apple.ttsbundle.Daniel-premium",
-            "com.apple.voice.compact.en-GB.Daniel",
-            "com.apple.ttsbundle.Daniel-compact",
-            "com.apple.voice.enhanced.en-US.Evan",
-            "com.apple.voice.compact.en-US.Aaron",
+            "com.apple.voice.enhanced.en-AU.Karen",
+            "com.apple.ttsbundle.Karen-premium",
+            "com.apple.voice.compact.en-AU.Karen",
+            "com.apple.ttsbundle.Karen-compact",
         ]
         return candidates.compactMap { AVSpeechSynthesisVoice(identifier: $0) }.first
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+            ?? AVSpeechSynthesisVoice(language: "en-AU")
     }()
 
     private let synthesizer = AVSpeechSynthesizer()
@@ -82,8 +75,8 @@ class TTSService: NSObject, ObservableObject {
 
     private func speak(_ text: String) {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.rate            = 0.30          // slow, deliberate — sleep pace
-        utterance.pitchMultiplier = 0.85          // slightly lower than default
+        utterance.rate            = 0.25          // slow, deliberate — sleep pace
+        utterance.pitchMultiplier = 0.80          // pull Karen's natural register down for bedtime
         utterance.postUtteranceDelay = 0.45       // natural pause between sentences
         utterance.voice = TTSService.calmingVoice
         synthesizer.speak(utterance)

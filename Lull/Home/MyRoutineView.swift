@@ -4,20 +4,21 @@ struct MyRoutineView: View {
     @EnvironmentObject var state: AppState
     @State private var showChangeConfirm = false
     @State private var showCandidatePicker = false
-    @State private var pendingCandidate: String? = nil
+    @State private var heroGlow = false
+    @AppStorage("routineCoachMarkCount") private var coachMarkCount = 0
+    @State private var showCoachMark = false
+
+    // MARK: - Computed
 
     private var candidates: [String] {
         let inRoutine = Set(state.coreRoutine.map(\.label))
         return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
     }
 
-    // App's top recommendation — computed without the current experiment step so that
-    // variable is eligible again (i.e. the user can "reset" back to it).
     private var suggestedVariable: String? {
-        let routineWithoutExperiment = state.coreRoutine.filter { $0.mode != .experiment }
-        return ExperimentEngine.suggestNextVariable(
+        ExperimentEngine.suggestNextVariable(
             logs: state.sleepLogs,
-            coreRoutine: routineWithoutExperiment,
+            coreRoutine: state.coreRoutine.filter { $0.mode != .experiment },
             remedyScores: state.remedyScores
         )
     }
@@ -29,87 +30,176 @@ struct MyRoutineView: View {
         return String(format: "AVG %.1f", avg)
     }
 
-    // Pads or trims sleep log entries to exactly 14 display slots.
-    // Slots with nil represent days with no data (shown as skeleton dots).
     private var displaySlots: [SleepLogEntry?] {
         let logs = state.sleepLogs
-        if logs.count >= 14 {
-            return logs.suffix(14).map { Optional($0) }
-        } else {
-            let padding: [SleepLogEntry?] = Array(repeating: nil, count: 14 - logs.count)
-            return padding + logs.map { Optional($0) }
-        }
+        if logs.count >= 14 { return logs.suffix(14).map { Optional($0) } }
+        return Array(repeating: nil, count: 14 - logs.count) + logs.map { Optional($0) }
     }
 
-    // Looks up the scheduled badge for a step from the canonical AppState schedule.
     private func badgeText(for step: RoutineStep) -> String {
         state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? step.mode.label
     }
 
-    var body: some View {
-        LullScreen(glow: false) {
-            AmberGlow(x: 0.8, y: -0.1, radius: 210, opacity: 0.45)
-                .ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 16)
+    private func expectedImpact(for label: String) -> String? {
+        let map: [String: String] = [
+            "Dim the lights":        "Triggers melatonin production roughly 90 min early.",
+            "Warm shower or bath":   "Post-shower temperature drop is one of the strongest sleep-onset cues.",
+            "Cold room prep":        "Cooler rooms (65–68°F) are linked to deeper, longer sleep.",
+            "No screens":            "Blue light delays melatonin release by up to 90 minutes.",
+            "No caffeine":           "Caffeine's half-life is 5–6 hours — it lingers longer than it feels.",
+            "No heavy snacks":       "Digestion competes with sleep — a quiet gut helps.",
+            "Herbal tea":            "The ritual and mild calming compounds both signal wind-down.",
+            "Magnesium glycinate":   "Shown to improve sleep quality in randomised controlled trials.",
+            "Brain Dump":            "Offloading worries before bed reduces racing-mind episodes.",
+            "4-7-8 Breathing":       "Activates the parasympathetic nervous system within 2–3 cycles.",
+            "Boring Story":          "Passive listening disengages the planning mind gently.",
+            "Weighted blanket":      "Deep pressure stimulation activates the parasympathetic system.",
+            "Finish workouts":       "Late exercise raises core temperature, delaying sleep onset.",
+            "App blocking":          "Removes the scroll reflex so wind-down actually happens.",
+            "No alcohol":            "Alcohol fragments sleep architecture in the second half of the night.",
+        ]
+        return map[label]
+    }
 
-                    // Header
+    // MARK: - Body
+
+    var body: some View {
+        ZStack {
+            LullScreen(glow: false) {
+                AmberGlow(x: 0.8, y: -0.1, radius: 210, opacity: 0.45)
+                    .ignoresSafeArea()
+
+                List {
+                    // ── Header ─────────────────────────────────────────
                     VStack(alignment: .leading, spacing: 6) {
+                        Spacer().frame(height: 8)
                         Kicker(text: "Your routine")
-                        Text("My Routine")
+                        Text("My Sleep System")
                             .font(.serif(26))
                             .foregroundColor(.lullInk0)
+                        Text("Build your experiment. Test one change at a time. Watch your sleep improve.")
+                            .font(.system(size: 12.5))
+                            .foregroundColor(.lullAmberSoft)
+                            .lineSpacing(3)
+                            .padding(.top, 2)
                     }
-                    .padding(.horizontal, Lull.horizontalPad)
-                    .padding(.bottom, 16)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: Lull.horizontalPad, bottom: 20, trailing: Lull.horizontalPad))
 
-                    // Tonight's variable
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Kicker(text: "Tonight's variable", color: .lullAmberSoft)
-                            Text(state.tonightVariable)
-                                .font(.serifItalic(17))
-                                .foregroundColor(.lullInk0)
-                            HStack(spacing: 0) {
-                                Text("Night \(state.variableNight) of 5  ·  ")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.lullInk2)
-                                Text(state.variableScore)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.lullAmber)
-                            }
-                            if let suggestion = suggestedVariable, suggestion != state.tonightVariable {
-                                Text("Lull suggests: \(suggestion)")
+                    // ── Tonight's Experiment (hero card) ───────────────
+                    ZStack(alignment: .topTrailing) {
+                        // Pulsing ambient glow
+                        Circle()
+                            .fill(Color.lullAmberGlow.opacity(heroGlow ? 0.20 : 0.06))
+                            .frame(width: 240)
+                            .blur(radius: 45)
+                            .offset(x: 40, y: -20)
+                            .allowsHitTesting(false)
+                            .animation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true), value: heroGlow)
+
+                        HStack(alignment: .top, spacing: 0) {
+                            VStack(alignment: .leading, spacing: 9) {
+                                // Kicker + badge
+                                HStack(spacing: 8) {
+                                    Kicker(text: "Tonight's Experiment", color: .lullAmberSoft)
+                                    Spacer()
+                                    Text("ACTIVE TEST")
+                                        .font(.mono(7.5))
+                                        .kerning(1)
+                                        .foregroundColor(.lullAmber)
+                                        .padding(.horizontal, 7)
+                                        .padding(.vertical, 3)
+                                        .background(Capsule().fill(Color.lullAmber.opacity(0.12)))
+                                        .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.4), lineWidth: 1))
+                                }
+
+                                Text(state.tonightVariable)
+                                    .font(.serifItalic(20))
+                                    .foregroundColor(.lullInk0)
+
+                                // Night counter + progress bar
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack(spacing: 0) {
+                                        Text("Night \(state.variableNight) of 5  ·  ")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.lullInk2)
+                                        Text(state.variableScore)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.lullAmber)
+                                    }
+                                    GeometryReader { geo in
+                                        ZStack(alignment: .leading) {
+                                            RoundedRectangle(cornerRadius: 2)
+                                                .fill(Color.lullAmber.opacity(0.15))
+                                            RoundedRectangle(cornerRadius: 2)
+                                                .fill(Color.lullAmber.opacity(0.75))
+                                                .frame(width: geo.size.width * min(1.0, Double(state.variableNight) / 5.0))
+                                        }
+                                        .frame(height: 3)
+                                    }
+                                    .frame(height: 3)
+                                }
+
+                                Text("We're testing if this improves your sleep. Rate it tomorrow morning.")
                                     .font(.system(size: 11.5))
                                     .foregroundColor(.lullInk3)
-                                    .padding(.top, 2)
+                                    .lineSpacing(2)
+
+                                // Expected impact
+                                if let impact = expectedImpact(for: state.tonightVariable) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "waveform.path.ecg")
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.lullAmberSoft)
+                                        Text(impact)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.lullInk3)
+                                            .lineSpacing(2)
+                                    }
+                                }
+
+                                // Override hint
+                                if let suggestion = suggestedVariable, suggestion != state.tonightVariable {
+                                    Text("Lull suggests: \(suggestion)")
+                                        .font(.system(size: 11.5))
+                                        .foregroundColor(.lullInk3)
+                                }
                             }
+
+                            // Swap button
+                            Button(action: {
+                                if state.variableNight > 0 { showChangeConfirm = true }
+                                else { showCandidatePicker = true }
+                            }) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(Color.lullBg.opacity(0.6))
+                                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.lullInk2)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.leading, 12)
                         }
-                        Spacer()
-                        Button(action: {
-                            if state.variableNight > 0 {
-                                showChangeConfirm = true
-                            } else {
-                                showCandidatePicker = true
-                            }
-                        }) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.lullBg.opacity(0.6))
-                                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.lullInk2)
-                            }
-                        }
-                        .buttonStyle(.plain)
+                        .padding(18)
                     }
-                    .padding(18)
-                    .lullCard(radius: 20, accent: true)
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.lullAmber.opacity(0.07))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(Color.lullAmber.opacity(heroGlow ? 0.35 : 0.20), lineWidth: 1)
+                            )
+                    )
+                    .shadow(color: Color.lullAmberGlow.opacity(heroGlow ? 0.28 : 0.08), radius: 20, y: 8)
+                    .animation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true), value: heroGlow)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22))
                     .alert("Change experiment?", isPresented: $showChangeConfirm) {
                         Button("Keep testing") { }
                         Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
@@ -127,99 +217,123 @@ struct MyRoutineView: View {
                         }
                     }
 
-                    // Pre-Wind Down section
-                    RoutineSectionHeader(title: "Pre-Wind Down")
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 10)
-
-                    VStack(spacing: 0) {
+                    // ── Prep Checklist ─────────────────────────────────
+                    Section {
                         ForEach(Array(state.preWindDownSteps.enumerated()), id: \.element.id) { i, step in
-                            PreWindDownRow(
-                                step: step,
-                                badgeText: badgeText(for: step)
-                            )
-                            if i < state.preWindDownSteps.count - 1 {
-                                Divider()
-                                    .background(Color.lullLine)
-                                    .padding(.leading, 36)
-                            }
+                            PrepRow(index: i + 1, step: step, badgeText: badgeText(for: step))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 3, leading: 22, bottom: 3, trailing: 22))
                         }
-                    }
-                    .padding(.vertical, 4)
-                    .lullCard(radius: 16)
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 24)
+                        .onMove { state.movePreWindDown(from: $0, to: $1) }
 
-                    // Wind Down section
-                    RoutineSectionHeader(title: "Wind Down", subtitle: "The Ritual")
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 10)
-
-                    VStack(spacing: 0) {
-                        ForEach(Array(state.windDownSteps.enumerated()), id: \.element.id) { i, step in
-                            WindDownRow(number: i + 1, step: step)
-                            if i < state.windDownSteps.count - 1 {
-                                Divider()
-                                    .background(Color.lullLine)
-                                    .padding(.leading, 52)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .lullCard(radius: 16)
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 28)
-
-                    // Section divider
-                    HStack(spacing: 12) {
-                        Rectangle()
-                            .fill(Color.lullLine)
-                            .frame(height: 1)
-                        Text("SLEEP HISTORY")
-                            .font(.mono(9))
-                            .kerning(1.4)
+                        Text("drag to reorder")
+                            .font(.system(size: 10))
                             .foregroundColor(.lullInk4)
-                            .fixedSize()
-                        Rectangle()
-                            .fill(Color.lullLine)
-                            .frame(height: 1)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 4, trailing: 10))
+                    } header: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Prep Checklist")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.lullInk1)
+                                Text("· Start Here")
+                                    .font(.serifItalic(13))
+                                    .foregroundColor(.lullInk3)
+                            }
+                            Text("Do these 30–75 min before bed")
+                                .font(.system(size: 11))
+                                .foregroundColor(.lullInk4)
+                        }
+                        .textCase(nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 20)
+                        .padding(.bottom, 8)
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 24)
+                    .listSectionSeparator(.hidden)
 
-                    // History dots — oldest on left, today on right
+                    // ── Bedtime Ritual ─────────────────────────────────
+                    Section {
+                        ForEach(Array(state.windDownSteps.enumerated()), id: \.element.id) { i, step in
+                            RitualRow(number: i + 1, step: step)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 3, leading: 22, bottom: 3, trailing: 22))
+                        }
+                        .onMove { state.moveWindDown(from: $0, to: $1) }
+
+                        Text("drag to reorder")
+                            .font(.system(size: 10))
+                            .foregroundColor(.lullInk4)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 4, trailing: 10))
+                    } header: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Bedtime Ritual")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.lullInk1)
+                                Text("· In Sequence")
+                                    .font(.serifItalic(13))
+                                    .foregroundColor(.lullInk3)
+                            }
+                            Text("Follow in order when you're getting into bed")
+                                .font(.system(size: 11))
+                                .foregroundColor(.lullInk4)
+                        }
+                        .textCase(nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 20)
+                        .padding(.bottom, 8)
+                    }
+                    .listSectionSeparator(.hidden)
+
+                    // ── Progress Divider ───────────────────────────────
+                    HStack(spacing: 12) {
+                        Rectangle().fill(Color.lullLine).frame(height: 1)
+                        Text("YOUR PROGRESS")
+                            .font(.mono(9)).kerning(1.4).foregroundColor(.lullInk4).fixedSize()
+                        Rectangle().fill(Color.lullLine).frame(height: 1)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 20, leading: 22, bottom: 20, trailing: 22))
+
+                    // ── Sleep History ──────────────────────────────────
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Kicker(text: "Last 14 nights")
                             Spacer()
                             if let avg = avgScoreText {
                                 Text(avg)
-                                    .font(.mono(10))
-                                    .kerning(1)
-                                    .foregroundColor(.lullInk3)
+                                    .font(.mono(10)).kerning(1).foregroundColor(.lullInk3)
                             }
                         }
+                        Text("Tap any night for details.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.lullInk4)
+                            .padding(.top, -6)
 
                         HStack(spacing: 6) {
                             ForEach(Array(displaySlots.enumerated()), id: \.offset) { _, maybeEntry in
                                 if let entry = maybeEntry {
                                     let isToday = entry.isToday
-                                    let rated   = entry.score > 0
+                                    let rated = entry.score > 0
                                     let realIdx = state.sleepLogs.firstIndex(where: { $0.id == entry.id })
                                     VStack(spacing: 4) {
                                         ZStack {
                                             if isToday {
-                                                // Outer ring
                                                 Circle()
                                                     .strokeBorder(Color.lullAmber, lineWidth: 1.5)
                                                     .frame(maxWidth: .infinity)
                                                     .aspectRatio(1, contentMode: .fit)
-                                                // Inner filled dot
-                                                Circle()
-                                                    .fill(Color.lullAmber)
-                                                    .scaleEffect(0.38)
+                                                Circle().fill(Color.lullAmber).scaleEffect(0.38)
                                             } else {
-                                                // Solid amber for scored past days
                                                 Circle()
                                                     .fill(Color.lullAmber.opacity(0.65))
                                                     .frame(maxWidth: .infinity)
@@ -235,63 +349,89 @@ struct MyRoutineView: View {
                                         if let idx = realIdx { state.selectedDotIndex = idx }
                                     }
                                 } else {
-                                    // Skeleton — no data for this day
                                     VStack(spacing: 4) {
                                         Circle()
                                             .fill(Color.white.opacity(0.06))
                                             .frame(maxWidth: .infinity)
                                             .aspectRatio(1, contentMode: .fit)
-                                        Text("·")
-                                            .font(.mono(8))
-                                            .foregroundColor(.lullInk4)
+                                        Text("·").font(.mono(8)).foregroundColor(.lullInk4)
                                     }
                                 }
                             }
                         }
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 40, trailing: 22))
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.editMode, .constant(.active))
+                .fullScreenCover(isPresented: $state.showNightlyFlow) { NightlyFlowView() }
+                .sheet(isPresented: Binding(
+                    get: { state.selectedDotIndex != nil },
+                    set: { if !$0 { state.selectedDotIndex = nil } }
+                )) {
+                    if let index = state.selectedDotIndex { SleepLogDetailView(entryIndex: index) }
+                }
+            }
+
+            // ── First-visit coach mark ─────────────────────────────
+            if showCoachMark {
+                Color.black.opacity(0.65)
+                    .ignoresSafeArea()
+                    .onTapGesture { withAnimation(.easeOut(duration: 0.2)) { showCoachMark = false } }
+
+                VStack {
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("This is your sleep lab.")
+                            .font(.serif(22))
+                            .foregroundColor(.lullInk0)
+                        Text("Test one change at a time. Rate your sleep each morning. See what actually works for you.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.lullInk2)
+                            .lineSpacing(4)
+                        Button(action: { withAnimation(.easeOut(duration: 0.2)) { showCoachMark = false } }) {
+                            Text("Got it →")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.lullBg)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(RoundedRectangle(cornerRadius: 16).fill(Color.lullAmber))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color(hex: "#1a1310"))
+                            .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color.lullLine, lineWidth: 1))
+                    )
+                    .shadow(color: Color.black.opacity(0.5), radius: 30, y: 10)
                     .padding(.horizontal, 22)
-                    .padding(.bottom, 36)
+                    .padding(.bottom, 52)
+                }
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .zIndex(20)
+            }
+        }
+        .onAppear {
+            heroGlow = true
+            if coachMarkCount < 3 {
+                coachMarkCount += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.spring(response: 0.4)) { showCoachMark = true }
                 }
             }
         }
-        .fullScreenCover(isPresented: $state.showNightlyFlow) {
-            NightlyFlowView()
-        }
-        .sheet(isPresented: Binding(
-            get: { state.selectedDotIndex != nil },
-            set: { if !$0 { state.selectedDotIndex = nil } }
-        )) {
-            if let index = state.selectedDotIndex {
-                SleepLogDetailView(entryIndex: index)
-            }
-        }
     }
 }
 
-// MARK: - Section Header
+// MARK: - Prep Row
 
-struct RoutineSectionHeader: View {
-    var title: String
-    var subtitle: String? = nil
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.lullInk1)
-            if let subtitle {
-                Text("· \(subtitle)")
-                    .font(.serifItalic(13))
-                    .foregroundColor(.lullInk3)
-            }
-            Spacer()
-        }
-    }
-}
-
-// MARK: - Pre-Wind Down Row (reminder / experiment steps)
-
-struct PreWindDownRow: View {
+struct PrepRow: View {
+    var index: Int
     var step: RoutineStep
     var badgeText: String
 
@@ -299,10 +439,10 @@ struct PreWindDownRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(isExperiment ? Color.lullAmber.opacity(0.7) : Color.lullInk3.opacity(0.4))
-                .frame(width: 5, height: 5)
-                .padding(.leading, 16)
+            Text(String(format: "%02d", index))
+                .font(.mono(11))
+                .foregroundColor(isExperiment ? .lullAmber : .lullInk3)
+                .frame(width: 22, alignment: .leading)
 
             Text(step.label)
                 .font(.system(size: 14))
@@ -311,38 +451,37 @@ struct PreWindDownRow: View {
             Spacer()
 
             Text(badgeText)
-                .font(.mono(9.5))
+                .font(.mono(9))
                 .kerning(0.8)
                 .foregroundColor(isExperiment ? .lullAmberSoft : .lullInk3)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(isExperiment ? Color.lullAmber.opacity(0.1) : Color.white.opacity(0.04))
-                )
-                .overlay(
-                    Capsule()
-                        .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.3) : Color.lullLine, lineWidth: 1)
-                )
-                .padding(.trailing, 14)
+                .background(Capsule().fill(isExperiment ? Color.lullAmber.opacity(0.1) : Color.white.opacity(0.04)))
+                .overlay(Capsule().strokeBorder(isExperiment ? Color.lullAmber.opacity(0.3) : Color.lullLine, lineWidth: 1))
         }
         .padding(.vertical, 13)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isExperiment ? Color.lullAmber.opacity(0.05) : Color.white.opacity(0.025))
+                .overlay(RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.3) : Color.lullLine, lineWidth: 1))
+        )
     }
 }
 
-// MARK: - Wind Down Row (in-sequence steps)
+// MARK: - Ritual Row
 
-struct WindDownRow: View {
+struct RitualRow: View {
     var number: Int
     var step: RoutineStep
 
     var body: some View {
         HStack(spacing: 14) {
-            Text("\(number)")
-                .font(.mono(12))
+            Text(String(format: "%02d", number))
+                .font(.mono(11))
                 .foregroundColor(.lullAmber)
-                .frame(width: 20, alignment: .center)
-                .padding(.leading, 16)
+                .frame(width: 22, alignment: .leading)
 
             Text(step.label)
                 .font(.system(size: 14))
@@ -354,9 +493,14 @@ struct WindDownRow: View {
                 .font(.mono(9))
                 .kerning(1)
                 .foregroundColor(.lullInk3)
-                .padding(.trailing, 14)
         }
         .padding(.vertical, 13)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.025))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+        )
     }
 }
 
@@ -369,8 +513,6 @@ struct CandidatePickerSheet: View {
     var onSelect: (String) -> Void
     @Environment(\.dismiss) var dismiss
 
-    // The suggestion is only shown as a distinct "Lull's pick" row when it differs
-    // from what the user is already testing, and is available in the candidate list.
     private var surfacedSuggestion: String? {
         guard let s = suggestedVariable,
               s != currentVariable,
@@ -406,8 +548,6 @@ struct CandidatePickerSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-
-                        // Lull's recommendation
                         if let suggestion = surfacedSuggestion {
                             Text("LULL'S PICK")
                                 .font(.mono(9)).kerning(1.4)
@@ -446,7 +586,6 @@ struct CandidatePickerSheet: View {
                             }
                         }
 
-                        // All other candidates
                         VStack(spacing: 10) {
                             ForEach(otherCandidates, id: \.self) { candidate in
                                 Button(action: { onSelect(candidate) }) {

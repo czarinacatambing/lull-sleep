@@ -168,6 +168,20 @@ class AppState: ObservableObject {
         persist()
     }
 
+    func movePreWindDown(from source: IndexSet, to destination: Int) {
+        var section = preWindDownSteps
+        section.move(fromOffsets: source, toOffset: destination)
+        coreRoutine = section + windDownSteps
+        persist()
+    }
+
+    func moveWindDown(from source: IndexSet, to destination: Int) {
+        var section = windDownSteps
+        section.move(fromOffsets: source, toOffset: destination)
+        coreRoutine = preWindDownSteps + section
+        persist()
+    }
+
     func changeExperimentVariable(to label: String) {
         coreRoutine.removeAll { $0.mode == .experiment }
         coreRoutine.append(RoutineStep(
