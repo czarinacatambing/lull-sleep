@@ -44,13 +44,12 @@ let remedyLeadTimes: [String: Int] = [
     R.warmShower:       90,
     R.magnesium:        45,
     R.herbalTea:        45,
-    R.weightedBlanket:  30,
 ]
 
 // All wind down candidate labels (compete for the 2 variable Wind Down slots)
 let allWindDownRemedies: [String] = [
     R.brainDump, R.boringStory, R.breathing478,
-    R.gratitudeJournal, R.gentleStretching, R.pmr, R.readingBook,
+    R.gratitudeJournal, R.gentleStretching, R.pmr, R.readingBook, R.weightedBlanket,
 ]
 
 // All bedtime prep remedy labels
@@ -250,11 +249,12 @@ private let keptHabitMap: [Int: String] = [
 private let windDownDifficulty: [String: Int] = [
     R.boringStory:      1,
     R.readingBook:      2,
-    R.gratitudeJournal: 3,
-    R.brainDump:        4,
-    R.gentleStretching: 5,
-    R.breathing478:     6,
-    R.pmr:              7,
+    R.weightedBlanket:  3,
+    R.gratitudeJournal: 4,
+    R.brainDump:        5,
+    R.gentleStretching: 6,
+    R.breathing478:     7,
+    R.pmr:              8,
 ]
 
 // MARK: - Scoring
@@ -412,6 +412,7 @@ private func nightlyStepKind(for remedy: String) -> NightlyStepKind? {
     case R.gentleStretching: return .gentleStretching
     case R.pmr:              return .progressiveMuscleRelaxation
     case R.readingBook:      return .existingHabit(label: R.readingBook)
+    case R.weightedBlanket:  return .existingHabit(label: R.weightedBlanket)
     default:                 return nil
     }
 }
