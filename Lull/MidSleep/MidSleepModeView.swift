@@ -3,8 +3,9 @@ import SwiftUI
 struct MidSleepModeView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
+    @State private var showBreathing   = false
     @State private var showBoringStory = false
-    @State private var showBodyScan = false
+    @State private var showBodyScan    = false
     @State private var currentDate = Date()
 
     private static let timeFmt: DateFormatter = {
@@ -67,10 +68,7 @@ struct MidSleepModeView: View {
                     ForEach(toolkit, id: \.primary) { opt in
                         Button(action: {
                             if opt.primary == "4·7·8 breath" {
-                                let idx = state.nightlyFlowSteps.firstIndex(of: .fourSevenEightBreathing) ?? 0
-                                state.nightlyStep = idx
-                                state.showNightlyFlow = true
-                                dismiss()
+                                showBreathing = true
                             } else if opt.primary == "Boring story" {
                                 showBoringStory = true
                             } else if opt.primary == "Body scan" {
@@ -150,6 +148,7 @@ struct MidSleepModeView: View {
                 .padding(.bottom, 40)
             }
         }
+        .fullScreenCover(isPresented: $showBreathing)   { NightlyBreathingView().environmentObject(state) }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
         .fullScreenCover(isPresented: $showBodyScan)    { MidSleepBodyScanView() }
         .onAppear { currentDate = Date() }
