@@ -222,6 +222,8 @@ class AppState: ObservableObject {
         persist()
     }
 
+    @AppStorage("variableIsOverridden") var variableIsOverridden: Bool = false
+
     func changeExperimentVariable(to label: String) {
         coreRoutine.removeAll { $0.mode == .experiment }
         coreRoutine.append(RoutineStep(
@@ -230,6 +232,26 @@ class AppState: ObservableObject {
             mode: .experiment,
             remedyId: RemedyID.fromLabel(label)
         ))
+        variableIsOverridden = true
+        persist()
+        scheduleBedtimePrepNotifications()
+    }
+
+    func resetToSuggestedVariable() {
+        let routineWithoutExperiment = coreRoutine.filter { $0.mode != .experiment }
+        guard let suggested = ExperimentEngine.suggestNextVariable(
+            logs: sleepLogs,
+            coreRoutine: routineWithoutExperiment,
+            remedyScores: remedyScores
+        ) else { return }
+        coreRoutine.removeAll { $0.mode == .experiment }
+        coreRoutine.append(RoutineStep(
+            order: coreRoutine.count + 1,
+            label: suggested,
+            mode: .experiment,
+            remedyId: RemedyID.fromLabel(suggested)
+        ))
+        variableIsOverridden = false
         persist()
         scheduleBedtimePrepNotifications()
     }
