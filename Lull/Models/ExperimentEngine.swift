@@ -103,9 +103,9 @@ struct ExperimentEngine {
         remedyScores: [String: Int]
     ) -> String? {
         let inRoutine = Set(coreRoutine.map(\.label))
-        // Only Bedtime Prep remedies are experimented with — they're passive and schedulable.
-        // Wind Down steps are determined once at onboarding and stay in the inSequence section.
-        let allCandidates = allBedroomPrepRemedies
+        // Candidates: Bedtime Prep remedies + passive Bedtime Ritual items (e.g. weighted blanket).
+        // Weighted blanket has no lead time and is displayed in the Bedtime Ritual section when selected.
+        let allCandidates = allBedroomPrepRemedies + [R.weightedBlanket]
 
         let scored: [(label: String, total: Double)] = allCandidates.map { candidate in
             // Historical score — prefer RemedyID match for newer records

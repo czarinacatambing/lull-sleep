@@ -15,7 +15,10 @@ struct SleepLogDetailView: View {
     private enum NoteMode { case none, text, voice }
 
     private var entry: SleepLogEntry { state.sleepLogs[entryIndex] }
-    private var isToday: Bool { entry.isToday }
+    private var isToday: Bool {
+        let cal = Calendar.current
+        return cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
+    }
 
     private let dayFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEEE · MMM d"; return f
@@ -79,7 +82,7 @@ struct SleepLogDetailView: View {
                                 .font(.mono(9.5))
                                 .kerning(1.4)
                                 .foregroundColor(.lullInk4)
-                            Text(entry.variable)
+                            Text(isToday ? state.tonightVariable : entry.variable)
                                 .font(.mono(9.5))
                                 .kerning(1)
                                 .foregroundColor(.lullAmberSoft)
@@ -102,6 +105,9 @@ struct SleepLogDetailView: View {
                         PrimaryCTA(title: "Log this morning") {
                             state.sleepLogs[entryIndex].score = draftScore
                             state.sleepLogs[entryIndex].notes = draftNotes
+                            state.sleepLogs[entryIndex].variable = state.tonightVariable
+                            state.sleepLogs[entryIndex].variableRemedyId = state.tonightRemedyId
+                            state.persist()
                             dismiss()
                         }
                         .disabled(draftScore == 0)
@@ -139,13 +145,16 @@ struct SleepLogDetailView: View {
                 .padding(.horizontal, 28)
                 .padding(.top, 28)
 
-            if noteMode == .none {
-                HStack(spacing: 10) {
-                    noteTypeButton(icon: "text.alignleft", label: "Type") { noteMode = .text }
-                    noteTypeButton(icon: "mic.fill", label: "Voice") { noteMode = .voice }
+            HStack(spacing: 10) {
+                noteTypeButton(icon: "text.alignleft", label: "Type", active: noteMode == .text) {
+                    noteMode = .text
                 }
-                .padding(.horizontal, 28)
+                noteTypeButton(icon: "mic.fill", label: "Voice", active: noteMode == .voice) {
+                    if isRecording { recorder?.stop(); isRecording = false }
+                    noteMode = .voice
+                }
             }
+            .padding(.horizontal, 28)
 
             if noteMode == .text {
                 ZStack(alignment: .topLeading) {
@@ -153,7 +162,7 @@ struct SleepLogDetailView: View {
                         .fill(Color.white.opacity(0.04))
                         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
                     if draftNotes.isEmpty {
-                        Text("Woke at 4am, felt groggy…")
+                        Text("Did you fall asleep when you planned to?")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk4)
                             .padding(14)
@@ -220,7 +229,7 @@ struct SleepLogDetailView: View {
 
     // MARK: - Helpers
 
-    private func noteTypeButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+    private func noteTypeButton(icon: String, label: String, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
@@ -228,11 +237,11 @@ struct SleepLogDetailView: View {
                 Text(label)
                     .font(.system(size: 14))
             }
-            .foregroundColor(.lullInk1)
+            .foregroundColor(active ? Color.lullAmber : .lullInk1)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 14).fill(active ? Color.lullAmber.opacity(0.08) : Color.white.opacity(0.04)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(active ? Color.lullAmber.opacity(0.4) : Color.lullLine, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

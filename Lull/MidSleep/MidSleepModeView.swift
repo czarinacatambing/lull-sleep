@@ -148,7 +148,7 @@ struct MidSleepModeView: View {
                 .padding(.bottom, 40)
             }
         }
-        .fullScreenCover(isPresented: $showBreathing)   { NightlyBreathingView().environmentObject(state) }
+        .fullScreenCover(isPresented: $showBreathing)   { NightlyBreathingView(isMidSleep: true).environmentObject(state) }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
         .fullScreenCover(isPresented: $showBodyScan)    { MidSleepBodyScanView() }
         .onAppear { currentDate = Date() }

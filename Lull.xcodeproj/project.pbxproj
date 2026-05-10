@@ -36,6 +36,7 @@
 		C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
+		E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */; };
 		F9147C3EE6EB7C0898A38E93 /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B96F9D7A41B8D164E87290B /* LullComponents.swift */; };
@@ -53,6 +54,7 @@
 		4B96F9D7A41B8D164E87290B /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
 		518622E3CFB58A6544BC915C /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
 		5D820BF460AB3C918823A264 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
 		5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
 		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		85F27EAE09500318E6960113 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				C839CE47A7EBAE076B7BF096 /* BundledStories.swift */,
 				D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */,
 				5D820BF460AB3C918823A264 /* TTSService.swift */,
+				F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -343,6 +346,7 @@
 				12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */,
 				0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */,
 				CA356A11A099E60F3920F72A /* TTSService.swift in Sources */,
+				E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

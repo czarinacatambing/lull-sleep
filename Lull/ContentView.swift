@@ -53,8 +53,15 @@ struct ContentView: View {
         Group {
             if state.hasCompletedOnboarding {
                 HomeTabView()
-                    .sheet(isPresented: $state.showMidSleepMode) { MidSleepModeView() }
+                    .sheet(isPresented: $state.showMidSleepMode,
+                           onDismiss: { state.restoreBrightnessAfterMidSleep() }) {
+                        MidSleepModeView()
+                    }
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
+                    .onShake {
+                        guard !state.showMidSleepMode else { return }
+                        state.activateMidSleepFromShake()
+                    }
             } else {
                 OnboardingView()
             }

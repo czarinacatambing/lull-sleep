@@ -15,7 +15,7 @@ enum R {
     static let pmr              = "Progressive muscle relaxation"
     static let readingBook      = "Reading (physical book)"
 
-    // Bedtime Prep reminder steps
+    // Bedtime Prep reminder steps (scheduled before bed with a lead time)
     static let dimTheLights    = "Dim the lights"
     static let noScreens       = "No screens"
     static let appBlocking     = "App blocking"
@@ -27,6 +27,8 @@ enum R {
     static let warmShower      = "Warm shower or bath"
     static let magnesium       = "Magnesium glycinate"
     static let herbalTea       = "Herbal tea"
+
+    // Bedtime Ritual steps (passive/physical, done in bed — no lead time)
     static let weightedBlanket = "Weighted blanket"
 }
 

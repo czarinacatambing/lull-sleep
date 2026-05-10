@@ -30,9 +30,9 @@ struct LullApp: App {
                 .environmentObject(state)
                 .onAppear { appDelegate.state = state }
         }
-        .onChange(of: scenePhase, perform: { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .background { state.persist() }
-        })
+        }
     }
 }
 

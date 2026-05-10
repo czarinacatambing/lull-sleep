@@ -26,6 +26,18 @@ class AppState: ObservableObject {
     @Published var showMidSleepMode = false
     @Published var showMorningCheckIn = false
 
+    private var brightnessBeforeShake: CGFloat = UIScreen.main.brightness
+
+    func activateMidSleepFromShake() {
+        brightnessBeforeShake = UIScreen.main.brightness
+        UIScreen.main.brightness = 0.0
+        showMidSleepMode = true
+    }
+
+    func restoreBrightnessAfterMidSleep() {
+        UIScreen.main.brightness = brightnessBeforeShake
+    }
+
     // MARK: - Routine data
 
     var remedyScores: [String: Int] {
@@ -317,7 +329,10 @@ class AppState: ObservableObject {
         let cal = Calendar.current
         let bed = typicalBedtime
 
-        let inSeq = coreRoutine.filter { $0.mode == .inSequence }
+        let inSeq = coreRoutine.filter {
+            $0.mode == .inSequence ||
+            ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+        }
         var seqOffset = 0
         var seqSteps: [ScheduledStep] = inSeq.reversed().map { step in
             let dur = NightlyStepKind.forLabel(step.label)?.estimatedMinutes ?? 5
@@ -338,7 +353,10 @@ class AppState: ObservableObject {
         }
 
         let prepSteps: [ScheduledStep] = coreRoutine
-            .filter { $0.mode == .reminderOnly || $0.mode == .experiment }
+            .filter {
+                $0.mode == .reminderOnly ||
+                ($0.mode == .experiment && !allWindDownRemedies.contains($0.label))
+            }
             .map { step in
                 let mins = Self.prepLeadTimes[step.label] ?? 90
                 let time = cal.date(byAdding: .minute, value: -mins, to: bed) ?? bed
@@ -350,11 +368,17 @@ class AppState: ObservableObject {
     }
 
     var preWindDownSteps: [RoutineStep] {
-        coreRoutine.filter { $0.mode == .reminderOnly || $0.mode == .experiment }
+        coreRoutine.filter {
+            $0.mode == .reminderOnly ||
+            ($0.mode == .experiment && !allWindDownRemedies.contains($0.label))
+        }
     }
 
     var windDownSteps: [RoutineStep] {
-        coreRoutine.filter { $0.mode == .inSequence }
+        coreRoutine.filter {
+            $0.mode == .inSequence ||
+            ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+        }
     }
 
     var nightlyFlowSteps: [NightlyStepKind] {

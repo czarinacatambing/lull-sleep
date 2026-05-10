@@ -66,8 +66,8 @@ My Routine is the command center of the app.
 
 Start Tonight’s Routine button (prominent)
 Tonight’s Variable card — shows the active 5-night experiment (if any)
-Bedtime Prep section — passive reminders that fire earlier in the evening (e.g. Dim the lights 75 min before, Warm shower, No screens, etc.)
-Wind Down Ritual section — the short sequential in-app flow (Brightness Check, Temperature Log, + 0–2 active steps)
+Prep Checklist section — passive reminders that fire earlier in the evening (e.g. Dim the lights 75 min before, Warm shower, No screens, etc.). Experiment steps that are prep-type remedies (anything with a lead time) appear here with an amber "THIS WEEK" badge.
+Bedtime Ritual section — the short sequential in-app flow (Brightness Check, Temperature Log, + 0–2 active steps). Experiment steps that are ritual-type remedies (e.g. Weighted blanket — done in bed, no lead time) appear here instead.
 
 This clear separation helps users understand what happens when vs. what they do right before bed.
 
@@ -111,12 +111,12 @@ Opens as a full-screen cover, triggered by tapping a notification or via `AppSta
 
 ### 8. Mid-Sleep Mode
 
-Accessible from the Dashboard hamburger menu (or via a lock-screen notification at 3 hours past bedtime). Designed for minimal friction when the user wakes at night.
+Accessible three ways: Dashboard hamburger menu, a lock-screen notification at 3 hours past bedtime, or by **shaking the phone** (shake dims the screen to 0 brightness immediately and opens the mode; brightness is restored when the sheet is dismissed). Designed for minimal friction when the user wakes at night.
 
-- Clock readout (hardcoded "03:14" in current build).
+- Clock readout (live, shows actual current time).
 - Copy: "You're awake. That's okay."
 - Three options:
-  - **4·7·8 breath** (featured) → jumps directly into the Nightly Flow at the breathing step.
+  - **4·7·8 breath** (featured) → opens a dedicated mid-sleep breathing screen (full-screen cover). Animated orb expands on inhale and shrinks on exhale, timed to the audio. No countdown numbers. Tapping **"End early · I'm calm"** immediately dismisses back to Mid-Sleep Mode (unlike the nightly-flow version which advances to the next step).
   - **Boring story** → opens `MidSleepBoringStoryView`: ~8-min version (2 stories), same TTS controls as the nightly version.
   - **Body scan** → opens `MidSleepBodyScanView`: 8 body areas, 20s per area auto-advancing, manual "Next area →" button, completion screen "Scan complete. Let yourself drift."
 - **"Try the get-up protocol →"** link at the bottom — dismisses Mid-Sleep Mode (get-up flow not yet implemented).
@@ -223,7 +223,10 @@ Lull runs a rolling A/B-style experiment: one variable is tested at a time for 5
 
 ### The candidate pool
 
-Experiment candidates are drawn exclusively from the **Bedtime Prep** remedy set — the 12 passive-reminder remedies (No alcohol, No caffeine, No screens, App blocking, Finish workouts, No heavy snacks, Dim the lights, Cold room prep, Warm shower or bath, Magnesium glycinate, Herbal tea, Weighted blanket). Wind Down steps are excluded from experiments because they are already interactive guided experiences in the nightly flow.
+Experiment candidates are drawn from two groups:
+
+- **Bedtime Prep remedies** (11 passive-reminder items with scheduled lead times): No alcohol, No caffeine, No screens, App blocking, Finish workouts, No heavy snacks, Dim the lights, Cold room prep, Warm shower or bath, Magnesium glycinate, Herbal tea. When one of these is the active experiment, it appears in the **Prep Checklist** section of My Routine with a scheduled reminder time.
+- **Bedtime Ritual experiment candidates** (passive, done in bed, no lead time): currently **Weighted blanket**. When this is the active experiment, it appears in the **Bedtime Ritual** section of My Routine (alongside inSequence steps) — no lead-time badge, no prep notification.
 
 Any candidate already in `coreRoutine` is hard-excluded (−10 score penalty).
 
@@ -336,10 +339,11 @@ The user can swap the variable at any time via the ↻ button on the My Routine 
 3. Select a candidate → variable replaced, night counter resets.
 
 #### Mid-Sleep Mode (woke up at 3am)
-1. Unlock phone → tap lock-screen widget or notification.
-2. Mid-Sleep Mode opens.
-3. Tap **Boring story** → ~8-min audio plays; tap × when ready to try sleeping again.
+1. Unlock phone → **shake the phone** (screen dims to black instantly + Mid-Sleep Mode opens), OR tap lock-screen notification.
+2. Tap **4·7·8 breath** → animated orb guides breathing; tap "End early · I'm calm" to return to Mid-Sleep Mode.
+3. Or tap **Boring story** → ~8-min audio plays; tap × when ready to try sleeping again.
 4. Or tap **Body scan** → advance through 8 areas (20s each) → "Scan complete. Let yourself drift." → tap Close.
+5. Dismiss Mid-Sleep Mode → screen brightness restores to previous level.
 
 ---
 
@@ -380,13 +384,18 @@ The user can swap the variable at any time via the ↻ button on the My Routine 
 - "Keep testing" dismisses; "Yes, change it" opens the Candidate Picker.
 
 #### Experiment conclusion — promote
-- After 5 scored nights with delta > 0.3: the experiment step's `mode` changes from `.experiment` to `.inSequence`. It moves from the Pre-Wind Down section to the Wind Down section in My Routine. The next candidate from the pool becomes the new experiment step.
+- After 5 scored nights with delta > 0.3: the experiment step's `mode` changes from `.experiment` to `.inSequence` (for ritual-type) or `.reminderOnly` (for prep-type). It stays in whichever section (Prep Checklist or Bedtime Ritual) it was already displayed in, but the "THIS WEEK" badge is replaced by a permanent scheduled time. The next candidate from the pool becomes the new experiment step.
 
 #### Experiment conclusion — drop
 - After 5 scored nights with delta ≤ 0.3: the experiment step is removed from `coreRoutine`. The next candidate is queued. If the pool is exhausted, no new experiment step is added and the Tonight's Variable card shows "No experiment running".
 
 #### Mid-Sleep Mode — "4·7·8 breath" option
-- Taps into the Nightly Flow at the `fourSevenEightBreathing` step by setting `state.nightlyStep` to that index. If the step isn't in `nightlyFlowSteps`, index defaults to 0 and the user starts the flow from the beginning.
+- Opens `NightlyBreathingView` in a full-screen cover with `isMidSleep: true`. Tapping "End early · I'm calm" calls `dismiss()` to return to Mid-Sleep Mode. When the audio finishes naturally it also dismisses (does not advance `nightlyStep`, which would be incorrect outside of the nightly flow).
+
+#### Mid-Sleep Mode — shake trigger
+- Shake is detected via `ShakeViewController` (a `UIViewControllerRepresentable` in the `HomeTabView` background). A 3-second throttle prevents a single physical shake from firing twice. Guard: if mid-sleep is already open, the shake is ignored.
+- `AppState.activateMidSleepFromShake()` saves current `UIScreen.main.brightness`, sets it to `0.0`, then sets `showMidSleepMode = true`. `restoreBrightnessAfterMidSleep()` is called `onDismiss` of the sheet to restore the saved level.
+- The shake path bypasses the notification system entirely — no notification is generated or shown.
 
 #### Mid-Sleep Mode — "Try the get-up protocol →"
 - Tapping dismisses Mid-Sleep Mode (`state.showMidSleepMode = false`). The get-up protocol screen (`GetUpPromptView`) exists as a file but is not yet wired into navigation.
