@@ -56,12 +56,11 @@ class AppState: ObservableObject {
     }
 
     @Published var coreRoutine: [RoutineStep] = [
-        RoutineStep(order: 1, label: R.dimTheLights,  mode: .reminderOnly, remedyId: .dimTheLights),
+        RoutineStep(order: 1, label: R.dimTheLights,  mode: .experiment,  remedyId: .dimTheLights),
         RoutineStep(order: 2, label: "Brightness check", mode: .inSequence),
         RoutineStep(order: 3, label: "Temperature check", mode: .inSequence),
-        RoutineStep(order: 4, label: R.brainDump,     mode: .inSequence,   remedyId: .brainDump),
-        RoutineStep(order: 5, label: R.boringStory,   mode: .inSequence,   remedyId: .boringStory),
-        RoutineStep(order: 6, label: R.magnesium,     mode: .experiment,   remedyId: .magnesium),
+        RoutineStep(order: 4, label: R.brainDump,     mode: .inSequence,  remedyId: .brainDump),
+        RoutineStep(order: 5, label: R.boringStory,   mode: .inSequence,  remedyId: .boringStory),
     ]
 
     // MARK: - Generated routine (set during onboarding)
@@ -88,6 +87,31 @@ class AppState: ObservableObject {
     @Published var breathingPhase: BreathingPhase = .hold
     @Published var breathingSecondsRemaining = 7
 
+    // MARK: - Prep checklist
+    @Published var prepDoneIds: Set<UUID> = []
+    @Published var prepDoneDate: Date? = nil
+
+    func togglePrepDone(_ id: UUID) {
+        if prepDoneIds.contains(id) { prepDoneIds.remove(id) }
+        else { prepDoneIds.insert(id) }
+        prepDoneDate = Date()
+        persist()
+    }
+
+    func resetPrepIfNeeded() {
+        guard let lastDate = prepDoneDate else { return }
+        let cal = Calendar.current
+        let wc = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        guard let todayWake = cal.date(bySettingHour: wc.hour ?? 7,
+                                       minute: wc.minute ?? 0,
+                                       second: 0, of: Date()) else { return }
+        if Date() >= todayWake && lastDate < todayWake {
+            prepDoneIds = []
+            prepDoneDate = nil
+            persist()
+        }
+    }
+
     // MARK: - Morning check-in
     @Published var morningScore = 0
     @Published var selectedDotIndex: Int? = nil
@@ -107,6 +131,8 @@ class AppState: ObservableObject {
             _coreRoutine              = Published(initialValue: saved.coreRoutine)
             _routineExplanation       = Published(initialValue: saved.routineExplanation)
             _sleepLogs                = Published(initialValue: saved.sleepLogs)
+            _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
+            _prepDoneDate             = Published(initialValue: saved.prepDoneDate)
             // Reschedule on every launch so notifications stay current (e.g. after OS clears them)
             DispatchQueue.main.async { self.scheduleAllNotifications() }
         }
@@ -123,7 +149,9 @@ class AppState: ObservableObject {
             selectedTriedThings:      selectedTriedThings,
             coreRoutine:              coreRoutine,
             routineExplanation:       routineExplanation,
-            sleepLogs:                sleepLogs
+            sleepLogs:                sleepLogs,
+            prepDoneIds:              Array(prepDoneIds),
+            prepDoneDate:             prepDoneDate
         )
         PersistenceStore.shared.save(snapshot)
     }

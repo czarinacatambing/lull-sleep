@@ -7,7 +7,7 @@ struct HomeTabView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
-                DashboardView()
+                DashboardView(selectedTab: $selectedTab)
                     .tag(0)
                 MyRoutineView()
                     .tag(1)
