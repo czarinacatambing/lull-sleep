@@ -843,7 +843,7 @@ struct ProgressDotsCard: View {
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
             case .unratedLocked:
-                Image(systemName: "moon.fill")
+                Image(systemName: "circle.lefthalf.filled")
                     .resizable()
                     .scaledToFit()
                     .foregroundColor(.lullInk3)
