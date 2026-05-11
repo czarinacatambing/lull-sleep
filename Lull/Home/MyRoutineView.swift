@@ -691,13 +691,19 @@ struct ProgressDotsCard: View {
 
     private var loggedCount: Int { displaySlots.compactMap { $0 }.filter { $0.score > 0 }.count }
 
+    private var activeDotLabel: String {
+        let cal = Calendar.current
+        let hasYesterday = displaySlots.compactMap { $0 }.contains { cal.isDateInYesterday($0.date) }
+        return hasYesterday ? "last night · rate now" : "tonight · live"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 5) {
                 ForEach(Array(displaySlots.enumerated()), id: \.offset) { _, maybeEntry in
                     if let entry = maybeEntry {
                         let cal = Calendar.current
-                        let isToday = cal.isDateInToday(entry.date)
+                        let isToday = cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
                         let rated = entry.score > 0
                         let realIdx = sleepLogs.firstIndex(where: { $0.id == entry.id })
 
@@ -754,7 +760,7 @@ struct ProgressDotsCard: View {
                         .fill(Color.lullAmber)
                         .frame(width: 6, height: 6)
                         .shadow(color: .lullAmberGlow, radius: 3)
-                    Text("tonight · live")
+                    Text(activeDotLabel)
                         .font(.mono(10.5))
                         .kerning(0.8)
                         .foregroundColor(.lullInk3)
