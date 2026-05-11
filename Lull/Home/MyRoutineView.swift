@@ -7,6 +7,7 @@ struct MyRoutineView: View {
     @State private var showChangeConfirm = false
     @State private var showCandidatePicker = false
     @State private var pendingCandidate: String? = nil
+    @State private var showHistoryLegend = false
 
     private var showCoach: Bool { !coachDismissed && visitCount <= 3 }
 
@@ -34,11 +35,35 @@ struct MyRoutineView: View {
     private var displaySlots: [DotSlot] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        return (0..<14).map { i in
-            let date = cal.date(byAdding: .day, value: -(13 - i), to: today)!
-            let entry = state.sleepLogs.first { cal.isDate($0.date, inSameDayAs: date) }
-            return DotSlot(date: date, entry: entry)
+
+        let pastDayCount: Int
+        if let earliest = state.sleepLogs.map(\.date).min() {
+            let days = cal.dateComponents([.day], from: cal.startOfDay(for: earliest), to: today).day ?? 0
+            pastDayCount = min(days, 13)
+        } else {
+            pastDayCount = 0
         }
+        let futureDayCount = 13 - pastDayCount
+
+        var slots: [DotSlot] = []
+
+        for i in stride(from: pastDayCount, through: 1, by: -1) {
+            let date = cal.date(byAdding: .day, value: -i, to: today)!
+            let entry = state.sleepLogs.first { cal.isDate($0.date, inSameDayAs: date) }
+            slots.append(DotSlot(date: date, entry: entry))
+        }
+
+        let todayEntry = state.sleepLogs.first { cal.isDateInToday($0.date) }
+        slots.append(DotSlot(date: today, entry: todayEntry))
+
+        if futureDayCount > 0 {
+            for i in 1...futureDayCount {
+                let date = cal.date(byAdding: .day, value: i, to: today)!
+                slots.append(DotSlot(date: date, entry: nil))
+            }
+        }
+
+        return slots
     }
 
     private func badgeText(for step: RoutineStep) -> String {
@@ -167,12 +192,20 @@ struct MyRoutineView: View {
                         .padding(.bottom, 28)
 
                     // Progress section
-                    RoutineSectionHead(
-                        title: "Your progress",
-                        eyebrow: "Last 14 nights",
-                        sub: "Tap any night for details.",
-                        right: avgScoreText ?? ""
-                    )
+                    HStack(alignment: .top) {
+                        RoutineSectionHead(
+                            title: "Your progress",
+                            eyebrow: "Last 14 nights",
+                            sub: "Tap any night for details.",
+                            right: avgScoreText ?? ""
+                        )
+                        Button { showHistoryLegend = true } label: {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 16))
+                                .foregroundColor(.lullInk4)
+                        }
+                        .padding(.top, 3)
+                    }
                     .padding(.horizontal, 22)
                     .padding(.bottom, 10)
 
@@ -197,6 +230,9 @@ struct MyRoutineView: View {
             if let index = state.selectedDotIndex {
                 SleepLogDetailView(entryIndex: index)
             }
+        }
+        .sheet(isPresented: $showHistoryLegend) {
+            SleepHistoryLegendView()
         }
     }
 }
@@ -690,10 +726,15 @@ struct DotSlot {
     let date: Date
     let entry: SleepLogEntry?
 
-    enum DotState { case inProgress, rated, unratedLocked, skipped }
+    var isToday: Bool { Calendar.current.isDateInToday(date) }
+
+    enum DotState { case inProgress, rated, unratedLocked, skipped, todayEmpty, future }
 
     var dotState: DotState {
         let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: Date())
+        if date > todayStart { return .future }
+        if cal.isDateInToday(date) && entry == nil { return .todayEmpty }
         guard let entry else { return .skipped }
         if entry.score > 0 { return .rated }
         return (cal.isDateInToday(date) || cal.isDateInYesterday(date)) ? .inProgress : .unratedLocked
@@ -708,6 +749,11 @@ struct ProgressDotsCard: View {
     var onTap: (Int) -> Void
 
     private var loggedCount: Int { slots.filter { $0.dotState == .rated }.count }
+
+    private var pastSlotCount: Int {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        return slots.filter { $0.date <= todayStart }.count
+    }
 
     private var activeDotLabel: String? {
         let cal = Calendar.current
@@ -726,16 +772,17 @@ struct ProgressDotsCard: View {
                 ForEach(Array(slots.enumerated()), id: \.offset) { _, slot in
                     let state = slot.dotState
                     let realIdx = slot.entry.flatMap { e in sleepLogs.firstIndex(where: { $0.id == e.id }) }
+                    let showsAmberGlow = state == .inProgress || (slot.isToday && state != .todayEmpty)
 
                     VStack(spacing: 5) {
-                        dotVisual(for: state)
-                            .shadow(color: state == .inProgress ? .lullAmberGlow : .clear, radius: 6)
+                        dotVisual(for: slot)
+                            .shadow(color: showsAmberGlow ? .lullAmberGlow : .clear, radius: 6)
                         dotLabel(for: slot)
                     }
                     .onTapGesture {
                         if let idx = realIdx { onTap(idx) }
                     }
-                    .allowsHitTesting(state != .skipped)
+                    .allowsHitTesting(state != .skipped && state != .todayEmpty && state != .future)
                 }
             }
             .padding(.horizontal, 18)
@@ -762,7 +809,7 @@ struct ProgressDotsCard: View {
                     Spacer()
                 }
                 Spacer()
-                Text("\(loggedCount) / 14 logged")
+                Text("\(loggedCount) / \(pastSlotCount) logged")
                     .font(.mono(10.5))
                     .kerning(0.8)
                     .foregroundColor(.lullInk3)
@@ -778,17 +825,18 @@ struct ProgressDotsCard: View {
     }
 
     @ViewBuilder
-    private func dotVisual(for state: DotSlot.DotState) -> some View {
+    private func dotVisual(for slot: DotSlot) -> some View {
+        let state = slot.dotState
+        let showAmberRing = state == .inProgress || (slot.isToday && state != .todayEmpty)
         ZStack {
+            // Fill layer
             switch state {
             case .inProgress:
                 Circle()
-                    .strokeBorder(Color.lullAmber, lineWidth: 1.5)
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
-                Circle()
                     .fill(Color.lullAmber.opacity(0.65))
                     .scaleEffect(0.45)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
             case .rated:
                 Circle()
                     .fill(Color.lullAmber)
@@ -801,9 +849,29 @@ struct ProgressDotsCard: View {
                     .foregroundColor(.lullInk3)
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
-            case .skipped:
+            case .skipped, .todayEmpty:
                 Circle()
                     .fill(Color.white.opacity(0.10))
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            case .future:
+                EmptyView()
+            }
+
+            // Ring layer
+            if showAmberRing {
+                Circle()
+                    .strokeBorder(Color.lullAmber, lineWidth: 1.5)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            } else if state == .todayEmpty {
+                Circle()
+                    .strokeBorder(Color.lullInk3.opacity(0.5), lineWidth: 1.5)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            } else if state == .future {
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
             }
@@ -817,7 +885,7 @@ struct ProgressDotsCard: View {
             Text("\(slot.entry!.score)")
                 .font(.mono(8))
                 .foregroundColor(.lullInk3)
-        case .inProgress, .unratedLocked:
+        case .inProgress, .unratedLocked, .todayEmpty:
             Text("·")
                 .font(.mono(8))
                 .foregroundColor(.lullInk3)
@@ -825,6 +893,10 @@ struct ProgressDotsCard: View {
             Text("—")
                 .font(.mono(8))
                 .foregroundColor(.lullInk4)
+        case .future:
+            Text("–")
+                .font(.mono(8))
+                .foregroundColor(.lullInk4.opacity(0.4))
         }
     }
 }
