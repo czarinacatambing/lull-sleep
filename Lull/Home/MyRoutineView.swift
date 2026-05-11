@@ -31,13 +31,13 @@ struct MyRoutineView: View {
         return String(format: "AVG %.1f", avg)
     }
 
-    private var displaySlots: [SleepLogEntry?] {
-        let logs = state.sleepLogs
-        if logs.count >= 14 {
-            return logs.suffix(14).map { Optional($0) }
-        } else {
-            let padding: [SleepLogEntry?] = Array(repeating: nil, count: 14 - logs.count)
-            return logs.map { Optional($0) } + padding
+    private var displaySlots: [DotSlot] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return (0..<14).map { i in
+            let date = cal.date(byAdding: .day, value: -(13 - i), to: today)!
+            let entry = state.sleepLogs.first { cal.isDate($0.date, inSameDayAs: date) }
+            return DotSlot(date: date, entry: entry)
         }
     }
 
@@ -177,7 +177,7 @@ struct MyRoutineView: View {
                     .padding(.bottom, 10)
 
                     ProgressDotsCard(
-                        displaySlots: displaySlots,
+                        slots: displaySlots,
                         sleepLogs: state.sleepLogs,
                         onTap: { idx in state.selectedDotIndex = idx }
                     )
@@ -684,66 +684,58 @@ struct RitualListRow: View {
 
 // MARK: - Progress Dots Card
 
+// MARK: - DotSlot
+
+struct DotSlot {
+    let date: Date
+    let entry: SleepLogEntry?
+
+    enum DotState { case inProgress, rated, unratedLocked, skipped }
+
+    var dotState: DotState {
+        let cal = Calendar.current
+        guard let entry else { return .skipped }
+        if entry.score > 0 { return .rated }
+        return (cal.isDateInToday(date) || cal.isDateInYesterday(date)) ? .inProgress : .unratedLocked
+    }
+}
+
+// MARK: - Progress Dots Card
+
 struct ProgressDotsCard: View {
-    var displaySlots: [SleepLogEntry?]
+    var slots: [DotSlot]
     var sleepLogs: [SleepLogEntry]
     var onTap: (Int) -> Void
 
-    private var loggedCount: Int { displaySlots.compactMap { $0 }.filter { $0.score > 0 }.count }
+    private var loggedCount: Int { slots.filter { $0.dotState == .rated }.count }
 
-    private var activeDotLabel: String {
+    private var activeDotLabel: String? {
         let cal = Calendar.current
-        let hasYesterday = displaySlots.compactMap { $0 }.contains { cal.isDateInYesterday($0.date) }
-        return hasYesterday ? "last night · rate now" : "tonight · live"
+        if slots.contains(where: { $0.dotState == .inProgress && cal.isDateInYesterday($0.date) }) {
+            return "last night · rate now"
+        }
+        if slots.contains(where: { $0.dotState == .inProgress && cal.isDateInToday($0.date) }) {
+            return "tonight · live"
+        }
+        return nil
     }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 5) {
-                ForEach(Array(displaySlots.enumerated()), id: \.offset) { _, maybeEntry in
-                    if let entry = maybeEntry {
-                        let cal = Calendar.current
-                        let isToday = cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
-                        let rated = entry.score > 0
-                        let realIdx = sleepLogs.firstIndex(where: { $0.id == entry.id })
+                ForEach(Array(slots.enumerated()), id: \.offset) { _, slot in
+                    let state = slot.dotState
+                    let realIdx = slot.entry.flatMap { e in sleepLogs.firstIndex(where: { $0.id == e.id }) }
 
-                        VStack(spacing: 5) {
-                            ZStack {
-                                if isToday {
-                                    Circle()
-                                        .strokeBorder(Color.lullAmber, lineWidth: 1.5)
-                                        .frame(maxWidth: .infinity)
-                                        .aspectRatio(1, contentMode: .fit)
-                                    Circle()
-                                        .fill(Color.lullAmber)
-                                        .scaleEffect(0.38)
-                                } else {
-                                    Circle()
-                                        .fill(Color.lullAmber.opacity(0.65))
-                                        .frame(maxWidth: .infinity)
-                                        .aspectRatio(1, contentMode: .fit)
-                                }
-                            }
-                            .shadow(color: isToday ? .lullAmberGlow : .clear, radius: 6)
-                            Text(rated ? "\(entry.score)" : "·")
-                                .font(.mono(8))
-                                .foregroundColor(isToday ? .lullAmber : .lullInk3)
-                        }
-                        .onTapGesture {
-                            if let idx = realIdx { onTap(idx) }
-                        }
-                    } else {
-                        VStack(spacing: 5) {
-                            Circle()
-                                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                                .foregroundColor(Color.white.opacity(0.16))
-                                .frame(maxWidth: .infinity)
-                                .aspectRatio(1, contentMode: .fit)
-                            Text("—")
-                                .font(.mono(8))
-                                .foregroundColor(.lullInk4)
-                        }
+                    VStack(spacing: 5) {
+                        dotVisual(for: state)
+                            .shadow(color: state == .inProgress ? .lullAmberGlow : .clear, radius: 6)
+                        dotLabel(for: slot)
                     }
+                    .onTapGesture {
+                        if let idx = realIdx { onTap(idx) }
+                    }
+                    .allowsHitTesting(state != .skipped)
                 }
             }
             .padding(.horizontal, 18)
@@ -755,15 +747,19 @@ struct ProgressDotsCard: View {
                 .padding(.horizontal, 18)
 
             HStack {
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(Color.lullAmber)
-                        .frame(width: 6, height: 6)
-                        .shadow(color: .lullAmberGlow, radius: 3)
-                    Text(activeDotLabel)
-                        .font(.mono(10.5))
-                        .kerning(0.8)
-                        .foregroundColor(.lullInk3)
+                if let label = activeDotLabel {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.lullAmber)
+                            .frame(width: 6, height: 6)
+                            .shadow(color: .lullAmberGlow, radius: 3)
+                        Text(label)
+                            .font(.mono(10.5))
+                            .kerning(0.8)
+                            .foregroundColor(.lullInk3)
+                    }
+                } else {
+                    Spacer()
                 }
                 Spacer()
                 Text("\(loggedCount) / 14 logged")
@@ -779,6 +775,57 @@ struct ProgressDotsCard: View {
                 .fill(Color.white.opacity(0.025))
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.lullLine, lineWidth: 1))
         )
+    }
+
+    @ViewBuilder
+    private func dotVisual(for state: DotSlot.DotState) -> some View {
+        ZStack {
+            switch state {
+            case .inProgress:
+                Circle()
+                    .strokeBorder(Color.lullAmber, lineWidth: 1.5)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+                Circle()
+                    .fill(Color.lullAmber.opacity(0.65))
+                    .scaleEffect(0.45)
+            case .rated:
+                Circle()
+                    .fill(Color.lullAmber)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            case .unratedLocked:
+                Image(systemName: "moon.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundColor(.lullInk3)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            case .skipped:
+                Circle()
+                    .fill(Color.white.opacity(0.10))
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func dotLabel(for slot: DotSlot) -> some View {
+        switch slot.dotState {
+        case .rated:
+            Text("\(slot.entry!.score)")
+                .font(.mono(8))
+                .foregroundColor(.lullInk3)
+        case .inProgress, .unratedLocked:
+            Text("·")
+                .font(.mono(8))
+                .foregroundColor(.lullInk3)
+        case .skipped:
+            Text("—")
+                .font(.mono(8))
+                .foregroundColor(.lullInk4)
+        }
     }
 }
 
