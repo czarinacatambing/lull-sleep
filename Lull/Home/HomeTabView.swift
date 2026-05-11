@@ -11,6 +11,8 @@ struct HomeTabView: View {
                     .tag(0)
                 MyRoutineView()
                     .tag(1)
+                MidSleepModeView()
+                    .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
@@ -22,6 +24,9 @@ struct HomeTabView: View {
                 }
                 TabBarButton(title: "Routine", icon: "flask.fill", selected: selectedTab == 1) {
                     selectedTab = 1
+                }
+                TabBarButton(title: "Mid-sleep", icon: "moon.zzz.fill", selected: selectedTab == 2) {
+                    selectedTab = 2
                 }
             }
             .padding(.horizontal, 20)
@@ -36,6 +41,19 @@ struct HomeTabView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        // Shake / programmatic activation → jump to tab 2
+        .onChange(of: state.showMidSleepMode) { _, active in
+            if active {
+                selectedTab = 2
+                state.showMidSleepMode = false
+            }
+        }
+        // Restore brightness when navigating away from Mid-sleep
+        .onChange(of: selectedTab) { oldTab, newTab in
+            if oldTab == 2 && newTab != 2 {
+                state.restoreBrightnessAfterMidSleep()
+            }
+        }
     }
 }
 
