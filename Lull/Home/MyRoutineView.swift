@@ -697,7 +697,7 @@ struct ProgressDotsCard: View {
                 ForEach(Array(displaySlots.enumerated()), id: \.offset) { _, maybeEntry in
                     if let entry = maybeEntry {
                         let cal = Calendar.current
-                        let isToday = cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
+                        let isToday = cal.isDateInToday(entry.date)
                         let rated = entry.score > 0
                         let realIdx = sleepLogs.firstIndex(where: { $0.id == entry.id })
 
