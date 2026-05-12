@@ -114,8 +114,59 @@ class AppState: ObservableObject {
 
     // MARK: - Morning check-in
     @Published var morningScore = 0
+    @Published var morningHoursSlept: Double = 7.5
     @Published var selectedDotIndex: Int? = nil
     @Published var sleepLogs: [SleepLogEntry] = []
+
+    var lastNightEntry: SleepLogEntry? {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        return sleepLogs.last { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
+    }
+
+    // MARK: - Export
+
+    @Published var isExporting = false
+    @Published var lastExportDate: Date? = nil
+    @Published var lastExportError: String? = nil
+
+    var installId: String {
+        let key = "lullInstallId"
+        if let existing = UserDefaults.standard.string(forKey: key) { return existing }
+        let new = UUID().uuidString
+        UserDefaults.standard.set(new, forKey: key)
+        return new
+    }
+
+    func exportData() {
+        guard !isExporting else { return }
+        isExporting = true
+        lastExportError = nil
+
+        let snapshot = PersistedState(
+            schemaVersion: 1,
+            selectedSleepProblems: selectedSleepProblems,
+            selectedWakes: selectedWakes,
+            sleepWindowMinutes: sleepWindowMinutes,
+            typicalBedtime: typicalBedtime,
+            typicalWakeTime: typicalWakeTime,
+            selectedPreBedActivities: selectedPreBedActivities,
+            selectedTriedThings: selectedTriedThings,
+            coreRoutine: coreRoutine,
+            routineExplanation: routineExplanation,
+            sleepLogs: sleepLogs
+        )
+
+        let id = installId
+        Task { @MainActor in
+            do {
+                try await ExportService.send(installId: id, state: snapshot)
+                lastExportDate = Date()
+            } catch {
+                lastExportError = error.localizedDescription
+            }
+            isExporting = false
+        }
+    }
 
     // MARK: - Init / Persistence
 
@@ -194,10 +245,12 @@ class AppState: ObservableObject {
             sleepLogs[idx].variable      = tonightVariable
             sleepLogs[idx].variableRemedyId = tonightRemedyId
             sleepLogs[idx].actualWakeTime = Date()
+            sleepLogs[idx].hoursSlept    = morningHoursSlept
         } else {
             var entry = SleepLogEntry(date: Date(), variable: tonightVariable, score: morningScore)
             entry.variableRemedyId = tonightRemedyId
             entry.actualWakeTime   = Date()
+            entry.hoursSlept       = morningHoursSlept
             sleepLogs.append(entry)
         }
         // If score is logged before noon, cancel the pending fallback so it doesn't fire today.
@@ -514,6 +567,7 @@ struct SleepLogEntry: Identifiable, Codable {
     var score: Int                     // 1–5; 0 = not yet rated
     var notes: String = ""
     var actualWakeTime: Date? = nil
+    var hoursSlept: Double? = nil      // user-reported, 0.5 hr increments
 
     // Per-night environment observations (captured during nightly flow)
     var lightsLevel: Int? = nil            // 0=Bright 1=Half-dim 2=Warm dim 3=Mostly dark
@@ -523,7 +577,14 @@ struct SleepLogEntry: Identifiable, Codable {
     // Per-night flow observations
     var actualBedtime: Date? = nil         // when nightly flow finished
     var brainDumpDurationSec: Int? = nil   // 0 = skipped, nil = step not in routine
+    var brainDumpFilePath: String? = nil   // relative to Documents dir
     var completedNightlyFlow: Bool = false
+
+    var brainDumpFileURL: URL? {
+        guard let path = brainDumpFilePath else { return nil }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(path)
+    }
 
     // Per-step execution log
     var stepAttempts: [StepAttempt] = []

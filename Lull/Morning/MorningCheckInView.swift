@@ -3,6 +3,7 @@ import SwiftUI
 struct MorningCheckInView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
+    @StateObject private var playback = AudioPlaybackService()
     @State private var currentDate = Date()
 
     private static let dateFmt: DateFormatter = {
@@ -52,6 +53,9 @@ struct MorningCheckInView: View {
                 SleepScoreSelector(score: $state.morningScore)
                     .padding(.top, 50)
 
+                HoursSleptStepper(hours: $state.morningHoursSlept)
+                    .padding(.top, 36)
+
                 Spacer()
 
                 // Experiment insight card
@@ -96,8 +100,17 @@ struct MorningCheckInView: View {
                     .padding(.horizontal, 22)
                 }
 
+                if let entry = state.lastNightEntry,
+                   let fileURL = entry.brainDumpFileURL,
+                   let duration = entry.brainDumpDurationSec, duration > 0 {
+                    BrainDumpPlayerCard(fileURL: fileURL, playback: playback)
+                        .padding(.horizontal, 22)
+                        .padding(.top, 12)
+                }
+
                 VStack(spacing: 0) {
                     PrimaryCTA(title: "Log this morning", disabled: state.morningScore == 0) {
+                        playback.stop()
                         state.logMorningScore()
                         dismiss()
                     }
@@ -110,5 +123,58 @@ struct MorningCheckInView: View {
                 .padding(.bottom, 36)
             }
         }
+    }
+}
+
+private struct BrainDumpPlayerCard: View {
+    let fileURL: URL
+    @ObservedObject var playback: AudioPlaybackService
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Kicker(text: "Brain dump · last night")
+
+            HStack(spacing: 12) {
+                Button {
+                    if playback.isPlaying { playback.pause() } else { playback.play() }
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color.lullAmber)
+                            .frame(width: 44, height: 44)
+                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.lullBgDeep)
+                            .offset(x: playback.isPlaying ? 0 : 1)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.lullLine)
+                                .frame(height: 3)
+                            Capsule()
+                                .fill(Color.lullAmber)
+                                .frame(width: geo.size.width * playback.progress, height: 3)
+                        }
+                    }
+                    .frame(height: 3)
+
+                    HStack {
+                        Text(playback.elapsed.lullTimeString)
+                        Spacer()
+                        Text(playback.duration.lullTimeString)
+                    }
+                    .font(.mono(10))
+                    .foregroundColor(.lullInk3)
+                }
+            }
+        }
+        .padding(16)
+        .lullCard(radius: 18)
+        .onAppear { playback.load(url: fileURL) }
     }
 }

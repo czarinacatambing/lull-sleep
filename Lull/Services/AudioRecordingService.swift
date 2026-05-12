@@ -18,6 +18,14 @@ class AudioRecordingService: NSObject, ObservableObject {
             .appendingPathComponent("lull_braindump_\(UUID().uuidString).m4a")
     }
 
+    static func braindumpURL(for date: Date) -> URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("brain_dumps", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let day = ISO8601DateFormatter().string(from: date).prefix(10)
+        return dir.appendingPathComponent("braindump_\(day).m4a")
+    }
+
     // MARK: - Permission
 
     func checkPermission() async {
@@ -62,7 +70,6 @@ class AudioRecordingService: NSObject, ObservableObject {
         }
     }
 
-    // Call when user taps "I'm done". Stops and immediately deletes — never replayed.
     func stopAndDiscard() {
         let url = recorder?.url
         recorder?.stop()
@@ -73,6 +80,30 @@ class AudioRecordingService: NSObject, ObservableObject {
 
         if let url { try? FileManager.default.removeItem(at: url) }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    func stopAndSave(date: Date) -> URL? {
+        guard let tempURL = recorder?.url else {
+            stopAndDiscard()
+            return nil
+        }
+        recorder?.stop()
+        timer?.invalidate()
+        timer = nil
+        recorder = nil
+        recordingState = .done
+
+        let dest = AudioRecordingService.braindumpURL(for: date)
+        try? FileManager.default.removeItem(at: dest)
+        do {
+            try FileManager.default.moveItem(at: tempURL, to: dest)
+        } catch {
+            try? FileManager.default.removeItem(at: tempURL)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            return nil
+        }
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        return dest
     }
 
     func pause() {

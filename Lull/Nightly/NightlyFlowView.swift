@@ -432,8 +432,15 @@ struct NightlyBrainDumpView: View {
             state.nightlyStep += 1
         } else {
             let finalDuration = Int(recorder.duration)
-            recorder.stopAndDiscard()
-            state.updateTodayLog { $0.brainDumpDurationSec = finalDuration }
+            let savedURL = recorder.stopAndSave(date: Date())
+            let relativePath: String? = savedURL.map { url in
+                let docsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
+                return String(url.path.dropFirst(docsPath.count + 1))
+            }
+            state.updateTodayLog {
+                $0.brainDumpDurationSec = finalDuration
+                $0.brainDumpFilePath = relativePath
+            }
             state.recordCurrentStepAttempt(status: .completed, durationSeconds: finalDuration)
             withAnimation { showDoneMessage = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

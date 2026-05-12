@@ -8,12 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		006744F385C7F5CC19798978 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 91F441E8041BBA5C851D941F /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5555555555555555555555 /* SleepHistoryLegendView.swift */; };
+		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
 		BB1111111111111111111111 /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1111111111111111111111 /* RemedyID.swift */; };
 		BB2222222222222222222222 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2222222222222222222222 /* PersistedState.swift */; };
 		BB3333333333333333333333 /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3333333333333333333333 /* PersistenceStore.swift */; };
 		BB4444444444444444444444 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4444444444444444444444 /* AmbientLightService.swift */; };
 		0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF78A2B998193B94B990E54E /* ContentView.swift */; };
 		08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040F13461C755DE8FF434700 /* AudioRecordingService.swift */; };
+		AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7777777777777777777777 /* AudioPlaybackService.swift */; };
 		0CFE2F405676712622D674B6 /* MyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80F43006C39DB668F529235 /* MyRoutineView.swift */; };
 		0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */; };
 		12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */; };
@@ -45,6 +48,7 @@
 
 /* Begin PBXFileReference section */
 		040F13461C755DE8FF434700 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		BB7777777777777777777777 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
 		099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
 		0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
 		129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
@@ -74,6 +78,8 @@
 		DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
 		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
+		AA5555555555555555555555 /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		AA1111111111111111111111 /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
 		AA2222222222222222222222 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
@@ -116,7 +122,9 @@
 			isa = PBXGroup;
 			children = (
 				AA4444444444444444444444 /* AmbientLightService.swift */,
+				AA6666666666666666666666 /* ExportService.swift */,
 				040F13461C755DE8FF434700 /* AudioRecordingService.swift */,
+				BB7777777777777777777777 /* AudioPlaybackService.swift */,
 				C839CE47A7EBAE076B7BF096 /* BundledStories.swift */,
 				D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */,
 				5D820BF460AB3C918823A264 /* TTSService.swift */,
@@ -140,6 +148,7 @@
 				96CD08D7A04346C513E351B8 /* DashboardView.swift */,
 				9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */,
 				F80F43006C39DB668F529235 /* MyRoutineView.swift */,
+				AA5555555555555555555555 /* SleepHistoryLegendView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -320,8 +329,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB4444444444444444444444 /* AmbientLightService.swift in Sources */,
+				CC6666666666666666666666 /* ExportService.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
+				AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */,
 				BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */,
 				12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */,
 				BB2222222222222222222222 /* PersistedState.swift in Sources */,
@@ -345,6 +356,7 @@
 				BB1111111111111111111111 /* RemedyID.swift in Sources */,
 				12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */,
 				0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */,
+				CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */,
 				CA356A11A099E60F3920F72A /* TTSService.swift in Sources */,
 				E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */,
 			);
