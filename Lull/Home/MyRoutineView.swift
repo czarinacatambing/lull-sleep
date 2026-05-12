@@ -215,7 +215,11 @@ struct MyRoutineView: View {
                         onTap: { idx in state.selectedDotIndex = idx }
                     )
                     .padding(.horizontal, 22)
-                    .padding(.bottom, 36)
+                    .padding(.bottom, 28)
+
+                    ExportDataFooter()
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 36)
                 }
             }
         }
@@ -1030,5 +1034,89 @@ struct CandidatePickerSheet: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Export Data Footer
+
+struct ExportDataFooter: View {
+    @EnvironmentObject var state: AppState
+    @State private var showResult = false
+    @State private var resultMessage = ""
+
+    private static let relativeFmt: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .short
+        return f
+    }()
+
+    private var statusLine: String {
+        if state.isExporting { return "Sending…" }
+        if let err = state.lastExportError { return "Last attempt failed · \(err)" }
+        if let last = state.lastExportDate {
+            return "Last sent \(ExportDataFooter.relativeFmt.localizedString(for: last, relativeTo: Date()))"
+        }
+        return "Never sent · helps us improve the app"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "paperplane")
+                    .font(.system(size: 13))
+                    .foregroundColor(.lullAmberSoft)
+                    .frame(width: 18, height: 18)
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Help us improve Lull")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.lullInk1)
+                    Text("Send your anonymous sleep data to the Lull team. No name, no email — just a random ID.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack {
+                Text(statusLine)
+                    .font(.mono(10))
+                    .kerning(0.8)
+                    .foregroundColor(state.lastExportError == nil ? .lullInk4 : .lullAmberSoft)
+                Spacer()
+                Button {
+                    state.exportData()
+                } label: {
+                    HStack(spacing: 6) {
+                        if state.isExporting {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                                .tint(.lullAmber)
+                        }
+                        Text(state.isExporting ? "Sending" : "Send now")
+                            .font(.mono(11))
+                            .kerning(1)
+                            .foregroundColor(.lullAmber)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color.lullAmber.opacity(0.10))
+                            .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.3), lineWidth: 1))
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(state.isExporting)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.025))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
+        )
     }
 }

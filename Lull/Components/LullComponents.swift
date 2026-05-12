@@ -299,6 +299,75 @@ struct SleepScoreSelector: View {
     }
 }
 
+// MARK: - HoursSleptStepper
+
+struct HoursSleptStepper: View {
+    @Binding var hours: Double
+
+    private let minHours: Double = 3.0
+    private let maxHours: Double = 12.0
+    private let step: Double = 0.5
+
+    private var formatted: String {
+        let rounded = (hours * 2).rounded() / 2
+        return rounded.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", rounded)
+            : String(format: "%.1f", rounded)
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text("HOURS SLEPT")
+                .font(.mono(9.5))
+                .kerning(1.4)
+                .foregroundColor(.lullInk4)
+
+            HStack(spacing: 22) {
+                stepButton(symbol: "minus", action: decrement, enabled: hours > minHours)
+
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(formatted)
+                        .font(.serif(34))
+                        .foregroundColor(.lullInk0)
+                        .monospacedDigit()
+                    Text("hrs")
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullInk3)
+                }
+                .frame(minWidth: 110)
+
+                stepButton(symbol: "plus", action: increment, enabled: hours < maxHours)
+            }
+        }
+    }
+
+    private func stepButton(symbol: String, action: @escaping () -> Void, enabled: Bool) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(enabled ? .lullAmber : .lullInk4)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(Color.white.opacity(0.03))
+                        .overlay(Circle().strokeBorder(
+                            enabled ? Color.lullAmber.opacity(0.35) : Color.lullLine,
+                            lineWidth: 1))
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    private func increment() {
+        hours = min(maxHours, ((hours * 2).rounded() / 2) + step)
+    }
+
+    private func decrement() {
+        hours = max(minHours, ((hours * 2).rounded() / 2) - step)
+    }
+}
+
 // MARK: - PrimaryCTA
 
 struct PrimaryCTA: View {

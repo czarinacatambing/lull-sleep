@@ -82,6 +82,11 @@ struct DashboardView: View {
                         .padding(.top, 32)
                         .padding(.bottom, 24)
 
+                        // Streak strip (compact peripheral progress)
+                        StreakStrip(selectedTab: $selectedTab)
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 16)
+
                         // Prep checklist card
                         prepChecklistCard
                             .padding(.horizontal, 22)
@@ -436,6 +441,119 @@ struct DashboardView: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.02)))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
             }
+        }
+    }
+}
+
+// MARK: - Streak Strip
+
+struct StreakStrip: View {
+    @EnvironmentObject var state: AppState
+    @Binding var selectedTab: Int
+
+    private var last7Slots: [DotSlot] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return (0..<7).reversed().map { offset in
+            let date = cal.date(byAdding: .day, value: -offset, to: today)!
+            let entry = state.sleepLogs.first { cal.isDate($0.date, inSameDayAs: date) }
+            return DotSlot(date: date, entry: entry)
+        }
+    }
+
+    private var loggedCount: Int {
+        state.sleepLogs.filter { $0.score > 0 }.count
+    }
+
+    private var currentStreak: Int {
+        let cal = Calendar.current
+        var count = 0
+        var cursor = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: Date()))!
+        while true {
+            let rated = state.sleepLogs.contains {
+                cal.isDate($0.date, inSameDayAs: cursor) && $0.score > 0
+            }
+            if rated {
+                count += 1
+                cursor = cal.date(byAdding: .day, value: -1, to: cursor)!
+            } else {
+                break
+            }
+        }
+        return count
+    }
+
+    private var captionText: String {
+        let nights = loggedCount == 1 ? "1 night" : "\(loggedCount) nights"
+        if currentStreak >= 2 {
+            return "\(nights) logged · \(currentStreak)-night streak"
+        }
+        return "\(nights) logged"
+    }
+
+    var body: some View {
+        if loggedCount == 0 {
+            Text("Tonight kicks off your first cycle.")
+                .font(.mono(11))
+                .kerning(0.6)
+                .foregroundColor(.lullInk4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+        } else {
+            Button { selectedTab = 1 } label: {
+                HStack(spacing: 14) {
+                    HStack(spacing: 5) {
+                        ForEach(Array(last7Slots.enumerated()), id: \.offset) { _, slot in
+                            miniDot(for: slot.dotState)
+                        }
+                    }
+
+                    Text(captionText)
+                        .font(.mono(10.5))
+                        .kerning(0.6)
+                        .foregroundColor(.lullInk3)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.lullInk4)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.02))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullLine, lineWidth: 1))
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private func miniDot(for state: DotSlot.DotState) -> some View {
+        switch state {
+        case .rated:
+            Circle()
+                .fill(Color.lullAmber)
+                .frame(width: 8, height: 8)
+        case .inProgress, .todayEmpty:
+            Circle()
+                .strokeBorder(Color.lullAmber, lineWidth: 1)
+                .frame(width: 8, height: 8)
+                .shadow(color: .lullAmberGlow, radius: 3)
+        case .unratedLocked:
+            Circle()
+                .fill(Color.lullInk3.opacity(0.35))
+                .frame(width: 8, height: 8)
+        case .skipped, .future:
+            Circle()
+                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                .frame(width: 8, height: 8)
         }
     }
 }
