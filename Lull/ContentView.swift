@@ -52,7 +52,7 @@ struct ContentView: View {
     private var mainContent: some View {
         Group {
             if state.hasCompletedOnboarding {
-                HomeTabView()
+                HomeTabView(initialTab: state.initialTab)
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
                     .onShake { state.activateMidSleepFromShake() }
             } else {

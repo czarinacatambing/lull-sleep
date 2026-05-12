@@ -237,7 +237,16 @@ class AppState: ObservableObject {
         updateTodayLog { $0.stepAttempts.append(attempt) }
     }
 
+    @Published var initialTab: Int = 0
+
     func completeOnboarding() {
+        initialTab = 0
+        hasCompletedOnboarding = true
+        persist()
+    }
+
+    func completeOnboardingToRoutine() {
+        initialTab = 1
         hasCompletedOnboarding = true
         persist()
     }

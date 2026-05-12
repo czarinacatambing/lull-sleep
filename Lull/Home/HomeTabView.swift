@@ -1,8 +1,11 @@
 import SwiftUI
 
 struct HomeTabView: View {
-    @State private var selectedTab = 0
     @EnvironmentObject var state: AppState
+    @State private var selectedTab: Int
+
+    init() { _selectedTab = State(initialValue: 0) }
+    init(initialTab: Int) { _selectedTab = State(initialValue: initialTab) }
 
     var body: some View {
         ZStack(alignment: .bottom) {

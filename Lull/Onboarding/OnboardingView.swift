@@ -657,7 +657,7 @@ struct OnbRoutineReadyView: View {
                         PrimaryCTA(
                             title: state.routineShouldStartNow ? "Start Routine Now" : "Try it tonight"
                         ) { state.completeOnboarding() }
-                        GhostButton(title: "Customize first") { state.completeOnboarding() }
+                        GhostButton(title: "Customize first") { state.completeOnboardingToRoutine() }
                             .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 24)
