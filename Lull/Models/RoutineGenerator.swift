@@ -154,11 +154,25 @@ struct GeneratedRoutine {
     var totalMinutes: Int { steps.reduce(0) { $0 + $1.estimatedMinutes } }
 
     func toCoreRoutineSteps() -> [RoutineStep] {
-        (avoidReminders + steps).enumerated().map { i, kind in
+        let hasNewWindDownMethod = steps.contains {
+            switch $0 {
+            case .existingHabit, .brightnessCheck, .temperatureLog: return false
+            default: return true
+            }
+        }
+        let dimLightsIsExistingHabit = keptHabitLabels.contains(R.dimTheLights)
+
+        return (avoidReminders + steps).enumerated().map { i, kind in
             var step = kind.toRoutineStep(order: i + 1)
             switch kind {
-            case .avoidReminder, .existingHabit, .brightnessCheck, .temperatureLog:
+            case .brightnessCheck, .temperatureLog:
                 break
+            case .existingHabit:
+                break
+            case .avoidReminder(let label, _):
+                if !hasNewWindDownMethod && !dimLightsIsExistingHabit && label == R.dimTheLights {
+                    step.mode = .experiment
+                }
             default:
                 step.mode = .experiment
             }
