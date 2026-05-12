@@ -212,7 +212,14 @@ struct MyRoutineView: View {
                     ProgressDotsCard(
                         slots: displaySlots,
                         sleepLogs: state.sleepLogs,
-                        onTap: { idx in state.selectedDotIndex = idx }
+                        onTap: { idx in state.selectedDotIndex = idx },
+                        onTodayEmptyTap: {
+                            // Create an empty entry for today so the detail sheet has something to point at.
+                            state.updateTodayLog { _ in }
+                            if let idx = state.sleepLogs.firstIndex(where: { $0.isToday }) {
+                                state.selectedDotIndex = idx
+                            }
+                        }
                     )
                     .padding(.horizontal, 22)
                     .padding(.bottom, 28)
@@ -821,6 +828,7 @@ struct ProgressDotsCard: View {
     var slots: [DotSlot]
     var sleepLogs: [SleepLogEntry]
     var onTap: (Int) -> Void
+    var onTodayEmptyTap: () -> Void = {}
 
     private var loggedCount: Int { slots.filter { $0.dotState == .rated }.count }
 
@@ -854,9 +862,13 @@ struct ProgressDotsCard: View {
                         dotLabel(for: slot)
                     }
                     .onTapGesture {
-                        if let idx = realIdx { onTap(idx) }
+                        if let idx = realIdx {
+                            onTap(idx)
+                        } else if state == .todayEmpty {
+                            onTodayEmptyTap()
+                        }
                     }
-                    .allowsHitTesting(state != .skipped && state != .todayEmpty && state != .future)
+                    .allowsHitTesting(state != .skipped && state != .future)
                 }
             }
             .padding(.horizontal, 18)
