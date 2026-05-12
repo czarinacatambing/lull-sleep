@@ -315,10 +315,10 @@ func generateStartingRoutine(from answers: OnboardingAnswers) -> GeneratedRoutin
     let keptHabitLabels = answers.preBedActivities
         .sorted()
         .compactMap { keptHabitMap[$0] }
-        .prefix(2)
+        .prefix(1)
         .map { $0 }
 
-    let prepSteps    = buildInitialPrepSteps(scores: scores)
+    let prepSteps    = buildInitialPrepSteps()
     let windDownSteps = buildInitialWindDownSteps(scores: scores, keptHabitLabels: Array(keptHabitLabels))
 
     let explanation = buildGentleExplanation(
@@ -336,30 +336,10 @@ func generateStartingRoutine(from answers: OnboardingAnswers) -> GeneratedRoutin
     )
 }
 
-// Bedtime Prep cap: Dim the lights (always) + at most 1 more. App Blocking excluded.
-private func buildInitialPrepSteps(scores: [String: Int]) -> [NightlyStepKind] {
-    var steps: [NightlyStepKind] = [
-        .avoidReminder(label: R.dimTheLights, minutesBefore: remedyLeadTimes[R.dimTheLights]!)
-    ]
-
-    let extra = allBedroomPrepRemedies
-        .filter { $0 != R.dimTheLights && $0 != R.appBlocking }
-        .compactMap { remedy -> (label: String, score: Int, leadTime: Int)? in
-            guard let score = scores[remedy], score > 0,
-                  let leadTime = remedyLeadTimes[remedy] else { return nil }
-            return (remedy, score, leadTime)
-        }
-        .max { $0.score < $1.score }
-
-    if let extra {
-        steps.append(.avoidReminder(label: extra.label, minutesBefore: extra.leadTime))
-    }
-
-    return steps.sorted { lhs, rhs in
-        guard case .avoidReminder(_, let a) = lhs,
-              case .avoidReminder(_, let b) = rhs else { return false }
-        return a > b  // largest lead time first = earliest reminder in the evening
-    }
+// Bedtime Prep: start with only Dim the lights. Others are introduced one at a time
+// through the experiment cycle so the checklist doesn't feel overwhelming on night 1.
+private func buildInitialPrepSteps() -> [NightlyStepKind] {
+    [.avoidReminder(label: R.dimTheLights, minutesBefore: remedyLeadTimes[R.dimTheLights]!)]
 }
 
 // Wind Down cap: 2 fixed checks + existing Wind Down habits (up to 2) OR 1 new method.

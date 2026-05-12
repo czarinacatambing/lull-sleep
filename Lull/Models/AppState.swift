@@ -433,8 +433,10 @@ class AppState: ObservableObject {
         let bed = typicalBedtime
 
         let inSeq = coreRoutine.filter {
-            $0.mode == .inSequence ||
-            ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+            !Self.hiddenFromRitualDisplay.contains($0.label) && (
+                $0.mode == .inSequence ||
+                ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+            )
         }
         var seqOffset = 0
         var seqSteps: [ScheduledStep] = inSeq.reversed().map { step in
@@ -477,10 +479,14 @@ class AppState: ObservableObject {
         }
     }
 
+    private static let hiddenFromRitualDisplay: Set<String> = ["Brightness check", "Temperature check"]
+
     var windDownSteps: [RoutineStep] {
         coreRoutine.filter {
-            $0.mode == .inSequence ||
-            ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+            !Self.hiddenFromRitualDisplay.contains($0.label) && (
+                $0.mode == .inSequence ||
+                ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
+            )
         }
     }
 
