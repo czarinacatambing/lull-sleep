@@ -599,29 +599,39 @@ struct OnbRoutineReadyView: View {
         ZStack {
             Color(hex: "#0c0807").ignoresSafeArea()
 
-            // Outer ambient glow
-            Circle()
-                .fill(Color.lullAmber.opacity(0.18))
-                .frame(width: 340, height: 340)
-                .blur(radius: 48)
-                .scaleEffect(orbScale)
+            VStack(spacing: 40) {
+                ZStack {
+                    // Outer ambient glow
+                    Circle()
+                        .fill(Color.lullAmber.opacity(0.18))
+                        .frame(width: 340, height: 340)
+                        .blur(radius: 48)
+                        .scaleEffect(orbScale)
 
-            // 3D sphere: dark base + radial highlight offset toward upper-left
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hex: "#d4924a"),
-                            Color(hex: "#b8732e"),
-                            Color(hex: "#7a3e10"),
-                        ],
-                        center: UnitPoint(x: 0.38, y: 0.32),
-                        startRadius: 10,
-                        endRadius: 130
-                    )
-                )
-                .frame(width: 240, height: 240)
-                .scaleEffect(orbScale)
+                    // 3D sphere: dark base + radial highlight offset toward upper-left
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(hex: "#d4924a"),
+                                    Color(hex: "#b8732e"),
+                                    Color(hex: "#7a3e10"),
+                                ],
+                                center: UnitPoint(x: 0.38, y: 0.32),
+                                startRadius: 10,
+                                endRadius: 130
+                            )
+                        )
+                        .frame(width: 240, height: 240)
+                        .scaleEffect(orbScale)
+                }
+                .frame(width: 340, height: 340)
+
+                Text("Planning your first night right now...")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(.lullInk3)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 
