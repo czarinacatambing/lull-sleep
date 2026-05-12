@@ -281,9 +281,11 @@ struct SleepScoreSelector: View {
                                     .foregroundColor(.lullBgDeep)
                             }
                         }
+                        .frame(width: 72, height: 72)
                     }
                     .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 72)
+                    .contentShape(Rectangle())
                     .disabled(disabled)
                 }
             }

@@ -300,6 +300,7 @@ struct ExperimentHeroCard: View {
     @Binding var showCandidatePicker: Bool
     @Binding var showChangeConfirm: Bool
     @State private var glowPulse = false
+    @State private var showScience = false
 
     var insightLine: String {
         state.experimentStatus?.insightLine ?? "We're tracking if this moves the needle on your sleep."
@@ -360,7 +361,7 @@ struct ExperimentHeroCard: View {
                     .padding(.bottom, 14)
 
                 // Expected impact
-                ExpectedImpactBox()
+                ExpectedImpactBox(remedyId: state.tonightRemedyId)
                     .padding(.bottom, 16)
 
                 // Action row
@@ -379,7 +380,7 @@ struct ExperimentHeroCard: View {
                         state.resetToSuggestedVariable()
                     }
 
-                    Button(action: {}) {
+                    Button(action: { showScience = true }) {
                         Text("View science · why this might work")
                             .font(.system(size: 12.5))
                             .foregroundColor(.lullInk1)
@@ -392,6 +393,14 @@ struct ExperimentHeroCard: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullLine, lineWidth: 1))
                     )
                     .buttonStyle(.plain)
+                    .sheet(isPresented: $showScience) {
+                        ScienceSheet(
+                            remedyName: state.tonightVariable,
+                            remedyId: state.tonightRemedyId
+                        )
+                        .presentationDetents([.fraction(0.45)])
+                        .presentationDragIndicator(.hidden)
+                    }
                 }
 
                 // Override note
@@ -511,6 +520,17 @@ struct NightProgressBar: View {
 }
 
 struct ExpectedImpactBox: View {
+    var remedyId: RemedyID?
+
+    private var impactData: RemedyImpact {
+        remedyId?.impact ?? RemedyImpact(
+            prefix: "Users like you fell asleep ",
+            highlight: "−11 min",
+            suffix: " faster.",
+            science: ""
+        )
+    }
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "chart.line.uptrend.xyaxis")
@@ -523,13 +543,13 @@ struct ExpectedImpactBox: View {
                     .font(.mono(9.5))
                     .kerning(1.4)
                     .foregroundColor(.lullAmberSoft)
-                (Text("Users like you fell asleep ")
+                (Text(impactData.prefix)
                     .font(.system(size: 12.5))
                     .foregroundColor(.lullInk1)
-                + Text("−11 min")
+                + Text(impactData.highlight)
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundColor(.lullAmber)
-                + Text(" faster.")
+                + Text(impactData.suffix)
                     .font(.system(size: 12.5))
                     .foregroundColor(.lullInk1))
                     .lineSpacing(2)
@@ -543,6 +563,56 @@ struct ExpectedImpactBox: View {
                 .fill(Color.black.opacity(0.45))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullLine, lineWidth: 1))
         )
+    }
+}
+
+struct ScienceSheet: View {
+    var remedyName: String
+    var remedyId: RemedyID?
+    @Environment(\.dismiss) private var dismiss
+
+    private var scienceText: String {
+        remedyId?.impact.science ?? ""
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Handle
+            Capsule()
+                .fill(Color.lullLine)
+                .frame(width: 36, height: 4)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+
+            // Icon + title
+            HStack(spacing: 10) {
+                Image(systemName: "flask")
+                    .font(.system(size: 15))
+                    .foregroundColor(.lullAmber)
+                Text("Why this might work")
+                    .font(.serif(20))
+                    .foregroundColor(.lullInk0)
+            }
+            .padding(.bottom, 6)
+
+            Text(remedyName)
+                .font(.mono(11))
+                .kerning(1.2)
+                .foregroundColor(.lullAmberSoft)
+                .padding(.bottom, 20)
+
+            Text(scienceText)
+                .font(.system(size: 14.5))
+                .foregroundColor(.lullInk1)
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+        .padding(.horizontal, 26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.lullBg.ignoresSafeArea())
     }
 }
 
