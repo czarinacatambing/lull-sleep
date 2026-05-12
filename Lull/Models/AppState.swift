@@ -114,6 +114,7 @@ class AppState: ObservableObject {
     }
 
     // MARK: - Morning check-in
+    @Published var baselineScore: Int = 0       // set once during onboarding
     @Published var morningScore = 0
     @Published var morningHoursSlept: Double = 7.5
     @Published var selectedDotIndex: Int? = nil
@@ -183,6 +184,7 @@ class AppState: ObservableObject {
             _coreRoutine              = Published(initialValue: saved.coreRoutine)
             _routineExplanation       = Published(initialValue: saved.routineExplanation)
             _sleepLogs                = Published(initialValue: saved.sleepLogs)
+            _baselineScore            = Published(initialValue: saved.baselineScore)
             _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
             _prepDoneDate             = Published(initialValue: saved.prepDoneDate)
             // Reschedule on every launch so notifications stay current (e.g. after OS clears them)
@@ -202,6 +204,7 @@ class AppState: ObservableObject {
             coreRoutine:              coreRoutine,
             routineExplanation:       routineExplanation,
             sleepLogs:                sleepLogs,
+            baselineScore:            baselineScore,
             prepDoneIds:              Array(prepDoneIds),
             prepDoneDate:             prepDoneDate
         )

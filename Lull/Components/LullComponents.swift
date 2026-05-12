@@ -475,3 +475,94 @@ struct NightlyStepHeader: View {
         .padding(.bottom, 24)
     }
 }
+
+// MARK: - ConfettiView
+
+private enum ConfettiShape { case rect, circle, streak }
+
+private struct ConfettiParticle: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    var velocityX: CGFloat
+    var velocityY: CGFloat
+    var rotation: Double
+    var rotationSpeed: Double
+    var color: Color
+    var shape: ConfettiShape
+    var width: CGFloat
+    var height: CGFloat
+}
+
+struct ConfettiView: View {
+    @State private var particles: [ConfettiParticle] = []
+    @State private var timer: Timer?
+    @State private var elapsed: Double = 0
+
+    private static let colors: [Color] = [
+        Color(hex: "#f0b96b"), // amber
+        Color(hex: "#f4826a"), // coral
+        Color(hex: "#7ed4a0"), // mint
+        Color(hex: "#b39ddb"), // lavender
+        Color(hex: "#7ec8e3"), // sky
+    ]
+
+    var body: some View {
+        Canvas { ctx, size in
+            for p in particles {
+                let rect = CGRect(
+                    x: p.x * size.width - p.width / 2,
+                    y: p.y * size.height - p.height / 2,
+                    width: p.width,
+                    height: p.height
+                )
+                ctx.translateBy(x: rect.midX, y: rect.midY)
+                ctx.rotate(by: .degrees(p.rotation))
+                ctx.translateBy(x: -rect.midX, y: -rect.midY)
+
+                var path: Path
+                switch p.shape {
+                case .rect:
+                    path = Path(rect)
+                case .circle:
+                    path = Path(ellipseIn: CGRect(x: rect.minX, y: rect.minY, width: p.width, height: p.width))
+                case .streak:
+                    path = Path(CGRect(x: rect.minX, y: rect.minY, width: p.width * 0.3, height: p.height * 1.8))
+                }
+                ctx.fill(path, with: .color(p.color))
+            }
+        }
+        .onAppear {
+            particles = (0..<70).map { _ in makeParticle() }
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
+                elapsed += 1.0 / 60.0
+                let gravity: CGFloat = 0.0006
+                particles = particles.map { var p = $0
+                    p.velocityY += gravity
+                    p.x += p.velocityX
+                    p.y += p.velocityY
+                    p.rotation += p.rotationSpeed
+                    return p
+                }
+                if elapsed > 3.5 { timer?.invalidate(); timer = nil }
+            }
+        }
+        .onDisappear { timer?.invalidate(); timer = nil }
+    }
+
+    private func makeParticle() -> ConfettiParticle {
+        let shapes: [ConfettiShape] = [.rect, .rect, .circle, .streak]
+        return ConfettiParticle(
+            x: CGFloat.random(in: 0.05...0.95),
+            y: CGFloat.random(in: 1.0...1.2),
+            velocityX: CGFloat.random(in: -0.004...0.004),
+            velocityY: CGFloat.random(in: -0.022...(-0.008)),
+            rotation: Double.random(in: 0...360),
+            rotationSpeed: Double.random(in: -4...4),
+            color: Self.colors.randomElement()!,
+            shape: shapes.randomElement()!,
+            width: CGFloat.random(in: 6...14),
+            height: CGFloat.random(in: 8...18)
+        )
+    }
+}

@@ -10,7 +10,7 @@ struct OnboardingView: View {
             switch step {
             case 1: OnbSleepProblemView(step: $step)
             case 2: OnbWhatWakesView(step: $step)
-            case 3: OnbWindowView(step: $step)
+            case 3: OnbBaselineRatingView(step: $step)
             case 4: OnbBedtimeView(step: $step)
             case 5: OnbPreBedView(step: $step)
             case 6: OnbTriedView(step: $step)
@@ -160,54 +160,46 @@ struct OnbWhatWakesView: View {
 
 // MARK: - Screen 3: Your Window
 
-struct OnbWindowView: View {
+struct OnbBaselineRatingView: View {
     @Binding var step: Int
     @EnvironmentObject var state: AppState
-
-    private let windows = ["Under 10 minutes", "10–20 minutes", "20–30 minutes", "30+ minutes or varies"]
-    private let windowValues = [7, 15, 25, 35]
+    @State private var score: Int = 0
 
     var body: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: 0.0, radius: 280, opacity: 0.55)
                 .ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 16)
-                    OnbTopBar(step: 3, total: 6, onBack: { step = 2 })
-                    StepProgress(step: 3, total: 6)
+            VStack(spacing: 0) {
+                Spacer().frame(height: 16)
+                OnbTopBar(step: 3, total: 6, onBack: { step = 2 })
+                StepProgress(step: 3, total: 6)
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Kicker(text: "Step three")
-                        Text("How long do you usually\nhave to fall asleep?")
-                            .font(.serif(28))
-                            .foregroundColor(.lullInk0)
-                            .padding(.top, 10)
-                        Text("This shapes your routine length.")
-                            .font(.system(size: 14))
-                            .foregroundColor(.lullInk2)
-                    }
-                    .padding(.horizontal, Lull.horizontalPad)
-                    .padding(.top, 10)
-                    .padding(.bottom, 24)
-
-                    VStack(spacing: 10) {
-                        ForEach(Array(windows.enumerated()), id: \.offset) { i, label in
-                            ChoiceRow(
-                                text: label,
-                                selected: state.sleepWindowMinutes == windowValues[i],
-                                big: true,
-                                onTap: { state.sleepWindowMinutes = windowValues[i] }
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    PrimaryCTA(title: "Continue") { step = 4 }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 32)
-                        .padding(.bottom, 36)
+                VStack(alignment: .leading, spacing: 10) {
+                    Kicker(text: "Step three")
+                    Text("Rate your sleep\nin the last 5 days.")
+                        .font(.serif(28))
+                        .foregroundColor(.lullInk0)
+                        .padding(.top, 10)
+                    Text("Out of 5, with 5 as great sleep. We'll use this as a starting point so you can see what's actually working.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.lullInk2)
+                        .lineSpacing(3)
                 }
+                .padding(.horizontal, Lull.horizontalPad)
+                .padding(.top, 10)
+                .padding(.bottom, 36)
+
+                SleepScoreSelector(score: $score)
+
+                Spacer()
+
+                PrimaryCTA(title: "Continue", disabled: score == 0) {
+                    state.baselineScore = score
+                    step = 4
+                }
+                .opacity(score == 0 ? 0.45 : 1)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 36)
             }
         }
     }

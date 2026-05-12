@@ -5,12 +5,30 @@ struct MorningCheckInView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var playback = AudioPlaybackService()
     @State private var currentDate = Date()
+    @State private var showImprovement = false
+    @State private var improvementDelta = 0
 
     private static let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEE · h:mm a"; return f
     }()
 
     var body: some View {
+        ZStack {
+            if showImprovement {
+                improvementCard
+            } else {
+                checkInContent
+            }
+
+            if showImprovement {
+                ConfettiView()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private var checkInContent: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: -0.05, radius: 250, opacity: 0.65)
                 .ignoresSafeArea()
@@ -110,9 +128,7 @@ struct MorningCheckInView: View {
 
                 VStack(spacing: 0) {
                     PrimaryCTA(title: "Log this morning", disabled: state.morningScore == 0) {
-                        playback.stop()
-                        state.logMorningScore()
-                        dismiss()
+                        handleLog()
                     }
                     .opacity(state.morningScore == 0 ? 0.45 : 1)
                     GhostButton(title: "Add a note · woke at 4am") {}
@@ -122,6 +138,60 @@ struct MorningCheckInView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 36)
             }
+        }
+    }
+
+    private var improvementCard: some View {
+        let nights = state.experimentStatus?.night ?? 1
+        let variable = state.experimentStatus?.variable ?? "your new routine"
+        let nightWord = nights == 1 ? "night" : "nights"
+
+        return LullScreen(glow: true) {
+            VStack(spacing: 0) {
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Kicker(text: "Your sleep has improved")
+
+                    Text("+\(improvementDelta)")
+                        .font(.serif(80))
+                        .foregroundColor(.lullAmber)
+                        .shadow(color: .lullAmberGlow, radius: 24)
+                        .shadow(color: .lullAmberGlow, radius: 48)
+
+                    Text("Your sleep improved after \(nights) \(nightWord) of trying "\(variable)".")
+                        .font(.system(size: 16))
+                        .foregroundColor(.lullInk1)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .frame(maxWidth: 280)
+                }
+                .padding(.horizontal, 32)
+
+                Spacer()
+
+                PrimaryCTA(title: "Great, thanks") {
+                    dismiss()
+                }
+                .padding(.horizontal, 22)
+                .padding(.bottom, 36)
+            }
+        }
+    }
+
+    private func handleLog() {
+        let priorScore: Int = {
+            let rated = state.sleepLogs.filter { $0.score > 0 && !$0.isToday }
+            return rated.last?.score ?? state.baselineScore
+        }()
+        let delta = state.morningScore - priorScore
+        playback.stop()
+        state.logMorningScore()
+        if delta > 0 {
+            improvementDelta = delta
+            withAnimation(.easeInOut(duration: 0.35)) { showImprovement = true }
+        } else {
+            dismiss()
         }
     }
 }

@@ -19,6 +19,9 @@ struct PersistedState: Codable {
     // Per-night history
     var sleepLogs: [SleepLogEntry]
 
+    // Onboarding baseline
+    var baselineScore: Int = 0
+
     // Prep checklist completion (resets at wake time each day)
     var prepDoneIds: [UUID] = []
     var prepDoneDate: Date? = nil
@@ -34,6 +37,7 @@ struct PersistedState: Codable {
          coreRoutine: [RoutineStep],
          routineExplanation: String,
          sleepLogs: [SleepLogEntry],
+         baselineScore: Int = 0,
          prepDoneIds: [UUID] = [],
          prepDoneDate: Date? = nil) {
         self.schemaVersion            = schemaVersion
@@ -47,6 +51,7 @@ struct PersistedState: Codable {
         self.coreRoutine              = coreRoutine
         self.routineExplanation       = routineExplanation
         self.sleepLogs                = sleepLogs
+        self.baselineScore            = baselineScore
         self.prepDoneIds              = prepDoneIds
         self.prepDoneDate             = prepDoneDate
     }
@@ -64,6 +69,7 @@ struct PersistedState: Codable {
         coreRoutine              = try c.decode([RoutineStep].self,           forKey: .coreRoutine)
         routineExplanation       = try c.decode(String.self,                  forKey: .routineExplanation)
         sleepLogs                = try c.decode([SleepLogEntry].self,         forKey: .sleepLogs)
+        baselineScore            = (try? c.decodeIfPresent(Int.self,          forKey: .baselineScore))   ?? 0
         prepDoneIds              = (try? c.decodeIfPresent([UUID].self,       forKey: .prepDoneIds))  ?? []
         prepDoneDate             = try? c.decodeIfPresent(Date.self,          forKey: .prepDoneDate)
     }
