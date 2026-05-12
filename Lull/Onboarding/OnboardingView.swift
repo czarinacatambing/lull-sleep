@@ -561,6 +561,7 @@ struct OnbRoutineReadyView: View {
     @EnvironmentObject var state: AppState
     @State private var showContent = false
     @State private var orbScale: CGFloat = 1.0
+    @State private var textOpacity: Double = 0
 
     private static let timeFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "h:mm"; return f
@@ -588,6 +589,9 @@ struct OnbRoutineReadyView: View {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
                 orbScale = 1.35
+            }
+            withAnimation(.easeIn(duration: 0.8).delay(0.5)) {
+                textOpacity = 1
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 showContent = true
@@ -631,6 +635,7 @@ struct OnbRoutineReadyView: View {
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.lullInk3)
                     .multilineTextAlignment(.center)
+                    .opacity(textOpacity)
             }
         }
     }
