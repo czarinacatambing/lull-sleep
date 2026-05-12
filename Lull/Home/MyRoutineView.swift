@@ -333,6 +333,17 @@ struct ExperimentHeroCard: View {
                 .allowsHitTesting(false)
 
             VStack(alignment: .leading, spacing: 0) {
+                // Science sheet — attached here so it doesn't block button taps
+                Color.clear.frame(width: 0, height: 0)
+                    .sheet(isPresented: $showScience) {
+                        ScienceSheet(
+                            remedyName: state.tonightVariable,
+                            remedyId: state.tonightRemedyId
+                        )
+                        .presentationDetents([.fraction(0.45)])
+                        .presentationDragIndicator(.hidden)
+                    }
+
                 // Top row: kicker + badge
                 HStack(alignment: .center) {
                     Kicker(text: "Tonight's experiment", color: .lullAmberSoft)
@@ -400,14 +411,6 @@ struct ExperimentHeroCard: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullLine, lineWidth: 1))
                     )
                     .buttonStyle(.plain)
-                    .sheet(isPresented: $showScience) {
-                        ScienceSheet(
-                            remedyName: state.tonightVariable,
-                            remedyId: state.tonightRemedyId
-                        )
-                        .presentationDetents([.fraction(0.45)])
-                        .presentationDragIndicator(.hidden)
-                    }
                 }
 
                 // Override note
