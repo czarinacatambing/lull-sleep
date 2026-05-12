@@ -656,8 +656,14 @@ struct OnbRoutineReadyView: View {
                     VStack(spacing: 0) {
                         PrimaryCTA(
                             title: state.routineShouldStartNow ? "Start Routine Now" : "Try it tonight"
-                        ) { state.completeOnboarding() }
-                        GhostButton(title: "Customize first") { state.completeOnboardingToRoutine() }
+                        ) {
+                            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+                            state.completeOnboarding()
+                        }
+                        GhostButton(title: "Customize first") {
+                            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+                            state.completeOnboardingToRoutine()
+                        }
                             .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 24)
@@ -668,7 +674,6 @@ struct OnbRoutineReadyView: View {
         }
         .onAppear {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         }
     }
 }

@@ -154,7 +154,16 @@ struct GeneratedRoutine {
     var totalMinutes: Int { steps.reduce(0) { $0 + $1.estimatedMinutes } }
 
     func toCoreRoutineSteps() -> [RoutineStep] {
-        (avoidReminders + steps).enumerated().map { i, kind in kind.toRoutineStep(order: i + 1) }
+        (avoidReminders + steps).enumerated().map { i, kind in
+            var step = kind.toRoutineStep(order: i + 1)
+            switch kind {
+            case .avoidReminder, .existingHabit, .brightnessCheck, .temperatureLog:
+                break
+            default:
+                step.mode = .experiment
+            }
+            return step
+        }
     }
 }
 
