@@ -559,6 +559,8 @@ struct OnbTriedView: View {
 
 struct OnbRoutineReadyView: View {
     @EnvironmentObject var state: AppState
+    @State private var showContent = false
+    @State private var orbScale: CGFloat = 1.0
 
     private var headlineSub: String {
         let windDownMins = state.coreRoutine
@@ -569,6 +571,36 @@ struct OnbRoutineReadyView: View {
     }
 
     var body: some View {
+        ZStack {
+            if showContent {
+                routineContent
+                    .transition(.opacity)
+            } else {
+                orbIntro
+            }
+        }
+        .animation(.easeInOut(duration: 0.6), value: showContent)
+        .onAppear {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                orbScale = 1.35
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                showContent = true
+            }
+        }
+    }
+
+    private var orbIntro: some View {
+        ZStack {
+            Color(hex: "#0c0807").ignoresSafeArea()
+            AmberGlow(x: 0.5, y: 0.5, radius: 220, opacity: 0.75)
+                .scaleEffect(orbScale)
+                .ignoresSafeArea()
+        }
+    }
+
+    private var routineContent: some View {
         LullScreen(glowX: 0.5, glowY: 0.22, glowRadius: 260, glowOpacity: 0.85) {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -671,9 +703,6 @@ struct OnbRoutineReadyView: View {
                     .padding(.bottom, 36)
                 }
             }
-        }
-        .onAppear {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
     }
 }
