@@ -127,7 +127,7 @@ class AppState: ObservableObject {
     // MARK: - Export
 
     @Published var isExporting = false
-    @Published var lastExportDate: Date? = nil
+    @Published var lastExportDate: Date? = UserDefaults.standard.object(forKey: "lullLastExportDate") as? Date
     @Published var lastExportError: String? = nil
 
     var installId: String {
@@ -136,6 +136,14 @@ class AppState: ObservableObject {
         let new = UUID().uuidString
         UserDefaults.standard.set(new, forKey: key)
         return new
+    }
+
+    // Fires exportData() at most once per calendar day. Called opportunistically
+    // on app foreground and after morning score logging — Lull is a daily-use
+    // app so one of those triggers will fire reliably without needing BGTaskScheduler.
+    func autoExportIfDue() {
+        if let last = lastExportDate, Calendar.current.isDateInToday(last) { return }
+        exportData()
     }
 
     func exportData() {
@@ -161,7 +169,9 @@ class AppState: ObservableObject {
         Task { @MainActor in
             do {
                 try await ExportService.send(installId: id, state: snapshot)
-                lastExportDate = Date()
+                let now = Date()
+                lastExportDate = now
+                UserDefaults.standard.set(now, forKey: "lullLastExportDate")
             } catch {
                 lastExportError = error.localizedDescription
             }
@@ -271,6 +281,7 @@ class AppState: ObservableObject {
         scheduleMorningRatingNotifications()
         advanceExperiment()
         persist()
+        autoExportIfDue()
     }
 
     func movePreWindDown(from source: IndexSet, to destination: Int) {

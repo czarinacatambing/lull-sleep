@@ -30,7 +30,14 @@ struct LullApp: App {
                 .onAppear { appDelegate.state = state }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { state.persist() }
+            switch phase {
+            case .background:
+                state.persist()
+            case .active:
+                state.autoExportIfDue()
+            default:
+                break
+            }
         }
     }
 }

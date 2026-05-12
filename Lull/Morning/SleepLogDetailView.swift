@@ -20,6 +20,16 @@ struct SleepLogDetailView: View {
         return cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
     }
 
+    // Entry is for today and hasn't been rated yet — the routine started but the
+    // user hasn't actually slept yet. Show a welcome card instead of the rating form.
+    private var isTonightInProgress: Bool {
+        Calendar.current.isDateInToday(entry.date) && entry.score == 0
+    }
+
+    private var isFirstNight: Bool {
+        state.sleepLogs.allSatisfy { $0.score == 0 }
+    }
+
     private let dayFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEEE · MMM d"; return f
     }()
@@ -47,28 +57,52 @@ struct SleepLogDetailView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // Title
                         VStack(alignment: .leading, spacing: 10) {
-                            Kicker(text: isToday ? "Morning check-in" : "Sleep log")
-                            Group {
-                                Text(isToday ? "How does this morning " : "How that morning ")
-                                    .foregroundColor(.lullInk0)
-                                + Text(isToday ? "feel?" : "felt.")
-                                    .foregroundColor(.lullAmber)
-                            }
-                            .font(.serif(30))
+                            Kicker(text: isTonightInProgress
+                                ? "Tonight in progress"
+                                : (isToday ? "Morning check-in" : "Sleep log"))
 
-                            if isToday {
-                                Text("One tap. We'll use this to nudge tonight's variable.")
+                            if isTonightInProgress {
+                                Text(isFirstNight
+                                    ? "This is your first night with Lull! 🌙"
+                                    : "Tonight's routine is in progress 🌙")
+                                    .font(.serif(28))
+                                    .foregroundColor(.lullInk0)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .lineSpacing(3)
+
+                                Text(isFirstNight
+                                    ? "No sleep score logged yet. Finish your routine tonight and rate your sleep tomorrow morning — your first dot with sleep score will appear."
+                                    : "No sleep score logged yet. Rate your sleep tomorrow morning and this dot will fill in.")
                                     .font(.system(size: 13.5))
                                     .foregroundColor(.lullInk2)
-                                    .lineSpacing(3)
+                                    .lineSpacing(4)
+                                    .padding(.top, 4)
+                            } else {
+                                Group {
+                                    Text(isToday ? "How does this morning " : "How that morning ")
+                                        .foregroundColor(.lullInk0)
+                                    + Text(isToday ? "feel?" : "felt.")
+                                        .foregroundColor(.lullAmber)
+                                }
+                                .font(.serif(30))
+
+                                if isToday {
+                                    Text("One tap. We'll use this to nudge tonight's variable.")
+                                        .font(.system(size: 13.5))
+                                        .foregroundColor(.lullInk2)
+                                        .lineSpacing(3)
+                                }
                             }
                         }
                         .padding(.horizontal, 28)
                         .padding(.top, 28)
 
-                        // Score circles
+                        // Score circles (disabled in tonight-in-progress state)
                         Group {
-                            if isToday {
+                            if isTonightInProgress {
+                                SleepScoreSelector(score: .constant(0), disabled: true)
+                                    .opacity(0.35)
+                            } else if isToday {
                                 SleepScoreSelector(score: $draftScore)
                             } else {
                                 SleepScoreSelector(score: .constant(entry.score), disabled: true)
@@ -90,8 +124,10 @@ struct SleepLogDetailView: View {
                         .padding(.horizontal, 28)
                         .padding(.top, 24)
 
-                        // Notes section
-                        if isToday {
+                        // Notes section (hidden during tonight-in-progress)
+                        if isTonightInProgress {
+                            EmptyView()
+                        } else if isToday {
                             todayNotesSection
                         } else if !entry.notes.isEmpty {
                             pastNotesSection
@@ -100,7 +136,13 @@ struct SleepLogDetailView: View {
                 }
 
                 // CTAs
-                if isToday {
+                if isTonightInProgress {
+                    GhostButton(title: "Got it") { dismiss() }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 22)
+                        .padding(.top, 16)
+                        .padding(.bottom, 36)
+                } else if isToday {
                     VStack(spacing: 0) {
                         PrimaryCTA(title: "Log this morning") {
                             state.sleepLogs[entryIndex].score = draftScore
