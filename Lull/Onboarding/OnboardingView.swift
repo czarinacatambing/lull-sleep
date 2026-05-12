@@ -562,6 +562,10 @@ struct OnbRoutineReadyView: View {
     @State private var showContent = false
     @State private var orbScale: CGFloat = 1.0
 
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "h:mm"; return f
+    }()
+
     private var headlineSub: String {
         let windDownMins = state.coreRoutine
             .filter { $0.mode == .inSequence }
@@ -658,10 +662,28 @@ struct OnbRoutineReadyView: View {
                                     .lineLimit(1)
                             }
                             .padding(.vertical, 12)
-                            if i < displayRoutine.count - 1 {
-                                Divider().background(Color.lullLine)
-                            }
+                            Divider().background(Color.lullLine)
                         }
+                        // Target sleep time
+                        HStack(spacing: 14) {
+                            Text(OnbRoutineReadyView.timeFmt.string(from: state.typicalBedtime))
+                                .font(.mono(11))
+                                .kerning(0.6)
+                                .foregroundColor(.lullInk3)
+                                .frame(width: 50, alignment: .leading)
+                            Image(systemName: "moon.fill")
+                                .font(.system(size: 7))
+                                .foregroundColor(.lullAmber)
+                            Text("Sleep")
+                                .font(.system(size: 14))
+                                .foregroundColor(.lullInk1)
+                            Spacer()
+                            Text("Target")
+                                .font(.mono(9))
+                                .kerning(0.4)
+                                .foregroundColor(.lullInk4)
+                        }
+                        .padding(.vertical, 12)
                     }
                     .padding(22)
                     .background(
