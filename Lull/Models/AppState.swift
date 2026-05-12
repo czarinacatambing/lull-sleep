@@ -380,6 +380,8 @@ class AppState: ObservableObject {
             content.body = "\(leadMins) minutes before your target bedtime."
             content.sound = .default
             content.categoryIdentifier = "BEDTIME_REMINDER"
+            content.interruptionLevel = .timeSensitive
+            content.relevanceScore = 1.0
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
             let request = UNNotificationRequest(
