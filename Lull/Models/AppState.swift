@@ -74,7 +74,6 @@ class AppState: ObservableObject {
         routineExplanation    = routine.explanation
         routineShouldStartNow = routine.shouldStartImmediately
         persist()
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         scheduleAllNotifications()
     }
 

@@ -18,7 +18,7 @@ struct OnboardingView: View {
             default: EmptyView()
             }
         }
-        .animation(.easeInOut(duration: 0.28), value: step)
+        .animation(step == 7 ? .easeInOut(duration: 0.7) : .easeInOut(duration: 0.28), value: step)
         .transition(.opacity)
     }
 }
@@ -653,36 +653,6 @@ struct OnbRoutineReadyView: View {
                             .padding(.top, 18)
                     }
 
-                    // Widget nudge
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(LinearGradient(colors: [Color(hex: "#1a110e"), Color(hex: "#0c0807")],
-                                                     startPoint: .top, endPoint: .bottom))
-                                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.lullLine, lineWidth: 1))
-                                .frame(width: 38, height: 38)
-                            Ember(size: 8)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Add the lock-screen widget")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.lullInk0)
-                            Text("One tap at 3am — no unlock, no app open.")
-                                .font(.system(size: 11.5))
-                                .foregroundColor(.lullInk3)
-                        }
-                        Spacer()
-                        Text("Add")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.lullAmber)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.02)))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLineStrong, style: StrokeStyle(lineWidth: 1, dash: [4])))
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-
                     VStack(spacing: 0) {
                         PrimaryCTA(
                             title: state.routineShouldStartNow ? "Start Routine Now" : "Try it tonight"
@@ -695,6 +665,10 @@ struct OnbRoutineReadyView: View {
                     .padding(.bottom, 36)
                 }
             }
+        }
+        .onAppear {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         }
     }
 }
