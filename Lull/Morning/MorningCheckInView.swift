@@ -159,7 +159,7 @@ struct MorningCheckInView: View {
                         .shadow(color: .lullAmberGlow, radius: 24)
                         .shadow(color: .lullAmberGlow, radius: 48)
 
-                    Text("Your sleep improved after \(nights) \(nightWord) of trying "\(variable)".")
+                    Text("Your sleep improved after \(nights) \(nightWord) of trying \"\(variable)\".")
                         .font(.system(size: 16))
                         .foregroundColor(.lullInk1)
                         .multilineTextAlignment(.center)
