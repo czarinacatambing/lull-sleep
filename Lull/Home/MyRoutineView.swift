@@ -865,7 +865,13 @@ struct DotSlot {
         if cal.isDateInToday(date) && entry == nil { return .todayEmpty }
         guard let entry else { return .skipped }
         if entry.score > 0 { return .rated }
-        return (cal.isDateInToday(date) || cal.isDateInYesterday(date)) ? .inProgress : .unratedLocked
+        // An entry with no completed wind-down is effectively a skipped night
+        // (often a ghost from older builds, or a partial flow that bailed).
+        if !entry.completedNightlyFlow { return .skipped }
+        // Today's completed-but-unrated routine = "Tonight" (amber ring).
+        // Anything older — including yesterday — = "Awaiting rating" (half moon),
+        // matching the SleepHistoryLegendView legend exactly.
+        return cal.isDateInToday(date) ? .inProgress : .unratedLocked
     }
 }
 
@@ -886,7 +892,9 @@ struct ProgressDotsCard: View {
 
     private var activeDotLabel: String? {
         let cal = Calendar.current
-        if slots.contains(where: { $0.dotState == .inProgress && cal.isDateInYesterday($0.date) }) {
+        // Yesterday-completed-no-rating is now .unratedLocked (half moon) but
+        // it's still ratable — surface the "rate now" prompt for it.
+        if slots.contains(where: { $0.dotState == .unratedLocked && cal.isDateInYesterday($0.date) }) {
             return "last night · rate now"
         }
         if slots.contains(where: { $0.dotState == .inProgress && cal.isDateInToday($0.date) }) {

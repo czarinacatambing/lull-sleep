@@ -31,26 +31,76 @@ struct MorningRewardView: View {
 
     // MARK: derived
 
-    private var deltaVsYesterday: Int? {
-        guard let y = yesterday else { return nil }
-        return score - y
+    // When yesterday's rating doesn't exist (first night, or only one rating
+    // total), we fall back to the user's onboarding baseline. Confetti / mood
+    // are driven by whichever comparison is available.
+    private enum Comparison {
+        case yesterday(Int)
+        case baseline(Int)
+        case none
     }
 
-    private enum Mood { case improved, steady, off, firstNight }
+    private var comparison: Comparison {
+        if let y = yesterday, y > 0 { return .yesterday(y) }
+        if baseline > 0 { return .baseline(baseline) }
+        return .none
+    }
+
+    private var comparisonValue: Int? {
+        switch comparison {
+        case .yesterday(let v), .baseline(let v): return v
+        case .none: return nil
+        }
+    }
+
+    private var delta: Int? {
+        guard let v = comparisonValue else { return nil }
+        return score - v
+    }
+
+    private enum Mood { case improved, steady, off }
 
     private var mood: Mood {
-        guard let d = deltaVsYesterday else { return .firstNight }
-        if d > 0 { return .improved }
-        if d == 0 { return .steady }
+        if let d = delta {
+            if d > 0 { return .improved }
+            if d == 0 { return .steady }
+            return .off
+        }
+        // No yesterday and no baseline available — fall back to the score
+        // itself. 4–5 still celebrates, 3 is neutral, 1–2 is off-night.
+        if score >= 4 { return .improved }
+        if score == 3 { return .steady }
         return .off
+    }
+
+    // Capitalised noun used in pill text, e.g. "VS YESTERDAY" / "VS BASELINE".
+    private var comparisonNounUpper: String {
+        switch comparison {
+        case .yesterday: return "YESTERDAY"
+        case .baseline:  return "BASELINE"
+        case .none:      return ""
+        }
+    }
+
+    // Lowercased phrase used in headline copy, e.g. "yesterday" / "your baseline".
+    private var comparisonNounLower: String {
+        switch comparison {
+        case .yesterday: return "yesterday"
+        case .baseline:  return "your baseline"
+        case .none:      return ""
+        }
     }
 
     private var kickerText: String {
         switch mood {
-        case .improved: return "Better than yesterday"
-        case .steady:   return "Logged · steady"
-        case .off:      return "Logged · off-night"
-        case .firstNight: return "Logged · steady"
+        case .improved:
+            switch comparison {
+            case .yesterday: return "Better than yesterday"
+            case .baseline:  return "Better than your baseline"
+            case .none:      return "Logged · solid night"
+            }
+        case .steady:     return "Logged · steady"
+        case .off:        return "Logged · off-night"
         }
     }
 
@@ -186,25 +236,29 @@ struct MorningRewardView: View {
 
     @ViewBuilder
     private var deltaPill: some View {
-        switch mood {
-        case .improved:
-            if let d = deltaVsYesterday {
-                pillContent(text: "▲ +\(d) VS YESTERDAY",
-                            fg: .lullAmber,
-                            bg: Color.lullAmber.opacity(0.18))
-            }
-        case .off:
-            if let d = deltaVsYesterday {
-                pillContent(text: "▼ \(d) VS YESTERDAY",
-                            fg: .lullInk3,
-                            bg: Color(red: 120/255, green: 140/255, blue: 160/255).opacity(0.16))
-            }
-        case .steady:
-            pillContent(text: "= SAME AS YESTERDAY",
-                        fg: .lullInk3,
-                        bg: Color.white.opacity(0.06))
-        case .firstNight:
+        // No comparison context → no pill (no delta to render). The kicker
+        // and headline carry the mood signal in this case.
+        if case .none = comparison {
             EmptyView()
+        } else {
+            switch mood {
+            case .improved:
+                if let d = delta {
+                    pillContent(text: "▲ +\(d) VS \(comparisonNounUpper)",
+                                fg: .lullAmber,
+                                bg: Color.lullAmber.opacity(0.18))
+                }
+            case .off:
+                if let d = delta {
+                    pillContent(text: "▼ \(d) VS \(comparisonNounUpper)",
+                                fg: .lullInk3,
+                                bg: Color(red: 120/255, green: 140/255, blue: 160/255).opacity(0.16))
+                }
+            case .steady:
+                pillContent(text: "= SAME AS \(comparisonNounUpper)",
+                            fg: .lullInk3,
+                            bg: Color.white.opacity(0.06))
+            }
         }
     }
 
@@ -224,12 +278,20 @@ struct MorningRewardView: View {
     private var headlineText: some View {
         switch mood {
         case .improved:
-            (Text("That's ").foregroundColor(.lullInk0)
-                + Text("better than yesterday.").font(.serifItalic(22)).foregroundColor(.lullAmber))
-                .font(.serif(22))
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-        case .steady, .firstNight:
+            if case .none = comparison {
+                (Text("That's a ").foregroundColor(.lullInk0)
+                    + Text("solid night.").font(.serifItalic(22)).foregroundColor(.lullAmber))
+                    .font(.serif(22))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            } else {
+                (Text("That's ").foregroundColor(.lullInk0)
+                    + Text("better than \(comparisonNounLower).").font(.serifItalic(22)).foregroundColor(.lullAmber))
+                    .font(.serif(22))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
+        case .steady:
             (Text("Steady night. Two more like it and we'll ").foregroundColor(.lullInk0)
                 + Text("promote a variable.").font(.serifItalic(22)).foregroundColor(.lullAmber))
                 .font(.serif(22))
