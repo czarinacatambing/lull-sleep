@@ -54,6 +54,13 @@ struct ContentView: View {
             if state.hasCompletedOnboarding {
                 HomeTabView(initialTab: state.initialTab)
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
+                    .fullScreenCover(item: $state.pendingPromotion) { promotion in
+                        RoutinePromotedView(promotion: promotion) {
+                            // acknowledgePromotion routes to the Routine tab and queues
+                            // the brief pulse on the promoted row.
+                            state.acknowledgePromotion()
+                        }
+                    }
                     .onShake { state.activateMidSleepFromShake() }
             } else {
                 OnboardingView()

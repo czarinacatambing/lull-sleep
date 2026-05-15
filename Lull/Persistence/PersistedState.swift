@@ -33,6 +33,11 @@ struct PersistedState: Codable {
     var prepDoneIds: [UUID] = []
     var prepDoneDate: Date? = nil
 
+    // Promotion celebration — pending modal + recently-promoted pill tracking.
+    var pendingPromotion: PendingPromotion? = nil
+    var recentlyPromotedRemedyId: RemedyID? = nil
+    var recentlyPromotedAt: Date? = nil
+
     init(schemaVersion: Int = 2,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
@@ -47,7 +52,10 @@ struct PersistedState: Codable {
          sleepLogs: [SleepLogEntry],
          baselineScore: Int = 0,
          prepDoneIds: [UUID] = [],
-         prepDoneDate: Date? = nil) {
+         prepDoneDate: Date? = nil,
+         pendingPromotion: PendingPromotion? = nil,
+         recentlyPromotedRemedyId: RemedyID? = nil,
+         recentlyPromotedAt: Date? = nil) {
         self.schemaVersion            = schemaVersion
         self.testerName               = testerName
         self.selectedSleepProblems    = selectedSleepProblems
@@ -63,6 +71,9 @@ struct PersistedState: Codable {
         self.baselineScore            = baselineScore
         self.prepDoneIds              = prepDoneIds
         self.prepDoneDate             = prepDoneDate
+        self.pendingPromotion         = pendingPromotion
+        self.recentlyPromotedRemedyId = recentlyPromotedRemedyId
+        self.recentlyPromotedAt       = recentlyPromotedAt
     }
 
     init(from decoder: Decoder) throws {
@@ -78,9 +89,12 @@ struct PersistedState: Codable {
         coreRoutine              = try c.decode([RoutineStep].self,           forKey: .coreRoutine)
         routineExplanation       = try c.decode(String.self,                  forKey: .routineExplanation)
         sleepLogs                = try c.decode([SleepLogEntry].self,         forKey: .sleepLogs)
-        testerName               = (try? c.decodeIfPresent(String.self,        forKey: .testerName))   ?? ""
-        baselineScore            = (try? c.decodeIfPresent(Int.self,          forKey: .baselineScore))   ?? 0
-        prepDoneIds              = (try? c.decodeIfPresent([UUID].self,       forKey: .prepDoneIds))  ?? []
-        prepDoneDate             = try? c.decodeIfPresent(Date.self,          forKey: .prepDoneDate)
+        testerName               = (try? c.decodeIfPresent(String.self,             forKey: .testerName))   ?? ""
+        baselineScore            = (try? c.decodeIfPresent(Int.self,                forKey: .baselineScore))   ?? 0
+        prepDoneIds              = (try? c.decodeIfPresent([UUID].self,             forKey: .prepDoneIds))  ?? []
+        prepDoneDate             = try? c.decodeIfPresent(Date.self,                forKey: .prepDoneDate)
+        pendingPromotion         = try? c.decodeIfPresent(PendingPromotion.self,    forKey: .pendingPromotion)
+        recentlyPromotedRemedyId = try? c.decodeIfPresent(RemedyID.self,            forKey: .recentlyPromotedRemedyId)
+        recentlyPromotedAt       = try? c.decodeIfPresent(Date.self,                forKey: .recentlyPromotedAt)
     }
 }

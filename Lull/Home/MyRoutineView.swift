@@ -763,8 +763,18 @@ struct PrepListRow: View {
 // MARK: - Ritual List Row
 
 struct RitualListRow: View {
+    @EnvironmentObject var state: AppState
     var number: Int
     var step: RoutineStep
+
+    @State private var pulse = false
+
+    private var isRecentlyPromoted: Bool {
+        guard let id = state.recentlyPromotedRemedyId,
+              let at = state.recentlyPromotedAt,
+              step.remedyId == id else { return false }
+        return Date().timeIntervalSince(at) < 7 * 24 * 60 * 60   // 7-day window
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -778,27 +788,58 @@ struct RitualListRow: View {
                 .foregroundColor(.lullInk0)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("IN SEQUENCE")
-                .font(.mono(9))
-                .kerning(1)
-                .foregroundColor(.lullInk3)
+            if isRecentlyPromoted {
+                HStack(spacing: 4) {
+                    Text("★")
+                        .font(.system(size: 9))
+                        .foregroundColor(.lullAmber)
+                    Text("RECENTLY PROMOTED")
+                        .font(.mono(9))
+                        .kerning(1)
+                        .foregroundColor(.lullAmber)
+                }
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .strokeBorder(Color.lullLine, lineWidth: 1)
+                        .fill(Color.lullAmber.opacity(0.12))
+                        .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.4), lineWidth: 1))
                 )
+            } else {
+                Text("IN SEQUENCE")
+                    .font(.mono(9))
+                    .kerning(1)
+                    .foregroundColor(.lullInk3)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .strokeBorder(Color.lullLine, lineWidth: 1)
+                    )
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(0.025))
+                .fill(isRecentlyPromoted ? Color.lullAmber.opacity(0.06) : Color.white.opacity(0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.lullLine, lineWidth: 1)
+                        .strokeBorder(
+                            isRecentlyPromoted ? Color.lullAmber.opacity(0.32) : Color.lullLine,
+                            lineWidth: 1
+                        )
                 )
         )
+        .shadow(color: pulse ? .lullAmberGlow : .clear, radius: pulse ? 24 : 0)
+        .onChange(of: state.routinePulseRemedyId) { _, newValue in
+            if let id = newValue, step.remedyId == id {
+                withAnimation(.easeInOut(duration: 0.4)) { pulse = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(.easeInOut(duration: 0.4)) { pulse = false }
+                }
+            }
+        }
     }
 }
 

@@ -5,8 +5,14 @@ struct MorningCheckInView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var playback = AudioPlaybackService()
     @State private var currentDate = Date()
-    @State private var showImprovement = false
-    @State private var improvementDelta = 0
+
+    // Reward state — set in handleLog() so confetti/headline match the just-logged numbers.
+    @State private var showReward = false
+    @State private var rewardScore: Int = 0
+    @State private var rewardYesterday: Int? = nil
+    @State private var rewardBaseline: Int = 0
+    @State private var rewardVariable: String? = nil
+    @State private var rewardNight: Int = 0
 
     private static let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEE · h:mm a"; return f
@@ -14,16 +20,22 @@ struct MorningCheckInView: View {
 
     var body: some View {
         ZStack {
-            if showImprovement {
-                improvementCard
+            if showReward {
+                MorningRewardView(
+                    score: rewardScore,
+                    yesterday: rewardYesterday,
+                    baseline: rewardBaseline,
+                    variable: rewardVariable,
+                    night: rewardNight,
+                    totalNights: 5,
+                    allowRerate: Calendar.current.component(.hour, from: Date()) < 12,
+                    onRerate: { withAnimation(.easeInOut(duration: 0.25)) { showReward = false } },
+                    onDismiss: { dismiss() },
+                    onNote: { dismiss() }
+                )
+                .transition(.opacity)
             } else {
                 checkInContent
-            }
-
-            if showImprovement {
-                ConfettiView()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
             }
         }
     }
@@ -141,58 +153,33 @@ struct MorningCheckInView: View {
         }
     }
 
-    private var improvementCard: some View {
-        let nights = state.experimentStatus?.night ?? 1
-        let variable = state.experimentStatus?.variable ?? "your new routine"
-        let nightWord = nights == 1 ? "night" : "nights"
-
-        return LullScreen(glow: true) {
-            VStack(spacing: 0) {
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Kicker(text: "Your sleep has improved")
-
-                    Text("+\(improvementDelta)")
-                        .font(.serif(80))
-                        .foregroundColor(.lullAmber)
-                        .shadow(color: .lullAmberGlow, radius: 24)
-                        .shadow(color: .lullAmberGlow, radius: 48)
-
-                    Text("Your sleep improved after \(nights) \(nightWord) of trying \"\(variable)\".")
-                        .font(.system(size: 16))
-                        .foregroundColor(.lullInk1)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(4)
-                        .frame(maxWidth: 280)
-                }
-                .padding(.horizontal, 32)
-
-                Spacer()
-
-                PrimaryCTA(title: "Great, thanks") {
-                    dismiss()
-                }
-                .padding(.horizontal, 22)
-                .padding(.bottom, 36)
-            }
-        }
-    }
-
     private func handleLog() {
-        let priorScore: Int = {
-            let rated = state.sleepLogs.filter { $0.score > 0 && !$0.isToday }
-            return rated.last?.score ?? state.baselineScore
-        }()
-        let delta = state.morningScore - priorScore
+        // Capture "yesterday's" score BEFORE logging — it's the most recent rated entry
+        // before this one. (state.logMorningScore will either update an existing unrated
+        // entry from last night, or create a new one — either way the previous rated
+        // entry stays as-is.)
+        let yesterdayScore: Int? = state.sleepLogs
+            .filter { $0.score > 0 }
+            .sorted { $0.date > $1.date }
+            .first?.score
+
+        let scoreToLog = state.morningScore
+        let baseline = state.baselineScore
+
         playback.stop()
         state.logMorningScore()
-        if delta > 0 {
-            improvementDelta = delta
-            withAnimation(.easeInOut(duration: 0.35)) { showImprovement = true }
-        } else {
-            dismiss()
-        }
+
+        // Read the experiment status AFTER logging so the "Tonight's experiment" card
+        // reflects whatever variable advanceExperiment lined up next.
+        let status = state.experimentStatus
+
+        rewardScore = scoreToLog
+        rewardYesterday = yesterdayScore
+        rewardBaseline = baseline
+        rewardVariable = status?.variable
+        rewardNight = status?.night ?? 0
+
+        withAnimation(.easeInOut(duration: 0.35)) { showReward = true }
     }
 }
 

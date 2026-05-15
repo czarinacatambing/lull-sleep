@@ -57,6 +57,13 @@ struct HomeTabView: View {
                 state.restoreBrightnessAfterMidSleep()
             }
         }
+        // External tab-switch requests (e.g. after dismissing the promotion celebration)
+        .onChange(of: state.requestedTab) { _, requested in
+            if let requested {
+                selectedTab = requested
+                state.requestedTab = nil
+            }
+        }
     }
 }
 

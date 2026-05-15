@@ -37,6 +37,10 @@
 		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
 		CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5555555555555555555555 /* SleepHistoryLegendView.swift */; };
+		CC8888888888888888888888 /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8888888888888888888888 /* Confetti.swift */; };
+		CC9999999999999999999999 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9999999999999999999999 /* PendingPromotion.swift */; };
+		CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */; };
+		CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */; };
 		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */; };
@@ -72,6 +76,10 @@
 		AA3333333333333333333333 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
 		AA4444444444444444444444 /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 		AA5555555555555555555555 /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		AA8888888888888888888888 /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
+		AA9999999999999999999999 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
+		AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
+		AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
 		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
 		BB7777777777777777777777 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
@@ -102,6 +110,7 @@
 		31F7E7C8AC3777CEE98481E9 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				AA8888888888888888888888 /* Confetti.swift */,
 				4B96F9D7A41B8D164E87290B /* LullComponents.swift */,
 			);
 			path = Components;
@@ -112,6 +121,7 @@
 			children = (
 				85F27EAE09500318E6960113 /* AppState.swift */,
 				F22F2E8574F38842A81E664B /* ExperimentEngine.swift */,
+				AA9999999999999999999999 /* PendingPromotion.swift */,
 				AA1111111111111111111111 /* RemedyID.swift */,
 				0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */,
 			);
@@ -139,6 +149,7 @@
 				96CD08D7A04346C513E351B8 /* DashboardView.swift */,
 				9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */,
 				F80F43006C39DB668F529235 /* MyRoutineView.swift */,
+				AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */,
 				AA5555555555555555555555 /* SleepHistoryLegendView.swift */,
 			);
 			path = Home;
@@ -176,6 +187,7 @@
 			isa = PBXGroup;
 			children = (
 				9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */,
+				AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */,
 				2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */,
 			);
 			path = Morning;
@@ -329,6 +341,10 @@
 			files = (
 				BB4444444444444444444444 /* AmbientLightService.swift in Sources */,
 				CC6666666666666666666666 /* ExportService.swift in Sources */,
+				CC8888888888888888888888 /* Confetti.swift in Sources */,
+				CC9999999999999999999999 /* PendingPromotion.swift in Sources */,
+				CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */,
+				CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
 				AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */,

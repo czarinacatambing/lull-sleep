@@ -122,6 +122,25 @@ class AppState: ObservableObject {
     @Published var selectedDotIndex: Int? = nil
     @Published var sleepLogs: [SleepLogEntry] = []
 
+    // MARK: - Promotion celebration
+    // Set when an experimental variable graduates into the core routine; cleared
+    // when the user dismisses the big celebration screen. Persisted so it survives
+    // a relaunch if the user logs the rating and quits before seeing the modal.
+    @Published var pendingPromotion: PendingPromotion? = nil
+
+    // Set after acknowledging a promotion — drives the "Recently promoted" pill
+    // on the routine list for 7 days. Persisted.
+    @Published var recentlyPromotedRemedyId: RemedyID? = nil
+    @Published var recentlyPromotedAt: Date? = nil
+
+    // Transient (not persisted) — triggers a brief amber pulse on the routine
+    // list item right after the big celebration dismisses.
+    @Published var routinePulseRemedyId: RemedyID? = nil
+
+    // Transient — when set, HomeTabView snaps to this tab index, then clears.
+    // Used by acknowledgePromotion() to route the user to the Routine tab.
+    @Published var requestedTab: Int? = nil
+
     var lastNightEntry: SleepLogEntry? {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
         return sleepLogs.last { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
@@ -269,6 +288,9 @@ class AppState: ObservableObject {
             _baselineScore            = Published(initialValue: saved.baselineScore)
             _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
             _prepDoneDate             = Published(initialValue: saved.prepDoneDate)
+            _pendingPromotion         = Published(initialValue: saved.pendingPromotion)
+            _recentlyPromotedRemedyId = Published(initialValue: saved.recentlyPromotedRemedyId)
+            _recentlyPromotedAt       = Published(initialValue: saved.recentlyPromotedAt)
 
             // Run any pending data migrations once.
             if saved.schemaVersion < 2 {
@@ -298,7 +320,10 @@ class AppState: ObservableObject {
             sleepLogs:                sleepLogs,
             baselineScore:            baselineScore,
             prepDoneIds:              Array(prepDoneIds),
-            prepDoneDate:             prepDoneDate
+            prepDoneDate:             prepDoneDate,
+            pendingPromotion:         pendingPromotion,
+            recentlyPromotedRemedyId: recentlyPromotedRemedyId,
+            recentlyPromotedAt:       recentlyPromotedAt
         )
         PersistenceStore.shared.save(snapshot)
     }
@@ -424,6 +449,9 @@ class AppState: ObservableObject {
         case .keepTesting: return
         case .promote:
             if let idx = coreRoutine.firstIndex(where: { $0.mode == .experiment }) {
+                // Capture promotion data BEFORE mutating the step, so the celebration
+                // screen sees the right variable/remedyId/sparkline.
+                pendingPromotion = buildPendingPromotion(forStep: coreRoutine[idx], status: status)
                 coreRoutine[idx].mode = .inSequence
             }
         case .drop:
@@ -439,6 +467,58 @@ class AppState: ObservableObject {
         }
         persist()
         scheduleBedtimePrepNotifications()
+    }
+
+    private func buildPendingPromotion(forStep step: RoutineStep,
+                                       status: ExperimentEngine.Status) -> PendingPromotion {
+        let promotedLabel = step.label
+        let promotedRemedyId = step.remedyId
+
+        // Last 7 rated entries, oldest first. Pad with empty bars at the start
+        // so the sparkline always has 7 columns.
+        let last7 = sleepLogs
+            .filter { $0.score > 0 }
+            .sorted { $0.date < $1.date }
+            .suffix(7)
+        var bars: [PendingPromotion.SparkBar] = last7.map { entry in
+            let onExp: Bool = {
+                if let eid = entry.variableRemedyId, let rid = promotedRemedyId { return eid == rid }
+                return entry.variable == promotedLabel
+            }()
+            return PendingPromotion.SparkBar(score: entry.score, onExperiment: onExp)
+        }
+        while bars.count < 7 {
+            bars.insert(PendingPromotion.SparkBar(score: 0, onExperiment: false), at: 0)
+        }
+
+        return PendingPromotion(
+            variable: promotedLabel,
+            remedyId: promotedRemedyId,
+            nights: status.night,
+            averageLift: status.scoreDelta,
+            sparkline: bars,
+            promotedAt: Date()
+        )
+    }
+
+    // Called when the user dismisses the big celebration screen. Promotes the
+    // variable visually (pill + brief pulse), routes to the Routine tab, and
+    // clears the pending modal.
+    func acknowledgePromotion() {
+        guard let pending = pendingPromotion else { return }
+        recentlyPromotedRemedyId = pending.remedyId
+        recentlyPromotedAt = Date()
+        routinePulseRemedyId = pending.remedyId
+        pendingPromotion = nil
+        requestedTab = 1
+        persist()
+        // Clear the pulse after a short delay so the animation only fires once.
+        let pulseTarget = pending.remedyId
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
+            if self?.routinePulseRemedyId == pulseTarget {
+                self?.routinePulseRemedyId = nil
+            }
+        }
     }
 
     func scheduleMidSleepNotification() {
