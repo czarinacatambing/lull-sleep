@@ -8,6 +8,7 @@ struct MyRoutineView: View {
     @State private var showCandidatePicker = false
     @State private var pendingCandidate: String? = nil
     @State private var showHistoryLegend = false
+    @State private var showTonightInProgress = false
 
     private var showCoach: Bool { !coachDismissed && visitCount <= 3 }
 
@@ -214,11 +215,10 @@ struct MyRoutineView: View {
                         sleepLogs: state.sleepLogs,
                         onTap: { idx in state.selectedDotIndex = idx },
                         onTodayEmptyTap: {
-                            // Create an empty entry for today so the detail sheet has something to point at.
-                            state.updateTodayLog { _ in }
-                            if let idx = state.sleepLogs.firstIndex(where: { $0.isToday }) {
-                                state.selectedDotIndex = idx
-                            }
+                            // Don't persist anything on tap — just show the welcome sheet.
+                            // Entries get created when the wind-down flow runs or the
+                            // morning rating is logged, not on a curiosity tap.
+                            showTonightInProgress = true
                         }
                     )
                     .padding(.horizontal, 22)
@@ -244,6 +244,9 @@ struct MyRoutineView: View {
         }
         .sheet(isPresented: $showHistoryLegend) {
             SleepHistoryLegendView()
+        }
+        .sheet(isPresented: $showTonightInProgress) {
+            TonightInProgressView()
         }
     }
 }

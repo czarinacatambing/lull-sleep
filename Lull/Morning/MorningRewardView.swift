@@ -1,5 +1,17 @@
 import SwiftUI
 
+// Payload captured at the moment the user logs a morning score, so the reward
+// sheet can render with the just-logged numbers (without recomputing from
+// AppState after advanceExperiment may have already mutated state).
+struct PendingMorningReward: Identifiable, Equatable {
+    let id = UUID()
+    let score: Int
+    let yesterday: Int?
+    let baseline: Int
+    let variable: String?
+    let night: Int
+}
+
 // Mini-celebration screen that follows the morning rating.
 // Confetti pops UP inside the score card only when today.score > yesterday.score.
 // Steady (=) and off-night (▼) share the same layout with no confetti.
@@ -138,35 +150,37 @@ struct MorningRewardView: View {
                 startPoint: .top, endPoint: .bottom))
             : AnyShapeStyle(Color.white.opacity(0.03))
 
-        return ZStack {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(fill)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22)
-                        .strokeBorder(borderColor, lineWidth: 1)
-                )
-
-            if showsConfetti {
-                Confetti(variant: .mini)
+        return VStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(score)")
+                    .font(.serif(64))
+                    .foregroundColor(.lullInk0)
+                    .kerning(-1.5)
+                Text("/5")
+                    .font(.serif(22))
+                    .foregroundColor(.lullInk3)
             }
-
-            VStack(spacing: 10) {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(score)")
-                        .font(.serif(64))
-                        .foregroundColor(.lullInk0)
-                        .kerning(-1.5)
-                    Text("/5")
-                        .font(.serif(22))
-                        .foregroundColor(.lullInk3)
-                }
-                deltaPill
-            }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 20)
+            deltaPill
         }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 20)
         .frame(minWidth: 220)
-        .fixedSize()
+        // .background gives the inner ZStack the same frame as the VStack so
+        // the Confetti's GeometryReader can measure the card and animate pieces
+        // inside it. Layering as a sibling in a .fixedSize ZStack collapsed it.
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(fill)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .strokeBorder(borderColor, lineWidth: 1)
+                    )
+                if showsConfetti {
+                    Confetti(variant: .mini)
+                }
+            }
+        )
         .clipShape(RoundedRectangle(cornerRadius: 22))
     }
 

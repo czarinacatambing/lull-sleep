@@ -20,8 +20,11 @@ struct SleepLogDetailView: View {
         return cal.isDateInToday(entry.date) || cal.isDateInYesterday(entry.date)
     }
 
-    // Entry is for today and hasn't been rated yet — the routine started but the
-    // user hasn't actually slept yet. Show a welcome card instead of the rating form.
+    // Entry is for today and hasn't been rated yet — the wind-down flow ran but
+    // the user hasn't yet logged a morning score. Renders a non-editable welcome
+    // card (the user can't rate "this morning" until they've slept). Now only
+    // reachable when an actual wind-down created the entry; the today-empty dot
+    // path opens TonightInProgressView instead.
     private var isTonightInProgress: Bool {
         Calendar.current.isDateInToday(entry.date) && entry.score == 0
     }
@@ -167,12 +170,32 @@ struct SleepLogDetailView: View {
                 } else if isToday {
                     VStack(spacing: 0) {
                         PrimaryCTA(title: "Log this morning") {
+                            // Capture comparison values BEFORE persisting so the
+                            // reward sheet renders with the correct "yesterday".
+                            let yesterdayCaptured: Int? = state.sleepLogs.enumerated()
+                                .compactMap { (i, e) -> SleepLogEntry? in
+                                    (i != entryIndex && e.score > 0) ? e : nil
+                                }
+                                .sorted { $0.date > $1.date }
+                                .first?.score
+                            let baselineCaptured = state.baselineScore
+                            let variableCaptured = state.experimentStatus?.variable
+                            let preLogNight = state.experimentStatus?.night ?? 0
+
                             state.sleepLogs[entryIndex].score = draftScore
                             state.sleepLogs[entryIndex].notes = draftNotes
                             state.sleepLogs[entryIndex].variable = state.tonightVariable
                             state.sleepLogs[entryIndex].variableRemedyId = state.tonightRemedyId
                             state.persist()
                             dismiss()
+
+                            state.pendingMorningReward = PendingMorningReward(
+                                score: draftScore,
+                                yesterday: yesterdayCaptured,
+                                baseline: baselineCaptured,
+                                variable: variableCaptured,
+                                night: preLogNight + 1
+                            )
                         }
                         .disabled(draftScore == 0)
                         .opacity(draftScore == 0 ? 0.45 : 1)

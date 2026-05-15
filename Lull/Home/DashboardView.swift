@@ -28,10 +28,19 @@ struct DashboardView: View {
     // MARK: - Morning state predicate
 
     private var isMorningState: Bool {
-        guard let wake = todaysWakeTime,
-              let windowEnd = Calendar.current.date(byAdding: .hour, value: 4, to: wake) else {
-            return false
-        }
+        if state.debugForceMorningState { return true }
+        if state.debugForceEveningState { return false }
+        guard let wake = todaysWakeTime else { return false }
+        let cal = Calendar.current
+        // Upper bound: the later of wake + 4h OR 11 AM. This keeps the morning
+        // hero available through breakfast hours for users with very early
+        // wake times, while preserving a 4-hour minimum for late wakers.
+        let plusFour = cal.date(byAdding: .hour, value: 4, to: wake) ?? wake
+        var elevenComps = cal.dateComponents([.year, .month, .day], from: currentDate)
+        elevenComps.hour = 11
+        elevenComps.minute = 0
+        let elevenAm = cal.date(from: elevenComps) ?? plusFour
+        let windowEnd = max(plusFour, elevenAm)
         return currentDate >= wake && currentDate < windowEnd
     }
 
@@ -52,19 +61,28 @@ struct DashboardView: View {
             .first
     }
 
-    // For the rate hero: today's rating = last night's score if logged this morning,
-    // otherwise nil (unrated).
-    private var todaysRating: Int? {
-        let lastNight = state.lastNightEntry
-        guard let score = lastNight?.score, score > 0 else { return nil }
-        return score
+    // Today's rating = the most recent rated entry within the today/yesterday
+    // window. We have to use that window (not strictly yesterday) because the
+    // rating can land on a today-dated entry when the user did wind-down after
+    // midnight OR when a today-dated ghost entry already exists.
+    private var todaysRatedEntry: SleepLogEntry? {
+        let cal = Calendar.current
+        return state.sleepLogs
+            .filter { $0.score > 0 && (cal.isDateInToday($0.date) || cal.isDateInYesterday($0.date)) }
+            .sorted { $0.date > $1.date }
+            .first
     }
 
-    // For the rate hero's delta: the most recent rated entry EXCLUDING last night's.
+    private var todaysRating: Int? {
+        todaysRatedEntry?.score
+    }
+
+    // For the rate hero's delta: the most recent rated entry EXCLUDING the one
+    // we're treating as "today" above.
     private var yesterdaysRating: Int? {
-        let lastNightId = state.lastNightEntry?.id
+        let todayId = todaysRatedEntry?.id
         let rated: [SleepLogEntry] = state.sleepLogs.filter {
-            $0.score > 0 && $0.id != lastNightId
+            $0.score > 0 && $0.id != todayId
         }
         let sorted = rated.sorted { $0.date > $1.date }
         return sorted.first?.score
@@ -127,7 +145,7 @@ struct DashboardView: View {
                     .ignoresSafeArea()
                     .onTapGesture { withAnimation(.easeOut(duration: 0.18)) { showMenu = false } }
 
-                VStack(alignment: .trailing, spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -145,6 +163,34 @@ struct DashboardView: View {
                         .padding(.vertical, 14)
                     }
                     .buttonStyle(.plain)
+
+                    Divider().background(Color.lullLine).padding(.horizontal, 12)
+
+                    debugMenuItem(
+                        label: "Force morning state",
+                        active: state.debugForceMorningState
+                    ) {
+                        state.debugForceMorningState.toggle()
+                        if state.debugForceMorningState {
+                            state.debugForceEveningState = false
+                        }
+                    }
+                    debugMenuItem(
+                        label: "Force evening state",
+                        active: state.debugForceEveningState
+                    ) {
+                        state.debugForceEveningState.toggle()
+                        if state.debugForceEveningState {
+                            state.debugForceMorningState = false
+                        }
+                    }
+                    debugMenuItem(
+                        label: "Clear today's rating",
+                        active: false
+                    ) {
+                        state.debugClearTodaysRating()
+                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+                    }
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 14)
@@ -152,7 +198,7 @@ struct DashboardView: View {
                         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
                         .shadow(color: Color.black.opacity(0.5), radius: 16, y: 8)
                 )
-                .frame(width: 190)
+                .frame(width: 220)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .padding(.top, 68)
                 .padding(.trailing, 22)
@@ -160,6 +206,24 @@ struct DashboardView: View {
                 .zIndex(10)
             }
         }
+    }
+
+    private func debugMenuItem(label: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: active ? "checkmark.circle.fill" : "wrench.adjustable")
+                    .font(.system(size: 12))
+                    .foregroundColor(active ? .lullAmber : .lullInk3)
+                    .frame(width: 10)
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundColor(active ? .lullAmber : .lullInk2)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Top bar (shared)
@@ -248,8 +312,24 @@ struct DashboardView: View {
             testNight: tonightTestNight,
             totalTestNights: 5,
             onRate: { n in
+                // Capture yesterday/baseline/variable/night BEFORE logging so
+                // the reward sheet renders with the just-rated numbers, not a
+                // post-advanceExperiment snapshot.
+                let yesterdayCaptured = yesterdaysRating
+                let baselineCaptured = state.baselineScore
+                let variableCaptured = state.experimentStatus?.variable
+                let preLogNight = state.experimentStatus?.night ?? 0
+
                 state.morningScore = n
                 state.logMorningScore()
+
+                state.pendingMorningReward = PendingMorningReward(
+                    score: n,
+                    yesterday: yesterdayCaptured,
+                    baseline: baselineCaptured,
+                    variable: variableCaptured,
+                    night: preLogNight + 1
+                )
             }
         )
         .padding(.horizontal, 22)

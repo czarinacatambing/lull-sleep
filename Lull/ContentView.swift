@@ -54,6 +54,20 @@ struct ContentView: View {
             if state.hasCompletedOnboarding {
                 HomeTabView(initialTab: state.initialTab)
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
+                    .sheet(item: $state.pendingMorningReward) { reward in
+                        MorningRewardView(
+                            score: reward.score,
+                            yesterday: reward.yesterday,
+                            baseline: reward.baseline,
+                            variable: reward.variable,
+                            night: reward.night,
+                            totalNights: 5,
+                            allowRerate: false,    // re-rate path only makes sense inside the check-in flow
+                            onRerate: { },
+                            onDismiss: { state.pendingMorningReward = nil },
+                            onNote:    { state.pendingMorningReward = nil }
+                        )
+                    }
                     .fullScreenCover(item: $state.pendingPromotion) { promotion in
                         RoutinePromotedView(promotion: promotion) {
                             // acknowledgePromotion routes to the Routine tab and queues

@@ -37,13 +37,14 @@
 		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
 		CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5555555555555555555555 /* SleepHistoryLegendView.swift */; };
+		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
 		CC8888888888888888888888 /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8888888888888888888888 /* Confetti.swift */; };
 		CC9999999999999999999999 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9999999999999999999999 /* PendingPromotion.swift */; };
 		CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */; };
 		CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */; };
 		CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */; };
 		CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */; };
-		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
+		CCEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */; };
 		EE478AAA0001000000000001 /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */; };
@@ -78,13 +79,14 @@
 		AA3333333333333333333333 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
 		AA4444444444444444444444 /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 		AA5555555555555555555555 /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		AA8888888888888888888888 /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
 		AA9999999999999999999999 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
 		AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
 		AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
 		AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
 		AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
-		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
 		BB7777777777777777777777 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
 		C839CE47A7EBAE076B7BF096 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 				AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */,
 				AA5555555555555555555555 /* SleepHistoryLegendView.swift */,
 				AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */,
+				AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -353,6 +356,7 @@
 				CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */,
 				CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */,
 				CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */,
+				CCEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
 				AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */,
@@ -395,7 +399,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lull;
@@ -545,7 +549,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lull;

@@ -141,6 +141,33 @@ class AppState: ObservableObject {
     // Used by acknowledgePromotion() to route the user to the Routine tab.
     @Published var requestedTab: Int? = nil
 
+    // Transient — queued by both the dashboard MorningRateHero and the
+    // SleepLogDetailView "Log this morning" CTA. ContentView observes this
+    // and presents MorningRewardView as a sheet (with mini confetti when
+    // the just-logged score is greater than yesterday's).
+    @Published var pendingMorningReward: PendingMorningReward? = nil
+
+    // Debug-only time-of-day override for testing the morning/evening branches
+    // on the Today tab without changing the simulator clock or wake time.
+    // Mutually exclusive (set one → other clears). Wrapped in #if DEBUG at the
+    // UI layer so they're never reachable on TestFlight or App Store builds.
+    @Published var debugForceMorningState: Bool = false
+    @Published var debugForceEveningState: Bool = false
+
+    // Debug: zeros the score on last night's entry (or today's, if last night
+    // has nothing) so the user can re-test the unrated morning hero.
+    func debugClearTodaysRating() {
+        let cal = Calendar.current
+        if let idx = sleepLogs.firstIndex(where: {
+            cal.isDateInYesterday($0.date) || cal.isDateInToday($0.date)
+        }) {
+            sleepLogs[idx].score = 0
+            sleepLogs[idx].actualWakeTime = nil
+            sleepLogs[idx].hoursSlept = nil
+            persist()
+        }
+    }
+
     var lastNightEntry: SleepLogEntry? {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
         return sleepLogs.last { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
