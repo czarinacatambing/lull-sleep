@@ -26,6 +26,10 @@ struct SleepLogDetailView: View {
         Calendar.current.isDateInToday(entry.date) && entry.score == 0
     }
 
+    // Already has a sleep score logged — show the rated read-only state regardless
+    // of whether the entry is from today, yesterday, or further back.
+    private var isAlreadyRated: Bool { entry.score > 0 }
+
     private var isFirstNight: Bool {
         state.sleepLogs.allSatisfy { $0.score == 0 }
     }
@@ -59,7 +63,7 @@ struct SleepLogDetailView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Kicker(text: isTonightInProgress
                                 ? "Tonight in progress"
-                                : (isToday ? "Morning check-in" : "Sleep log"))
+                                : (isAlreadyRated ? "Sleep log" : (isToday ? "Morning check-in" : "Sleep log")))
 
                             if isTonightInProgress {
                                 Text(isFirstNight
@@ -77,6 +81,14 @@ struct SleepLogDetailView: View {
                                     .foregroundColor(.lullInk2)
                                     .lineSpacing(4)
                                     .padding(.top, 4)
+                            } else if isAlreadyRated {
+                                Group {
+                                    Text("How that morning ")
+                                        .foregroundColor(.lullInk0)
+                                    + Text("felt.")
+                                        .foregroundColor(.lullAmber)
+                                }
+                                .font(.serif(30))
                             } else {
                                 Group {
                                     Text(isToday ? "How does this morning " : "How that morning ")
@@ -102,6 +114,8 @@ struct SleepLogDetailView: View {
                             if isTonightInProgress {
                                 SleepScoreSelector(score: .constant(0), disabled: true)
                                     .opacity(0.35)
+                            } else if isAlreadyRated {
+                                SleepScoreSelector(score: .constant(entry.score), disabled: true)
                             } else if isToday {
                                 SleepScoreSelector(score: $draftScore)
                             } else {
@@ -116,7 +130,7 @@ struct SleepLogDetailView: View {
                                 .font(.mono(9.5))
                                 .kerning(1.4)
                                 .foregroundColor(.lullInk4)
-                            Text(isToday ? state.tonightVariable : entry.variable)
+                            Text((isToday && !isAlreadyRated) ? state.tonightVariable : entry.variable)
                                 .font(.mono(9.5))
                                 .kerning(1)
                                 .foregroundColor(.lullAmberSoft)
@@ -127,6 +141,8 @@ struct SleepLogDetailView: View {
                         // Notes section (hidden during tonight-in-progress)
                         if isTonightInProgress {
                             EmptyView()
+                        } else if isAlreadyRated {
+                            if !entry.notes.isEmpty { pastNotesSection }
                         } else if isToday {
                             todayNotesSection
                         } else if !entry.notes.isEmpty {
@@ -138,6 +154,12 @@ struct SleepLogDetailView: View {
                 // CTAs
                 if isTonightInProgress {
                     GhostButton(title: "Got it") { dismiss() }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 22)
+                        .padding(.top, 16)
+                        .padding(.bottom, 36)
+                } else if isAlreadyRated {
+                    GhostButton(title: "Done") { dismiss() }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 22)
                         .padding(.top, 16)
@@ -171,7 +193,7 @@ struct SleepLogDetailView: View {
             }
         }
         .onAppear {
-            draftScore = isToday ? 0 : entry.score
+            draftScore = entry.score
             draftNotes = entry.notes
         }
     }

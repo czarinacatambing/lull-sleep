@@ -20,7 +20,11 @@ struct LullApp: App {
         let midSleepCategory = UNNotificationCategory(
             identifier: "MID_SLEEP_CHECK", actions: [midSleepAction], intentIdentifiers: [], options: [])
 
-        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory])
+        let startRitualAction = UNNotificationAction(identifier: "OPEN_RITUAL", title: "Start ritual", options: [.foreground])
+        let windDownStartCategory = UNNotificationCategory(
+            identifier: "WIND_DOWN_START", actions: [startRitualAction], intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory, windDownStartCategory])
     }
 
     var body: some Scene {
@@ -64,11 +68,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let category = response.notification.request.content.categoryIdentifier
         DispatchQueue.main.async {
             if category == "MORNING_CHECKIN" {
-                if let index = self.state?.sleepLogs.firstIndex(where: { $0.isToday }) {
+                // Open last night's dot, not today's. If nothing's unrated,
+                // fall back to whatever entry exists for yesterday so the user
+                // still lands on the right night.
+                let cal = Calendar.current
+                let idx = self.state?.ratableEntryIndex
+                    ?? self.state?.sleepLogs.firstIndex(where: { cal.isDateInYesterday($0.date) })
+                if let index = idx {
                     self.state?.selectedDotIndex = index
                 }
             } else if category == "MID_SLEEP_CHECK" {
                 self.state?.showMidSleepMode = true
+            } else if category == "WIND_DOWN_START" {
+                self.state?.cancelWindDownStartNotifications()
+                self.state?.showNightlyFlow = true
             }
         }
         completionHandler()

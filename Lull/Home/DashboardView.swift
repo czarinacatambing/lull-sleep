@@ -355,6 +355,7 @@ struct DashboardView: View {
 
                 // CTA
                 PrimaryCTA(title: allPrepDone ? "Start ritual" : "Finish prep · \(remaining) left") {
+                    state.cancelWindDownStartNotifications()
                     state.showNightlyFlow = true
                 }
                 .disabled(!allPrepDone)
