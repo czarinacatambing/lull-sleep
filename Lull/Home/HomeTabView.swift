@@ -22,7 +22,7 @@ struct HomeTabView: View {
 
             // Custom tab bar
             HStack(spacing: 0) {
-                TabBarButton(title: "Tonight", icon: "moon.fill", selected: selectedTab == 0) {
+                TabBarButton(title: "Today", icon: "moon.fill", selected: selectedTab == 0) {
                     selectedTab = 0
                 }
                 TabBarButton(title: "Routine", icon: "flask.fill", selected: selectedTab == 1) {

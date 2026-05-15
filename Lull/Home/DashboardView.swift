@@ -11,6 +11,10 @@ struct DashboardView: View {
         let f = DateFormatter(); f.dateFormat = "EEEE · h:mm a"; return f
     }()
 
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
+    }()
+
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: currentDate)
         switch hour {
@@ -19,6 +23,51 @@ struct DashboardView: View {
         case 17..<22: return "Good evening,"
         default:      return "Hi,"
         }
+    }
+
+    // MARK: - Morning state predicate
+
+    private var isMorningState: Bool {
+        guard let wake = todaysWakeTime,
+              let windowEnd = Calendar.current.date(byAdding: .hour, value: 4, to: wake) else {
+            return false
+        }
+        return currentDate >= wake && currentDate < windowEnd
+    }
+
+    private var todaysWakeTime: Date? {
+        let cal = Calendar.current
+        let wakeComps = cal.dateComponents([.hour, .minute], from: state.typicalWakeTime)
+        var combined = cal.dateComponents([.year, .month, .day], from: currentDate)
+        combined.hour = wakeComps.hour ?? 7
+        combined.minute = wakeComps.minute ?? 0
+        return cal.date(from: combined)
+    }
+
+    // Most recent entry with a score (any date). nil if user has never rated.
+    private var mostRecentRated: SleepLogEntry? {
+        state.sleepLogs
+            .filter { $0.score > 0 }
+            .sorted { $0.date > $1.date }
+            .first
+    }
+
+    // For the rate hero: today's rating = last night's score if logged this morning,
+    // otherwise nil (unrated).
+    private var todaysRating: Int? {
+        let lastNight = state.lastNightEntry
+        guard let score = lastNight?.score, score > 0 else { return nil }
+        return score
+    }
+
+    // For the rate hero's delta: the most recent rated entry EXCLUDING last night's.
+    private var yesterdaysRating: Int? {
+        let lastNightId = state.lastNightEntry?.id
+        let rated: [SleepLogEntry] = state.sleepLogs.filter {
+            $0.score > 0 && $0.id != lastNightId
+        }
+        let sorted = rated.sorted { $0.date > $1.date }
+        return sorted.first?.score
     }
 
     private var prepSteps: [RoutineStep] { state.preWindDownSteps }
@@ -48,59 +97,15 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Spacer().frame(height: 16)
 
-                        // Top bar
-                        HStack {
-                            BrandMark()
-                            Spacer()
-                            Button(action: { withAnimation(.easeOut(duration: 0.18)) { showMenu.toggle() } }) {
-                                ZStack {
-                                    Circle()
-                                        .strokeBorder(Color.lullLine, lineWidth: 1)
-                                        .frame(width: 36, height: 36)
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.lullInk2)
-                                }
-                            }
+                        topBar
+                            .padding(.horizontal, Lull.horizontalPad)
+                            .padding(.bottom, 8)
+
+                        if isMorningState {
+                            morningContent
+                        } else {
+                            eveningContent
                         }
-                        .padding(.horizontal, Lull.horizontalPad)
-                        .padding(.bottom, 8)
-
-                        // Greeting
-                        VStack(alignment: .leading, spacing: 14) {
-                            Kicker(text: DashboardView.dateFmt.string(from: currentDate))
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(greeting)
-                                    .font(.serif(32))
-                                    .foregroundColor(.lullInk0)
-                                Text("let's wind down.")
-                                    .font(.serifItalic(32))
-                                    .foregroundColor(.lullInk2)
-                            }
-                        }
-                        .padding(.horizontal, 28)
-                        .padding(.top, 32)
-                        .padding(.bottom, 24)
-
-                        // Streak strip (compact peripheral progress)
-                        StreakStrip(selectedTab: $selectedTab)
-                            .padding(.horizontal, 22)
-                            .padding(.bottom, 16)
-
-                        // Prep checklist card
-                        prepChecklistCard
-                            .padding(.horizontal, 22)
-                            .padding(.bottom, 16)
-
-                        // Tonight's ritual hero
-                        ritualHeroCard
-                            .padding(.horizontal, 22)
-                            .padding(.bottom, 24)
-
-                        // The ritual · in sequence
-                        ritualSequenceSection
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 36)
                     }
                 }
             }
@@ -155,6 +160,136 @@ struct DashboardView: View {
                 .zIndex(10)
             }
         }
+    }
+
+    // MARK: - Top bar (shared)
+
+    private var topBar: some View {
+        HStack {
+            BrandMark()
+            Spacer()
+            Button(action: { withAnimation(.easeOut(duration: 0.18)) { showMenu.toggle() } }) {
+                ZStack {
+                    Circle()
+                        .strokeBorder(Color.lullLine, lineWidth: 1)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.lullInk2)
+                }
+            }
+        }
+    }
+
+    // MARK: - Evening content (existing layout)
+
+    @ViewBuilder
+    private var eveningContent: some View {
+        // Greeting
+        VStack(alignment: .leading, spacing: 14) {
+            Kicker(text: DashboardView.dateFmt.string(from: currentDate))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(greeting)
+                    .font(.serif(32))
+                    .foregroundColor(.lullInk0)
+                Text("let's wind down.")
+                    .font(.serifItalic(32))
+                    .foregroundColor(.lullInk2)
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 32)
+        .padding(.bottom, 24)
+
+        StreakStrip(selectedTab: $selectedTab)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 16)
+
+        prepChecklistCard
+            .padding(.horizontal, 22)
+            .padding(.bottom, 16)
+
+        ritualHeroCard
+            .padding(.horizontal, 22)
+            .padding(.bottom, 24)
+
+        ritualSequenceSection
+            .padding(.horizontal, 24)
+            .padding(.bottom, 36)
+    }
+
+    // MARK: - Morning content
+
+    @ViewBuilder
+    private var morningContent: some View {
+        // Morning greeting
+        VStack(alignment: .leading, spacing: 14) {
+            Kicker(text: DashboardView.dateFmt.string(from: currentDate))
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Good morning,")
+                    .font(.serif(32))
+                    .foregroundColor(.lullInk0)
+                Text("how did you sleep?")
+                    .font(.serifItalic(32))
+                    .foregroundColor(.lullInk2)
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 32)
+        .padding(.bottom, 22)
+
+        MorningRateHero(
+            wakeTime: DashboardView.timeFmt.string(from: currentDate),
+            yesterday: yesterdaysRating,
+            rating: todaysRating,
+            variable: state.experimentStatus?.variable,
+            // "Tonight is night X of 5" — forward-looking. After rating, the
+            // chip frames the user as positioned for the next test night.
+            testNight: tonightTestNight,
+            totalTestNights: 5,
+            onRate: { n in
+                state.morningScore = n
+                state.logMorningScore()
+            }
+        )
+        .padding(.horizontal, 22)
+        .padding(.bottom, 16)
+
+        TonightPreviewCard(
+            rated: todaysRating != nil,
+            variable: state.experimentStatus?.variable,
+            testNight: tonightTestNight,
+            totalTestNights: 5,
+            schedule: tonightScheduleRows,
+            startsAt: tonightStartTime,
+            onEditRoutine: { selectedTab = 1 }
+        )
+        .padding(.horizontal, 22)
+        .padding(.bottom, 36)
+    }
+
+    // MARK: - Tonight preview data
+
+    // Tonight is the NEXT test night. After rating last night, that's
+    // experimentStatus.night + 1 (the upcoming night).
+    private var tonightTestNight: Int {
+        let baseline = state.experimentStatus?.night ?? 0
+        return min(baseline + 1, 5)
+    }
+
+    private var tonightScheduleRows: [TonightPreviewCard.Row] {
+        // First 3 actionable items in chronological order.
+        let f = DateFormatter(); f.dateFormat = "h:mm"
+        return state.scheduledRoutine.prefix(3).map { step in
+            TonightPreviewCard.Row(time: f.string(from: step.time), label: step.step.label)
+        }
+    }
+
+    private var tonightStartTime: String {
+        if let first = state.scheduledRoutine.first {
+            return DashboardView.timeFmt.string(from: first.time)
+        }
+        return DashboardView.timeFmt.string(from: state.typicalBedtime)
     }
 
     // MARK: - Prep Checklist Card

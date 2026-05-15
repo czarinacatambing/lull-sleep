@@ -41,6 +41,8 @@
 		CC9999999999999999999999 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9999999999999999999999 /* PendingPromotion.swift */; };
 		CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */; };
 		CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */; };
+		CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */; };
+		CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */; };
 		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */; };
@@ -80,6 +82,8 @@
 		AA9999999999999999999999 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
 		AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
 		AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
+		AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
+		AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
 		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
 		BB7777777777777777777777 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
@@ -148,9 +152,11 @@
 			children = (
 				96CD08D7A04346C513E351B8 /* DashboardView.swift */,
 				9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */,
+				AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */,
 				F80F43006C39DB668F529235 /* MyRoutineView.swift */,
 				AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */,
 				AA5555555555555555555555 /* SleepHistoryLegendView.swift */,
+				AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -345,6 +351,8 @@
 				CC9999999999999999999999 /* PendingPromotion.swift in Sources */,
 				CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */,
 				CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */,
+				CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */,
+				CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
 				AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */,
