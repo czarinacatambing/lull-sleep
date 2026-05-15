@@ -67,21 +67,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let category = response.notification.request.content.categoryIdentifier
         DispatchQueue.main.async {
-            if category == "MORNING_CHECKIN" {
-                // Open last night's dot, not today's. If nothing's unrated,
-                // fall back to whatever entry exists for yesterday so the user
-                // still lands on the right night.
-                let cal = Calendar.current
-                let idx = self.state?.ratableEntryIndex
-                    ?? self.state?.sleepLogs.firstIndex(where: { cal.isDateInYesterday($0.date) })
-                if let index = idx {
-                    self.state?.selectedDotIndex = index
-                }
-            } else if category == "MID_SLEEP_CHECK" {
-                self.state?.showMidSleepMode = true
-            } else if category == "WIND_DOWN_START" {
+            switch category {
+            case "MORNING_CHECKIN", "BEDTIME_REMINDER":
+                // Both surfaces live on the Today tab now — the morning hero
+                // handles rating, and the prep checklist sits below it for
+                // bedtime prep items.
+                self.state?.requestedTab = 0
+            case "WIND_DOWN_START":
                 self.state?.cancelWindDownStartNotifications()
                 self.state?.showNightlyFlow = true
+            case "MID_SLEEP_CHECK":
+                self.state?.showMidSleepMode = true
+            default:
+                break
             }
         }
         completionHandler()
