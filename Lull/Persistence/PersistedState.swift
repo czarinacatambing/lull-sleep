@@ -1,7 +1,11 @@
 import Foundation
 
 struct PersistedState: Codable {
-    var schemaVersion: Int = 1
+    // Schema versions:
+    //   1 — original
+    //   2 — added migration: consolidate orphaned morning-rating entries
+    //       created by the pre-1.0(4) logMorningScore bug
+    var schemaVersion: Int = 2
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -19,6 +23,9 @@ struct PersistedState: Codable {
     // Per-night history
     var sleepLogs: [SleepLogEntry]
 
+    // Tester identity
+    var testerName: String = ""
+
     // Onboarding baseline
     var baselineScore: Int = 0
 
@@ -26,7 +33,8 @@ struct PersistedState: Codable {
     var prepDoneIds: [UUID] = []
     var prepDoneDate: Date? = nil
 
-    init(schemaVersion: Int = 1,
+    init(schemaVersion: Int = 2,
+         testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
          sleepWindowMinutes: Int,
@@ -41,6 +49,7 @@ struct PersistedState: Codable {
          prepDoneIds: [UUID] = [],
          prepDoneDate: Date? = nil) {
         self.schemaVersion            = schemaVersion
+        self.testerName               = testerName
         self.selectedSleepProblems    = selectedSleepProblems
         self.selectedWakes            = selectedWakes
         self.sleepWindowMinutes       = sleepWindowMinutes
@@ -69,6 +78,7 @@ struct PersistedState: Codable {
         coreRoutine              = try c.decode([RoutineStep].self,           forKey: .coreRoutine)
         routineExplanation       = try c.decode(String.self,                  forKey: .routineExplanation)
         sleepLogs                = try c.decode([SleepLogEntry].self,         forKey: .sleepLogs)
+        testerName               = (try? c.decodeIfPresent(String.self,        forKey: .testerName))   ?? ""
         baselineScore            = (try? c.decodeIfPresent(Int.self,          forKey: .baselineScore))   ?? 0
         prepDoneIds              = (try? c.decodeIfPresent([UUID].self,       forKey: .prepDoneIds))  ?? []
         prepDoneDate             = try? c.decodeIfPresent(Date.self,          forKey: .prepDoneDate)

@@ -1,13 +1,14 @@
 import SwiftUI
 
-// Onboarding coordinator — 6 screens plus the Routine Ready payoff.
+// Onboarding coordinator — name screen + 6 screens plus the Routine Ready payoff.
 struct OnboardingView: View {
     @EnvironmentObject var state: AppState
-    @State private var step = 1
+    @State private var step = 0
 
     var body: some View {
         ZStack {
             switch step {
+            case 0: OnbNameView(step: $step)
             case 1: OnbSleepProblemView(step: $step)
             case 2: OnbWhatWakesView(step: $step)
             case 3: OnbBaselineRatingView(step: $step)
@@ -20,6 +21,67 @@ struct OnboardingView: View {
         }
         .animation(step == 7 ? .easeInOut(duration: 0.7) : .easeInOut(duration: 0.28), value: step)
         .transition(.opacity)
+    }
+}
+
+// MARK: - Screen 0: Name
+
+struct OnbNameView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        LullScreen(glow: false) {
+            AmberGlow(x: 0.5, y: -0.1, radius: 220, opacity: 0.65)
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 16)
+
+                HStack { BrandMark(); Spacer() }
+                    .padding(.horizontal, Lull.horizontalPad)
+                    .padding(.bottom, 32)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Kicker(text: "Welcome")
+                    Text("What should we\ncall you?")
+                        .font(.serif(30))
+                        .foregroundColor(.lullInk0)
+                        .padding(.top, 10)
+                    Text("Just your first name is fine.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.lullInk2)
+                }
+                .padding(.horizontal, Lull.horizontalPad)
+                .padding(.bottom, 36)
+
+                TextField("", text: $state.testerName, prompt: Text("Your name").foregroundColor(.lullInk4))
+                    .font(.system(size: 22, weight: .light))
+                    .foregroundColor(.lullInk0)
+                    .tint(.lullAmber)
+                    .focused($focused)
+                    .submitLabel(.continue)
+                    .onSubmit { if !state.testerName.trimmingCharacters(in: .whitespaces).isEmpty { step = 1 } }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.white.opacity(0.04))
+                            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                    )
+                    .padding(.horizontal, Lull.horizontalPad)
+                    .onAppear { focused = true }
+
+                Spacer()
+
+                PrimaryCTA(title: "Continue", disabled: state.testerName.trimmingCharacters(in: .whitespaces).isEmpty) {
+                    step = 1
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 36)
+            }
+        }
     }
 }
 

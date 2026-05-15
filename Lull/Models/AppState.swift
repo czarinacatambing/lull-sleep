@@ -8,6 +8,7 @@ class AppState: ObservableObject {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
 
     // MARK: - Onboarding answers
+    @Published var testerName: String = ""
     @Published var selectedSleepProblems: Set<Int> = []
     @Published var selectedWakes: Set<Int> = []
     @Published var sleepWindowMinutes: Int = 20
@@ -96,6 +97,7 @@ class AppState: ObservableObject {
         else { prepDoneIds.insert(id) }
         prepDoneDate = Date()
         persist()
+        scheduleBedtimePrepSummary()
     }
 
     func resetPrepIfNeeded() {
@@ -109,6 +111,7 @@ class AppState: ObservableObject {
             prepDoneIds = []
             prepDoneDate = nil
             persist()
+            scheduleBedtimePrepSummary()
         }
     }
 
@@ -122,6 +125,74 @@ class AppState: ObservableObject {
     var lastNightEntry: SleepLogEntry? {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
         return sleepLogs.last { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
+    }
+
+    // One-time data migration: consolidates orphaned morning-rating entries
+    // produced by the pre-1.0(4) logMorningScore bug. That bug created a new
+    // entry on the *morning-after* date holding only the score, leaving the
+    // *wind-down* entry on the night-before date unrated. This function detects
+    // those pairs and merges the rating back onto the wind-down entry.
+    //
+    // Only call once on launch (gated by schemaVersion in init).
+    func migrateOrphanedRatings() {
+        var removed: [Int] = []
+
+        for (bIndex, b) in sleepLogs.enumerated() {
+            // The bug signature: a score-only entry with no completed flow data.
+            guard b.score > 0,
+                  b.completedNightlyFlow == false,
+                  b.actualBedtime == nil,
+                  (b.stepAttempts).isEmpty
+            else { continue }
+
+            // Pair it with the most recent prior unrated entry that *did* run the flow.
+            guard let aIndex = sleepLogs.indices
+                .filter({ idx in
+                    idx != bIndex &&
+                    sleepLogs[idx].score == 0 &&
+                    sleepLogs[idx].completedNightlyFlow == true &&
+                    sleepLogs[idx].date < b.date
+                })
+                .max(by: { sleepLogs[$0].date < sleepLogs[$1].date })
+            else { continue }
+
+            // Same "night" sanity check — within 36 hours.
+            let hoursBetween = b.date.timeIntervalSince(sleepLogs[aIndex].date) / 3600
+            guard (0..<36).contains(hoursBetween) else { continue }
+
+            // Merge the rating onto the wind-down entry.
+            sleepLogs[aIndex].score            = b.score
+            sleepLogs[aIndex].actualWakeTime   = b.actualWakeTime
+            sleepLogs[aIndex].hoursSlept       = b.hoursSlept
+            if !b.notes.isEmpty { sleepLogs[aIndex].notes = b.notes }
+            if let bRemedyId = b.variableRemedyId, sleepLogs[aIndex].variableRemedyId == nil {
+                sleepLogs[aIndex].variableRemedyId = bRemedyId
+            }
+
+            removed.append(bIndex)
+        }
+
+        // Remove orphans in reverse order so indices stay valid.
+        for idx in removed.sorted(by: >) {
+            sleepLogs.remove(at: idx)
+        }
+
+        if !removed.isEmpty {
+            print("[Migration] Consolidated \(removed.count) orphaned rating entr\(removed.count == 1 ? "y" : "ies").")
+        }
+    }
+
+    // Most recent unrated entry from today or yesterday. Used by the morning
+    // rating flow to attribute the score to *last night's* sleep rather than
+    // creating a new entry dated today.
+    var ratableEntryIndex: Int? {
+        let cal = Calendar.current
+        return sleepLogs.indices
+            .filter { i in
+                let d = sleepLogs[i].date
+                return sleepLogs[i].score == 0 && (cal.isDateInYesterday(d) || cal.isDateInToday(d))
+            }
+            .max(by: { sleepLogs[$0].date < sleepLogs[$1].date })
     }
 
     // MARK: - Export
@@ -153,6 +224,7 @@ class AppState: ObservableObject {
 
         let snapshot = PersistedState(
             schemaVersion: 1,
+            testerName: testerName,
             selectedSleepProblems: selectedSleepProblems,
             selectedWakes: selectedWakes,
             sleepWindowMinutes: sleepWindowMinutes,
@@ -183,6 +255,7 @@ class AppState: ObservableObject {
 
     init() {
         if let saved = PersistenceStore.shared.load() {
+            _testerName               = Published(initialValue: saved.testerName)
             _selectedSleepProblems    = Published(initialValue: saved.selectedSleepProblems)
             _selectedWakes            = Published(initialValue: saved.selectedWakes)
             _sleepWindowMinutes       = Published(initialValue: saved.sleepWindowMinutes)
@@ -196,6 +269,15 @@ class AppState: ObservableObject {
             _baselineScore            = Published(initialValue: saved.baselineScore)
             _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
             _prepDoneDate             = Published(initialValue: saved.prepDoneDate)
+
+            // Run any pending data migrations once.
+            if saved.schemaVersion < 2 {
+                DispatchQueue.main.async {
+                    self.migrateOrphanedRatings()
+                    self.persist()  // saves with new schemaVersion (default = 2)
+                }
+            }
+
             // Reschedule on every launch so notifications stay current (e.g. after OS clears them)
             DispatchQueue.main.async { self.scheduleAllNotifications() }
         }
@@ -203,6 +285,7 @@ class AppState: ObservableObject {
 
     func persist() {
         let snapshot = PersistedState(
+            testerName:               testerName,
             selectedSleepProblems:    selectedSleepProblems,
             selectedWakes:            selectedWakes,
             sleepWindowMinutes:       sleepWindowMinutes,
@@ -262,14 +345,17 @@ class AppState: ObservableObject {
     }
 
     func logMorningScore() {
-        if let idx = sleepLogs.firstIndex(where: { $0.isToday }) {
-            sleepLogs[idx].score         = morningScore
-            sleepLogs[idx].variable      = tonightVariable
+        if let idx = ratableEntryIndex {
+            sleepLogs[idx].score            = morningScore
+            sleepLogs[idx].variable         = tonightVariable
             sleepLogs[idx].variableRemedyId = tonightRemedyId
-            sleepLogs[idx].actualWakeTime = Date()
-            sleepLogs[idx].hoursSlept    = morningHoursSlept
+            sleepLogs[idx].actualWakeTime   = Date()
+            sleepLogs[idx].hoursSlept       = morningHoursSlept
         } else {
-            var entry = SleepLogEntry(date: Date(), variable: tonightVariable, score: morningScore)
+            // No recent unrated entry — create one dated yesterday so the dot
+            // lands on "last night," not today.
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+            var entry = SleepLogEntry(date: yesterday, variable: tonightVariable, score: morningScore)
             entry.variableRemedyId = tonightRemedyId
             entry.actualWakeTime   = Date()
             entry.hoursSlept       = morningHoursSlept
@@ -373,9 +459,59 @@ class AppState: ObservableObject {
         center.add(request)
     }
 
+    // Per-item primary notification copy — see Docs/notification-copy.md
+    private static let prepNotificationCopy: [String: (title: String, body: String)] = [
+        R.dimTheLights: (
+            "Dim the lights",
+            "Lamps only from here. Bright light tells your brain it's still daytime."
+        ),
+        R.noScreens: (
+            "Wind down screen time",
+            "Blue light suppresses melatonin and tells your brain it's still daytime. Lull is fine — TikTok, email, and news aren't. Taper from here."
+        ),
+        R.appBlocking: (
+            "Lock the time-sinks",
+            "Tap done after you've blocked the apps you don't want pulling you in tonight."
+        ),
+        R.finishWorkouts: (
+            "Wrap your workout",
+            "Cortisol takes about three hours to settle. Cool down when you can."
+        ),
+        R.noHeavySnacks: (
+            "Last call on heavy food",
+            "Big meals = restless sleep. A light snack is fine if you're hungry."
+        ),
+        R.noAlcohol: (
+            "Last call on alcoholic drinks",
+            "Even one alcoholic drink fragments your deep sleep tonight. It's a real trade-off."
+        ),
+        R.noCaffeine: (
+            "Caffeine cutoff",
+            "Caffeine has a six-hour shadow. Stop now and you'll feel it tonight."
+        ),
+        R.coldRoomPrep: (
+            "Cool your room",
+            "Sweet spot is 65–68°F. Crack a window or drop the thermostat now and it'll be perfect by bedtime."
+        ),
+        R.warmShower: (
+            "Warm shower time",
+            "A warm shower now triggers a body-temp drop that helps you fall asleep faster."
+        ),
+        R.magnesium: (
+            "Take your magnesium",
+            "200–400mg glycinate. Quiet, steady, no jitters. Take it with water."
+        ),
+        R.herbalTea: (
+            "Brew your tea",
+            "Chamomile or rooibos. Steep it now, sip it slow."
+        ),
+    ]
+
     func scheduleBedtimePrepNotifications() {
         let center = UNUserNotificationCenter.current()
-        let prepSteps = coreRoutine.filter { $0.mode == .reminderOnly }
+        // Match preWindDownSteps so experiment-mode prep items (e.g. "Dim the lights"
+        // when it's tonight's variable) also get reminder notifications.
+        let prepSteps = preWindDownSteps
         let oldIds = prepSteps.map { "bedtime_prep_\($0.label)" }
         center.removePendingNotificationRequests(withIdentifiers: oldIds)
 
@@ -386,9 +522,14 @@ class AppState: ObservableObject {
             var comps = cal.dateComponents([.hour, .minute], from: fireDate)
             comps.second = 0
 
+            let copy = Self.prepNotificationCopy[step.label] ?? (
+                title: step.label,
+                body: "Quick reminder, this one's part of tonight's prep. Tap done when you've got it."
+            )
+
             let content = UNMutableNotificationContent()
-            content.title = step.label
-            content.body = "\(leadMins) minutes before your target bedtime."
+            content.title = copy.title
+            content.body = copy.body
             content.sound = .default
             content.categoryIdentifier = "BEDTIME_REMINDER"
             content.interruptionLevel = .timeSensitive
@@ -402,6 +543,112 @@ class AppState: ObservableObject {
             )
             center.add(request)
         }
+
+        scheduleBedtimePrepSummary()
+        scheduleWindDownStartNotifications()
+    }
+
+    // Fires 10 min before wind-down ritual starts (i.e. 40 min before typicalBedtime)
+    // if there are still unchecked prep items. Reschedules whenever prep state changes
+    // so the body's count stays current.
+    func scheduleBedtimePrepSummary() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["bedtime_prep_summary"])
+
+        let prepSteps = preWindDownSteps
+        let uncheckedCount = prepSteps.filter { !prepDoneIds.contains($0.id) }.count
+        guard uncheckedCount > 0 else { return }
+
+        let cal = Calendar.current
+        // Fire 10 min before wind-down start (which itself is at bedtime - duration).
+        let offsetFromBedtime = windDownDurationMinutes + 10
+        guard let fireDate = cal.date(byAdding: .minute, value: -offsetFromBedtime, to: typicalBedtime) else { return }
+        var comps = cal.dateComponents([.hour, .minute], from: fireDate)
+        comps.second = 0
+
+        let content = UNMutableNotificationContent()
+        if uncheckedCount == 1 {
+            content.title = "Bedtime — one item still open"
+            content.body = "One prep item left. Knock it out or skip tonight — both fine."
+        } else {
+            content.title = "Bedtime — a few items still open"
+            content.body = "\(uncheckedCount) prep items still on the list. Skip tonight or knock them out in the next few minutes."
+        }
+        content.sound = .default
+        content.categoryIdentifier = "BEDTIME_REMINDER"
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 1.0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+        let request = UNNotificationRequest(identifier: "bedtime_prep_summary", content: content, trigger: trigger)
+        center.add(request)
+    }
+
+    // Total estimated duration of tonight's in-sequence wind-down ritual.
+    // Used to compute when to fire the "Wind-down time" notification and how to
+    // word the follow-up body. Floors at 1 min so we never produce a negative offset.
+    var windDownDurationMinutes: Int {
+        let total = windDownSteps.reduce(0) { sum, step in
+            sum + (NightlyStepKind.forLabel(step.label)?.estimatedMinutes ?? 5)
+        }
+        return max(1, total)
+    }
+
+    // Primary fires at typicalBedtime - <wind-down duration> so starting now lands
+    // the user in bed right at bedtime. Follow-up fires 5 min later if still no
+    // ritual. cancelWindDownStartNotifications() clears pending requests once the
+    // user starts the ritual.
+    func scheduleWindDownStartNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [
+            "wind_down_start_primary", "wind_down_start_followup"
+        ])
+
+        let cal = Calendar.current
+        let duration = windDownDurationMinutes
+        let followupGap = 5
+
+        if let primaryFire = cal.date(byAdding: .minute, value: -duration, to: typicalBedtime) {
+            var comps = cal.dateComponents([.hour, .minute], from: primaryFire)
+            comps.second = 0
+
+            let content = UNMutableNotificationContent()
+            content.title = "Wind-down time"
+            content.body = "Close to bedtime now. Tap to start tonight's ritual — Lull will guide you through to lights-out."
+            content.sound = .default
+            content.categoryIdentifier = "WIND_DOWN_START"
+            content.interruptionLevel = .timeSensitive
+            content.relevanceScore = 1.0
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+            let request = UNNotificationRequest(identifier: "wind_down_start_primary", content: content, trigger: trigger)
+            center.add(request)
+        }
+
+        // Skip follow-up if duration <= followupGap — otherwise it'd land at or past bedtime.
+        if duration > followupGap,
+           let followupFire = cal.date(byAdding: .minute, value: -(duration - followupGap), to: typicalBedtime) {
+            var comps = cal.dateComponents([.hour, .minute], from: followupFire)
+            comps.second = 0
+
+            let content = UNMutableNotificationContent()
+            content.title = "Bedtime's getting close"
+            content.body = "Wind-down takes about \(duration) minutes. Start now and you'll land in bed right on time."
+            content.sound = .default
+            content.categoryIdentifier = "WIND_DOWN_START"
+            content.interruptionLevel = .timeSensitive
+            content.relevanceScore = 1.0
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+            let request = UNNotificationRequest(identifier: "wind_down_start_followup", content: content, trigger: trigger)
+            center.add(request)
+        }
+    }
+
+    func cancelWindDownStartNotifications() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
+            "wind_down_start_primary", "wind_down_start_followup"
+        ])
     }
 
     func scheduleMorningRatingNotifications() {
@@ -444,9 +691,52 @@ class AppState: ObservableObject {
     }
 
     func scheduleAllNotifications() {
+        print("[NotifDebug] scheduleAllNotifications() called. bedtime=\(typicalBedtime), windDownDuration=\(windDownDurationMinutes)min, prepSteps=\(preWindDownSteps.count), windDownSteps=\(windDownSteps.count)")
+
+        // UNUserNotificationCenter.add silently drops requests until permission
+        // is granted. If status is .notDetermined we have to request first,
+        // then do the actual scheduling on the main queue after the prompt
+        // resolves.
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { [weak self] settings in
+            guard let self = self else { return }
+            print("[NotifDebug] auth status: \(settings.authorizationStatus.rawValue) (0=notDetermined, 1=denied, 2=authorized, 3=provisional)")
+
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    print("[NotifDebug] permission prompt resolved: granted=\(granted), error=\(error?.localizedDescription ?? "nil")")
+                    guard granted else { return }
+                    DispatchQueue.main.async { self.performScheduling() }
+                }
+            case .denied:
+                print("[NotifDebug] permission denied — user must re-enable in Settings → Lull → Notifications")
+            default:
+                DispatchQueue.main.async { self.performScheduling() }
+            }
+        }
+    }
+
+    private func performScheduling() {
         scheduleBedtimePrepNotifications()
         scheduleMorningRatingNotifications()
         scheduleMidSleepNotification()
+        scheduleWindDownStartNotifications()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.dumpPendingNotifications()
+        }
+    }
+
+    // Diagnostic — prints the next fire date of every pending request so we can
+    // verify scheduling without poking around in Settings.
+    func dumpPendingNotifications() {
+        UNUserNotificationCenter.current().getPendingNotificationRequests { reqs in
+            print("[NotifDebug] \(reqs.count) pending request(s):")
+            for r in reqs.sorted(by: { ($0.identifier) < ($1.identifier) }) {
+                let next = (r.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate()
+                print("  • \(r.identifier) → \(next.map { "\($0)" } ?? "no next fire")")
+            }
+        }
     }
 
     // MARK: - Canonical schedule

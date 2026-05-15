@@ -30,6 +30,7 @@ enum ExportService {
 
     struct Payload: Encodable {
         let installId: String
+        let testerName: String
         let exportedAt: Date
         let appVersion: String
         let state: PersistedState
@@ -41,7 +42,7 @@ enum ExportService {
         }
 
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        let payload = Payload(installId: installId, exportedAt: Date(), appVersion: version, state: state)
+        let payload = Payload(installId: installId, testerName: state.testerName, exportedAt: Date(), appVersion: version, state: state)
 
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
