@@ -894,6 +894,7 @@ struct SettingsSheet: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         state.persist()
+                        state.scheduleAllNotifications()
                         dismiss()
                     }
                     .font(.system(size: 14, weight: .medium))
@@ -903,6 +904,9 @@ struct SettingsSheet: View {
             .toolbarBackground(Color.lullBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
         }
-        .onDisappear { state.persist() }
+        .onDisappear {
+            state.persist()
+            state.scheduleAllNotifications()
+        }
     }
 }
