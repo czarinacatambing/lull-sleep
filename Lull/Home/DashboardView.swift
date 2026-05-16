@@ -893,8 +893,6 @@ struct SettingsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        state.persist()
-                        state.scheduleAllNotifications()
                         dismiss()
                     }
                     .font(.system(size: 14, weight: .medium))
