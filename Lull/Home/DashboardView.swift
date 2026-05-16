@@ -4,6 +4,7 @@ struct DashboardView: View {
     @EnvironmentObject var state: AppState
     @Binding var selectedTab: Int
     @State private var showMenu = false
+    @State private var showSettings = false
     @State private var currentDate = Date()
     @State private var glowPulse = false
 
@@ -149,12 +150,15 @@ struct DashboardView: View {
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            state.showMidSleepMode = true
+                            showSettings = true
                         }
                     }) {
                         HStack(spacing: 12) {
-                            Ember(size: 5)
-                            Text("Mid-Sleep Mode")
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullInk2)
+                                .frame(width: 18)
+                            Text("Settings")
                                 .font(.system(size: 14))
                                 .foregroundColor(.lullInk1)
                             Spacer()
@@ -205,6 +209,11 @@ struct DashboardView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
                 .zIndex(10)
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -771,5 +780,129 @@ struct StreakStrip: View {
                 .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
                 .frame(width: 8, height: 8)
         }
+    }
+}
+
+// MARK: - Settings Sheet
+
+struct SettingsSheet: View {
+    @EnvironmentObject var state: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
+    }()
+
+    private var sleepDurationText: String {
+        let mins = Int(state.typicalWakeTime.timeIntervalSince(state.typicalBedtime) / 60)
+        let adjusted = mins <= 0 ? mins + 1440 : mins
+        let h = adjusted / 60
+        let m = adjusted % 60
+        return m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
+    }
+
+    private func formatted(_ date: Date) -> String {
+        Self.timeFmt.string(from: date)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.lullBg.ignoresSafeArea()
+                AmberGlow(x: 0.5, y: -0.05, radius: 220, opacity: 0.5)
+                    .ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Sleep window section
+                        VStack(alignment: .leading, spacing: 6) {
+                            Kicker(text: "Sleep window")
+                            Text("When do you usually sleep?")
+                                .font(.serif(22))
+                                .foregroundColor(.lullInk0)
+                        }
+                        .padding(.horizontal, 26)
+                        .padding(.top, 8)
+                        .padding(.bottom, 20)
+
+                        // Duration readout
+                        VStack(spacing: 3) {
+                            Text(sleepDurationText)
+                                .font(.serif(34))
+                                .foregroundColor(.lullInk0)
+                            Text("Typical window")
+                                .font(.mono(10))
+                                .kerning(1.6)
+                                .foregroundColor(.lullInk3)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 16)
+
+                        // Arc clock
+                        SleepArcClock(bedtime: $state.typicalBedtime, wakeTime: $state.typicalWakeTime)
+                            .frame(width: 260, height: 260)
+                            .frame(maxWidth: .infinity)
+
+                        // Bedtime / Wake labels
+                        HStack {
+                            VStack(spacing: 4) {
+                                Image(systemName: "moon.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.lullAmber)
+                                Text(formatted(state.typicalBedtime))
+                                    .font(.serif(18))
+                                    .foregroundColor(.lullInk0)
+                                Text("Usually asleep")
+                                    .font(.mono(10))
+                                    .kerning(1.2)
+                                    .foregroundColor(.lullInk3)
+                            }
+                            Spacer()
+                            VStack(spacing: 4) {
+                                Image(systemName: "sun.horizon.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.lullAmber)
+                                Text(formatted(state.typicalWakeTime))
+                                    .font(.serif(18))
+                                    .foregroundColor(.lullInk0)
+                                Text("Usually up")
+                                    .font(.mono(10))
+                                    .kerning(1.2)
+                                    .foregroundColor(.lullInk3)
+                            }
+                        }
+                        .padding(.horizontal, 52)
+                        .padding(.top, 12)
+                        .padding(.bottom, 36)
+
+                        Divider()
+                            .background(Color.lullLine)
+                            .padding(.horizontal, 26)
+                            .padding(.bottom, 28)
+
+                        // Help improve Lull card
+                        ExportDataFooter()
+                            .padding(.horizontal, 22)
+
+                        Spacer().frame(height: 40)
+                    }
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        state.persist()
+                        dismiss()
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.lullAmber)
+                }
+            }
+            .toolbarBackground(Color.lullBg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+        }
+        .onDisappear { state.persist() }
     }
 }
