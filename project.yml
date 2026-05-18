@@ -32,6 +32,10 @@ targets:
         NSMicrophoneUsageDescription: "Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: true
         UIAppFonts:
           - Fraunces-Light.ttf
           - Fraunces-LightItalic.ttf
@@ -78,6 +82,7 @@ targets:
     info:
       path: LullActivities/Info.plist
       properties:
+        CFBundleDisplayName: LullActivities
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
