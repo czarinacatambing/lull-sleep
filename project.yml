@@ -39,6 +39,8 @@ targets:
           - JetBrainsMono-Regular.ttf
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
