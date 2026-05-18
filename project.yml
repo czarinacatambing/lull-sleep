@@ -30,6 +30,7 @@ targets:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
         NSMicrophoneUsageDescription: "Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared."
+        NSCameraUsageDescription: "Lull does not use the camera."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown

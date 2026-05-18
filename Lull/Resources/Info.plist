@@ -18,6 +18,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Lull does not use the camera.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared.</string>
 	<key>NSSupportsLiveActivities</key>
