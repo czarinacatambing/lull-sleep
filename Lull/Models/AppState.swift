@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import UserNotifications
+import ActivityKit
 
 class AppState: ObservableObject {
 
@@ -98,6 +99,10 @@ class AppState: ObservableObject {
         prepDoneDate = Date()
         persist()
         scheduleBedtimePrepSummary()
+        LiveActivityService.shared.update(doneIds: prepDoneIds)
+        if prepDoneIds.count == preWindDownSteps.count {
+            LiveActivityService.shared.end(dismissalPolicy: .after(.now + 30))
+        }
     }
 
     func resetPrepIfNeeded() {
@@ -113,6 +118,85 @@ class AppState: ObservableObject {
             persist()
             scheduleBedtimePrepSummary()
         }
+    }
+
+    // MARK: - Sleep Companion Live Activity helpers
+
+    // The next wake time anchored to today/tomorrow based on the user's
+    // typicalWakeTime hour/minute. Used to seed the Live Activity countdown.
+    func nextWakeTime() -> Date {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        let now = Date()
+        var candidate = cal.date(bySettingHour: comps.hour ?? 7,
+                                 minute: comps.minute ?? 0,
+                                 second: 0,
+                                 of: now) ?? now
+        if candidate <= now {
+            candidate = cal.date(byAdding: .day, value: 1, to: candidate) ?? candidate
+        }
+        return candidate
+    }
+
+    // Called on app foreground. If a Lock Screen rating tap stashed a value
+    // in the App Group, persist it as morningScore and push the .rated state
+    // (with score + delta) to the Live Activity so the confirmation lingers.
+    func ingestPendingLiveActivityRating() {
+        guard let pending = LiveActivityService.shared.consumePendingRating() else { return }
+
+        // 1-5 dot → 1-10 morningScore (matches the in-app SleepScoreSelector scale)
+        let score10 = max(1, min(10, pending.rating * 2))
+        morningScore = score10
+        logMorningScore()
+
+        let delta = Double(score10 - baselineScore)
+        let baseLabel = sameWeekdayBaselineLabel(for: pending.at)
+
+        LiveActivityService.shared.publishRatedAndEnd(
+            rating: pending.rating,
+            score: Double(score10),
+            deltaVsBaseline: delta,
+            baselineLabel: baseLabel
+        )
+    }
+
+    // Promote the Live Activity from .sleeping → .awaitingRating once the
+    // app foregrounds past the user's wake time. The view already renders
+    // the wake UI based on the clock; this just syncs the data state.
+    func syncSleepActivityWakeStateIfNeeded() {
+        if Date() >= nextWakeTimeOrTodayWake() {
+            LiveActivityService.shared.updateToAwaitingRating()
+        }
+    }
+
+    private func nextWakeTimeOrTodayWake() -> Date {
+        // Return *today's* wake time anchor — for detecting whether we've
+        // crossed it since bedtime. If today's wake hasn't happened yet,
+        // we use it directly; nextWakeTime() would already roll to tomorrow.
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        return cal.date(bySettingHour: comps.hour ?? 7,
+                        minute: comps.minute ?? 0,
+                        second: 0,
+                        of: Date()) ?? Date()
+    }
+
+    private func sameWeekdayBaselineLabel(for ratedAt: Date) -> String {
+        let cal = Calendar.current
+        let weekday = cal.component(.weekday, from: ratedAt)
+        let priorMatching = sleepLogs
+            .filter {
+                $0.score > 0 &&
+                cal.component(.weekday, from: $0.date) == weekday &&
+                $0.date < cal.startOfDay(for: ratedAt)
+            }
+            .max(by: { $0.date < $1.date })
+        if priorMatching != nil {
+            let f = DateFormatter()
+            f.dateFormat = "EEE"
+            return f.string(from: priorMatching!.date).uppercased()
+        }
+        return "BASELINE"
     }
 
     // MARK: - Morning check-in
@@ -761,6 +845,14 @@ class AppState: ObservableObject {
     func scheduleMorningRatingNotifications() {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ["morning_rating_primary", "morning_rating_noon"])
+
+        // When Live Activities are enabled, the Sleep Companion card handles
+        // the morning rating from the Lock Screen and we don't need a banner.
+        // Only schedule the notifications as a fallback when the user has
+        // Live Activities disabled in Settings → Lull.
+        if ActivityAuthorizationInfo().areActivitiesEnabled {
+            return
+        }
 
         let cal = Calendar.current
 

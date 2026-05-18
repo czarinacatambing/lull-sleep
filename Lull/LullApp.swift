@@ -32,6 +32,11 @@ struct LullApp: App {
             ContentView()
                 .environmentObject(state)
                 .onAppear { appDelegate.state = state }
+                .onOpenURL { url in
+                    if url.scheme == "lull" && url.host == "midsleep" {
+                        state.showMidSleepMode = true
+                    }
+                }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -39,6 +44,19 @@ struct LullApp: App {
                 state.persist()
             case .active:
                 state.autoExportIfDue()
+                // Apply any prep-item toggles made from the Lock Screen while the app was closed.
+                let pendingIds = LiveActivityService.shared.consumePendingToggles()
+                for id in pendingIds { state.togglePrepDone(id) }
+                // The Sleep Companion "Mid-Sleep mode" button writes a flag
+                // to the App Group; surface the Mid-Sleep tab when we see it.
+                if LiveActivityService.shared.consumePendingMidSleepRequest() {
+                    state.showMidSleepMode = true
+                }
+                // Sync the Sleep Companion data state to the wake phase if we
+                // crossed wake time, then pull in any rating tapped from the
+                // Lock Screen and publish the .rated confirmation.
+                state.syncSleepActivityWakeStateIfNeeded()
+                state.ingestPendingLiveActivityRating()
             default:
                 break
             }

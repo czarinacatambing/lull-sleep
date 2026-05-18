@@ -215,17 +215,19 @@ struct MorningRewardView: View {
         .padding(.horizontal, 28)
         .padding(.vertical, 20)
         .frame(minWidth: 220)
-        // .background gives the inner ZStack the same frame as the VStack so
-        // the Confetti's GeometryReader can measure the card and animate pieces
-        // inside it. Layering as a sibling in a .fixedSize ZStack collapsed it.
         .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(fill)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .strokeBorder(borderColor, lineWidth: 1)
-                    )
+            RoundedRectangle(cornerRadius: 22)
+                .fill(fill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .strokeBorder(borderColor, lineWidth: 1)
+                )
+        )
+        // Overlay keeps the confetti as a proper view that gets onAppear/layout,
+        // avoiding the animation-start issue when deep inside .background().
+        // clipShape is applied last so it clips the overlay too.
+        .overlay(
+            Group {
                 if showsConfetti {
                     Confetti(variant: .mini)
                 }

@@ -24,13 +24,17 @@ struct NightlyFlowView: View {
                 case .avoidReminder:                 EmptyView()
                 }
             } else {
-                Color.lullBg.ignoresSafeArea()
-                    .onAppear {
-                        state.updateTodayLog { $0.actualBedtime = Date(); $0.completedNightlyFlow = true }
-                        state.scheduleMidSleepNotification()
-                        state.nightlyStep = 0
-                        dismiss()
-                    }
+                NightlyGoodNightView {
+                    state.nightlyStep = 0
+                    // End the prep-checklist Live Activity (if still running)
+                    // and start the Sleep Companion that runs through wake.
+                    LiveActivityService.shared.end(dismissalPolicy: .immediate)
+                    LiveActivityService.shared.startSleepActivity(
+                        bedtime: Date(),
+                        wakeTime: state.nextWakeTime()
+                    )
+                    dismiss()
+                }
             }
         }
         .animation(.easeInOut(duration: 0.45), value: state.nightlyStep)
@@ -965,6 +969,182 @@ struct NightlyGenericStepView: View {
                 }
                 .padding(.horizontal, 22)
                 .padding(.bottom, 36)
+            }
+        }
+    }
+}
+
+// MARK: - Good Night Outro
+
+struct NightlyGoodNightView: View {
+    var onDismiss: () -> Void
+
+    @EnvironmentObject var state: AppState
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+
+    @State private var heroOpacity: Double = 0
+    @State private var tipOpacity: Double = 0
+    @State private var dimOpacity: Double = 0
+    @State private var glowOpacity: Double = 0.55
+    @State private var heroFade: Double = 1
+    @State private var tipFade: Double = 1
+    @State private var emberScale: CGFloat = 1.0
+    @State private var canDismiss = false
+
+    private var displayName: String? {
+        let name = state.testerName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return nil }
+        let first = name.components(separatedBy: .whitespaces).first ?? name
+        guard first.count <= 14 else { return nil }
+        return first
+    }
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color.lullBg, Color(hex: "#120b09")],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [Color.lullAmber.opacity(glowOpacity), .clear],
+                center: UnitPoint(x: 0.5, y: 0.48),
+                startRadius: 0,
+                endRadius: 280
+            )
+            .ignoresSafeArea()
+
+            GeometryReader { geo in
+                let w = geo.size.width
+
+                // Hero title
+                VStack(alignment: .center, spacing: 0) {
+                    Text("ROUTINE COMPLETE")
+                        .font(.mono(10))
+                        .kerning(10 * 0.18)
+                        .foregroundColor(Color.lullAmber.opacity(0.75))
+
+                    Group {
+                        if let name = displayName {
+                            (Text("Good night,\n")
+                                .font(.serif(52))
+                             + Text("\(name).")
+                                .font(.serifItalic(52))
+                                .foregroundColor(Color.lullAmber))
+                        } else if !state.testerName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Text("Good night.")
+                                .font(.serif(52))
+                        } else {
+                            (Text("Good night,\n")
+                                .font(.serif(52))
+                             + Text("you.")
+                                .font(.serifItalic(52))
+                                .foregroundColor(Color.lullAmber))
+                        }
+                    }
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .foregroundColor(Color.lullInk0)
+                    .shadow(color: Color.lullAmber.opacity(0.4), radius: 16)
+                    .padding(.top, 22)
+                }
+                .opacity(heroOpacity * heroFade)
+                .frame(width: w - 64)
+                .position(x: w / 2, y: 280)
+
+                // Breathing ember
+                Circle()
+                    .fill(Color.lullAmber)
+                    .frame(width: 14, height: 14)
+                    .shadow(color: Color.lullAmber.opacity(0.9), radius: 7)
+                    .shadow(color: Color.lullAmber.opacity(0.5), radius: 24)
+                    .scaleEffect(emberScale)
+                    .position(x: w / 2, y: 470)
+                    .zIndex(10)
+
+                // Mid-sleep tip
+                VStack(spacing: 14) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "moon.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(Color(hex: "#b9aedc"))
+                        Text("IF YOU WAKE TONIGHT")
+                            .font(.mono(9.5))
+                            .kerning(9.5 * 0.14)
+                            .foregroundColor(Color(hex: "#b9aedc"))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(hex: "#b4a0dc").opacity(0.08))
+                    .overlay(Capsule().strokeBorder(Color(hex: "#b4a0dc").opacity(0.20), lineWidth: 1))
+                    .clipShape(Capsule())
+
+                    (Text("Swipe to the ")
+                     + Text("Mid-sleep tab")
+                        .italic()
+                        .foregroundColor(Color.lullAmber)
+                     + Text(" to fall back asleep."))
+                        .font(.serif(16))
+                        .foregroundColor(Color.lullInk1)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(8)
+                        .frame(maxWidth: 290)
+                }
+                .opacity(tipOpacity * tipFade)
+                .frame(width: w - 64)
+                .position(x: w / 2, y: 600)
+
+                // Dim overlay — above content but below ember (zIndex 5 < 10)
+                Color(red: 12/255, green: 8/255, blue: 7/255)
+                    .opacity(dimOpacity * 0.86)
+                    .ignoresSafeArea()
+                    .zIndex(5)
+                    .allowsHitTesting(false)
+            }
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            state.updateTodayLog {
+                $0.completedNightlyFlow = true
+                $0.actualBedtime = Date()
+            }
+            state.persist()
+
+            if reduceMotion {
+                heroOpacity = 1
+                tipOpacity = 1
+            } else {
+                runAnimation()
+                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
+                    emberScale = 1.18
+                }
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                canDismiss = true
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard canDismiss else { return }
+            onDismiss()
+        }
+    }
+
+    private func runAnimation() {
+        withAnimation(.easeOut(duration: 3.0)) {
+            heroOpacity = 1
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.6) {
+            withAnimation(.easeOut(duration: 2.8)) {
+                tipOpacity = 1
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.9) {
+            withAnimation(.easeIn(duration: 3.1)) {
+                dimOpacity = 1
+                glowOpacity = 0.18
+                heroFade = 0.04
+                tipFade = 0.06
             }
         }
     }

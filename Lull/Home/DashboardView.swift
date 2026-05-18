@@ -137,6 +137,14 @@ struct DashboardView: View {
                 withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
                     glowPulse = true
                 }
+                if !isMorningState && !state.preWindDownSteps.isEmpty {
+                    LiveActivityService.shared.startIfNeeded(
+                        prepSteps: state.preWindDownSteps,
+                        doneIds: state.prepDoneIds,
+                        bedtime: state.typicalBedtime,
+                        leadTimes: AppState.prepLeadTimes
+                    )
+                }
             }
 
             // Menu overlay
@@ -288,6 +296,10 @@ struct DashboardView: View {
 
         ritualSequenceSection
             .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+
+        MidSleepPrimerCard(selectedTab: $selectedTab)
+            .padding(.horizontal, 22)
             .padding(.bottom, 36)
     }
 
@@ -580,6 +592,7 @@ struct DashboardView: View {
                 // CTA
                 PrimaryCTA(title: allPrepDone ? "Start ritual" : "Finish prep · \(remaining) left") {
                     state.cancelWindDownStartNotifications()
+                    LiveActivityService.shared.end(dismissalPolicy: .immediate)
                     state.showNightlyFlow = true
                 }
                 .disabled(!allPrepDone)
@@ -906,5 +919,84 @@ struct SettingsSheet: View {
             state.persist()
             state.scheduleAllNotifications()
         }
+    }
+}
+
+// MARK: - Mid-Sleep Primer Card
+
+struct MidSleepPrimerCard: View {
+    @Binding var selectedTab: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: "#b4a0dc").opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "moon.zzz.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(hex: "#b9aedc"))
+                }
+                Text("MID-SLEEP MODE")
+                    .font(.mono(10))
+                    .kerning(10 * 0.12)
+                    .foregroundColor(Color(hex: "#b9aedc"))
+                Spacer()
+            }
+            .padding(.bottom, 16)
+
+            // Single activation row
+            HStack(spacing: 14) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 15))
+                    .foregroundColor(Color(hex: "#b9aedc"))
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tap the Mid-sleep tab")
+                        .font(.serif(15))
+                        .foregroundColor(.lullInk0)
+                    Text("From any screen, any time of night")
+                        .font(.mono(10))
+                        .kerning(10 * 0.06)
+                        .foregroundColor(.lullInk3)
+                }
+                Spacer()
+            }
+            .padding(.bottom, 18)
+
+            // Try it now button
+            Button(action: { selectedTab = 2 }) {
+                HStack(spacing: 6) {
+                    Text("Try it now")
+                        .font(.mono(11))
+                        .foregroundColor(Color(hex: "#b9aedc"))
+                    Text("·")
+                        .foregroundColor(Color(hex: "#b9aedc").opacity(0.5))
+                    Text("preview")
+                        .font(.mono(11))
+                        .foregroundColor(Color(hex: "#b9aedc").opacity(0.6))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color(hex: "#b4a0dc").opacity(0.08))
+                .overlay(
+                    Capsule().strokeBorder(Color(hex: "#b4a0dc").opacity(0.20), lineWidth: 1)
+                )
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(hex: "#b4a0dc").opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color(hex: "#b4a0dc").opacity(0.14), lineWidth: 1)
+                )
+        )
     }
 }

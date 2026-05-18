@@ -9,99 +9,183 @@
 /* Begin PBXBuildFile section */
 		006744F385C7F5CC19798978 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 91F441E8041BBA5C851D941F /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF78A2B998193B94B990E54E /* ContentView.swift */; };
+		075356FCE0333528762FFECA /* LullRateSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD883DF344382B1B7BAF123A /* LullRateSleepIntent.swift */; };
 		08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040F13461C755DE8FF434700 /* AudioRecordingService.swift */; };
+		0C00EAD9127E46AEBA0A1D31 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2553583629DF9CBE3DFA6A25 /* ExportService.swift */; };
 		0CFE2F405676712622D674B6 /* MyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80F43006C39DB668F529235 /* MyRoutineView.swift */; };
 		0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */; };
+		11A5627E180807546D2495B7 /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */; };
 		12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */; };
 		12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */; };
+		188D027E713348F9BB9E5628 /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = C90C508C6CD8BC5FA3FF2A21 /* MorningRateHero.swift */; };
+		1CC0536C3E7902F73B9E28DB /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922E3A735BFD405971B0A32A /* LullSleepAttributes.swift */; };
+		23730F99D4E35496D8ADD792 /* PrepChecklistWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B53DB97A6798113D998BA66 /* PrepChecklistWidget.swift */; };
 		2A8BFC6FBA480460BA7E0DF5 /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518622E3CFB58A6544BC915C /* LullApp.swift */; };
 		30C48EF1D2833AD03BC1935B /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */; };
+		4975CF3B4196D5FFE5FEDBF4 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D82CC80B0E14181CF12FB6EB /* ActivityKit.framework */; };
+		4F3B09156060EF7B5AC085E2 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F9269E07008D5DE743569DD /* AppIntents.framework */; };
+		51DC2A648110E8BA1CC1377B /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0376FDB43062AFB889D3098 /* TonightInProgressView.swift */; };
 		52496FFD9E414733A0B2C35B /* JetBrainsMono-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8796F041C3D5B0A73379488D /* JetBrainsMono-VariableFont_wght.ttf */; };
 		52B9009E37E5E54D7A2511DD /* NightlyGentleStretchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */; };
+		58A4EFC38A1202086017A126 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08B64CD1A7E7BB58650234EF /* WidgetKit.framework */; };
+		5A37BFE7A8F13D5F67ACF712 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D70CC2675B14641EE134DD1D /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5B244209D85E8B8C879E407D /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80FF006ACC51F5E83E2C89 /* LiveActivityService.swift */; };
 		60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD08D7A04346C513E351B8 /* DashboardView.swift */; };
+		64A5328C3806666A75220FE2 /* SleepCompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 320920ECC3D9C6F39DAA4784 /* SleepCompanionWidget.swift */; };
 		6B13AEE4C552544EAAEFF3B6 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */; };
 		6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */; };
+		8954243D140D5948A8113811 /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEC3B0EFE8401B5BE6410A1 /* AudioPlaybackService.swift */; };
+		8976ED87CC800F8A9452AF76 /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD7C80E32E0B7CF96FC33BE /* MorningRewardView.swift */; };
+		8E63DB47160563298AE75B6E /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BBF9E8C8D14ED72BBA159EE6 /* 478-breathing-revised.mp3 */; };
 		908F5B9B12AD92424F3B31C1 /* LullTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FDBFDA7720439DD74C23B7 /* LullTheme.swift */; };
 		90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B0DDCB101CFACF018241D3 /* OnboardingView.swift */; };
+		946EEF911678A7B64EDC054E /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5AF7D1DC92796A58350ACE /* AmbientLightService.swift */; };
+		95EB7D7BF53C086BB751D0DE /* LullLA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34063E2E9148765A6A76FE5C /* LullLA.swift */; };
+		98D2A5412321A06133E336E3 /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9ED5212DA0CF5C6B991456 /* Confetti.swift */; };
+		9B7F44E0E934CDBD5118EABE /* LullOpenMidSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3235DFDF444A604EE24349 /* LullOpenMidSleepIntent.swift */; };
+		9E029E5B69BCCD755344B012 /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4412D817F2D0337DA1C1F994 /* PersistenceStore.swift */; };
+		A36C4EE43206BC88FE832426 /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */; };
 		A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD947544D9101E2AC407DBAB /* Assets.xcassets */; };
 		A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */; };
 		A9A3802E174F3057EF6EC4AD /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B11A89266A2BB853502200 /* MidSleepModeView.swift */; };
-		AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7777777777777777777777 /* AudioPlaybackService.swift */; };
 		AC496C0EE12D5E143D032EAE /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
-		BB1111111111111111111111 /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1111111111111111111111 /* RemedyID.swift */; };
-		BB2222222222222222222222 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2222222222222222222222 /* PersistedState.swift */; };
-		BB3333333333333333333333 /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3333333333333333333333 /* PersistenceStore.swift */; };
-		BB4444444444444444444444 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4444444444444444444444 /* AmbientLightService.swift */; };
+		AF066F1DE82E52962CAED688 /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */; };
+		B2A42AD9065E4BC06BAF016D /* SleepCompanionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7457BC39AB8F1183DAC0095 /* SleepCompanionViews.swift */; };
+		BC4416BCE8CCC57E722242F4 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DBD42F7C9064584A41BF3FB /* ShakeDetector.swift */; };
 		BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = C839CE47A7EBAE076B7BF096 /* BundledStories.swift */; };
 		C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		C21ACB4E52422CA3B860179B /* TogglePrepItemIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D672346153DDFAB0134A27 /* TogglePrepItemIntent.swift */; };
 		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
-		CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5555555555555555555555 /* SleepHistoryLegendView.swift */; };
-		CC6666666666666666666666 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6666666666666666666666 /* ExportService.swift */; };
-		CC8888888888888888888888 /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8888888888888888888888 /* Confetti.swift */; };
-		CC9999999999999999999999 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9999999999999999999999 /* PendingPromotion.swift */; };
-		CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */; };
-		CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */; };
-		CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */; };
-		CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */; };
-		CCEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */; };
+		CE93045453F0912FE9C179D3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F0EC340E643E534877184C /* SwiftUI.framework */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
-		E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */; };
-		EE478AAA0001000000000001 /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */; };
+		D29B21E1293E07711A6E45A1 /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3766F9B8EB6573D6A78031 /* RemedyID.swift */; };
+		D4FCC2FB096E9828F15905BD /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C1D840B4D324BD2398203A /* PendingPromotion.swift */; };
+		E2F6F22AFD1E841B36CEDF9D /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922E3A735BFD405971B0A32A /* LullSleepAttributes.swift */; };
+		E3CF98B5C45E60574B05D170 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */; };
+		E48CFA2EC5402130519FA91B /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92AE10983629698DB935D9 /* PersistedState.swift */; };
+		EDC6C11156BBC9B945FE8FBA /* LullActivitiesBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215C66917069AEA87DB96A67 /* LullActivitiesBundle.swift */; };
 		F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */; };
 		F9147C3EE6EB7C0898A38E93 /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B96F9D7A41B8D164E87290B /* LullComponents.swift */; };
 		F925DA874E2FC8346941100A /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F27EAE09500318E6960113 /* AppState.swift */; };
+		F96711F6C36A922A061BF457 /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EAE9CF9872342D98F37A518E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC1489B8F5E914D227BD800C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 80125A11900CFE94289197BE;
+			remoteInfo = LullActivities;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FEF4E5099F15042DEFB1709A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5A37BFE7A8F13D5F67ACF712 /* LullActivities.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		040F13461C755DE8FF434700 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		08B64CD1A7E7BB58650234EF /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WidgetKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
 		0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
+		0D92AE10983629698DB935D9 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		0DBD42F7C9064584A41BF3FB /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
+		0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
 		129DDCFD6C5884ACA1FAA91A /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
+		14C1D840B4D324BD2398203A /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
 		16FDBFDA7720439DD74C23B7 /* LullTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullTheme.swift; sourceTree = "<group>"; };
+		1FEC3B0EFE8401B5BE6410A1 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
+		215C66917069AEA87DB96A67 /* LullActivitiesBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullActivitiesBundle.swift; sourceTree = "<group>"; };
+		2553583629DF9CBE3DFA6A25 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistAttributes.swift; sourceTree = "<group>"; };
 		2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
+		320920ECC3D9C6F39DAA4784 /* SleepCompanionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionWidget.swift; sourceTree = "<group>"; };
 		3322D11828817486556E8D96 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		34063E2E9148765A6A76FE5C /* LullLA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullLA.swift; sourceTree = "<group>"; };
+		4412D817F2D0337DA1C1F994 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
 		4B96F9D7A41B8D164E87290B /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
 		518622E3CFB58A6544BC915C /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
+		5D76FEDF0A76231878CBEDC0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5D820BF460AB3C918823A264 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
+		5E7F895C68C02E5CB09E9FC2 /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
 		5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
-		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		84F0EC340E643E534877184C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		85F27EAE09500318E6960113 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		8796F041C3D5B0A73379488D /* JetBrainsMono-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		8B53DB97A6798113D998BA66 /* PrepChecklistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistWidget.swift; sourceTree = "<group>"; };
+		8F9269E07008D5DE743569DD /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppIntents.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		91F441E8041BBA5C851D941F /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		922E3A735BFD405971B0A32A /* LullSleepAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSleepAttributes.swift; sourceTree = "<group>"; };
 		96CD08D7A04346C513E351B8 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		98B0DDCB101CFACF018241D3 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
 		9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
 		A6B11A89266A2BB853502200 /* MidSleepModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MidSleepModeView.swift; sourceTree = "<group>"; };
-		AA1111111111111111111111 /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
-		AA2222222222222222222222 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
-		AA3333333333333333333333 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
-		AA4444444444444444444444 /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
-		AA5555555555555555555555 /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
-		AA6666666666666666666666 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
-		AA8888888888888888888888 /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
-		AA9999999999999999999999 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
-		AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
-		AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
-		AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
-		AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
-		AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
+		B0376FDB43062AFB889D3098 /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
-		BB7777777777777777777777 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
+		BBF9E8C8D14ED72BBA159EE6 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
+		C7457BC39AB8F1183DAC0095 /* SleepCompanionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionViews.swift; sourceTree = "<group>"; };
+		C7593BCBB7E3B42541FD29CF /* Lull.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lull.entitlements; sourceTree = "<group>"; };
 		C839CE47A7EBAE076B7BF096 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
+		C90C508C6CD8BC5FA3FF2A21 /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
+		C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
+		D70CC2675B14641EE134DD1D /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D82CC80B0E14181CF12FB6EB /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ActivityKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA2955AB3D94EB52E2CBBE00 /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
-		EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
-		F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
+		DA3235DFDF444A604EE24349 /* LullOpenMidSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullOpenMidSleepIntent.swift; sourceTree = "<group>"; };
+		DA9ED5212DA0CF5C6B991456 /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
+		DB80FF006ACC51F5E83E2C89 /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityService.swift; sourceTree = "<group>"; };
+		DD3766F9B8EB6573D6A78031 /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
+		DD883DF344382B1B7BAF123A /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
+		EC5AF7D1DC92796A58350ACE /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
+		F2D672346153DDFAB0134A27 /* TogglePrepItemIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglePrepItemIntent.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		FCAFDC51020778EEE5138C00 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		FCD7C80E32E0B7CF96FC33BE /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		3323552E7A1C2C7CA4F79AFC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				58A4EFC38A1202086017A126 /* WidgetKit.framework in Frameworks */,
+				4975CF3B4196D5FFE5FEDBF4 /* ActivityKit.framework in Frameworks */,
+				4F3B09156060EF7B5AC085E2 /* AppIntents.framework in Frameworks */,
+				CE93045453F0912FE9C179D3 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		17D7FE50836C056C0B1C1384 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				0D92AE10983629698DB935D9 /* PersistedState.swift */,
+				4412D817F2D0337DA1C1F994 /* PersistenceStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
 		1F36B2AF949245399F032553 /* Nightly */ = {
 			isa = PBXGroup;
 			children = (
@@ -113,10 +197,19 @@
 			path = Nightly;
 			sourceTree = "<group>";
 		};
+		2B616ED554FF7F0CEBFEEC10 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				922E3A735BFD405971B0A32A /* LullSleepAttributes.swift */,
+				2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */,
+			);
+			path = LiveActivity;
+			sourceTree = "<group>";
+		};
 		31F7E7C8AC3777CEE98481E9 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				AA8888888888888888888888 /* Confetti.swift */,
+				DA9ED5212DA0CF5C6B991456 /* Confetti.swift */,
 				4B96F9D7A41B8D164E87290B /* LullComponents.swift */,
 			);
 			path = Components;
@@ -127,24 +220,33 @@
 			children = (
 				85F27EAE09500318E6960113 /* AppState.swift */,
 				F22F2E8574F38842A81E664B /* ExperimentEngine.swift */,
-				AA9999999999999999999999 /* PendingPromotion.swift */,
-				AA1111111111111111111111 /* RemedyID.swift */,
+				14C1D840B4D324BD2398203A /* PendingPromotion.swift */,
+				DD3766F9B8EB6573D6A78031 /* RemedyID.swift */,
 				0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
+		42D4818E2D276C4FCEFA797D /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				BBF9E8C8D14ED72BBA159EE6 /* 478-breathing-revised.mp3 */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
 		455604E026B5EE2AC3B7BDA2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				AA4444444444444444444444 /* AmbientLightService.swift */,
-				AA6666666666666666666666 /* ExportService.swift */,
+				EC5AF7D1DC92796A58350ACE /* AmbientLightService.swift */,
+				1FEC3B0EFE8401B5BE6410A1 /* AudioPlaybackService.swift */,
 				040F13461C755DE8FF434700 /* AudioRecordingService.swift */,
-				BB7777777777777777777777 /* AudioPlaybackService.swift */,
 				C839CE47A7EBAE076B7BF096 /* BundledStories.swift */,
 				D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */,
+				2553583629DF9CBE3DFA6A25 /* ExportService.swift */,
+				DB80FF006ACC51F5E83E2C89 /* LiveActivityService.swift */,
+				0DBD42F7C9064584A41BF3FB /* ShakeDetector.swift */,
 				5D820BF460AB3C918823A264 /* TTSService.swift */,
-				F1A2B3C4D5E6F7A8B9C0D1E3 /* ShakeDetector.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -154,12 +256,12 @@
 			children = (
 				96CD08D7A04346C513E351B8 /* DashboardView.swift */,
 				9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */,
-				AACCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift */,
+				C90C508C6CD8BC5FA3FF2A21 /* MorningRateHero.swift */,
 				F80F43006C39DB668F529235 /* MyRoutineView.swift */,
-				AABBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift */,
-				AA5555555555555555555555 /* SleepHistoryLegendView.swift */,
-				AADDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift */,
-				AAEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift */,
+				0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */,
+				654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */,
+				B0376FDB43062AFB889D3098 /* TonightInProgressView.swift */,
+				C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -168,15 +270,17 @@
 			isa = PBXGroup;
 			children = (
 				CF78A2B998193B94B990E54E /* ContentView.swift */,
+				C7593BCBB7E3B42541FD29CF /* Lull.entitlements */,
 				518622E3CFB58A6544BC915C /* LullApp.swift */,
 				31F7E7C8AC3777CEE98481E9 /* Components */,
 				6E08A71543323A3D0E55B93E /* Home */,
+				2B616ED554FF7F0CEBFEEC10 /* LiveActivity */,
 				9196F343A80EAA39F9029661 /* MidSleep */,
 				3F06728D2AE3E4F6240996A2 /* Models */,
 				87B9CC12A3E456D67ED7A2A2 /* Morning */,
 				1F36B2AF949245399F032553 /* Nightly */,
 				B2418C89F574340784D8FB34 /* Onboarding */,
-				CC0000000000000000000001 /* Persistence */,
+				17D7FE50836C056C0B1C1384 /* Persistence */,
 				F3F7A8DF1539BC59FC9B5357 /* Resources */,
 				455604E026B5EE2AC3B7BDA2 /* Services */,
 				723E82AD5C5A691159771561 /* Theme */,
@@ -196,7 +300,7 @@
 			isa = PBXGroup;
 			children = (
 				9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */,
-				AAAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift */,
+				FCD7C80E32E0B7CF96FC33BE /* MorningRewardView.swift */,
 				2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */,
 			);
 			path = Morning;
@@ -211,10 +315,23 @@
 			path = MidSleep;
 			sourceTree = "<group>";
 		};
+		99234C6D2FD7632F8BEAF319 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D82CC80B0E14181CF12FB6EB /* ActivityKit.framework */,
+				8F9269E07008D5DE743569DD /* AppIntents.framework */,
+				84F0EC340E643E534877184C /* SwiftUI.framework */,
+				08B64CD1A7E7BB58650234EF /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A718EF8101F94FAB99DD3AED = {
 			isa = PBXGroup;
 			children = (
 				713AE8A6FDB1F48F9B6F8403 /* Lull */,
+				E27B89F4851BAB34D8166959 /* LullActivities */,
+				99234C6D2FD7632F8BEAF319 /* Frameworks */,
 				F4700DAD589C69A0363C6B7B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -225,15 +342,6 @@
 				98B0DDCB101CFACF018241D3 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
-			sourceTree = "<group>";
-		};
-		CC0000000000000000000001 /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				AA2222222222222222222222 /* PersistedState.swift */,
-				AA3333333333333333333333 /* PersistenceStore.swift */,
-			);
-			path = Persistence;
 			sourceTree = "<group>";
 		};
 		DC3DACA822328A4904D4CBAC /* Fonts */ = {
@@ -247,19 +355,28 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
-		EE478GGG0001000000000001 /* Audio */ = {
+		E27B89F4851BAB34D8166959 /* LullActivities */ = {
 			isa = PBXGroup;
 			children = (
-				EE478FFF0001000000000001 /* 478-breathing-revised.mp3 */,
+				5D76FEDF0A76231878CBEDC0 /* Info.plist */,
+				5E7F895C68C02E5CB09E9FC2 /* LullActivities.entitlements */,
+				215C66917069AEA87DB96A67 /* LullActivitiesBundle.swift */,
+				34063E2E9148765A6A76FE5C /* LullLA.swift */,
+				DA3235DFDF444A604EE24349 /* LullOpenMidSleepIntent.swift */,
+				DD883DF344382B1B7BAF123A /* LullRateSleepIntent.swift */,
+				8B53DB97A6798113D998BA66 /* PrepChecklistWidget.swift */,
+				C7457BC39AB8F1183DAC0095 /* SleepCompanionViews.swift */,
+				320920ECC3D9C6F39DAA4784 /* SleepCompanionWidget.swift */,
+				F2D672346153DDFAB0134A27 /* TogglePrepItemIntent.swift */,
 			);
-			path = Audio;
+			path = LullActivities;
 			sourceTree = "<group>";
 		};
 		F3F7A8DF1539BC59FC9B5357 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				CD947544D9101E2AC407DBAB /* Assets.xcassets */,
-				EE478GGG0001000000000001 /* Audio */,
+				42D4818E2D276C4FCEFA797D /* Audio */,
 				DC3DACA822328A4904D4CBAC /* Fonts */,
 			);
 			path = Resources;
@@ -269,6 +386,7 @@
 			isa = PBXGroup;
 			children = (
 				6F40249E393C00D6191A73D1 /* Lull.app */,
+				D70CC2675B14641EE134DD1D /* LullActivities.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -276,16 +394,36 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		80125A11900CFE94289197BE /* LullActivities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 97B28991775FE4411BC3BCB1 /* Build configuration list for PBXNativeTarget "LullActivities" */;
+			buildPhases = (
+				3E9D037C5AC418C88DE5863A /* Sources */,
+				3323552E7A1C2C7CA4F79AFC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LullActivities;
+			packageProductDependencies = (
+			);
+			productName = LullActivities;
+			productReference = D70CC2675B14641EE134DD1D /* LullActivities.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		913FDFB167D77578D6628079 /* Lull */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 20A36241E5A6F0A2AAD6CCA2 /* Build configuration list for PBXNativeTarget "Lull" */;
 			buildPhases = (
 				2A9AF1297D4A465E9C64559D /* Sources */,
 				2F32AA108EA42C7336F06542 /* Resources */,
+				FEF4E5099F15042DEFB1709A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F37CD2EF7ECF0494C5391002 /* PBXTargetDependency */,
 			);
 			name = Lull;
 			packageProductDependencies = (
@@ -301,9 +439,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					80125A11900CFE94289197BE = {
+						DevelopmentTeam = 2WLHFD257A;
+						ProvisioningStyle = Automatic;
+					};
 					913FDFB167D77578D6628079 = {
+						DevelopmentTeam = 2WLHFD257A;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -323,6 +466,7 @@
 			projectRoot = "";
 			targets = (
 				913FDFB167D77578D6628079 /* Lull */,
+				80125A11900CFE94289197BE /* LullActivities */,
 			);
 		};
 /* End PBXProject section */
@@ -332,8 +476,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8E63DB47160563298AE75B6E /* 478-breathing-revised.mp3 in Resources */,
 				A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */,
-				EE478AAA0001000000000001 /* 478-breathing-revised.mp3 in Resources */,
 				C0F7B0F86DA74FF0D28F8A89 /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				006744F385C7F5CC19798978 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				AC496C0EE12D5E143D032EAE /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */,
@@ -348,48 +492,76 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB4444444444444444444444 /* AmbientLightService.swift in Sources */,
-				CC6666666666666666666666 /* ExportService.swift in Sources */,
-				CC8888888888888888888888 /* Confetti.swift in Sources */,
-				CC9999999999999999999999 /* PendingPromotion.swift in Sources */,
-				CCAAAAAAAAAAAAAAAAAAAAAA /* MorningRewardView.swift in Sources */,
-				CCBBBBBBBBBBBBBBBBBBBBBB /* RoutinePromotedView.swift in Sources */,
-				CCCCCCCCCCCCCCCCCCCCCCCC /* MorningRateHero.swift in Sources */,
-				CCDDDDDDDDDDDDDDDDDDDDDD /* TonightPreviewCard.swift in Sources */,
-				CCEEEEEEEEEEEEEEEEEEEEEE /* TonightInProgressView.swift in Sources */,
+				946EEF911678A7B64EDC054E /* AmbientLightService.swift in Sources */,
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
+				8954243D140D5948A8113811 /* AudioPlaybackService.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
-				AA7777777777777777777777 /* AudioPlaybackService.swift in Sources */,
 				BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */,
 				12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */,
-				BB2222222222222222222222 /* PersistedState.swift in Sources */,
-				BB3333333333333333333333 /* PersistenceStore.swift in Sources */,
+				98D2A5412321A06133E336E3 /* Confetti.swift in Sources */,
 				0189D99750DF4F9DD82F9066 /* ContentView.swift in Sources */,
 				60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */,
 				CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */,
+				0C00EAD9127E46AEBA0A1D31 /* ExportService.swift in Sources */,
 				30C48EF1D2833AD03BC1935B /* GetUpPromptView.swift in Sources */,
 				6B13AEE4C552544EAAEFF3B6 /* HomeTabView.swift in Sources */,
+				5B244209D85E8B8C879E407D /* LiveActivityService.swift in Sources */,
 				2A8BFC6FBA480460BA7E0DF5 /* LullApp.swift in Sources */,
 				F9147C3EE6EB7C0898A38E93 /* LullComponents.swift in Sources */,
+				1CC0536C3E7902F73B9E28DB /* LullSleepAttributes.swift in Sources */,
 				908F5B9B12AD92424F3B31C1 /* LullTheme.swift in Sources */,
 				A9A3802E174F3057EF6EC4AD /* MidSleepModeView.swift in Sources */,
 				F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */,
+				188D027E713348F9BB9E5628 /* MorningRateHero.swift in Sources */,
+				8976ED87CC800F8A9452AF76 /* MorningRewardView.swift in Sources */,
 				0CFE2F405676712622D674B6 /* MyRoutineView.swift in Sources */,
 				6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */,
 				52B9009E37E5E54D7A2511DD /* NightlyGentleStretchingView.swift in Sources */,
 				C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */,
 				A930E2F5B28DA5B903975BE0 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */,
 				90ABCE6F90322DEBB83A003F /* OnboardingView.swift in Sources */,
-				BB1111111111111111111111 /* RemedyID.swift in Sources */,
+				D4FCC2FB096E9828F15905BD /* PendingPromotion.swift in Sources */,
+				E48CFA2EC5402130519FA91B /* PersistedState.swift in Sources */,
+				9E029E5B69BCCD755344B012 /* PersistenceStore.swift in Sources */,
+				A36C4EE43206BC88FE832426 /* PrepChecklistAttributes.swift in Sources */,
+				D29B21E1293E07711A6E45A1 /* RemedyID.swift in Sources */,
 				12A292BFE58500E4CE3E7342 /* RoutineGenerator.swift in Sources */,
+				E3CF98B5C45E60574B05D170 /* RoutinePromotedView.swift in Sources */,
+				BC4416BCE8CCC57E722242F4 /* ShakeDetector.swift in Sources */,
+				F96711F6C36A922A061BF457 /* SleepHistoryLegendView.swift in Sources */,
 				0E1C1D245B8503E78B953113 /* SleepLogDetailView.swift in Sources */,
-				CC5555555555555555555555 /* SleepHistoryLegendView.swift in Sources */,
 				CA356A11A099E60F3920F72A /* TTSService.swift in Sources */,
-				E1A2B3C4D5E6F7A8B9C0D1E2 /* ShakeDetector.swift in Sources */,
+				51DC2A648110E8BA1CC1377B /* TonightInProgressView.swift in Sources */,
+				AF066F1DE82E52962CAED688 /* TonightPreviewCard.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E9D037C5AC418C88DE5863A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDC6C11156BBC9B945FE8FBA /* LullActivitiesBundle.swift in Sources */,
+				95EB7D7BF53C086BB751D0DE /* LullLA.swift in Sources */,
+				9B7F44E0E934CDBD5118EABE /* LullOpenMidSleepIntent.swift in Sources */,
+				075356FCE0333528762FFECA /* LullRateSleepIntent.swift in Sources */,
+				E2F6F22AFD1E841B36CEDF9D /* LullSleepAttributes.swift in Sources */,
+				11A5627E180807546D2495B7 /* PrepChecklistAttributes.swift in Sources */,
+				23730F99D4E35496D8ADD792 /* PrepChecklistWidget.swift in Sources */,
+				B2A42AD9065E4BC06BAF016D /* SleepCompanionViews.swift in Sources */,
+				64A5328C3806666A75220FE2 /* SleepCompanionWidget.swift in Sources */,
+				C21ACB4E52422CA3B860179B /* TogglePrepItemIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F37CD2EF7ECF0494C5391002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 80125A11900CFE94289197BE /* LullActivities */;
+			targetProxy = EAE9CF9872342D98F37A518E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		159E6EEC45C25BB7282FFC0C /* Release */ = {
@@ -397,13 +569,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Lull;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -449,11 +619,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -468,7 +637,6 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.10;
@@ -509,11 +677,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -535,25 +702,38 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.10;
 			};
 			name = Debug;
 		};
+		B803AB70EF284BFA261C9E69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		C1F15F60D71A626126066DDA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Lull;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -561,6 +741,22 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
 				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C884AC02AB8B8A88FA886531 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -582,6 +778,15 @@
 			buildConfigurations = (
 				9A35974462947B5EE070D7D6 /* Debug */,
 				1A515D6BD5E384BADE27C470 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		97B28991775FE4411BC3BCB1 /* Build configuration list for PBXNativeTarget "LullActivities" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C884AC02AB8B8A88FA886531 /* Debug */,
+				B803AB70EF284BFA261C9E69 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
