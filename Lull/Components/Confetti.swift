@@ -21,11 +21,10 @@ struct Confetti: View {
         var sizeMax: CGFloat      { self == .mini ? 8 : 14 }
         var driftRange: Double    { self == .mini ? 30 : 200 }
         var delayMax: Double      { self == .mini ? 0.25 : 0.6 }
-        var glowRadius: CGFloat   { self == .mini ? 3 : 6 }
-        var startScale: Double    { self == .mini ? 0.3 : 0.4 }
-        var endScale: Double      { self == .mini ? 0.9 : 1.0 }
         var peakProgress: Double  { self == .mini ? 0.45 : 0.35 }
         var fadeInEnd: Double     { self == .mini ? 0.15 : 0.06 }
+        var startScale: Double    { self == .mini ? 0.3 : 0.4 }
+        var endScale: Double      { self == .mini ? 0.9 : 1.0 }
     }
 
     let variant: Variant
@@ -33,53 +32,50 @@ struct Confetti: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ZStack {
-            if reduceMotion {
-                ReducedMotionBloom(variant: variant)
-            } else {
-                GeometryReader { geo in
-                    ConfettiCanvas(variant: variant, size: geo.size)
-                }
-            }
+        if reduceMotion {
+            ReducedMotionBloom(variant: variant)
+                .allowsHitTesting(false)
+                .modifier(ClipIfMini(variant: variant))
+        } else {
+            ConfettiCanvas(variant: variant)
+                .allowsHitTesting(false)
+                .modifier(ClipIfMini(variant: variant))
         }
-        .allowsHitTesting(false)
-        .modifier(ClipIfMini(variant: variant))
     }
 }
 
 // MARK: - Piece
 
-private struct ConfettiPiece: Identifiable {
+private struct ConfettiPiece {
     enum PieceShape { case rect, circle, streak }
 
-    let id = UUID()
-    let vx: CGFloat       // horizontal peak displacement
-    let vy: CGFloat       // vertical peak displacement (negative = up)
-    let drift: CGFloat    // horizontal post-peak drift
+    let vx: CGFloat
+    let vy: CGFloat
+    let drift: CGFloat
     let delay: Double
     let duration: Double
     let size: CGFloat
-    let rotationEnd: Double
+    let rotationEnd: Double   // degrees
     let color: Color
     let shape: PieceShape
 }
 
-// MARK: - Palette (mixed amber/coral/mint/lavender/sky/cream)
+// MARK: - Palette
 
 private enum ConfettiPalette {
     static let colors: [Color] = [
-        Color(hex: "#f0b96b"),  // amber
-        Color(hex: "#f25c54"),  // coral
-        Color(hex: "#9bd1c4"),  // mint
-        Color(hex: "#a89cc8"),  // lavender
-        Color(hex: "#f7d488"),  // soft amber
-        Color(hex: "#5bc0eb"),  // sky
-        Color(hex: "#ee9c81"),  // peach
-        Color(hex: "#f6f4ef"),  // cream
+        Color(hex: "#f0b96b"),
+        Color(hex: "#f25c54"),
+        Color(hex: "#9bd1c4"),
+        Color(hex: "#a89cc8"),
+        Color(hex: "#f7d488"),
+        Color(hex: "#5bc0eb"),
+        Color(hex: "#ee9c81"),
+        Color(hex: "#f6f4ef"),
     ]
 }
 
-// Seeded pseudo-random — matches the JSX reference so visuals stay consistent.
+// Seeded pseudo-random so visuals stay consistent across launches.
 private func seededRandom(_ i: Int, _ seed: Int) -> Double {
     let raw = sin(Double(i) * 9301.0 + Double(seed) * 49297.0) * 233280.0
     return raw - floor(raw)
@@ -88,14 +84,12 @@ private func seededRandom(_ i: Int, _ seed: Int) -> Double {
 private func makePieces(variant: Confetti.Variant) -> [ConfettiPiece] {
     (0..<variant.pieces).map { i in
         let angleDeg = (seededRandom(i, 1) - 0.5) * 2 * variant.fanDegrees
-        // -90deg = straight up in screen coordinates
         let angleRad = (angleDeg - 90) * .pi / 180
         let peak = variant.peakMin + seededRandom(i, 2) * (variant.peakMax - variant.peakMin)
 
         let vx = CGFloat(cos(angleRad) * peak)
         let vy = CGFloat(sin(angleRad) * peak)
         let drift = CGFloat((seededRandom(i, 6) - 0.5) * variant.driftRange)
-
         let delay = seededRandom(i, 3) * variant.delayMax
         let duration = variant.durationMin + seededRandom(i, 4) * (variant.durationMax - variant.durationMin)
         let size = variant.sizeMin + CGFloat(seededRandom(i, 5)) * (variant.sizeMax - variant.sizeMin)
@@ -117,115 +111,96 @@ private func makePieces(variant: Confetti.Variant) -> [ConfettiPiece] {
     }
 }
 
-// MARK: - Canvas
+// MARK: - Canvas (TimelineView-driven, no SwiftUI animation dependency)
 
 private struct ConfettiCanvas: View {
     let variant: Confetti.Variant
-    let size: CGSize
 
     @State private var pieces: [ConfettiPiece] = []
+    @State private var startDate: Date? = nil
 
     var body: some View {
-        ZStack {
-            ForEach(pieces) { piece in
-                ConfettiPieceView(piece: piece, variant: variant, containerSize: size)
-            }
-        }
-        .frame(width: size.width, height: size.height)
-        .onAppear {
-            if pieces.isEmpty { pieces = makePieces(variant: variant) }
-        }
-    }
-}
-
-// MARK: - Piece view
-
-private struct ConfettiPieceView: View {
-    let piece: ConfettiPiece
-    let variant: Confetti.Variant
-    let containerSize: CGSize
-
-    @State private var progress: Double = 0
-
-    var body: some View {
-        let pos = position(at: progress)
-        let opa = opacityValue(at: progress)
-        let rot = piece.rotationEnd * progress
-        let scl = scaleValue(at: progress)
-
-        shape
-            .foregroundColor(piece.color)
-            .shadow(color: piece.color.opacity(0.4), radius: variant.glowRadius)
-            .rotationEffect(.degrees(rot))
-            .scaleEffect(scl)
-            .opacity(opa)
-            .position(
-                x: containerSize.width / 2 + pos.x,
-                y: containerSize.height + pos.y
-            )
-            .onAppear {
-                // Linear progress 0→1 with a cubic-bezier-ish easing; piecewise functions
-                // (position/scale/opacity) shape the actual on-screen feel.
-                withAnimation(
-                    .timingCurve(0.22, 0.85, 0.42, 1.0, duration: piece.duration)
-                        .repeatForever(autoreverses: false)
-                        .delay(piece.delay)
-                ) {
-                    progress = 1
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: startDate == nil)) { timeline in
+            Canvas { context, size in
+                guard let start = startDate else { return }
+                let elapsed = timeline.date.timeIntervalSince(start)
+                for piece in pieces {
+                    draw(piece: piece, elapsed: elapsed, context: &context, size: size)
                 }
             }
-    }
-
-    @ViewBuilder
-    private var shape: some View {
-        switch piece.shape {
-        case .circle:
-            Circle()
-                .frame(width: piece.size, height: piece.size)
-        case .rect:
-            RoundedRectangle(cornerRadius: 2)
-                .frame(width: piece.size, height: piece.size)
-        case .streak:
-            RoundedRectangle(cornerRadius: 1)
-                .frame(width: 2, height: piece.size * 2)
+        }
+        .onAppear {
+            if pieces.isEmpty { pieces = makePieces(variant: variant) }
+            // Delay past the sheet/fullScreenCover slide-up (~0.35s) so the
+            // clock starts after the presentation animation completes.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                startDate = Date()
+            }
         }
     }
 
-    /// Position relative to origin (bottom-center). Negative y = above the bottom edge.
-    private func position(at t: Double) -> CGPoint {
-        let peakTime = variant.peakProgress
+    private func draw(piece: ConfettiPiece, elapsed: Double,
+                      context: inout GraphicsContext, size: CGSize) {
+        let t = pieceProgress(piece: piece, elapsed: elapsed)
+        guard t > 0 && t < 1 else { return }
 
+        let opa = opacity(t: t)
+        guard opa > 0 else { return }
+
+        let pos = position(piece: piece, t: t, size: size)
+        let rot = piece.rotationEnd * t * (.pi / 180)
+        let scl = CGFloat(scale(t: t))
+
+        let cx = size.width / 2 + pos.x
+        let cy = size.height + pos.y
+
+        context.drawLayer { ctx in
+            ctx.opacity = opa
+            ctx.transform = CGAffineTransform(translationX: cx, y: cy)
+                .rotated(by: rot)
+                .scaledBy(x: scl, y: scl)
+            let s = piece.size
+            switch piece.shape {
+            case .circle:
+                ctx.fill(Path(ellipseIn: CGRect(x: -s/2, y: -s/2, width: s, height: s)),
+                         with: .color(piece.color))
+            case .rect:
+                ctx.fill(Path(roundedRect: CGRect(x: -s/2, y: -s/2, width: s, height: s),
+                              cornerRadius: 2),
+                         with: .color(piece.color))
+            case .streak:
+                ctx.fill(Path(roundedRect: CGRect(x: -1, y: -s, width: 2, height: s * 2),
+                              cornerRadius: 1),
+                         with: .color(piece.color))
+            }
+        }
+    }
+
+    private func pieceProgress(piece: ConfettiPiece, elapsed: Double) -> Double {
+        let adjusted = elapsed - piece.delay
+        guard adjusted > 0 else { return 0 }
+        return min(adjusted / piece.duration, 1.0)
+    }
+
+    private func position(piece: ConfettiPiece, t: Double, size: CGSize) -> CGPoint {
+        let peakTime = variant.peakProgress
         if t <= peakTime {
             let local = peakTime == 0 ? 0 : t / peakTime
             return CGPoint(x: piece.vx * CGFloat(local), y: piece.vy * CGFloat(local))
         }
-
         let local = (t - peakTime) / (1 - peakTime)
         let endX = piece.vx + piece.drift
-
-        let endY: CGFloat = {
-            switch variant {
-            case .mini:
-                // Brief settle: drop ~80pt below peak so the piece looks like it lands inside the card.
-                return piece.vy + 80
-            case .big:
-                // Continue falling past the viewport (130% of container height).
-                return containerSize.height * 1.3
-            }
-        }()
-
+        let endY: CGFloat = variant == .mini ? piece.vy + 80 : size.height * 1.3
         return CGPoint(
             x: piece.vx + (endX - piece.vx) * CGFloat(local),
             y: piece.vy + (endY - piece.vy) * CGFloat(local)
         )
     }
 
-    private func opacityValue(at t: Double) -> Double {
-        // Fade in from 0 → 1 over the first `fadeInEnd` slice.
+    private func opacity(t: Double) -> Double {
         if t <= variant.fadeInEnd {
             return variant.fadeInEnd == 0 ? 1 : t / variant.fadeInEnd
         }
-        // Mini fades out from peak (0.45) to end (1.0). Big stays opaque.
         switch variant {
         case .mini:
             let peakTime = variant.peakProgress
@@ -236,7 +211,7 @@ private struct ConfettiPieceView: View {
         }
     }
 
-    private func scaleValue(at t: Double) -> Double {
+    private func scale(t: Double) -> Double {
         let peakTime = variant.peakProgress
         if t <= peakTime {
             let local = peakTime == 0 ? 0 : t / peakTime

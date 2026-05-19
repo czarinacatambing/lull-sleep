@@ -5,6 +5,7 @@ struct DashboardView: View {
     @Binding var selectedTab: Int
     @State private var showMenu = false
     @State private var showSettings = false
+    @State private var showBrainDumps = false
     @State private var currentDate = Date()
     @State private var glowPulse = false
 
@@ -176,6 +177,27 @@ struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
 
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            showBrainDumps = true
+                        }
+                    }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullInk2)
+                                .frame(width: 18)
+                            Text("Brain Dumps")
+                                .font(.system(size: 14))
+                                .foregroundColor(.lullInk1)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.plain)
+
                     Divider().background(Color.lullLine).padding(.horizontal, 12)
 
                     debugMenuItem(
@@ -220,6 +242,11 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showBrainDumps) {
+            BrainDumpsBrowser()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }

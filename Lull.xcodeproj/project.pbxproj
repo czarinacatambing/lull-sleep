@@ -58,6 +58,7 @@
 		C3CB5BE543EEA2827CBD52D6 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */; };
 		CA356A11A099E60F3920F72A /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D820BF460AB3C918823A264 /* TTSService.swift */; };
 		CE93045453F0912FE9C179D3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F0EC340E643E534877184C /* SwiftUI.framework */; };
+		CFC043CDADB5C91B409F315A /* BrainDumpsBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10D8F1F1F41C60D73FD534C /* BrainDumpsBrowser.swift */; };
 		CFD7E77D6E511831E87B1EB1 /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22F2E8574F38842A81E664B /* ExperimentEngine.swift */; };
 		D29B21E1293E07711A6E45A1 /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3766F9B8EB6573D6A78031 /* RemedyID.swift */; };
 		D4FCC2FB096E9828F15905BD /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C1D840B4D324BD2398203A /* PendingPromotion.swift */; };
@@ -122,7 +123,7 @@
 		5E7F895C68C02E5CB09E9FC2 /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
 		5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
 		654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
-		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84F0EC340E643E534877184C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		85F27EAE09500318E6960113 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		8796F041C3D5B0A73379488D /* JetBrainsMono-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-VariableFont_wght.ttf"; sourceTree = "<group>"; };
@@ -145,6 +146,7 @@
 		C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D10D8F1F1F41C60D73FD534C /* BrainDumpsBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDumpsBrowser.swift; sourceTree = "<group>"; };
 		D66821D923F73F6E202C48FF /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
 		D70CC2675B14641EE134DD1D /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D82CC80B0E14181CF12FB6EB /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ActivityKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -254,6 +256,7 @@
 		6E08A71543323A3D0E55B93E /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				D10D8F1F1F41C60D73FD534C /* BrainDumpsBrowser.swift */,
 				96CD08D7A04346C513E351B8 /* DashboardView.swift */,
 				9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */,
 				C90C508C6CD8BC5FA3FF2A21 /* MorningRateHero.swift */,
@@ -496,6 +499,7 @@
 				F925DA874E2FC8346941100A /* AppState.swift in Sources */,
 				8954243D140D5948A8113811 /* AudioPlaybackService.swift in Sources */,
 				08D913B238D9530F25E581B1 /* AudioRecordingService.swift in Sources */,
+				CFC043CDADB5C91B409F315A /* BrainDumpsBrowser.swift in Sources */,
 				BE34E1AD1DAD049E9EE63C73 /* BundledStories.swift in Sources */,
 				12A0C07F45A7A54C16DD0FF7 /* ClaudeAPIService.swift in Sources */,
 				98D2A5412321A06133E336E3 /* Confetti.swift in Sources */,
@@ -572,6 +576,7 @@
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -619,7 +624,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -677,7 +682,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -716,7 +721,11 @@
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = LullActivities/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -732,6 +741,7 @@
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -753,7 +763,11 @@
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = LullActivities/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;

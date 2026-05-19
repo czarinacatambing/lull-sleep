@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.10"
   MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "12"
+  CURRENT_PROJECT_VERSION: "15"
 
 targets:
   Lull:
@@ -85,6 +85,8 @@ targets:
       path: LullActivities/Info.plist
       properties:
         CFBundleDisplayName: LullActivities
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
