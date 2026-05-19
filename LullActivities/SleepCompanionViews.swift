@@ -137,7 +137,7 @@ private struct SleepingLockCard: View {
                                 )
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
             }
             .padding(.top, 10)
         }
@@ -296,7 +296,7 @@ struct RatingDotRow: View {
                     .frame(width: hitSize, height: hitSize)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
                 .accessibilityLabel("Rate \(n) of 5: \(labels[n - 1])")
                 if n < 5 { Spacer(minLength: 0) }
             }

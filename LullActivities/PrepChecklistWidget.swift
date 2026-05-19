@@ -100,7 +100,7 @@ struct PrepChecklistLiveActivityView: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
             }
         }
     }
@@ -143,7 +143,7 @@ private struct ExpandedView: View {
                         }
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                 }
                 if items.count > 3 {
                     Text("+ \(items.count - 3) more")
