@@ -48,9 +48,12 @@ struct LullApp: App {
                 let pendingIds = LiveActivityService.shared.consumePendingToggles()
                 for id in pendingIds { state.togglePrepDone(id) }
                 // The Sleep Companion "Mid-Sleep mode" button writes a flag
-                // to the App Group; surface the Mid-Sleep tab when we see it.
-                if LiveActivityService.shared.consumePendingMidSleepRequest() {
-                    state.showMidSleepMode = true
+                // to the App Group before openAppWhenRun foregrounds us.
+                // Delay slightly so the extension process has time to flush.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    if LiveActivityService.shared.consumePendingMidSleepRequest() {
+                        state.showMidSleepMode = true
+                    }
                 }
                 // Sync the Sleep Companion data state to the wake phase if we
                 // crossed wake time, then pull in any rating tapped from the
