@@ -120,6 +120,22 @@ class AppState: ObservableObject {
         }
     }
 
+    // MARK: - Brain dump helpers
+
+    // When the user deletes a recording from the Brain Dumps browser, clear
+    // any matching SleepLogEntry's reference so MorningCheckInView doesn't
+    // try to render a player for a file that no longer exists.
+    func clearBrainDumpReference(forFileAt url: URL) {
+        let relative = "brain_dumps/" + url.lastPathComponent
+        var changed = false
+        for i in sleepLogs.indices where sleepLogs[i].brainDumpFilePath == relative {
+            sleepLogs[i].brainDumpFilePath = nil
+            sleepLogs[i].brainDumpDurationSec = nil
+            changed = true
+        }
+        if changed { persist() }
+    }
+
     // MARK: - Sleep Companion Live Activity helpers
 
     // The next wake time anchored to today/tomorrow based on the user's
@@ -144,12 +160,28 @@ class AppState: ObservableObject {
     func ingestPendingLiveActivityRating() {
         guard let pending = LiveActivityService.shared.consumePendingRating() else { return }
 
+        // Capture before logMorningScore/advanceExperiment mutate state.
+        let mostRecentRated    = sleepLogs.filter { $0.score > 0 }.sorted { $0.date > $1.date }.first
+        let yesterdayCaptured  = mostRecentRated?.score
+        let baselineCaptured   = baselineScore
+        let variableCaptured   = experimentStatus?.variable
+        let preLogNight        = experimentStatus?.night ?? 0
+
         // 1-5 dot → 1-10 morningScore (matches the in-app SleepScoreSelector scale)
         let score10 = max(1, min(10, pending.rating * 2))
         morningScore = score10
         logMorningScore()
 
-        let delta = Double(score10 - baselineScore)
+        // Show the reward sheet when the app opens.
+        pendingMorningReward = PendingMorningReward(
+            score: score10,
+            yesterday: yesterdayCaptured,
+            baseline: baselineCaptured,
+            variable: variableCaptured,
+            night: preLogNight + 1
+        )
+
+        let delta = Double(score10 - baselineCaptured)
         let baseLabel = sameWeekdayBaselineLabel(for: pending.at)
 
         LiveActivityService.shared.publishRatedAndEnd(

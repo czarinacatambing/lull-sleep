@@ -59,7 +59,9 @@ struct LullApp: App {
                 // crossed wake time, then pull in any rating tapped from the
                 // Lock Screen and publish the .rated confirmation.
                 state.syncSleepActivityWakeStateIfNeeded()
-                state.ingestPendingLiveActivityRating()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    state.ingestPendingLiveActivityRating()
+                }
             default:
                 break
             }

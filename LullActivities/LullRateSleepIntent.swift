@@ -14,7 +14,7 @@ struct LullRateSleepIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Rate last night"
     static var description = IntentDescription("Records last night's sleep rating from the Lock Screen.")
     static var isDiscoverable: Bool = false
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = true
 
     @Parameter(title: "Rating")
     var rating: Int
