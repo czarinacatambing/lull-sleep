@@ -6,38 +6,12 @@ struct MorningCheckInView: View {
     @StateObject private var playback = AudioPlaybackService()
     @State private var currentDate = Date()
 
-    // Reward state — set in handleLog() so confetti/headline match the just-logged numbers.
-    @State private var showReward = false
-    @State private var rewardScore: Int = 0
-    @State private var rewardYesterday: Int? = nil
-    @State private var rewardBaseline: Int = 0
-    @State private var rewardVariable: String? = nil
-    @State private var rewardNight: Int = 0
-
     private static let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEE · h:mm a"; return f
     }()
 
     var body: some View {
-        ZStack {
-            if showReward {
-                MorningRewardView(
-                    score: rewardScore,
-                    yesterday: rewardYesterday,
-                    baseline: rewardBaseline,
-                    variable: rewardVariable,
-                    night: rewardNight,
-                    totalNights: 5,
-                    allowRerate: Calendar.current.component(.hour, from: Date()) < 12,
-                    onRerate: { withAnimation(.easeInOut(duration: 0.25)) { showReward = false } },
-                    onDismiss: { dismiss() },
-                    onNote: { dismiss() }
-                )
-                .transition(.opacity)
-            } else {
-                checkInContent
-            }
-        }
+        checkInContent
     }
 
     private var checkInContent: some View {
@@ -72,7 +46,7 @@ struct MorningCheckInView: View {
                             }
                             .font(.serif(30))
 
-                            Text("One tap. We'll use this to nudge tonight's variable.")
+                            Text("One tap. We'll use this to understand how your wind-down is feeling.")
                                 .font(.system(size: 13.5))
                                 .foregroundColor(.lullInk2)
                                 .lineSpacing(3)
@@ -89,48 +63,6 @@ struct MorningCheckInView: View {
                             .padding(.top, 36)
 
                         Spacer()
-
-                        // Experiment insight card
-                        if let status = state.experimentStatus {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Kicker(text: "What we're learning", color: .lullAmberSoft)
-                                    Spacer()
-                                    Text("Night \(status.night) of 5")
-                                        .font(.mono(9.5))
-                                        .kerning(1)
-                                        .foregroundColor(.lullInk4)
-                                }
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text(status.variable)
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.lullAmber)
-                                    Text("·")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.lullInk3)
-                                    Text(status.insightLine)
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.lullInk1)
-                                }
-                                .lineSpacing(3)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                                if status.decision == .promote {
-                                    Text("↑ Adding to core routine")
-                                        .font(.mono(10)).kerning(0.8)
-                                        .foregroundColor(.lullAmber)
-                                        .padding(.top, 2)
-                                } else if status.decision == .drop, let next = status.nextCandidate {
-                                    Text("Next up: \(next)")
-                                        .font(.mono(10)).kerning(0.8)
-                                        .foregroundColor(.lullInk3)
-                                        .padding(.top, 2)
-                                }
-                            }
-                            .padding(16)
-                            .lullCard(radius: 18)
-                            .padding(.horizontal, 22)
-                        }
 
                         if let entry = state.lastNightEntry,
                            let fileURL = entry.brainDumpFileURL,
@@ -159,37 +91,10 @@ struct MorningCheckInView: View {
     }
 
     private func handleLog() {
-        // Capture "yesterday's" score BEFORE logging — it's the most recent rated entry
-        // before this one. (state.logMorningScore will either update an existing unrated
-        // entry from last night, or create a new one — either way the previous rated
-        // entry stays as-is.)
-        let yesterdayScore: Int? = state.sleepLogs
-            .filter { $0.score > 0 }
-            .sorted { $0.date > $1.date }
-            .first?.score
-
-        let scoreToLog = AppState.clampedSleepScore(state.morningScore)
-        let baseline = state.baselineScore
-
         playback.stop()
         state.logMorningScore()
-
-        if state.justTriggeredNightFivePaywall {
-            dismiss()
-            return
-        }
-
-        // Read the experiment status AFTER logging so the "Tonight's experiment" card
-        // reflects whatever variable advanceExperiment lined up next.
-        let status = state.experimentStatus
-
-        rewardScore = scoreToLog
-        rewardYesterday = yesterdayScore
-        rewardBaseline = baseline
-        rewardVariable = status?.variable
-        rewardNight = status?.night ?? 0
-
-        withAnimation(.easeInOut(duration: 0.35)) { showReward = true }
+        state.presentPendingStreakMilestoneIfEligible()
+        dismiss()
     }
 }
 

@@ -33,7 +33,7 @@ struct HomeTabView: View {
                 TabBarButton(title: "Today", icon: "moon.fill", selected: selectedTab == 0) {
                     selectedTab = 0
                 }
-                TabBarButton(title: "Routine", icon: "flask.fill", selected: selectedTab == 1) {
+                TabBarButton(title: "Routine", icon: "moon.stars.fill", selected: selectedTab == 1) {
                     selectedTab = 1
                 }
                 TabBarButton(title: "Mid-sleep", icon: "moon.zzz.fill", selected: selectedTab == 2) {

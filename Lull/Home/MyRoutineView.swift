@@ -91,19 +91,7 @@ struct MyRoutineView: View {
                         RoutineTopHeader(bedtime: state.typicalBedtime)
                             .padding(.horizontal, 22)
 
-                        ExperimentStrip(
-                            title: state.tonightVariable,
-                            night: max(state.variableNight, 2),
-                            total: 5,
-                            onViewScience: { showScience = true },
-                            onSwitch: {
-                                if state.variableNight > 0 {
-                                    showChangeConfirm = true
-                                } else {
-                                    showCandidatePicker = true
-                                }
-                            }
-                        )
+                        StreakStatusCard(summary: state.streakSummary, selectedTab: .constant(1), prominent: false)
                         .padding(.horizontal, 22)
 
                         RoutineStepSection(
@@ -112,14 +100,26 @@ struct MyRoutineView: View {
                             suffix: "· before bed",
                             steps: prepSteps,
                             section: .prep,
-                            onSelect: { selectedStepID = $0.id },
+                            onSelect: { step in
+                                if state.canCustomizeRoutine || step.label == R.appBlocking || step.remedyId == .appBlocking {
+                                    selectedStepID = step.id
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
+                            },
                             onMove: { moving, target in
                                 state.moveRoutineStep(moving, before: target, in: .prep)
                             },
                             onDelete: { step in
                                 state.removeRoutineStep(step)
                             },
-                            onAdd: { libraryTarget = .prep }
+                            onAdd: {
+                                if state.canCustomizeRoutine {
+                                    libraryTarget = .prep
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
+                            }
                         )
                         .padding(.horizontal, 22)
 
@@ -129,14 +129,26 @@ struct MyRoutineView: View {
                             suffix: "· in bed",
                             steps: ritualSteps,
                             section: .ritual,
-                            onSelect: { selectedStepID = $0.id },
+                            onSelect: { step in
+                                if state.canCustomizeRoutine || step.label == R.appBlocking || step.remedyId == .appBlocking {
+                                    selectedStepID = step.id
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
+                            },
                             onMove: { moving, target in
                                 state.moveRoutineStep(moving, before: target, in: .ritual)
                             },
                             onDelete: { step in
                                 state.removeRoutineStep(step)
                             },
-                            onAdd: { libraryTarget = .ritual }
+                            onAdd: {
+                                if state.canCustomizeRoutine {
+                                    libraryTarget = .ritual
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
+                            }
                         )
                         .padding(.horizontal, 22)
 
@@ -179,32 +191,50 @@ struct MyRoutineView: View {
 
                 if let step = selectedStep {
                     if step.label == R.sleepSounds {
-                        SleepSoundsStep(
-                            initial: step.sleepSoundConfig ?? .fresh,
-                            mode: .editStep,
-                            onSave: { config in
-                                var updated = step
-                                updated.sleepSoundConfig = config
-                                updated.durationLabel = config.infinite ? "∞" : config.durationSummary
-                                state.updateRoutineStep(updated)
-                                selectedStepID = nil
-                            },
-                            onDismiss: { selectedStepID = nil }
-                        )
-                        .id(step.id)
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                        .zIndex(3)
+                        if state.canUseSleepSounds {
+                            SleepSoundsStep(
+                                initial: step.sleepSoundConfig ?? .fresh,
+                                mode: .editStep,
+                                onSave: { config in
+                                    var updated = step
+                                    updated.sleepSoundConfig = config
+                                    updated.durationLabel = config.infinite ? "∞" : config.durationSummary
+                                    state.updateRoutineStep(updated)
+                                    selectedStepID = nil
+                                },
+                                onDismiss: { selectedStepID = nil }
+                            )
+                            .id(step.id)
+                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                            .zIndex(3)
+                        } else {
+                            Color.clear
+                                .onAppear {
+                                    selectedStepID = nil
+                                    state.presentUpgradePaywall()
+                                }
+                        }
                     } else {
                         EditStepSheet(
                             step: step,
                             section: state.sectionKind(for: step),
                             onClose: { selectedStepID = nil },
                             onRemove: {
-                                state.removeRoutineStep(step)
+                                if state.canCustomizeRoutine {
+                                    state.removeRoutineStep(step)
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
                                 selectedStepID = nil
                             },
                             onSave: { updated in
-                                state.updateRoutineStep(updated)
+                                if step.label == R.appBlocking || step.remedyId == .appBlocking || state.canCustomizeRoutine {
+                                    if state.canCustomizeRoutine {
+                                        state.updateRoutineStep(updated)
+                                    }
+                                } else {
+                                    state.presentUpgradePaywall()
+                                }
                                 selectedStepID = nil
                             }
                         )
@@ -859,8 +889,19 @@ struct EditStepSheet: View {
                             }
                     }
 
-                    if section == .prep {
+                    if section == .prep && (!isAppBlockingStep || state.canUseHardAppBlocking) {
                         WhenSlider(value: $leadTime)
+                    } else if isAppBlockingStep && !state.canUseHardAppBlocking {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("GENTLE BLOCKING")
+                                .font(.mono(10))
+                                .kerning(1.5)
+                                .foregroundColor(.lullInk3)
+                            Text("Free blocking only runs during your sleep window and can be bypassed for the night.")
+                                .font(.system(size: 12.5))
+                                .foregroundColor(.lullInk3)
+                                .lineSpacing(3)
+                        }
                     }
 
                     if isAppBlockingStep {
@@ -872,7 +913,8 @@ struct EditStepSheet: View {
                             graceMinutes: $appBlockingGraceMinutes,
                             showPicker: $showFamilyActivityPicker,
                             bedtime: state.typicalBedtime,
-                            wakeTime: state.typicalWakeTime
+                            wakeTime: state.typicalWakeTime,
+                            isHardMode: state.canUseHardAppBlocking
                         )
                     } else {
                         StepScienceInline(step: step)
@@ -1181,6 +1223,7 @@ final class AppBlockingAccessProbe: ObservableObject {
 }
 
 struct InlineAppBlockingSection: View {
+    @EnvironmentObject var state: AppState
     @ObservedObject private var probe = AppBlockingAccessProbe.shared
     @Binding var selection: FamilyActivitySelection
     @Binding var enabled: Bool
@@ -1190,6 +1233,7 @@ struct InlineAppBlockingSection: View {
     @Binding var showPicker: Bool
     var bedtime: Date
     var wakeTime: Date
+    var isHardMode: Bool
 
     private let graceOptions = [0, 5, 10, 15]
 
@@ -1222,30 +1266,45 @@ struct InlineAppBlockingSection: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if probe.isApproved {
-                AppBlockingLeadTimeCard(
-                    startTime: $startTime,
-                    endTime: $endTime,
-                    bedtime: bedtime,
-                    wakeTime: wakeTime
-                )
+                if isHardMode {
+                    AppBlockingLeadTimeCard(
+                        startTime: $startTime,
+                        endTime: $endTime,
+                        bedtime: bedtime,
+                        wakeTime: wakeTime
+                    )
 
-                HStack(spacing: 10) {
-                    AppBlockingTimeTile(
-                        title: "LOCK AT",
-                        value: timeFormatter.string(from: startTime),
-                        detail: ""
+                    HStack(spacing: 10) {
+                        AppBlockingTimeTile(
+                            title: "LOCK AT",
+                            value: timeFormatter.string(from: startTime),
+                            detail: ""
+                        )
+                        AppBlockingTimeTile(
+                            title: "UNLOCK AT",
+                            value: timeFormatter.string(from: endTime),
+                            detail: ""
+                        )
+                    }
+
+                    BedtimeHintCard(
+                        bedtime: bedtime,
+                        lockTime: startTime
                     )
-                    AppBlockingTimeTile(
-                        title: "UNLOCK AT",
-                        value: timeFormatter.string(from: endTime),
-                        detail: ""
-                    )
+                } else {
+                    HStack(spacing: 10) {
+                        AppBlockingTimeTile(
+                            title: "LOCK AT",
+                            value: timeFormatter.string(from: bedtime),
+                            detail: "Sleep window"
+                        )
+                        AppBlockingTimeTile(
+                            title: "UNLOCK AT",
+                            value: timeFormatter.string(from: wakeTime),
+                            detail: ""
+                        )
+                    }
                 }
-
-                BedtimeHintCard(
-                    bedtime: bedtime,
-                    lockTime: startTime
-                )
 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
@@ -1288,33 +1347,35 @@ struct InlineAppBlockingSection: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("GRACE WARNING")
-                            .font(.mono(10))
-                            .kerning(1.5)
-                            .foregroundColor(.lullInk3)
-                        Spacer()
-                        Text(graceMinutes == 0 ? "Off" : "\(graceMinutes) min")
-                            .font(.mono(9.5))
-                            .foregroundColor(.lullAmber)
-                    }
+                if isHardMode {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("GRACE WARNING")
+                                .font(.mono(10))
+                                .kerning(1.5)
+                                .foregroundColor(.lullInk3)
+                            Spacer()
+                            Text(graceMinutes == 0 ? "Off" : "\(graceMinutes) min")
+                                .font(.mono(9.5))
+                                .foregroundColor(.lullAmber)
+                        }
 
-                    HStack(spacing: 8) {
-                        ForEach(graceOptions, id: \.self) { option in
-                            Button(action: { graceMinutes = option }) {
-                                Text(option == 0 ? "Off" : "\(option)m")
-                                    .font(.mono(10))
-                                    .foregroundColor(graceMinutes == option ? .lullBgDeep : .lullInk3)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 34)
-                                    .background(
-                                        Capsule()
-                                            .fill(graceMinutes == option ? Color.lullAmber : Color.white.opacity(0.03))
-                                            .overlay(Capsule().strokeBorder(graceMinutes == option ? Color.lullAmber : Color.lullLine, lineWidth: 1))
-                                    )
+                        HStack(spacing: 8) {
+                            ForEach(graceOptions, id: \.self) { option in
+                                Button(action: { graceMinutes = option }) {
+                                    Text(option == 0 ? "Off" : "\(option)m")
+                                        .font(.mono(10))
+                                        .foregroundColor(graceMinutes == option ? .lullBgDeep : .lullInk3)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 34)
+                                        .background(
+                                            Capsule()
+                                                .fill(graceMinutes == option ? Color.lullAmber : Color.white.opacity(0.03))
+                                                .overlay(Capsule().strokeBorder(graceMinutes == option ? Color.lullAmber : Color.lullLine, lineWidth: 1))
+                                        )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -1328,6 +1389,24 @@ struct InlineAppBlockingSection: View {
                     Toggle("", isOn: $enabled)
                         .labelsHidden()
                         .tint(.lullAmber)
+                }
+
+                if !isHardMode {
+                    Button {
+                        state.bypassGentleAppBlockingUntilTomorrow()
+                    } label: {
+                        Text("Bypass tonight")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundColor(.lullAmber)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .background(
+                                Capsule()
+                                    .fill(Color.lullAmber.opacity(0.06))
+                                    .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.28), lineWidth: 1))
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Text("Always allowed: Lull, Messages, Phone, Clock.")

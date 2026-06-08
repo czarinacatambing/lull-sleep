@@ -141,6 +141,7 @@ struct DashboardView: View {
             .onAppear {
                 currentDate = Date()
                 state.resetPrepIfNeeded()
+                state.presentPendingStreakMilestoneIfEligible()
                 withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
                     glowPulse = true
                 }
@@ -315,7 +316,7 @@ struct DashboardView: View {
         .padding(.top, 32)
         .padding(.bottom, 24)
 
-        StreakStrip(selectedTab: $selectedTab)
+        StreakStatusCard(summary: state.streakSummary, selectedTab: $selectedTab, prominent: true)
             .padding(.horizontal, 22)
             .padding(.bottom, 16)
 
@@ -360,57 +361,34 @@ struct DashboardView: View {
             wakeTime: DashboardView.timeFmt.string(from: currentDate),
             yesterday: yesterdaysRating,
             rating: todaysRating,
-            variable: state.experimentStatus?.variable,
-            // "Tonight is night X of 5" — forward-looking. After rating, the
-            // chip frames the user as positioned for the next test night.
-            testNight: tonightTestNight,
-            totalTestNights: 5,
+            variable: nil,
+            testNight: 0,
+            totalTestNights: 0,
             onRate: { n in
-                // Capture yesterday/baseline/variable/night BEFORE logging so
-                // the reward sheet renders with the just-rated numbers, not a
-                // post-advanceExperiment snapshot.
-                let yesterdayCaptured = yesterdaysRating
-                let baselineCaptured = state.baselineScore
-                let variableCaptured = state.experimentStatus?.variable
-                let preLogNight = state.experimentStatus?.night ?? 0
-
                 let scoreToLog = AppState.clampedSleepScore(n)
                 state.morningScore = scoreToLog
                 state.logMorningScore()
-
-                if state.justTriggeredNightFivePaywall {
-                    return
-                }
-
-                state.pendingMorningReward = PendingMorningReward(
-                    score: scoreToLog,
-                    yesterday: yesterdayCaptured,
-                    baseline: baselineCaptured,
-                    variable: variableCaptured,
-                    night: preLogNight + 1
-                )
+                state.presentPendingStreakMilestoneIfEligible()
             }
         )
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
 
-        if state.paywallState.tier == .shareUnlocked {
-            viewVerdictTile
-                .padding(.horizontal, 22)
-                .padding(.bottom, 16)
-        }
-
         TonightPreviewCard(
             rated: todaysRating != nil,
-            variable: state.experimentStatus?.variable,
-            testNight: tonightTestNight,
-            totalTestNights: 5,
+            variable: nil,
+            testNight: 0,
+            totalTestNights: 0,
             schedule: tonightScheduleRows,
             startsAt: tonightStartTime,
             onEditRoutine: { selectedTab = 1 }
         )
         .padding(.horizontal, 22)
-        .padding(.bottom, 36)
+        .padding(.bottom, 16)
+
+        StreakStatusCard(summary: state.streakSummary, selectedTab: $selectedTab, prominent: false)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 36)
     }
 
     private var viewVerdictTile: some View {
@@ -572,7 +550,6 @@ struct DashboardView: View {
 
     private var ritualHeroCard: some View {
         let remaining = prepSteps.count - prepDoneCount
-        let hasExperiment = state.experimentStatus != nil
 
         return ZStack(alignment: .topTrailing) {
             // Pulsing radial glow
@@ -588,71 +565,21 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Top row: kicker + badge
                 HStack(alignment: .center) {
-                    Kicker(text: hasExperiment ? "Tonight's experiment" : "Tonight's ritual",
-                           color: .lullAmberSoft)
+                    Kicker(text: "Tonight's wind-down", color: .lullAmberSoft)
                     Spacer()
-                    if hasExperiment {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.lullAmber)
-                                .frame(width: 6, height: 6)
-                                .shadow(color: .lullAmberGlow, radius: 4)
-                                .opacity(glowPulse ? 1.0 : 0.55)
-                            Text("ACTIVE TEST")
-                                .font(.mono(9.5))
-                                .kerning(1.4)
-                                .foregroundColor(.lullAmber)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(Color.lullAmber.opacity(0.14)))
-                        .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.4), lineWidth: 1))
-                    }
                 }
 
                 // Title
-                Text(state.tonightVariable)
+                Text("Earn tonight's moon")
                     .font(.serif(26))
                     .foregroundColor(.lullInk0)
                     .padding(.top, 10)
 
-                // Night progress
-                if hasExperiment {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Night ")
-                                .font(.mono(11))
-                                .foregroundColor(.lullInk2)
-                            + Text("\(state.variableNight)")
-                                .font(.mono(11))
-                                .foregroundColor(.lullAmber)
-                            + Text(" of 5")
-                                .font(.mono(11))
-                                .foregroundColor(.lullInk2)
-                            Spacer()
-                            Text("\(5 - state.variableNight) testing nights left")
-                                .font(.mono(10.5))
-                                .foregroundColor(.lullInk3)
-                        }
-                        HStack(spacing: 4) {
-                            ForEach(0..<5, id: \.self) { i in
-                                RoundedRectangle(cornerRadius: 99)
-                                    .fill(i < state.variableNight ? Color.lullAmber : Color.lullAmber.opacity(0.14))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 4)
-                                    .shadow(color: i < state.variableNight ? .lullAmberGlow : .clear, radius: 4)
-                            }
-                        }
-                    }
-                    .padding(.top, 16)
-                    .padding(.bottom, 16)
-                }
-
                 // Description
                 VStack(alignment: .leading, spacing: 8) {
-                    (Text("We're testing if this helps you fall asleep faster. ")
+                    (Text("Finish the guided wind-down to keep your bedtime rhythm alive. ")
                         .foregroundColor(.lullInk1)
-                    + Text("Rate it tomorrow morning.")
+                    + Text("You can skip a step and still complete the ritual.")
                         .foregroundColor(.lullInk2))
                     .font(.system(size: 13.5))
                     .lineSpacing(3)
@@ -813,6 +740,118 @@ struct DashboardView: View {
     }
 }
 
+// MARK: - Streak Card
+
+struct StreakStatusCard: View {
+    var summary: StreakSummary
+    @Binding var selectedTab: Int
+    var prominent: Bool
+
+    private var title: String {
+        if summary.completedNights == 0 { return "Start your streak tonight" }
+        return "\(summary.completedNights)-night streak"
+    }
+
+    private var subtitle: String {
+        guard summary.expectedNights > 0 else {
+            return "Reach the end of the guided wind-down to earn your first moon."
+        }
+        return "\(summary.completedNights) of \(summary.expectedNights) nights completed"
+    }
+
+    var body: some View {
+        Button { selectedTab = 1 } label: {
+            VStack(alignment: .leading, spacing: prominent ? 16 : 12) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Kicker(text: "Current streak", color: .lullAmberSoft)
+                        Text(title)
+                            .font(.serif(prominent ? 32 : 22))
+                            .foregroundColor(.lullInk0)
+                    }
+                    Spacer()
+                    Text(summary.expectedNights == 0 ? "--" : "\(summary.completionRate)%")
+                        .font(.mono(11))
+                        .kerning(1)
+                        .foregroundColor(.lullAmberSoft)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(Color.lullAmber.opacity(0.12)))
+                }
+
+                StreakMoonRow(nights: summary.last13, large: prominent)
+
+                HStack(alignment: .center) {
+                    Text(subtitle)
+                        .font(.system(size: prominent ? 13.5 : 12.5))
+                        .foregroundColor(.lullInk2)
+                        .lineSpacing(3)
+                    Spacer()
+                    Text("ROUTINE")
+                        .font(.mono(9.5))
+                        .kerning(1.2)
+                        .foregroundColor(.lullInk4)
+                }
+            }
+            .padding(.horizontal, prominent ? 20 : 16)
+            .padding(.vertical, prominent ? 20 : 16)
+            .background(
+                RoundedRectangle(cornerRadius: prominent ? 24 : 18)
+                    .fill(LinearGradient(
+                        colors: [Color.lullAmber.opacity(prominent ? 0.14 : 0.08), Color.lullAmber.opacity(0.02)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: prominent ? 24 : 18)
+                            .strokeBorder(Color.lullAmber.opacity(prominent ? 0.34 : 0.24), lineWidth: 1)
+                    )
+            )
+            .shadow(color: Color.black.opacity(prominent ? 0.42 : 0.24), radius: prominent ? 24 : 14, y: prominent ? 16 : 8)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StreakMoonRow: View {
+    var nights: [StreakNight]
+    var large: Bool
+
+    var body: some View {
+        HStack(spacing: large ? 6 : 5) {
+            ForEach(nights) { night in
+                moon(for: night.state)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func moon(for state: StreakNight.State) -> some View {
+        let size: CGFloat = large ? 13 : 10
+        switch state {
+        case .completed:
+            Circle()
+                .fill(Color.lullAmber)
+                .frame(width: size, height: size)
+                .shadow(color: .lullAmberGlow, radius: large ? 5 : 3)
+        case .missed:
+            Circle()
+                .strokeBorder(Color.lullInk4.opacity(0.38), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                .frame(width: size, height: size)
+        case .tonight:
+            Circle()
+                .strokeBorder(Color.lullAmber, lineWidth: 1.3)
+                .background(Circle().fill(Color.lullAmber.opacity(0.08)))
+                .frame(width: size + 2, height: size + 2)
+                .shadow(color: .lullAmberGlow, radius: large ? 5 : 3)
+        case .future:
+            Circle()
+                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                .frame(width: size, height: size)
+        }
+    }
+}
+
 // MARK: - Streak Strip
 
 struct StreakStrip: View {
@@ -933,9 +972,8 @@ struct SettingsSheet: View {
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showUpgrade = false
     @State private var showCustomerCenter = false
-    @State private var didSeedNightFivePaywall = false
+    @State private var didExpireTrial = false
     @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
     @State private var initialSleepScheduleSignature: String? = nil
 
@@ -1048,21 +1086,21 @@ struct SettingsSheet: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Kicker(text: "Debug")
                             Button {
-                                state.debugSeedNightFivePaywallReadiness()
-                                didSeedNightFivePaywall = true
+                                state.debugExpireTrialForRevenueCatPaywall()
+                                didExpireTrial = true
                             } label: {
                                 HStack(spacing: 12) {
-                                    Image(systemName: didSeedNightFivePaywall ? "checkmark.circle.fill" : "moon.stars.fill")
+                                    Image(systemName: didExpireTrial ? "checkmark.circle.fill" : "timer")
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.lullAmber)
                                         .frame(width: 22)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Seed Night-5 paywall test")
+                                        Text("Expire trial paywall test")
                                             .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.lullInk0)
-                                        Text(didSeedNightFivePaywall
-                                             ? "Ready. Go to Today and log the morning score."
-                                             : "Creates 4 scored test nights and one unrated morning.")
+                                        Text(didExpireTrial
+                                             ? "RevenueCat paywall requested."
+                                             : "Ends the local trial and opens the RevenueCat paywall.")
                                             .font(.system(size: 12.5))
                                             .foregroundColor(.lullInk3)
                                             .lineSpacing(2)
@@ -1070,7 +1108,7 @@ struct SettingsSheet: View {
                                     Spacer()
                                 }
                                 .padding(14)
-                                .lullCard(radius: 14, accent: didSeedNightFivePaywall)
+                                .lullCard(radius: 14, accent: didExpireTrial)
                             }
                             .buttonStyle(.plain)
                         }
@@ -1080,18 +1118,18 @@ struct SettingsSheet: View {
 
                         // Help improve Lull card
                         Button {
-                            if subscriptions.isLullProActive {
+                            if state.isPaidPremium {
                                 showCustomerCenter = true
                             } else {
-                                showUpgrade = true
+                                state.presentUpgradePaywall()
                             }
                         } label: {
                             HStack {
-                                Text(subscriptions.isLullProActive ? "Manage Lull Pro" : "Upgrade to Lull Premium")
+                                Text(state.isPaidPremium ? "Manage Lull Premium" : "Upgrade to Lull Premium")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.lullInk0)
                                 Spacer()
-                                Text(subscriptions.isLullProActive ? "ACTIVE →" : "PRO →")
+                                Text(state.isPaidPremium ? "ACTIVE →" : (state.trialDaysRemainingText ?? "PRO →"))
                                     .font(.mono(10.5))
                                     .kerning(1.1)
                                     .foregroundColor(.lullAmber)
@@ -1140,16 +1178,6 @@ struct SettingsSheet: View {
             if phase == .active {
                 refreshLiveActivitiesStatus()
             }
-        }
-        .sheet(isPresented: $showUpgrade) {
-            PricingSheet(entryPoint: .settings) { plan in
-                state.unlockVerdict(method: .subscribe(plan))
-                showUpgrade = false
-            } onNotNow: {
-                showUpgrade = false
-            }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showCustomerCenter) {
             CustomerCenterView()

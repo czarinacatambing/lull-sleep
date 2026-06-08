@@ -37,6 +37,7 @@
 		5A37BFE7A8F13D5F67ACF712 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D70CC2675B14641EE134DD1D /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5B244209D85E8B8C879E407D /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80FF006ACC51F5E83E2C89 /* LiveActivityService.swift */; };
 		60D15B91CA48E6BCF4BE25A6 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD08D7A04346C513E351B8 /* DashboardView.swift */; };
+		61F0C6E7D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61F0C6E6D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift */; };
 		64A5328C3806666A75220FE2 /* SleepCompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 320920ECC3D9C6F39DAA4784 /* SleepCompanionWidget.swift */; };
 		6B13AEE4C552544EAAEFF3B6 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */; };
 		6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */; };
@@ -151,6 +152,7 @@
 		5E7F895C68C02E5CB09E9FC2 /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
 		5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
 		654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		61F0C6E6D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakMilestoneView.swift; sourceTree = "<group>"; };
 		66A3F3D308227C10A3257F1D /* heavy-rain.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "heavy-rain.m4a"; sourceTree = "<group>"; };
 		69EC5108E1FAA5C9BC07089B /* lake.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = lake.m4a; sourceTree = "<group>"; };
 		6D99D336272FBA1B2B4855F7 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
@@ -342,6 +344,7 @@
 				F80F43006C39DB668F529235 /* MyRoutineView.swift */,
 				0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */,
 				654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */,
+				61F0C6E6D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift */,
 				B0376FDB43062AFB889D3098 /* TonightInProgressView.swift */,
 				C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */,
 			);
@@ -649,6 +652,7 @@
 				B0D71DB4F5A844B0865F635C /* SleepSounds.swift in Sources */,
 				CA356A11A099E60F3920F72A /* TTSService.swift in Sources */,
 				51DC2A648110E8BA1CC1377B /* TonightInProgressView.swift in Sources */,
+				61F0C6E7D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift in Sources */,
 				AF066F1DE82E52962CAED688 /* TonightPreviewCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

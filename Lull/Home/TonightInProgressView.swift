@@ -68,13 +68,13 @@ struct TonightInProgressView: View {
                             .opacity(0.35)
                             .padding(.top, 40)
 
-                        // Variable label — what's being tested tonight.
+                        // Routine label — whether tonight's guided wind-down is complete.
                         HStack(spacing: 8) {
-                            Text("VARIABLE TESTED")
+                            Text("BEDTIME ROUTINE")
                                 .font(.mono(9.5))
                                 .kerning(1.4)
                                 .foregroundColor(.lullInk4)
-                            Text(state.tonightVariable)
+                            Text("IN PROGRESS")
                                 .font(.mono(9.5))
                                 .kerning(1)
                                 .foregroundColor(.lullAmberSoft)

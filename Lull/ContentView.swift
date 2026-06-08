@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @State private var showWelcome = true
     @State private var logoOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
@@ -71,22 +72,21 @@ struct ContentView: View {
             if state.hasCompletedOnboarding {
                 HomeTabView(initialTab: state.initialTab)
                     .fullScreenCover(isPresented: $state.showSleepSounds) {
-                        SleepSoundsStep(mode: .standalone)
+                        if state.canUseSleepSounds {
+                            SleepSoundsStep(mode: .standalone)
+                        } else {
+                            Color.clear
+                                .onAppear {
+                                    state.showSleepSounds = false
+                                    state.presentUpgradePaywall()
+                                }
+                        }
                     }
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
-                    .sheet(item: $state.pendingMorningReward) { reward in
-                        MorningRewardView(
-                            score: reward.score,
-                            yesterday: reward.yesterday,
-                            baseline: reward.baseline,
-                            variable: reward.variable,
-                            night: reward.night,
-                            totalNights: 5,
-                            allowRerate: false,    // re-rate path only makes sense inside the check-in flow
-                            onRerate: { },
-                            onDismiss: { state.pendingMorningReward = nil },
-                            onNote:    { state.pendingMorningReward = nil }
-                        )
+                    .fullScreenCover(item: $state.activeStreakMilestone) { milestone in
+                        StreakMilestoneView(milestone: milestone) {
+                            state.acknowledgeStreakMilestone()
+                        }
                     }
                     .fullScreenCover(item: $state.pendingPromotion) { promotion in
                         RoutinePromotedView(promotion: promotion) {
@@ -98,11 +98,25 @@ struct ContentView: View {
                     .fullScreenCover(item: $state.activePaywallRoute) { route in
                         NightFivePaywallFlow(route: route)
                     }
+                    .sheet(item: $state.activeRevenueCatPaywall, onDismiss: {
+                        state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
+                    }) { context in
+                        RevenueCatPaywallSheet(context: context) {
+                            state.applyRevenueCatEntitlement(isActive: true)
+                            state.handleRevenueCatPaywallDismissed(isSubscribed: true)
+                        } onClose: {
+                            state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
+                        }
+                        .presentationDetents([.large])
+                        .presentationDragIndicator(.visible)
+                    }
                     .onShake { state.activateMidSleepFromShake() }
                     .onAppear {
                         if state.shouldPresentDay14Prompt {
                             state.activePaywallRoute = .day14
                         }
+                        state.evaluateTrialStatus()
+                        state.presentPendingStreakMilestoneIfEligible()
                     }
             } else {
                 OnboardingView()

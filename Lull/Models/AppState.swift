@@ -64,6 +64,34 @@ struct SleepPatternClassification {
     var isProvisional: Bool
 }
 
+struct StreakSummary {
+    var completedNights: Int
+    var expectedNights: Int
+    var completionRate: Int
+    var last13: [StreakNight]
+    var nextCount: Int { completedNights + 1 }
+}
+
+struct StreakNight: Identifiable, Equatable {
+    enum State: Equatable { case completed, missed, tonight, future }
+
+    var id: Date { date }
+    let date: Date
+    let state: State
+}
+
+struct StreakMilestonePresentation: Identifiable, Equatable {
+    var id: Int { day }
+
+    let day: Int
+    let headlineRate: Int
+    let headlineLabel: String
+    let secondaryRate: Int?
+    let secondaryLabel: String?
+    let averageSleepScore: Double?
+    let showsConfetti: Bool
+}
+
 func classifySleepPattern(
     sleepProblems: Set<Int>,
     wakingFactors: Set<Int>,
@@ -216,6 +244,8 @@ class AppState: ObservableObject {
     @Published var paywallState = PaywallState()
     @Published var activePaywallRoute: PaywallRoute? = nil
     @Published var activePaywallVerdict: PaywallVerdict? = nil
+    @Published var activeRevenueCatPaywall: RevenueCatPaywallContext? = nil
+    @Published var activeStreakMilestone: StreakMilestonePresentation? = nil
 
     // MARK: - Home / Dashboard
     @Published var showNightlyFlow = false
@@ -257,10 +287,53 @@ class AppState: ObservableObject {
         coreRoutine.first { $0.mode == .experiment }?.remedyId
     }
 
+    var isTrialActive: Bool {
+        paywallState.isTrialActive()
+    }
+
+    var isPaidPremium: Bool {
+        paywallState.tier == .subscribed
+    }
+
+    var hasPremiumAccess: Bool {
+        isPaidPremium || isTrialActive
+    }
+
+    var isFreeAccess: Bool {
+        !hasPremiumAccess
+    }
+
+    var canCustomizeRoutine: Bool {
+        hasPremiumAccess
+    }
+
+    var canUseSleepSounds: Bool {
+        hasPremiumAccess
+    }
+
+    var canUseContentLibrary: Bool {
+        hasPremiumAccess
+    }
+
+    var canUseHardAppBlocking: Bool {
+        hasPremiumAccess
+    }
+
+    var canUseReassessment: Bool {
+        hasPremiumAccess
+    }
+
+    var trialDaysRemainingText: String? {
+        guard isTrialActive, let end = paywallState.trialEndsAt else { return nil }
+        let seconds = max(0, end.timeIntervalSince(Date()))
+        let days = max(1, Int(ceil(seconds / (24 * 60 * 60))))
+        return "\(days)d trial left"
+    }
+
     @Published var coreRoutine: [RoutineStep] = [
         RoutineStep(order: 1, label: R.dimTheLights,       mode: .reminderOnly, leadTimeMins: 75, remedyId: .dimTheLights),
         RoutineStep(order: 2, label: R.noScreens,          mode: .reminderOnly, leadTimeMins: 75, remedyId: .noScreens),
-        RoutineStep(order: 3, label: R.weightedBlanket,    mode: .experiment,   leadTimeMins: 90, remedyId: .weightedBlanket),
+        RoutineStep(order: 3, label: R.weightedBlanket,    mode: .reminderOnly, leadTimeMins: 90, remedyId: .weightedBlanket),
         RoutineStep(order: 4, label: "Brightness check",   mode: .inSequence, durationLabel: "10s"),
         RoutineStep(order: 5, label: "Temperature check",  mode: .inSequence, durationLabel: "10s"),
         RoutineStep(order: 6, label: R.brainDump,          mode: .inSequence, durationLabel: "2m · voice", remedyId: .brainDump),
@@ -275,11 +348,103 @@ class AppState: ObservableObject {
     func applyGeneratedRoutine(_ routine: GeneratedRoutine, scheduleNotifications: Bool = true) {
         generatedRoutine      = routine
         coreRoutine           = routine.toCoreRoutineSteps()
+        convertExperimentStepsToHabits()
         routineExplanation    = routine.explanation
         routineShouldStartNow = shouldOfferImmediateOnboardingRitual
+        if paywallState.originalGeneratedRoutine == nil {
+            paywallState.originalGeneratedRoutine = coreRoutine
+        }
+        paywallState.lastReassessmentAt = Date()
         persist()
         if scheduleNotifications {
             scheduleAllNotifications()
+        }
+    }
+
+    private func startTrialIfNeeded() {
+        guard !paywallState.trialHasStarted else { return }
+        let now = Date()
+        paywallState.tier = .trial
+        paywallState.trialStartedAt = now
+        paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: 7, to: now)
+        paywallState.trialExpiredAt = nil
+        paywallState.verdictRevealed = true
+        paywallState.originalGeneratedRoutine = paywallState.originalGeneratedRoutine ?? coreRoutine
+        paywallState.lastReassessmentAt = paywallState.lastReassessmentAt ?? now
+    }
+
+    func evaluateTrialStatus() {
+        guard paywallState.tier == .trial else { return }
+        guard !isTrialActive else { return }
+        expireTrialAndPresentPaywall()
+    }
+
+    func presentUpgradePaywall() {
+        activeRevenueCatPaywall = .upgrade
+    }
+
+    func handleRevenueCatPaywallDismissed(isSubscribed: Bool) {
+        let context = activeRevenueCatPaywall
+        activeRevenueCatPaywall = nil
+        if isSubscribed {
+            presentPendingStreakMilestoneIfEligible()
+            return
+        }
+        guard context == .trialExpired else { return }
+        completeTrialDowngrade()
+    }
+
+    func expireTrialAndPresentPaywall() {
+        guard paywallState.tier == .trial else { return }
+        paywallState.trialExpiredAt = paywallState.trialExpiredAt ?? Date()
+        activeRevenueCatPaywall = .trialExpired
+        persist()
+    }
+
+    private func completeTrialDowngrade() {
+        guard paywallState.tier != .subscribed else { return }
+        if paywallState.trialCustomizedRoutine == nil {
+            paywallState.trialCustomizedRoutine = coreRoutine
+        }
+        paywallState.tier = .free
+        paywallState.verdictRevealed = false
+        restoreFreeRoutine()
+        persist()
+        scheduleAllNotifications()
+        refreshAppBlockingShield()
+    }
+
+    private func restoreFreeRoutine() {
+        let source = paywallState.originalGeneratedRoutine ?? coreRoutine
+        coreRoutine = source.filter { !Self.isPremiumOnlyRoutineStep($0) }
+        convertExperimentStepsToHabits()
+        normalizeRoutineOrder()
+    }
+
+    private static func isPremiumOnlyRoutineStep(_ step: RoutineStep) -> Bool {
+        step.label == R.sleepSounds || step.remedyId == .sleepSounds
+    }
+
+    private func captureTrialRoutineEdit() {
+        guard paywallState.tier == .trial else { return }
+        paywallState.trialCustomizedRoutine = coreRoutine
+    }
+
+    private func restorePremiumRoutineIfAvailable() {
+        guard let saved = paywallState.trialCustomizedRoutine else { return }
+        coreRoutine = saved
+        convertExperimentStepsToHabits()
+        normalizeRoutineOrder()
+    }
+
+    func convertExperimentStepsToHabits() {
+        var changed = false
+        for idx in coreRoutine.indices where coreRoutine[idx].mode == .experiment {
+            coreRoutine[idx].mode = isPrepRoutineStep(coreRoutine[idx]) ? .reminderOnly : .inSequence
+            changed = true
+        }
+        if changed {
+            normalizeRoutineOrder()
         }
     }
 
@@ -485,24 +650,10 @@ class AppState: ObservableObject {
     func ingestLiveActivityRating(rating rawRating: Int, at: Date = Date()) {
         let rating = Self.clampedSleepScore(rawRating)
         guard rating > 0 else { return }
-        // Capture before logMorningScore/advanceExperiment mutate state.
-        let mostRecentRated    = sleepLogs.filter { $0.score > 0 }.sorted { $0.date > $1.date }.first
-        let yesterdayCaptured  = mostRecentRated?.score
         let baselineCaptured   = baselineScore
-        let variableCaptured   = experimentStatus?.variable
-        let preLogNight        = experimentStatus?.night ?? 0
 
         morningScore = rating
         logMorningScore()
-
-        // Show the reward sheet when the app opens.
-        pendingMorningReward = PendingMorningReward(
-            score: rating,
-            yesterday: yesterdayCaptured,
-            baseline: baselineCaptured,
-            variable: variableCaptured,
-            night: preLogNight + 1
-        )
 
         let delta = Double(rating - baselineCaptured)
         let baseLabel = sameWeekdayBaselineLabel(for: at)
@@ -572,6 +723,12 @@ class AppState: ObservableObject {
     @Published var recentlyPromotedRemedyId: RemedyID? = nil
     @Published var recentlyPromotedAt: Date? = nil
 
+    // Streak milestones are earned at night, then presented the next morning
+    // after rating or once the morning check-in window has passed.
+    @Published var pendingStreakMilestoneDay: Int? = nil
+    @Published var acknowledgedStreakMilestoneDays: Set<Int> = []
+    @Published var streakMilestonePaywallPromptedDays: Set<Int> = []
+
     // Transient (not persisted) — triggers a brief amber pulse on the routine
     // list item right after the big celebration dismisses.
     @Published var routinePulseRemedyId: RemedyID? = nil
@@ -580,11 +737,6 @@ class AppState: ObservableObject {
     // Used by acknowledgePromotion() to route the user to the Routine tab.
     @Published var requestedTab: Int? = nil
 
-    // Transient — queued by both the dashboard MorningRateHero and the
-    // SleepLogDetailView "Log this morning" CTA. ContentView observes this
-    // and presents MorningRewardView as a sheet (with mini confetti when
-    // the just-logged score is greater than yesterday's).
-    @Published var pendingMorningReward: PendingMorningReward? = nil
     @Published var justTriggeredNightFivePaywall: Bool = false
 
     // Debug-only time-of-day override for testing the morning/evening branches
@@ -609,59 +761,229 @@ class AppState: ObservableObject {
     }
 
     #if DEBUG
-    func debugSeedNightFivePaywallReadiness() {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-
-        coreRoutine.removeAll { $0.mode == .experiment }
-        coreRoutine.append(RoutineStep(
-            order: coreRoutine.count + 1,
-            label: R.brainDump,
-            mode: .experiment,
-            durationLabel: "12m",
-            remedyId: .brainDump
-        ))
-        normalizeRoutineOrder()
-
-        func day(_ offset: Int) -> Date {
-            cal.date(byAdding: .day, value: offset, to: today) ?? today
+    func debugExpireTrialForRevenueCatPaywall() {
+        if paywallState.originalGeneratedRoutine == nil {
+            paywallState.originalGeneratedRoutine = coreRoutine
         }
-
-        var seeded: [SleepLogEntry] = []
-        seeded.append(SleepLogEntry(date: day(-7), variable: R.dimTheLights, variableRemedyId: .dimTheLights, score: 3))
-        seeded.append(SleepLogEntry(date: day(-6), variable: R.noScreens, variableRemedyId: .noScreens, score: 3))
-        seeded.append(SleepLogEntry(date: day(-5), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
-        seeded.append(SleepLogEntry(date: day(-4), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
-        seeded.append(SleepLogEntry(date: day(-3), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
-        seeded.append(SleepLogEntry(date: day(-2), variable: R.brainDump, variableRemedyId: .brainDump, score: 5))
-
-        var lastNight = SleepLogEntry(date: day(-1), variable: R.brainDump, variableRemedyId: .brainDump, score: 0)
-        lastNight.completedNightlyFlow = true
-        lastNight.actualBedtime = typicalBedtime
-        seeded.append(lastNight)
-
-        sleepLogs = seeded
-        baselineScore = 3
-        morningScore = 0
-        morningHoursSlept = 7.5
-        pendingMorningReward = nil
-        pendingPromotion = nil
-        activePaywallRoute = nil
-        activePaywallVerdict = nil
-        justTriggeredNightFivePaywall = false
-        paywallState = PaywallState(tier: .awaitingVerdict, verdictRevealed: false)
+        paywallState.tier = .trial
+        paywallState.trialStartedAt = Calendar.current.date(byAdding: .day, value: -8, to: Date())
+        paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        paywallState.trialExpiredAt = nil
         hasCompletedOnboarding = true
         initialTab = 0
         requestedTab = 0
-        debugForceMorningState = true
+        debugForceMorningState = false
         debugForceEveningState = false
         persist()
+        evaluateTrialStatus()
     }
     #endif
 
     var lastNightEntry: SleepLogEntry? {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
         return sleepLogs.last { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
+    }
+
+    func bedtimeDate(for date: Date,
+                     calendar: Calendar = .autoupdatingCurrent) -> Date {
+        let wakeComponents = calendar.dateComponents([.hour, .minute], from: typicalWakeTime)
+        let wakeMinute = (wakeComponents.hour ?? 7) * 60 + (wakeComponents.minute ?? 0)
+        let dateMinute = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+        let adjusted = dateMinute < wakeMinute
+            ? (calendar.date(byAdding: .day, value: -1, to: date) ?? date)
+            : date
+        return calendar.startOfDay(for: adjusted)
+    }
+
+    private func completedWindDownDates(calendar: Calendar = .autoupdatingCurrent) -> [Date] {
+        let dates = sleepLogs
+            .filter(\.completedNightlyFlow)
+            .map { calendar.startOfDay(for: $0.date) }
+        return Array(Set(dates)).sorted()
+    }
+
+    var streakSummary: StreakSummary {
+        let cal = Calendar.current
+        let completed = completedWindDownDates(calendar: cal)
+        guard let first = completed.first else {
+            let today = bedtimeDate(for: Date(), calendar: cal)
+            return StreakSummary(
+                completedNights: 0,
+                expectedNights: 0,
+                completionRate: 0,
+                last13: [StreakNight(date: today, state: .tonight)]
+            )
+        }
+
+        let today = bedtimeDate(for: Date(), calendar: cal)
+        let completedSet = Set(completed)
+        let expected = max(1, (cal.dateComponents([.day], from: first, to: today).day ?? 0) + 1)
+        let rate = Int((Double(completed.count) / Double(expected) * 100).rounded())
+        let start = cal.date(byAdding: .day, value: -12, to: today) ?? today
+        let last13 = (0..<13).compactMap { offset -> StreakNight? in
+            guard let date = cal.date(byAdding: .day, value: offset, to: start) else { return nil }
+            let day = cal.startOfDay(for: date)
+            if day > today { return StreakNight(date: day, state: .future) }
+            if completedSet.contains(day) { return StreakNight(date: day, state: .completed) }
+            if day == today { return StreakNight(date: day, state: .tonight) }
+            if day < first { return StreakNight(date: day, state: .future) }
+            return StreakNight(date: day, state: .missed)
+        }
+
+        return StreakSummary(
+            completedNights: completed.count,
+            expectedNights: expected,
+            completionRate: rate,
+            last13: last13
+        )
+    }
+
+    private func isMilestoneDay(_ day: Int) -> Bool {
+        day == 3 || day == 7 || day == 30 || day == 60 || day == 90 || (day > 90 && day % 30 == 0)
+    }
+
+    private func queueStreakMilestoneIfNeeded() {
+        let day = completedWindDownDates().count
+        guard isMilestoneDay(day),
+              !acknowledgedStreakMilestoneDays.contains(day)
+        else { return }
+        pendingStreakMilestoneDay = day
+    }
+
+    func morningWindowEnd(for date: Date = Date(),
+                          calendar: Calendar = .autoupdatingCurrent) -> Date? {
+        let wakeComponents = calendar.dateComponents([.hour, .minute], from: typicalWakeTime)
+        var combined = calendar.dateComponents([.year, .month, .day], from: date)
+        combined.hour = wakeComponents.hour ?? 7
+        combined.minute = wakeComponents.minute ?? 0
+        guard let wake = calendar.date(from: combined) else { return nil }
+
+        let plusFour = calendar.date(byAdding: .hour, value: 4, to: wake) ?? wake
+        var elevenComponents = calendar.dateComponents([.year, .month, .day], from: date)
+        elevenComponents.hour = 11
+        elevenComponents.minute = 0
+        let elevenAm = calendar.date(from: elevenComponents) ?? plusFour
+        return max(plusFour, elevenAm)
+    }
+
+    private func isMorningWindowActive(now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        let wakeComponents = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        var combined = cal.dateComponents([.year, .month, .day], from: now)
+        combined.hour = wakeComponents.hour ?? 7
+        combined.minute = wakeComponents.minute ?? 0
+        guard let wake = cal.date(from: combined),
+              let windowEnd = morningWindowEnd(for: now, calendar: cal)
+        else { return false }
+        return now >= wake && now < windowEnd
+    }
+
+    private func hasRatedCurrentMorning(now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        return sleepLogs.contains {
+            $0.score > 0 && (cal.isDateInToday($0.date) || cal.isDateInYesterday($0.date))
+        }
+    }
+
+    func presentPendingStreakMilestoneIfEligible(now: Date = Date()) {
+        guard activeStreakMilestone == nil,
+              activeRevenueCatPaywall == nil,
+              let day = pendingStreakMilestoneDay
+        else { return }
+
+        let canPresentNow = hasRatedCurrentMorning(now: now) || !isMorningWindowActive(now: now)
+        guard canPresentNow else { return }
+
+        if !hasPremiumAccess {
+            guard !streakMilestonePaywallPromptedDays.contains(day) else { return }
+            streakMilestonePaywallPromptedDays.insert(day)
+            activeRevenueCatPaywall = .upgrade
+            persist()
+            return
+        }
+
+        activeStreakMilestone = buildStreakMilestonePresentation(day: day)
+    }
+
+    func acknowledgeStreakMilestone() {
+        guard let milestone = activeStreakMilestone else { return }
+        acknowledgedStreakMilestoneDays.insert(milestone.day)
+        if pendingStreakMilestoneDay == milestone.day {
+            pendingStreakMilestoneDay = nil
+        }
+        activeStreakMilestone = nil
+        persist()
+    }
+
+    private func buildStreakMilestonePresentation(day: Int) -> StreakMilestonePresentation {
+        let cal = Calendar.current
+        let completed = completedWindDownDates(calendar: cal)
+        guard let first = completed.first else {
+            return StreakMilestonePresentation(
+                day: day,
+                headlineRate: 0,
+                headlineLabel: "THIS YEAR",
+                secondaryRate: nil,
+                secondaryLabel: nil,
+                averageSleepScore: nil,
+                showsConfetti: true
+            )
+        }
+
+        let milestoneDate = completed.indices.contains(day - 1) ? completed[day - 1] : (completed.last ?? first)
+        let last30Start = cal.date(byAdding: .day, value: -29, to: milestoneDate) ?? milestoneDate
+        let ytdStart = cal.date(from: cal.dateComponents([.year], from: milestoneDate)) ?? first
+
+        let headlineStart = day >= 60 ? last30Start : max(first, ytdStart)
+        let headlineRate = completionRate(from: headlineStart, to: milestoneDate, completedDates: completed, calendar: cal)
+        let secondaryRate = day >= 60
+            ? completionRate(from: max(first, ytdStart), to: milestoneDate, completedDates: completed, calendar: cal)
+            : nil
+
+        let averageScopeStart = day >= 60 ? last30Start : headlineStart
+        let average = averageSleepScore(from: averageScopeStart, to: milestoneDate, calendar: cal)
+        let confetti = average.map { $0 > Double(baselineScore) } ?? true
+
+        return StreakMilestonePresentation(
+            day: day,
+            headlineRate: headlineRate,
+            headlineLabel: day >= 60 ? "LAST 30 DAYS" : "THIS YEAR",
+            secondaryRate: secondaryRate,
+            secondaryLabel: day >= 60 ? "THIS YEAR" : nil,
+            averageSleepScore: average,
+            showsConfetti: confetti
+        )
+    }
+
+    private func completionRate(from start: Date,
+                                to end: Date,
+                                completedDates: [Date],
+                                calendar: Calendar) -> Int {
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+        let expected = max(1, (calendar.dateComponents([.day], from: startDay, to: endDay).day ?? 0) + 1)
+        let completedSet = Set(completedDates)
+        var count = 0
+        for offset in 0..<expected {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: startDay) else { continue }
+            if completedSet.contains(calendar.startOfDay(for: date)) {
+                count += 1
+            }
+        }
+        return Int((Double(count) / Double(expected) * 100).rounded())
+    }
+
+    private func averageSleepScore(from start: Date,
+                                   to end: Date,
+                                   calendar: Calendar) -> Double? {
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+        let scored = sleepLogs.filter {
+            let day = calendar.startOfDay(for: $0.date)
+            return $0.score > 0 && day >= startDay && day <= endDay
+        }
+        guard !scored.isEmpty else { return nil }
+        return Double(scored.map(\.score).reduce(0, +)) / Double(scored.count)
     }
 
     // One-time data migration: consolidates orphaned morning-rating entries
@@ -802,7 +1124,10 @@ class AppState: ObservableObject {
     }
 
     func recordNightlySessionCompleted() {
-        let entry = sleepLogs.first(where: { $0.isToday })
+        let entry = sleepLogs
+            .filter { $0.completedNightlyFlow }
+            .sorted { ($0.actualBedtime ?? $0.date) > ($1.actualBedtime ?? $1.date) }
+            .first ?? sleepLogs.first(where: { $0.isToday })
         trackAnalytics("nightly_session_completed", [
             "tested_remedy_id": entry?.variableRemedyId?.rawValue ?? tonightRemedyId?.rawValue ?? "",
             "routine_step_attempt_count": "\(entry?.stepAttempts.count ?? 0)"
@@ -1136,6 +1461,9 @@ class AppState: ObservableObject {
             _pendingPromotion         = Published(initialValue: saved.pendingPromotion)
             _recentlyPromotedRemedyId = Published(initialValue: saved.recentlyPromotedRemedyId)
             _recentlyPromotedAt       = Published(initialValue: saved.recentlyPromotedAt)
+            _pendingStreakMilestoneDay = Published(initialValue: saved.pendingStreakMilestoneDay)
+            _acknowledgedStreakMilestoneDays = Published(initialValue: Set(saved.acknowledgedStreakMilestoneDays))
+            _streakMilestonePaywallPromptedDays = Published(initialValue: Set(saved.streakMilestonePaywallPromptedDays))
             if let data = saved.appBlockingSelectionData,
                let decoded = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
                 _appBlockingSelection = Published(initialValue: decoded)
@@ -1144,8 +1472,22 @@ class AppState: ObservableObject {
             _appBlockingStartTime = Published(initialValue: saved.appBlockingStartTime ?? Self.defaultAppBlockingStart(from: saved.typicalBedtime))
             _appBlockingEndTime = Published(initialValue: saved.appBlockingEndTime ?? Self.defaultAppBlockingEnd(from: saved.typicalWakeTime))
             _appBlockingGraceMinutes = Published(initialValue: saved.appBlockingGraceMinutes)
+            if paywallState.originalGeneratedRoutine == nil {
+                paywallState.originalGeneratedRoutine = saved.originalGeneratedRoutine ?? saved.coreRoutine
+            }
+            if paywallState.trialCustomizedRoutine == nil {
+                paywallState.trialCustomizedRoutine = saved.trialCustomizedRoutine
+            }
+            if paywallState.gentleBlockingBypassedUntil == nil {
+                paywallState.gentleBlockingBypassedUntil = saved.gentleBlockingBypassedUntil
+            }
             if hasCompletedOnboarding && paywallState.tier == .onboarding {
-                paywallState.tier = .awaitingVerdict
+                startTrialIfNeeded()
+            } else if paywallState.tier == .awaitingVerdict ||
+                        paywallState.tier == .paywallPending ||
+                        paywallState.tier == .shareUnlocked ||
+                        paywallState.tier == .freeForever {
+                paywallState.tier = .free
                 paywallState.verdictRevealed = false
             }
 
@@ -1169,8 +1511,13 @@ class AppState: ObservableObject {
                 DispatchQueue.main.async {
                     self.persist()
                 }
-            } else if saved.schemaVersion < 7 {
+            } else if saved.schemaVersion < 8 {
                 DispatchQueue.main.async {
+                    self.persist()
+                }
+            } else if saved.schemaVersion < 9 {
+                DispatchQueue.main.async {
+                    self.convertExperimentStepsToHabits()
                     self.persist()
                 }
             }
@@ -1179,6 +1526,7 @@ class AppState: ObservableObject {
             DispatchQueue.main.async {
                 _ = self.handleTimeZoneChangeIfNeeded()
                 self.scheduleAllNotifications()
+                self.evaluateTrialStatus()
                 self.refreshAppBlockingShield()
             }
         } else {
@@ -1209,6 +1557,8 @@ class AppState: ObservableObject {
             committedRoutineTime:     committedRoutineTime,
             timeZoneIdentifier:       persistedTimeZoneIdentifier,
             paywallState:             paywallState,
+            originalGeneratedRoutine: paywallState.originalGeneratedRoutine,
+            trialCustomizedRoutine:   paywallState.trialCustomizedRoutine,
             baselineScore:            baselineScore,
             prepDoneIds:              Array(prepDoneIds),
             prepDoneDate:             prepDoneDate,
@@ -1217,11 +1567,15 @@ class AppState: ObservableObject {
             pendingPromotion:         pendingPromotion,
             recentlyPromotedRemedyId: recentlyPromotedRemedyId,
             recentlyPromotedAt:       recentlyPromotedAt,
+            pendingStreakMilestoneDay: pendingStreakMilestoneDay,
+            acknowledgedStreakMilestoneDays: Array(acknowledgedStreakMilestoneDays),
+            streakMilestonePaywallPromptedDays: Array(streakMilestonePaywallPromptedDays),
             appBlockingSelectionData: try? JSONEncoder().encode(appBlockingSelection),
             appBlockingEnabled:       appBlockingEnabled,
             appBlockingStartTime:     appBlockingStartTime,
             appBlockingEndTime:       appBlockingEndTime,
-            appBlockingGraceMinutes:  appBlockingGraceMinutes
+            appBlockingGraceMinutes:  appBlockingGraceMinutes,
+            gentleBlockingBypassedUntil: paywallState.gentleBlockingBypassedUntil
         )
         PersistenceStore.shared.save(snapshot)
     }
@@ -1262,7 +1616,7 @@ class AppState: ObservableObject {
                               graceMinutes: Int) {
         appBlockingSelection = selection
         appBlockingEnabled = enabled
-        appBlockingStartTime = startTime
+        appBlockingStartTime = canUseHardAppBlocking ? startTime : typicalBedtime
         appBlockingEndTime = endTime
         appBlockingGraceMinutes = graceMinutes
         persist()
@@ -1272,7 +1626,12 @@ class AppState: ObservableObject {
     func refreshAppBlockingShield(now: Date = Date()) {
         let hasStep = hasRoutineStep(label: R.appBlocking)
         let hasTargets = !appBlockingSelection.applicationTokens.isEmpty || !appBlockingSelection.categoryTokens.isEmpty
-        let shouldApply = hasStep && appBlockingEnabled && hasTargets && isWithinAppBlockingWindow(now: now)
+        let bypassed = paywallState.gentleBlockingBypassedUntil.map { now < $0 } ?? false
+        let shouldApply = hasStep &&
+            appBlockingEnabled &&
+            hasTargets &&
+            isWithinAppBlockingWindow(now: now) &&
+            (canUseHardAppBlocking || !bypassed)
 
         if shouldApply {
             appBlockingStore.shield.applications = appBlockingSelection.applicationTokens.isEmpty ? nil : appBlockingSelection.applicationTokens
@@ -1282,10 +1641,29 @@ class AppState: ObservableObject {
         }
     }
 
+    func bypassGentleAppBlockingUntilTomorrow(now: Date = Date()) {
+        guard !canUseHardAppBlocking else { return }
+        let cal = Calendar.current
+        let wakeComponents = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        let todayWake = cal.date(
+            bySettingHour: wakeComponents.hour ?? 7,
+            minute: wakeComponents.minute ?? 0,
+            second: 0,
+            of: now
+        ) ?? now
+        let bypassEnd = now < todayWake
+            ? todayWake
+            : (cal.date(byAdding: .day, value: 1, to: todayWake) ?? now.addingTimeInterval(24 * 60 * 60))
+        paywallState.gentleBlockingBypassedUntil = bypassEnd
+        persist()
+        refreshAppBlockingShield(now: now)
+    }
+
     func isWithinAppBlockingWindow(now: Date = Date()) -> Bool {
         let cal = Calendar.current
         let nowMins = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
-        let startMins = cal.component(.hour, from: appBlockingStartTime) * 60 + cal.component(.minute, from: appBlockingStartTime)
+        let activeStart = canUseHardAppBlocking ? appBlockingStartTime : typicalBedtime
+        let startMins = cal.component(.hour, from: activeStart) * 60 + cal.component(.minute, from: activeStart)
         let endMins = cal.component(.hour, from: appBlockingEndTime) * 60 + cal.component(.minute, from: appBlockingEndTime)
 
         if startMins == endMins { return true }
@@ -1306,6 +1684,19 @@ class AppState: ObservableObject {
             sleepLogs.append(entry)
         }
         persist()
+    }
+
+    func recordGuidedWindDownCompleted(at completedAt: Date = Date()) {
+        let bedtimeDay = bedtimeDate(for: completedAt)
+        updateTodayLog {
+            $0.date = bedtimeDay
+            $0.completedNightlyFlow = true
+            $0.actualBedtime = completedAt
+        }
+        markAllRitualDone()
+        queueStreakMilestoneIfNeeded()
+        persist()
+        recordNightlySessionCompleted()
     }
 
     // Records a completed/skipped attempt for the current nightly step.
@@ -1354,10 +1745,7 @@ class AppState: ObservableObject {
 
     func completeOnboarding() {
         initialTab = 0
-        if paywallState.tier == .onboarding {
-            paywallState.tier = .awaitingVerdict
-            paywallState.verdictRevealed = false
-        }
+        startTrialIfNeeded()
         hasCompletedOnboarding = true
         persist()
         recordOnboardingTelemetry(route: "home")
@@ -1365,10 +1753,7 @@ class AppState: ObservableObject {
 
     func completeOnboardingToRoutine() {
         initialTab = 1
-        if paywallState.tier == .onboarding {
-            paywallState.tier = .awaitingVerdict
-            paywallState.verdictRevealed = false
-        }
+        startTrialIfNeeded()
         hasCompletedOnboarding = true
         persist()
         recordOnboardingTelemetry(route: "routine")
@@ -1377,10 +1762,7 @@ class AppState: ObservableObject {
     func completeOnboardingAndStartRitual() {
         initialTab = 0
         requestedTab = 0
-        if paywallState.tier == .onboarding {
-            paywallState.tier = .awaitingVerdict
-            paywallState.verdictRevealed = false
-        }
+        startTrialIfNeeded()
         hasCompletedOnboarding = true
         showNightlyFlow = true
         persist()
@@ -1390,7 +1772,6 @@ class AppState: ObservableObject {
     func logMorningScore() {
         let score = Self.clampedSleepScore(morningScore)
         morningScore = score
-        let statusBeforeMutation = experimentStatus
         var loggedEntry: SleepLogEntry?
 
         if let idx = ratableEntryIndex {
@@ -1411,31 +1792,19 @@ class AppState: ObservableObject {
             sleepLogs.append(entry)
             loggedEntry = entry
         }
-        let completedVerdictStatus = experimentStatus
         clearMorningRatingNotifications()
         scheduleMorningRatingNotifications(skipToday: true)
-        if shouldTriggerNightFivePaywall(statusBefore: statusBeforeMutation, statusAfter: completedVerdictStatus) {
-            activePaywallVerdict = buildVerdictSnapshot(status: completedVerdictStatus)
-            paywallState.tier = .paywallPending
-            paywallState.verdictRevealed = false
-            justTriggeredNightFivePaywall = true
-            activePaywallRoute = .nightFive
-        } else {
-            justTriggeredNightFivePaywall = false
-        }
-        advanceExperiment()
+        justTriggeredNightFivePaywall = false
         persist()
         if let loggedEntry {
             recordMorningTelemetry(entry: loggedEntry)
         }
+        presentPendingStreakMilestoneIfEligible()
     }
 
     private func shouldTriggerNightFivePaywall(statusBefore: ExperimentEngine.Status?,
                                                statusAfter: ExperimentEngine.Status?) -> Bool {
-        guard paywallState.tier == .awaitingVerdict || paywallState.tier == .paywallPending else { return false }
-        guard paywallState.verdictRevealed == false else { return false }
-        guard let statusAfter, statusAfter.night >= 5 else { return false }
-        return (statusBefore?.night ?? 0) < 5
+        false
     }
 
     func unlockVerdict(method: UnlockMethod) {
@@ -1452,12 +1821,21 @@ class AppState: ObservableObject {
 
     func applyRevenueCatEntitlement(isActive: Bool) {
         if isActive {
+            let wasFree = paywallState.tier == .free
             paywallState.tier = .subscribed
             paywallState.verdictRevealed = true
+            if wasFree {
+                restorePremiumRoutineIfAvailable()
+                scheduleAllNotifications()
+            }
         } else if paywallState.tier == .subscribed {
-            paywallState.tier = .paywallPending
+            paywallState.tier = paywallState.isTrialActive() ? .trial : .free
             paywallState.unlockMethod = nil
             paywallState.verdictRevealed = false
+            if paywallState.tier == .free {
+                restoreFreeRoutine()
+                scheduleAllNotifications()
+            }
         }
         persist()
     }
@@ -1583,6 +1961,7 @@ class AppState: ObservableObject {
         section.move(fromOffsets: source, toOffset: destination)
         coreRoutine = section + windDownSteps
         normalizeRoutineOrder()
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "reorder", stepID: section.first?.id)
         persist()
     }
@@ -1592,6 +1971,7 @@ class AppState: ObservableObject {
         section.move(fromOffsets: source, toOffset: destination)
         coreRoutine = preWindDownSteps + section
         normalizeRoutineOrder()
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "reorder", stepID: section.first?.id)
         persist()
     }
@@ -1614,12 +1994,17 @@ class AppState: ObservableObject {
         }
 
         normalizeRoutineOrder()
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "reorder", stepID: moving.id)
         persist()
     }
 
     @discardableResult
     func addRoutineStep(from item: RoutineLibraryStep) -> RoutineStep {
+        guard canCustomizeRoutine else {
+            presentUpgradePaywall()
+            return RoutineStep(order: coreRoutine.count + 1, label: item.label, mode: .reminderOnly)
+        }
         let mode: RoutineMode = item.defaultSection == .ritual ? .inSequence : .reminderOnly
         var step = RoutineStep(
             order: coreRoutine.count + 1,
@@ -1650,6 +2035,7 @@ class AppState: ObservableObject {
             return step
         }
         normalizeRoutineOrder()
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "add", stepID: step.id)
         persist()
         scheduleBedtimePrepNotifications()
@@ -1657,6 +2043,10 @@ class AppState: ObservableObject {
     }
 
     func updateRoutineStep(_ updated: RoutineStep) {
+        guard canCustomizeRoutine else {
+            presentUpgradePaywall()
+            return
+        }
         guard let idx = coreRoutine.firstIndex(where: { $0.id == updated.id }) else { return }
         let previous = coreRoutine[idx]
         if previous.label != updated.label {
@@ -1666,12 +2056,17 @@ class AppState: ObservableObject {
         }
         coreRoutine[idx] = updated
         normalizeRoutineOrder()
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "edit", stepID: updated.id)
         persist()
         scheduleBedtimePrepNotifications()
     }
 
     func removeRoutineStep(_ step: RoutineStep) {
+        guard canCustomizeRoutine else {
+            presentUpgradePaywall()
+            return
+        }
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: ["bedtime_prep_\(step.label)"]
         )
@@ -1680,6 +2075,7 @@ class AppState: ObservableObject {
         if step.mode == .experiment {
             print("[Analytics] experiment_aborted step_id=\(step.id.uuidString) label=\"\(step.label)\"")
         }
+        captureTrialRoutineEdit()
         logRoutineUpdated(kind: "remove", stepID: step.id)
         persist()
         scheduleBedtimePrepNotifications()
@@ -1706,6 +2102,10 @@ class AppState: ObservableObject {
     @AppStorage("variableIsOverridden") var variableIsOverridden: Bool = false
 
     func changeExperimentVariable(to label: String) {
+        guard canCustomizeRoutine else {
+            presentUpgradePaywall()
+            return
+        }
         coreRoutine.removeAll { $0.mode == .experiment }
         coreRoutine.append(RoutineStep(
             order: coreRoutine.count + 1,
@@ -1714,11 +2114,16 @@ class AppState: ObservableObject {
             remedyId: RemedyID.fromLabel(label)
         ))
         variableIsOverridden = true
+        captureTrialRoutineEdit()
         persist()
         scheduleBedtimePrepNotifications()
     }
 
     func resetToSuggestedVariable() {
+        guard canCustomizeRoutine else {
+            presentUpgradePaywall()
+            return
+        }
         let routineWithoutExperiment = coreRoutine.filter { $0.mode != .experiment }
         guard let suggested = ExperimentEngine.suggestNextVariable(
             logs: sleepLogs,
@@ -1733,6 +2138,7 @@ class AppState: ObservableObject {
             remedyId: RemedyID.fromLabel(suggested)
         ))
         variableIsOverridden = false
+        captureTrialRoutineEdit()
         persist()
         scheduleBedtimePrepNotifications()
     }

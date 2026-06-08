@@ -1446,13 +1446,7 @@ struct NightlyGoodNightView: View {
         .onAppear {
             if !didRecordCompletion {
                 didRecordCompletion = true
-                state.updateTodayLog {
-                    $0.completedNightlyFlow = true
-                    $0.actualBedtime = Date()
-                }
-                state.markAllRitualDone()
-                state.persist()
-                state.recordNightlySessionCompleted()
+                state.recordGuidedWindDownCompleted()
             }
             startSleepCompanionIfNeeded()
 

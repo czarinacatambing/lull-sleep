@@ -5,11 +5,20 @@ import RevenueCatUI
 
 enum UserTier: String, Codable {
     case onboarding
+    case trial
+    case free
     case awaitingVerdict
     case paywallPending
     case subscribed
     case shareUnlocked
     case freeForever
+}
+
+enum RevenueCatPaywallContext: String, Identifiable {
+    case trialExpired
+    case upgrade
+
+    var id: String { rawValue }
 }
 
 enum UnlockMethod: Codable {
@@ -65,6 +74,20 @@ struct PaywallState: Codable {
     var dismissalCount: Int = 0
     var lastDismissalAt: Date? = nil
     var verdictRevealed: Bool = false
+    var trialStartedAt: Date? = nil
+    var trialEndsAt: Date? = nil
+    var trialExpiredAt: Date? = nil
+    var originalGeneratedRoutine: [RoutineStep]? = nil
+    var trialCustomizedRoutine: [RoutineStep]? = nil
+    var lastReassessmentAt: Date? = nil
+    var gentleBlockingBypassedUntil: Date? = nil
+
+    var trialHasStarted: Bool { trialStartedAt != nil && trialEndsAt != nil }
+
+    func isTrialActive(now: Date = Date()) -> Bool {
+        guard tier == .trial, let trialEndsAt else { return false }
+        return now < trialEndsAt
+    }
 }
 
 enum PaywallOutcome: String, Codable {
@@ -407,26 +430,37 @@ struct BlurredVerdictPaywallView: View {
 }
 
 struct PricingSheet: View {
-    @EnvironmentObject private var subscriptions: LullSubscriptionManager
     let entryPoint: PaywallEntryPoint
     let onSubscribed: (PaywallPlan) -> Void
     let onNotNow: () -> Void
+
+    var body: some View {
+        RevenueCatPaywallSheet(context: entryPoint == .settings ? .upgrade : .trialExpired) {
+            onSubscribed(.yearly)
+        } onClose: {
+            onNotNow()
+        }
+    }
+}
+
+struct RevenueCatPaywallSheet: View {
+    @EnvironmentObject private var subscriptions: LullSubscriptionManager
+    let context: RevenueCatPaywallContext
+    let onSubscribed: () -> Void
+    let onClose: () -> Void
     @State private var showCustomerCenter = false
     @State private var didAttemptInitialLoad = false
 
     var body: some View {
         Group {
             if !didAttemptInitialLoad {
-                LullScreen(glow: true, glowX: 0.5, glowY: 0.1, glowRadius: 300, glowOpacity: 0.75) {
-                    ProgressView()
-                        .tint(.lullAmber)
-                }
+                loadingView
             } else if let offering = subscriptions.currentOffering,
                       offering.hasPaywall,
                       !offering.availablePackages.isEmpty {
                 hostedPaywall(offering: offering)
             } else {
-                ManualRevenueCatPricingSheet(onSubscribed: onSubscribed, onNotNow: onNotNow)
+                unavailableView
             }
         }
         .task {
@@ -449,13 +483,21 @@ struct PricingSheet: View {
         }
     }
 
+    private var loadingView: some View {
+        LullScreen(glow: true, glowX: 0.5, glowY: 0.1, glowRadius: 300, glowOpacity: 0.75) {
+            ProgressView()
+                .tint(.lullAmber)
+        }
+    }
+
     private func hostedPaywall(offering: Offering) -> some View {
         ZStack(alignment: .topTrailing) {
             PaywallView(offering: offering)
+                .onRequestedDismissal(onClose)
                 .ignoresSafeArea()
 
             VStack(alignment: .trailing, spacing: 10) {
-                Button(action: onNotNow) {
+                Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.lullInk0)
@@ -482,139 +524,26 @@ struct PricingSheet: View {
         }
     }
 
+    private var unavailableView: some View {
+        LullScreen(glow: true, glowX: 0.5, glowY: 0.05, glowRadius: 330, glowOpacity: 0.85) {
+            VStack(alignment: .leading, spacing: 18) {
+                Kicker(text: context == .trialExpired ? "TRIAL ENDED" : "LULL PREMIUM", color: .lullAmberSoft)
+                Text("Lull Premium isn't available right now.")
+                    .font(.serif(30))
+                    .foregroundColor(.lullInk0)
+                Text("RevenueCat did not return an active paywall offering for this build. You can keep using Lull and try again from Settings later.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(4)
+                GhostButton(title: "Close", action: onClose)
+            }
+            .padding(24)
+        }
+    }
+
     private func completeIfSubscribed() {
         guard subscriptions.isLullProActive else { return }
-        let activeProductID = subscriptions.customerInfo?.activeSubscriptions.first
-        let plan = PaywallPlan.allCases.first { $0.storeProductID == activeProductID } ?? .yearly
-        onSubscribed(plan)
-    }
-}
-
-struct ManualRevenueCatPricingSheet: View {
-    @EnvironmentObject private var subscriptions: LullSubscriptionManager
-    let onSubscribed: (PaywallPlan) -> Void
-    let onNotNow: () -> Void
-
-    @State private var plan: PaywallPlan = .yearly
-    @State private var statusMessage: String?
-
-    var body: some View {
-        LullScreen(glow: true, glowX: 0.5, glowY: 0.05, glowRadius: 330, glowOpacity: 0.85) {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    Kicker(text: "LULL PREMIUM", color: .lullAmberSoft)
-                    segmented
-                    priceBlock
-                    Divider().background(Color.lullLine)
-                    Kicker(text: "Lull Premium includes")
-                    includesList
-                    PrimaryCTA(title: subscriptions.isLoading ? "Working..." : plan.cta) {
-                        Task { await purchase(plan) }
-                    }
-                    .disabled(subscriptions.isLoading)
-                    GhostButton(title: "Not right now", action: onNotNow)
-                        .frame(maxWidth: .infinity)
-                    Button("RESTORE PURCHASE") {
-                        Task { await restore() }
-                    }
-                    .font(.mono(10))
-                    .kerning(1.2)
-                    .foregroundColor(.lullInk4)
-                    .frame(maxWidth: .infinity)
-                    Text("Cancel anytime. \(plan.legalPrice.capitalized). Terms · Privacy")
-                        .font(.mono(9.5))
-                        .kerning(0.5)
-                        .foregroundColor(.lullInk4)
-                        .frame(maxWidth: .infinity)
-                    if let message = statusMessage ?? subscriptions.lastErrorMessage {
-                        Text(message)
-                            .font(.system(size: 12))
-                            .foregroundColor(.lullInk3)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 28)
-                .padding(.bottom, 36)
-            }
-        }
-        .task {
-            await subscriptions.refreshOfferings()
-        }
-    }
-
-    private var segmented: some View {
-        HStack(spacing: 0) {
-            ForEach(PaywallPlan.allCases, id: \.self) { option in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) { plan = option }
-                } label: {
-                    Text(option.rawValue.uppercased())
-                        .font(.mono(11))
-                        .kerning(1.3)
-                        .foregroundColor(plan == option ? .lullBgDeep : .lullInk2)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(Capsule().fill(plan == option ? Color.lullAmber : .clear))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color.white.opacity(0.045)))
-        .overlay(Capsule().strokeBorder(Color.lullLineStrong, lineWidth: 1))
-    }
-
-    private var priceBlock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(plan.displayPrice)
-                .font(.serif(46))
-                .foregroundColor(.lullInk0)
-                .minimumScaleFactor(0.72)
-                .lineLimit(1)
-            Text("Prices and trials come from App Store Connect through RevenueCat.")
-                .font(.mono(11))
-                .kerning(0.8)
-                .foregroundColor(.lullInk3)
-        }
-    }
-
-    private var includesList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(PREMIUM_INCLUDES, id: \.self) { item in
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Ember(size: 5)
-                    Text(item)
-                        .font(.system(size: 14))
-                        .foregroundColor(.lullInk1)
-                        .lineSpacing(3)
-                }
-            }
-        }
-    }
-
-    private func purchase(_ plan: PaywallPlan) async {
-        do {
-            guard let product = LullStoreProduct(rawValue: plan.storeProductID) else { return }
-            try await subscriptions.purchase(product)
-            if subscriptions.isLullProActive {
-                onSubscribed(plan)
-            } else {
-                statusMessage = "Purchase finished, but Lull Pro is not active yet."
-            }
-        } catch {
-            statusMessage = error.localizedDescription
-        }
-    }
-
-    private func restore() async {
-        await subscriptions.restorePurchases()
-        statusMessage = subscriptions.isLullProActive
-            ? "Restore complete. Lull Pro is active."
-            : "Restore complete. No active Lull Pro entitlement was found."
-        if subscriptions.isLullProActive {
-            onSubscribed(plan)
-        }
+        onSubscribed()
     }
 }
 

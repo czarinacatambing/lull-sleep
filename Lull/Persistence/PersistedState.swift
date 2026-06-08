@@ -11,7 +11,9 @@ struct PersistedState: Codable {
     //       chronotype, bottleneck, and commitment time
     //   6 — night-5 paywall state
     //   7 — timezone identifier for re-anchoring wall-clock sleep times
-    var schemaVersion: Int = 7
+    //   8 — app-managed trial and premium/free routine snapshots
+    //   9 — streak milestone queue and acknowledgement state
+    var schemaVersion: Int = 9
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -30,6 +32,8 @@ struct PersistedState: Codable {
     var committedRoutineTime: Date?
     var timeZoneIdentifier: String
     var paywallState: PaywallState = PaywallState()
+    var originalGeneratedRoutine: [RoutineStep]? = nil
+    var trialCustomizedRoutine: [RoutineStep]? = nil
 
     // Routine — mutated by experiment engine
     var coreRoutine: [RoutineStep]
@@ -55,14 +59,20 @@ struct PersistedState: Codable {
     var recentlyPromotedRemedyId: RemedyID? = nil
     var recentlyPromotedAt: Date? = nil
 
+    // Streak milestone presentation state
+    var pendingStreakMilestoneDay: Int? = nil
+    var acknowledgedStreakMilestoneDays: [Int] = []
+    var streakMilestonePaywallPromptedDays: [Int] = []
+
     // App blocking setup
     var appBlockingSelectionData: Data? = nil
     var appBlockingEnabled: Bool = false
     var appBlockingStartTime: Date? = nil
     var appBlockingEndTime: Date? = nil
     var appBlockingGraceMinutes: Int = 5
+    var gentleBlockingBypassedUntil: Date? = nil
 
-    init(schemaVersion: Int = 7,
+    init(schemaVersion: Int = 9,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
@@ -83,6 +93,8 @@ struct PersistedState: Codable {
          committedRoutineTime: Date? = nil,
          timeZoneIdentifier: String = TimeZone.autoupdatingCurrent.identifier,
          paywallState: PaywallState = PaywallState(),
+         originalGeneratedRoutine: [RoutineStep]? = nil,
+         trialCustomizedRoutine: [RoutineStep]? = nil,
          baselineScore: Int = 0,
          prepDoneIds: [UUID] = [],
          prepDoneDate: Date? = nil,
@@ -91,11 +103,15 @@ struct PersistedState: Codable {
          pendingPromotion: PendingPromotion? = nil,
          recentlyPromotedRemedyId: RemedyID? = nil,
          recentlyPromotedAt: Date? = nil,
+         pendingStreakMilestoneDay: Int? = nil,
+         acknowledgedStreakMilestoneDays: [Int] = [],
+         streakMilestonePaywallPromptedDays: [Int] = [],
          appBlockingSelectionData: Data? = nil,
          appBlockingEnabled: Bool = false,
          appBlockingStartTime: Date? = nil,
          appBlockingEndTime: Date? = nil,
-         appBlockingGraceMinutes: Int = 5) {
+         appBlockingGraceMinutes: Int = 5,
+         gentleBlockingBypassedUntil: Date? = nil) {
         self.schemaVersion            = schemaVersion
         self.testerName               = testerName
         self.selectedSleepProblems    = selectedSleepProblems
@@ -114,6 +130,8 @@ struct PersistedState: Codable {
         self.committedRoutineTime     = committedRoutineTime
         self.timeZoneIdentifier       = timeZoneIdentifier
         self.paywallState             = paywallState
+        self.originalGeneratedRoutine = originalGeneratedRoutine
+        self.trialCustomizedRoutine   = trialCustomizedRoutine
         self.coreRoutine              = coreRoutine
         self.routineExplanation       = routineExplanation
         self.sleepLogs                = sleepLogs
@@ -125,11 +143,15 @@ struct PersistedState: Codable {
         self.pendingPromotion         = pendingPromotion
         self.recentlyPromotedRemedyId = recentlyPromotedRemedyId
         self.recentlyPromotedAt       = recentlyPromotedAt
+        self.pendingStreakMilestoneDay = pendingStreakMilestoneDay
+        self.acknowledgedStreakMilestoneDays = acknowledgedStreakMilestoneDays
+        self.streakMilestonePaywallPromptedDays = streakMilestonePaywallPromptedDays
         self.appBlockingSelectionData = appBlockingSelectionData
         self.appBlockingEnabled       = appBlockingEnabled
         self.appBlockingStartTime     = appBlockingStartTime
         self.appBlockingEndTime       = appBlockingEndTime
         self.appBlockingGraceMinutes  = appBlockingGraceMinutes
+        self.gentleBlockingBypassedUntil = gentleBlockingBypassedUntil
     }
 
     init(from decoder: Decoder) throws {
@@ -151,6 +173,8 @@ struct PersistedState: Codable {
         committedRoutineTime     = try? c.decodeIfPresent(Date.self,          forKey: .committedRoutineTime)
         timeZoneIdentifier       = (try? c.decodeIfPresent(String.self,        forKey: .timeZoneIdentifier)) ?? TimeZone.autoupdatingCurrent.identifier
         paywallState             = (try? c.decodeIfPresent(PaywallState.self, forKey: .paywallState)) ?? PaywallState()
+        originalGeneratedRoutine = try? c.decodeIfPresent([RoutineStep].self,  forKey: .originalGeneratedRoutine)
+        trialCustomizedRoutine   = try? c.decodeIfPresent([RoutineStep].self,  forKey: .trialCustomizedRoutine)
         coreRoutine              = try c.decode([RoutineStep].self,           forKey: .coreRoutine)
         routineExplanation       = try c.decode(String.self,                  forKey: .routineExplanation)
         sleepLogs                = try c.decode([SleepLogEntry].self,         forKey: .sleepLogs)
@@ -163,10 +187,24 @@ struct PersistedState: Codable {
         pendingPromotion         = try? c.decodeIfPresent(PendingPromotion.self,    forKey: .pendingPromotion)
         recentlyPromotedRemedyId = try? c.decodeIfPresent(RemedyID.self,            forKey: .recentlyPromotedRemedyId)
         recentlyPromotedAt       = try? c.decodeIfPresent(Date.self,                forKey: .recentlyPromotedAt)
+        pendingStreakMilestoneDay = try? c.decodeIfPresent(Int.self,                forKey: .pendingStreakMilestoneDay)
+        acknowledgedStreakMilestoneDays = (try? c.decodeIfPresent([Int].self,       forKey: .acknowledgedStreakMilestoneDays)) ?? []
+        streakMilestonePaywallPromptedDays = (try? c.decodeIfPresent([Int].self,    forKey: .streakMilestonePaywallPromptedDays)) ?? []
         appBlockingSelectionData = try? c.decodeIfPresent(Data.self,                forKey: .appBlockingSelectionData)
         appBlockingEnabled       = (try? c.decodeIfPresent(Bool.self,               forKey: .appBlockingEnabled)) ?? false
         appBlockingStartTime     = try? c.decodeIfPresent(Date.self,                forKey: .appBlockingStartTime)
         appBlockingEndTime       = try? c.decodeIfPresent(Date.self,                forKey: .appBlockingEndTime)
         appBlockingGraceMinutes  = (try? c.decodeIfPresent(Int.self,                forKey: .appBlockingGraceMinutes)) ?? 5
+        gentleBlockingBypassedUntil = try? c.decodeIfPresent(Date.self,             forKey: .gentleBlockingBypassedUntil)
+
+        if paywallState.originalGeneratedRoutine == nil {
+            paywallState.originalGeneratedRoutine = originalGeneratedRoutine
+        }
+        if paywallState.trialCustomizedRoutine == nil {
+            paywallState.trialCustomizedRoutine = trialCustomizedRoutine
+        }
+        if paywallState.gentleBlockingBypassedUntil == nil {
+            paywallState.gentleBlockingBypassedUntil = gentleBlockingBypassedUntil
+        }
     }
 }

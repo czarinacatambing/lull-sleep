@@ -241,26 +241,11 @@ struct MorningRateHero: View {
 
     private var chipBody: String? {
         guard let d = delta else { return nil }
-        let variableText = variable.map { "the \($0.lowercased())" } ?? "this variable"
-        let remainingAfterTonight = max(0, totalTestNights - testNight)
-        let remainingWord = remainingAfterTonight == 1 ? "night" : "nights"
-        let countWord: String = {
-            switch remainingAfterTonight {
-            case 1: return "One"
-            case 2: return "Two"
-            case 3: return "Three"
-            case 4: return "Four"
-            default: return "\(remainingAfterTonight)"
-            }
-        }()
-
         if d > 0 {
-            return "+\(d) vs yesterday — \(variableText) might be working."
+            return "+\(d) vs yesterday. We'll keep tonight's wind-down steady."
         }
         if d == 0 {
-            return remainingAfterTonight > 0
-                ? "Same as yesterday. \(countWord) more \(remainingWord) to call it."
-                : "Same as yesterday."
+            return "Same as yesterday. A steady morning still counts."
         }
         return "\(d) vs yesterday. We'll watch this trend."
     }

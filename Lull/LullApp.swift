@@ -41,9 +41,11 @@ struct LullApp: App {
                     appDelegate.state = state
                     subscriptions.start()
                     state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
+                    state.evaluateTrialStatus()
                 }
                 .onChange(of: subscriptions.isLullProActive) { _, isActive in
                     state.applyRevenueCatEntitlement(isActive: isActive)
+                    state.evaluateTrialStatus()
                 }
                 .onOpenURL { url in
                     guard url.scheme == "lull" else { return }
@@ -76,6 +78,7 @@ struct LullApp: App {
                 state.persist()
             case .active:
                 Task { await subscriptions.refreshCustomerInfo() }
+                state.evaluateTrialStatus()
                 state.trackAppOpened()
                 state.flushResearchData()
                 if state.handleTimeZoneChangeIfNeeded() {

@@ -102,7 +102,7 @@ struct SleepLogDetailView: View {
                                 .font(.serif(30))
 
                                 if isToday {
-                                    Text("One tap. We'll use this to nudge tonight's variable.")
+                                    Text("One tap. We'll use this to understand how your wind-down is feeling.")
                                         .font(.system(size: 13.5))
                                         .foregroundColor(.lullInk2)
                                         .lineSpacing(3)
@@ -127,13 +127,13 @@ struct SleepLogDetailView: View {
                         }
                         .padding(.top, 40)
 
-                        // Variable tested label
+                        // Routine context label
                         HStack(spacing: 8) {
-                            Text("VARIABLE TESTED")
+                            Text("BEDTIME ROUTINE")
                                 .font(.mono(9.5))
                                 .kerning(1.4)
                                 .foregroundColor(.lullInk4)
-                            Text((isToday && !isAlreadyRated) ? state.tonightVariable : entry.variable)
+                            Text(entry.completedNightlyFlow ? "COMPLETED" : "NOT COMPLETED")
                                 .font(.mono(9.5))
                                 .kerning(1)
                                 .foregroundColor(.lullAmberSoft)
@@ -170,33 +170,12 @@ struct SleepLogDetailView: View {
                 } else if isToday {
                     VStack(spacing: 0) {
                         PrimaryCTA(title: "Log this morning") {
-                            // Capture comparison values BEFORE persisting so the
-                            // reward sheet renders with the correct "yesterday".
-                            let yesterdayCaptured: Int? = state.sleepLogs.enumerated()
-                                .compactMap { (i, e) -> SleepLogEntry? in
-                                    (i != entryIndex && e.score > 0) ? e : nil
-                                }
-                                .sorted { $0.date > $1.date }
-                                .first?.score
-                            let baselineCaptured = state.baselineScore
-                            let variableCaptured = state.experimentStatus?.variable
-                            let preLogNight = state.experimentStatus?.night ?? 0
-
                             let scoreToLog = AppState.clampedSleepScore(draftScore)
                             state.sleepLogs[entryIndex].score = scoreToLog
                             state.sleepLogs[entryIndex].notes = draftNotes
-                            state.sleepLogs[entryIndex].variable = state.tonightVariable
-                            state.sleepLogs[entryIndex].variableRemedyId = state.tonightRemedyId
                             state.persist()
                             dismiss()
-
-                            state.pendingMorningReward = PendingMorningReward(
-                                score: scoreToLog,
-                                yesterday: yesterdayCaptured,
-                                baseline: baselineCaptured,
-                                variable: variableCaptured,
-                                night: preLogNight + 1
-                            )
+                            state.presentPendingStreakMilestoneIfEligible()
                         }
                         .disabled(draftScore == 0)
                         .opacity(draftScore == 0 ? 0.45 : 1)
