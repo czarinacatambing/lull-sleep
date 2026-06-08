@@ -182,7 +182,8 @@ struct SleepLogDetailView: View {
                             let variableCaptured = state.experimentStatus?.variable
                             let preLogNight = state.experimentStatus?.night ?? 0
 
-                            state.sleepLogs[entryIndex].score = draftScore
+                            let scoreToLog = AppState.clampedSleepScore(draftScore)
+                            state.sleepLogs[entryIndex].score = scoreToLog
                             state.sleepLogs[entryIndex].notes = draftNotes
                             state.sleepLogs[entryIndex].variable = state.tonightVariable
                             state.sleepLogs[entryIndex].variableRemedyId = state.tonightRemedyId
@@ -190,7 +191,7 @@ struct SleepLogDetailView: View {
                             dismiss()
 
                             state.pendingMorningReward = PendingMorningReward(
-                                score: draftScore,
+                                score: scoreToLog,
                                 yesterday: yesterdayCaptured,
                                 baseline: baselineCaptured,
                                 variable: variableCaptured,

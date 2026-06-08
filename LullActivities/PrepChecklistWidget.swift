@@ -97,10 +97,17 @@ struct PrepChecklistLiveActivityView: View {
                         Text(timeString(item.scheduledTime))
                             .font(.system(.caption2, design: .monospaced))
                             .foregroundColor(done ? ink3.opacity(0.5) : ink3)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color(red: 26/255, green: 13/255, blue: 6/255))
+                            .frame(width: 30, height: 30)
+                            .background(Circle().fill(amber))
+                            .shadow(color: amberGlow, radius: 4)
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Mark \(item.label) done")
             }
         }
     }
@@ -140,10 +147,16 @@ private struct ExpandedView: View {
                                 .foregroundColor(done ? ink3 : ink0)
                                 .lineLimit(1)
                             Spacer()
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Color(red: 26/255, green: 13/255, blue: 6/255))
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(amber))
                         }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.borderless)
+                    .accessibilityLabel("Mark \(item.label) done")
                 }
                 if items.count > 3 {
                     Text("+ \(items.count - 3) more")

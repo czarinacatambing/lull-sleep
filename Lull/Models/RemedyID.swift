@@ -20,10 +20,12 @@ enum RemedyID: String, Codable, CaseIterable {
     // Wind Down interactive
     case brainDump
     case boringStory
+    case sleepSounds
     case breathing478
     case gratitudeJournal
     case gentleStretching
     case progressiveMuscleRelaxation
+    case bodyScan
     case readingBook
 
     // Maps an R-constant display label to a stable RemedyID.
@@ -44,10 +46,12 @@ enum RemedyID: String, Codable, CaseIterable {
         case R.weightedBlanket:  return .weightedBlanket
         case R.brainDump:        return .brainDump
         case R.boringStory:      return .boringStory
+        case R.sleepSounds:      return .sleepSounds
         case R.breathing478:     return .breathing478
         case R.gratitudeJournal: return .gratitudeJournal
         case R.gentleStretching: return .gentleStretching
         case R.pmr:              return .progressiveMuscleRelaxation
+        case R.bodyScan:         return .bodyScan
         case R.readingBook:      return .readingBook
         default:                 return nil
         }
@@ -164,6 +168,13 @@ extension RemedyID {
                 suffix: " faster.",
                 science: "Gentle narrative occupies the language-processing parts of the brain just enough to prevent intrusive thoughts, without triggering the reward circuits that keep you alert. A cognitive decoy for sleep."
             )
+        case .sleepSounds:
+            return RemedyImpact(
+                prefix: "Users like you woke up ",
+                highlight: "less often",
+                suffix: " from noise.",
+                science: "Steady ambient sound can mask small changes in the room that pull attention back online. Keep it quiet enough to fade into the background."
+            )
         case .breathing478:
             return RemedyImpact(
                 prefix: "Users like you fell asleep ",
@@ -198,6 +209,13 @@ extension RemedyID {
                 highlight: "−9 min",
                 suffix: " faster.",
                 science: "Reading a physical book reduces cognitive stress by up to 68% within 6 minutes (University of Sussex study). It engages just enough attention to quiet rumination without the alerting effects of screens."
+            )
+        case .bodyScan:
+            return RemedyImpact(
+                prefix: "Users like you fell asleep ",
+                highlight: "−10 min",
+                suffix: " faster.",
+                science: "A guided body scan moves attention slowly through the body, interrupting pre-sleep rumination and cueing each muscle group to release. Shifting focus to physical sensation lowers cognitive and physiological arousal, two of the main drivers of delayed sleep onset."
             )
         }
     }

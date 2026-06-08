@@ -32,7 +32,14 @@ struct RoutinePromotedView: View {
                             Image(systemName: "xmark")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.lullInk3)
-                                .frame(width: 28, height: 28)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.035))
+                                        .overlay(Circle().strokeBorder(Color.lullLine, lineWidth: 1))
+                                )
+                                .frame(width: 44, height: 44)
+                                .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
                     }

@@ -13,6 +13,7 @@ class LiveActivityService {
     private let pendingRatingKey   = "lull_pendingMorningRating"
     private let pendingRatingAtKey = "lull_pendingMorningRatingAt"
     private let pendingMidSleepKey = "lull_pendingOpenMidSleep"
+    private let morningRatingWindow: TimeInterval = 4 * 60 * 60
 
     // MARK: - Lifecycle
 
@@ -20,10 +21,15 @@ class LiveActivityService {
                        bedtime: Date, leadTimes: [String: Int]) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
+        let now = Date()
+        let anchoredBedtime = nextBedtimeAnchor(from: bedtime, now: now)
         let items = prepSteps.map { step -> PrepChecklistAttributes.Item in
-            let leadMins = leadTimes[step.label] ?? 90
-            let cal = Calendar.current
-            let scheduledTime = cal.date(byAdding: .minute, value: -leadMins, to: bedtime) ?? bedtime
+            let leadMins = leadTimes[step.label] ?? step.resolvedLeadTimeMins
+            let scheduledTime = Calendar.autoupdatingCurrent.date(
+                byAdding: .minute,
+                value: -leadMins,
+                to: anchoredBedtime
+            ) ?? anchoredBedtime
             return PrepChecklistAttributes.Item(
                 id: step.id.uuidString,
                 label: step.label,
@@ -32,6 +38,14 @@ class LiveActivityService {
         }
 
         guard !items.isEmpty else { return }
+        if let firstPrepTime = items.map(\.scheduledTime).min(), now < firstPrepTime {
+            end(dismissalPolicy: .immediate)
+            return
+        }
+        guard doneIds.count < items.count else {
+            end(dismissalPolicy: .immediate)
+            return
+        }
 
         // If already running just update it.
         if let existing = Activity<PrepChecklistAttributes>.activities.first {
@@ -43,7 +57,7 @@ class LiveActivityService {
             return
         }
 
-        let attrs = PrepChecklistAttributes(items: items, bedtime: bedtime)
+        let attrs = PrepChecklistAttributes(items: items, bedtime: anchoredBedtime)
         let state = PrepChecklistAttributes.ContentState(
             doneIds: doneIds.map { $0.uuidString },
             updatedAt: Date()
@@ -52,12 +66,25 @@ class LiveActivityService {
         do {
             _ = try Activity.request(
                 attributes: attrs,
-                content: ActivityContent(state: state, staleDate: bedtime),
+                content: ActivityContent(state: state, staleDate: anchoredBedtime),
                 pushType: nil
             )
         } catch {
             print("[LiveActivity] Failed to start: \(error)")
         }
+    }
+
+    private func nextBedtimeAnchor(from bedtime: Date, now: Date) -> Date {
+        let cal = Calendar.autoupdatingCurrent
+        let comps = cal.dateComponents([.hour, .minute], from: bedtime)
+        var candidate = cal.date(bySettingHour: comps.hour ?? 23,
+                                 minute: comps.minute ?? 0,
+                                 second: 0,
+                                 of: now) ?? bedtime
+        if candidate <= now {
+            candidate = cal.date(byAdding: .day, value: 1, to: candidate) ?? candidate
+        }
+        return candidate
     }
 
     func update(doneIds: Set<UUID>) {
@@ -100,22 +127,38 @@ class LiveActivityService {
     }
 
     func startSleepActivity(bedtime: Date, wakeTime: Date) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        guard wakeTime > bedtime else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("[LiveActivity] Sleep activity not started: Live Activities are disabled for Lull.")
+            return
+        }
+        let effectiveWakeTime = wakeTimeAnchoredAfter(bedtime: bedtime, wakeTime: wakeTime)
+        guard effectiveWakeTime > bedtime else {
+            print("[LiveActivity] Sleep activity not started: wakeTime (\(effectiveWakeTime)) is not after bedtime (\(bedtime)).")
+            return
+        }
 
-        // If one is already running, just refresh its content.
-        if let existing = Activity<LullSleepAttributes>.activities.first {
+        let sleepActivities = Activity<LullSleepAttributes>.activities
+
+        // If one is already running, reuse it as a fresh sleep session. Do
+        // not preserve the old phase: a prior wake/rated activity would hide
+        // the sleeping-state Mid-Sleep affordance on the next night.
+        if let existing = sleepActivities.first {
+            print("[LiveActivity] Refreshing existing sleep activity as sleeping until \(effectiveWakeTime).")
             let state = LullSleepAttributes.ContentState(
-                phase: existing.content.state.phase,
+                phase: .sleeping,
                 bedtime: bedtime,
-                wakeTime: wakeTime,
-                rating: existing.content.state.rating,
-                score: existing.content.state.score,
-                deltaVsBaseline: existing.content.state.deltaVsBaseline,
-                baselineLabel: existing.content.state.baselineLabel,
-                experimentLabel: existing.content.state.experimentLabel
+                wakeTime: effectiveWakeTime
             )
-            Task { await existing.update(ActivityContent(state: state, staleDate: wakeTime)) }
+            Task {
+                await existing.update(ActivityContent(
+                    state: state,
+                    staleDate: effectiveWakeTime,
+                    relevanceScore: 0.8
+                ))
+                for extra in sleepActivities.dropFirst() {
+                    await extra.end(nil, dismissalPolicy: .immediate)
+                }
+            }
             return
         }
 
@@ -123,30 +166,56 @@ class LiveActivityService {
         let state = LullSleepAttributes.ContentState(
             phase: .sleeping,
             bedtime: bedtime,
-            wakeTime: wakeTime
+            wakeTime: effectiveWakeTime
         )
 
         do {
-            _ = try Activity.request(
+            let activity = try Activity.request(
                 attributes: attrs,
-                content: ActivityContent(state: state, staleDate: wakeTime),
+                content: ActivityContent(
+                    state: state,
+                    staleDate: effectiveWakeTime,
+                    relevanceScore: 0.8
+                ),
                 pushType: nil
             )
+            print("[LiveActivity] Started sleep activity \(activity.id) from \(bedtime) to \(effectiveWakeTime).")
         } catch {
             print("[LiveActivity] Failed to start sleep activity: \(error)")
         }
     }
 
+    private func wakeTimeAnchoredAfter(bedtime: Date, wakeTime: Date) -> Date {
+        let cal = Calendar.autoupdatingCurrent
+        let comps = cal.dateComponents([.hour, .minute], from: wakeTime)
+        var candidate = cal.date(bySettingHour: comps.hour ?? 7,
+                                 minute: comps.minute ?? 0,
+                                 second: 0,
+                                 of: bedtime) ?? wakeTime
+        if candidate <= bedtime {
+            candidate = cal.date(byAdding: .day, value: 1, to: candidate) ?? candidate
+        }
+        return candidate
+    }
+
     // Promote the underlying state from .sleeping to .awaitingRating. The view
     // already renders the wake UI based on the clock; this just brings the
     // data state in sync so subsequent updates make sense.
+    // Guards on the activity's OWN wakeTime, not the caller's, so we don't
+    // flip a still-sleeping activity just because we're past today's typical
+    // wake hour (e.g. ritual started in the evening, wakeTime is tomorrow).
     func updateToAwaitingRating() {
         Task {
             for activity in Activity<LullSleepAttributes>.activities {
                 var state = activity.content.state
                 guard state.phase == .sleeping else { continue }
+                guard Date() >= state.wakeTime else { continue }
                 state.phase = .awaitingRating
-                await activity.update(ActivityContent(state: state, staleDate: nil))
+                await activity.update(ActivityContent(
+                    state: state,
+                    staleDate: self.ratingWindowEnd(for: state.wakeTime),
+                    relevanceScore: 1.0
+                ))
             }
         }
     }
@@ -174,7 +243,7 @@ class LiveActivityService {
                 state.score = score
                 state.deltaVsBaseline = deltaVsBaseline
                 state.baselineLabel = baselineLabel
-                await activity.update(ActivityContent(state: state, staleDate: nil))
+                await activity.update(ActivityContent(state: state, staleDate: nil, relevanceScore: 1.0))
             }
             try? await Task.sleep(nanoseconds: 4_000_000_000)
             for activity in Activity<LullSleepAttributes>.activities {
@@ -196,5 +265,9 @@ class LiveActivityService {
                 await activity.end(nil, dismissalPolicy: dismissalPolicy)
             }
         }
+    }
+
+    private func ratingWindowEnd(for wakeTime: Date) -> Date {
+        wakeTime.addingTimeInterval(morningRatingWindow)
     }
 }

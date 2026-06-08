@@ -7,11 +7,28 @@ struct ContentView: View {
     @State private var buttonOpacity: Double = 0
 
     var body: some View {
-        if showWelcome {
-            welcomeScreen
-        } else {
-            mainContent
-                .preferredColorScheme(.dark)
+        Group {
+            if showWelcome {
+                welcomeScreen
+            } else {
+                mainContent
+                    .preferredColorScheme(.dark)
+            }
+        }
+        .onAppear {
+            if state.requestedTab != nil || state.showMidSleepMode {
+                showWelcome = false
+            }
+        }
+        .onChange(of: state.requestedTab) { _, requested in
+            if requested != nil {
+                showWelcome = false
+            }
+        }
+        .onChange(of: state.showMidSleepMode) { _, active in
+            if active {
+                showWelcome = false
+            }
         }
     }
 
@@ -30,7 +47,7 @@ struct ContentView: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.4)) { showWelcome = false }
                 } label: {
-                    Text("Get started")
+                    Text("Help me sleep")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color(hex: "#1a0d06"))
                         .padding(.horizontal, 32)
@@ -53,6 +70,9 @@ struct ContentView: View {
         Group {
             if state.hasCompletedOnboarding {
                 HomeTabView(initialTab: state.initialTab)
+                    .fullScreenCover(isPresented: $state.showSleepSounds) {
+                        SleepSoundsStep(mode: .standalone)
+                    }
                     .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
                     .sheet(item: $state.pendingMorningReward) { reward in
                         MorningRewardView(
@@ -75,7 +95,15 @@ struct ContentView: View {
                             state.acknowledgePromotion()
                         }
                     }
+                    .fullScreenCover(item: $state.activePaywallRoute) { route in
+                        NightFivePaywallFlow(route: route)
+                    }
                     .onShake { state.activateMidSleepFromShake() }
+                    .onAppear {
+                        if state.shouldPresentDay14Prompt {
+                            state.activePaywallRoute = .day14
+                        }
+                    }
             } else {
                 OnboardingView()
             }

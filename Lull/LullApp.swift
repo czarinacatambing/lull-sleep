@@ -4,10 +4,14 @@ import UserNotifications
 @main
 struct LullApp: App {
     @StateObject private var state = AppState()
+    @StateObject private var subscriptions = LullSubscriptionManager()
+    @StateObject private var sleepSoundsAudio = SleepSoundsAudioStore()
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        LullRevenueCatConfig.configure()
+
         let doneAction = UNNotificationAction(identifier: "MARK_DONE", title: "Mark done", options: [])
         let bedtimeCategory = UNNotificationCategory(
             identifier: "BEDTIME_REMINDER", actions: [doneAction], intentIdentifiers: [], options: [])
@@ -31,10 +35,38 @@ struct LullApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(state)
-                .onAppear { appDelegate.state = state }
+                .environmentObject(subscriptions)
+                .environmentObject(sleepSoundsAudio)
+                .onAppear {
+                    appDelegate.state = state
+                    subscriptions.start()
+                    state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
+                }
+                .onChange(of: subscriptions.isLullProActive) { _, isActive in
+                    state.applyRevenueCatEntitlement(isActive: isActive)
+                }
                 .onOpenURL { url in
-                    if url.scheme == "lull" && url.host == "midsleep" {
+                    guard url.scheme == "lull" else { return }
+                    if url.host == "midsleep" {
                         state.showMidSleepMode = true
+                    } else if url.host == "reward" {
+                        state.ingestPendingLiveActivityRating()
+                    } else if url.host == "rate" {
+                        let ratingValue = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                            .queryItems?
+                            .first(where: { $0.name == "score" || $0.name == "rating" })?
+                            .value
+                        if let ratingValue, let rating = Int(ratingValue), (1...5).contains(rating) {
+                            state.ingestLiveActivityRating(rating: rating)
+                        }
+                    } else if url.host == "prep-done" {
+                        let itemId = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                            .queryItems?
+                            .first(where: { $0.name == "id" })?
+                            .value
+                        if let itemId, let id = UUID(uuidString: itemId) {
+                            state.completePrepFromLiveActivity(id)
+                        }
                     }
                 }
         }
@@ -43,7 +75,13 @@ struct LullApp: App {
             case .background:
                 state.persist()
             case .active:
-                state.autoExportIfDue()
+                Task { await subscriptions.refreshCustomerInfo() }
+                state.trackAppOpened()
+                state.flushResearchData()
+                if state.handleTimeZoneChangeIfNeeded() {
+                    state.scheduleAllNotifications()
+                }
+                state.refreshAppBlockingShield()
                 // Apply any prep-item toggles made from the Lock Screen while the app was closed.
                 let pendingIds = LiveActivityService.shared.consumePendingToggles()
                 for id in pendingIds { state.togglePrepDone(id) }

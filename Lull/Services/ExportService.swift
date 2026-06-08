@@ -11,7 +11,11 @@ enum ExportService {
     // 3. Deploy → New deployment → type "Web app" → execute as "Me" → access
     //    "Anyone". Copy the resulting /exec URL and paste it below.
     // 4. Each "New deployment" gets a new URL, so don't redeploy unless needed.
+    #if DEBUG
     static let endpointURL: URL? = URL(string: "https://script.google.com/macros/s/AKfycbwrm03vDYReZeSbfUx0NANpWWpu1TcmECMjc_TVigDIsT7AO_867WMS6irs-ey6_QeArw/exec")
+    #else
+    static let endpointURL: URL? = nil
+    #endif
     // ──────────────────────────────────────────────────────────────────────────
 
     enum ExportError: LocalizedError {

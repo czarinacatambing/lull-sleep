@@ -7,7 +7,7 @@ struct SleepCompanionWidget: Widget {
         ActivityConfiguration(for: LullSleepAttributes.self) { context in
             SleepCompanionLockScreenView(context: context)
         } dynamicIsland: { context in
-            let phase = context.state.effectivePhase
+            let phase = context.state.effectivePhase(isStale: context.isStale)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     switch phase {
@@ -41,6 +41,7 @@ struct SleepCompanionWidget: Widget {
                     .font(.system(size: 12))
                     .foregroundColor(LullLA.amber)
             }
+            .widgetURL(URL(string: phase == .sleeping ? "lull://midsleep" : "lull://reward"))
         }
     }
 

@@ -1,3 +1,5 @@
+import ActivityKit
+import RevenueCatUI
 import SwiftUI
 
 struct DashboardView: View {
@@ -97,6 +99,10 @@ struct DashboardView: View {
         prepSteps.filter { state.prepDoneIds.contains($0.id) }.count
     }
     private var allPrepDone: Bool { prepDoneCount == prepSteps.count && !prepSteps.isEmpty }
+    private var ritualDoneCount: Int {
+        ritualSteps.filter { state.ritualDoneIds.contains($0.id) }.count
+    }
+    private var allRitualDone: Bool { ritualDoneCount == ritualSteps.count && !ritualSteps.isEmpty }
 
     private func scheduledTime(for step: RoutineStep) -> String {
         state.scheduledRoutine.first { $0.step.id == step.id }?.timeString ?? ""
@@ -138,7 +144,7 @@ struct DashboardView: View {
                 withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
                     glowPulse = true
                 }
-                if !isMorningState && !state.preWindDownSteps.isEmpty {
+                if !isMorningState && !state.preWindDownSteps.isEmpty && !state.suppressPrepLiveActivityForSession {
                     LiveActivityService.shared.startIfNeeded(
                         prepSteps: state.preWindDownSteps,
                         doneIds: state.prepDoneIds,
@@ -368,11 +374,16 @@ struct DashboardView: View {
                 let variableCaptured = state.experimentStatus?.variable
                 let preLogNight = state.experimentStatus?.night ?? 0
 
-                state.morningScore = n
+                let scoreToLog = AppState.clampedSleepScore(n)
+                state.morningScore = scoreToLog
                 state.logMorningScore()
 
+                if state.justTriggeredNightFivePaywall {
+                    return
+                }
+
                 state.pendingMorningReward = PendingMorningReward(
-                    score: n,
+                    score: scoreToLog,
                     yesterday: yesterdayCaptured,
                     baseline: baselineCaptured,
                     variable: variableCaptured,
@@ -382,6 +393,12 @@ struct DashboardView: View {
         )
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
+
+        if state.paywallState.tier == .shareUnlocked {
+            viewVerdictTile
+                .padding(.horizontal, 22)
+                .padding(.bottom, 16)
+        }
 
         TonightPreviewCard(
             rated: todaysRating != nil,
@@ -394,6 +411,35 @@ struct DashboardView: View {
         )
         .padding(.horizontal, 22)
         .padding(.bottom, 36)
+    }
+
+    private var viewVerdictTile: some View {
+        Button {
+            state.activePaywallVerdict = state.buildVerdictSnapshotFromRecentLogs()
+            state.activePaywallRoute = .verdictReplay
+        } label: {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Kicker(text: "Verdict unlocked", color: .lullAmberSoft)
+                    Text("View your verdict")
+                        .font(.serif(22))
+                        .foregroundColor(.lullInk0)
+                    Text("Tonight's verdict stays available because you shared.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.lullBgDeep)
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(Color.lullAmber))
+            }
+            .padding(16)
+            .lullCard(radius: 16, accent: true)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Tonight preview data
@@ -572,7 +618,7 @@ struct DashboardView: View {
 
                 // Night progress
                 if hasExperiment {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Night ")
                                 .font(.mono(11))
@@ -598,23 +644,29 @@ struct DashboardView: View {
                             }
                         }
                     }
-                    .padding(.top, 14)
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
                 }
 
                 // Description
-                Text("We're testing if this helps you fall asleep faster. ")
-                    .foregroundColor(.lullInk1)
-                + Text("Rate it tomorrow morning.")
-                    .foregroundColor(.lullInk2)
-
-                // Sub-copy
-                Text(allPrepDone
-                     ? "Prep complete. Ready to start the wind-down sequence whenever you are."
-                     : "Finish prep first (\(remaining) left), then we'll start the wind-down sequence.")
-                    .font(.system(size: 12.5))
-                    .foregroundColor(.lullInk2)
+                VStack(alignment: .leading, spacing: 8) {
+                    (Text("We're testing if this helps you fall asleep faster. ")
+                        .foregroundColor(.lullInk1)
+                    + Text("Rate it tomorrow morning.")
+                        .foregroundColor(.lullInk2))
+                    .font(.system(size: 13.5))
                     .lineSpacing(3)
-                    .padding(.top, 4)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                    // Sub-copy
+                    Text(allPrepDone
+                         ? "Prep complete. Ready to start the wind-down sequence whenever you are."
+                         : "Finish prep first (\(remaining) left), then we'll start the wind-down sequence.")
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.lullInk2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 // CTA
                 PrimaryCTA(title: allPrepDone ? "Start ritual" : "Finish prep · \(remaining) left") {
@@ -624,10 +676,12 @@ struct DashboardView: View {
                 }
                 .disabled(!allPrepDone)
                 .opacity(allPrepDone ? 1 : 0.45)
-                .padding(.top, 18)
+                .padding(.top, 24)
             }
             .font(.system(size: 13))
-            .padding(22)
+            .padding(.horizontal, 22)
+            .padding(.top, 22)
+            .padding(.bottom, 24)
         }
         .background(
             RoundedRectangle(cornerRadius: 26)
@@ -647,9 +701,13 @@ struct DashboardView: View {
 
     private var ritualSequenceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 12) {
                 Kicker(text: "The ritual · in sequence")
                 Spacer()
+                Text("\(ritualDoneCount)/\(ritualSteps.count) done")
+                    .font(.mono(10.5))
+                    .kerning(0.6)
+                    .foregroundColor(allRitualDone ? .lullAmber : .lullInk3)
                 Button(action: { selectedTab = 1 }) {
                     Text("EDIT")
                         .font(.mono(10.5))
@@ -661,25 +719,7 @@ struct DashboardView: View {
 
             VStack(spacing: 8) {
                 ForEach(ritualSteps) { step in
-                    HStack(spacing: 12) {
-                        Text(scheduledTime(for: step))
-                            .font(.mono(11))
-                            .foregroundColor(.lullInk3)
-                            .frame(width: 38, alignment: .leading)
-                        Ember(size: 4)
-                        Text(step.label)
-                            .font(.system(size: 13.5))
-                            .foregroundColor(.lullInk1)
-                        Spacer()
-                        Text(state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? "")
-                            .font(.mono(10))
-                            .kerning(0.6)
-                            .foregroundColor(.lullInk4)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.02)))
-                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                    ritualRow(step)
                 }
 
                 // Sleep target row
@@ -691,10 +731,23 @@ struct DashboardView: View {
                     .font(.mono(11))
                     .foregroundColor(.lullInk3)
                     .frame(width: 38, alignment: .leading)
-                    Ember(size: 4)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 7)
+                            .fill(allRitualDone ? Color.lullAmber.opacity(0.24) : Color.clear)
+                            .frame(width: 22, height: 22)
+                        RoundedRectangle(cornerRadius: 7)
+                            .strokeBorder(allRitualDone ? Color.lullAmber.opacity(0.45) : Color.white.opacity(0.16), lineWidth: 1.4)
+                            .frame(width: 22, height: 22)
+                        if allRitualDone {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.lullAmber)
+                        }
+                    }
                     Text("Sleep")
                         .font(.system(size: 13.5))
-                        .foregroundColor(.lullInk1)
+                        .foregroundColor(allRitualDone ? .lullInk3 : .lullInk1)
+                        .strikethrough(allRitualDone, color: Color.lullAmber.opacity(0.45))
                     Spacer()
                     Text("\(state.sleepDurationString) target")
                         .font(.mono(10))
@@ -707,6 +760,56 @@ struct DashboardView: View {
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
             }
         }
+    }
+
+    private func ritualRow(_ step: RoutineStep) -> some View {
+        let done = state.ritualDoneIds.contains(step.id)
+
+        return Button(action: {
+            guard done else { return }
+            state.unmarkRitualDone(step.id)
+        }) {
+            HStack(spacing: 12) {
+                Text(scheduledTime(for: step))
+                    .font(.mono(11))
+                    .foregroundColor(.lullInk3)
+                    .frame(width: 38, alignment: .leading)
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(done ? Color.lullAmber : Color.clear)
+                        .frame(width: 22, height: 22)
+                    RoundedRectangle(cornerRadius: 7)
+                        .strokeBorder(done ? Color.lullAmber : Color.white.opacity(0.22), lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                    if done {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Color(hex: "#1a0d06"))
+                    }
+                }
+                .shadow(color: done ? .lullAmberGlow : .clear, radius: 8)
+
+                Text(step.label)
+                    .font(.system(size: 13.5))
+                    .foregroundColor(done ? .lullInk3 : .lullInk1)
+                    .strikethrough(done, color: Color.lullAmber.opacity(0.5))
+                    .animation(.easeInOut(duration: 0.2), value: done)
+
+                Spacer()
+
+                Text(state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? "")
+                    .font(.mono(10))
+                    .kerning(0.6)
+                    .foregroundColor(.lullInk4)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.02)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(done ? "Marks this ritual item incomplete" : "Complete this step in the ritual flow to check it off")
     }
 }
 
@@ -827,22 +930,35 @@ struct StreakStrip: View {
 
 struct SettingsSheet: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var showUpgrade = false
+    @State private var showCustomerCenter = false
+    @State private var didSeedNightFivePaywall = false
+    @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
+    @State private var initialSleepScheduleSignature: String? = nil
 
     private static let timeFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
     }()
 
     private var sleepDurationText: String {
-        let mins = Int(state.typicalWakeTime.timeIntervalSince(state.typicalBedtime) / 60)
-        let adjusted = mins <= 0 ? mins + 1440 : mins
-        let h = adjusted / 60
-        let m = adjusted % 60
+        let mins = AppState.clockDurationMinutes(from: state.typicalBedtime, to: state.typicalWakeTime)
+        let h = mins / 60
+        let m = mins % 60
         return m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
     }
 
     private func formatted(_ date: Date) -> String {
         Self.timeFmt.string(from: date)
+    }
+
+    private var sleepScheduleSignature: String {
+        let cal = Calendar.autoupdatingCurrent
+        let bed = cal.dateComponents([.hour, .minute], from: state.typicalBedtime)
+        let wake = cal.dateComponents([.hour, .minute], from: state.typicalWakeTime)
+        return "\(bed.hour ?? 0):\(bed.minute ?? 0)-\(wake.hour ?? 0):\(wake.minute ?? 0)"
     }
 
     var body: some View {
@@ -920,7 +1036,73 @@ struct SettingsSheet: View {
                             .padding(.horizontal, 26)
                             .padding(.bottom, 28)
 
+                        LiveActivitiesSettingsCard(isEnabled: liveActivitiesEnabled) {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 24)
+
+                        #if DEBUG
+                        VStack(alignment: .leading, spacing: 12) {
+                            Kicker(text: "Debug")
+                            Button {
+                                state.debugSeedNightFivePaywallReadiness()
+                                didSeedNightFivePaywall = true
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: didSeedNightFivePaywall ? "checkmark.circle.fill" : "moon.stars.fill")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.lullAmber)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Seed Night-5 paywall test")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.lullInk0)
+                                        Text(didSeedNightFivePaywall
+                                             ? "Ready. Go to Today and log the morning score."
+                                             : "Creates 4 scored test nights and one unrated morning.")
+                                            .font(.system(size: 12.5))
+                                            .foregroundColor(.lullInk3)
+                                            .lineSpacing(2)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(14)
+                                .lullCard(radius: 14, accent: didSeedNightFivePaywall)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 22)
+                        #endif
+
                         // Help improve Lull card
+                        Button {
+                            if subscriptions.isLullProActive {
+                                showCustomerCenter = true
+                            } else {
+                                showUpgrade = true
+                            }
+                        } label: {
+                            HStack {
+                                Text(subscriptions.isLullProActive ? "Manage Lull Pro" : "Upgrade to Lull Premium")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.lullInk0)
+                                Spacer()
+                                Text(subscriptions.isLullProActive ? "ACTIVE →" : "PRO →")
+                                    .font(.mono(10.5))
+                                    .kerning(1.1)
+                                    .foregroundColor(.lullAmber)
+                            }
+                            .padding(16)
+                            .lullCard(radius: 16, accent: true)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 18)
+
                         ExportDataFooter()
                             .padding(.horizontal, 22)
 
@@ -943,9 +1125,111 @@ struct SettingsSheet: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .onDisappear {
-            state.persist()
-            state.scheduleAllNotifications()
+            if initialSleepScheduleSignature != sleepScheduleSignature {
+                state.sleepWindowWasEdited()
+            } else {
+                state.persist()
+                state.scheduleAllNotifications()
+            }
         }
+        .onAppear {
+            initialSleepScheduleSignature = sleepScheduleSignature
+            refreshLiveActivitiesStatus()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                refreshLiveActivitiesStatus()
+            }
+        }
+        .sheet(isPresented: $showUpgrade) {
+            PricingSheet(entryPoint: .settings) { plan in
+                state.unlockVerdict(method: .subscribe(plan))
+                showUpgrade = false
+            } onNotNow: {
+                showUpgrade = false
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showCustomerCenter) {
+            CustomerCenterView()
+                .onCustomerCenterRestoreCompleted { customerInfo in
+                    subscriptions.apply(customerInfo: customerInfo)
+                }
+                .onCustomerCenterRestoreFailed { error in
+                    subscriptions.lastErrorMessage = error.localizedDescription
+                }
+        }
+    }
+
+    private func refreshLiveActivitiesStatus() {
+        liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
+    }
+}
+
+private struct LiveActivitiesSettingsCard: View {
+    var isEnabled: Bool
+    var onOpenSettings: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill((isEnabled ? Color.lullAmber : Color.white).opacity(isEnabled ? 0.14 : 0.05))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: isEnabled ? "livephoto" : "livephoto.slash")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(isEnabled ? .lullAmber : .lullInk3)
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 8) {
+                        Text("Live Activities")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.lullInk0)
+                        Text(isEnabled ? "ON" : "OFF")
+                            .font(.mono(9.5))
+                            .kerning(1.1)
+                            .foregroundColor(isEnabled ? .lullAmber : Color(hex: "#e89189"))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill((isEnabled ? Color.lullAmber : Color(hex: "#e89189")).opacity(0.10))
+                            )
+                    }
+
+                    Text(isEnabled
+                         ? "Mid-Sleep mode can appear from the Lock Screen after your ritual."
+                         : "Turn this on in iOS Settings so Mid-Sleep mode can appear after your ritual.")
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            Button(action: onOpenSettings) {
+                HStack {
+                    Text("Open iOS Settings")
+                        .font(.system(size: 14, weight: .medium))
+                    Spacer()
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(.lullBgDeep)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .frame(height: 46)
+                .background(Capsule().fill(Color.lullAmber))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .lullCard(radius: 16, accent: !isEnabled)
     }
 }
 

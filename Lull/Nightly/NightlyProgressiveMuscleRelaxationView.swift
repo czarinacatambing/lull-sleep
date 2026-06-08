@@ -1,7 +1,7 @@
 import SwiftUI
 
 // Guides the user through 5 muscle groups, 20 seconds each.
-// Pattern mirrors MidSleepBodyScanView — tense then release.
+// Tense then release (a step-based timer view, distinct from the audio-guided body scan).
 struct NightlyProgressiveMuscleRelaxationView: View {
     @EnvironmentObject var state: AppState
     @State private var currentStep = 0

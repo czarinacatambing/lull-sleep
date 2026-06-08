@@ -9,10 +9,12 @@ enum R {
     // Wind Down interactive steps
     static let brainDump        = "Brain dump"
     static let boringStory      = "Boring story"
+    static let sleepSounds      = "Sleep sounds"
     static let breathing478     = "4-7-8 breathing"
     static let gratitudeJournal = "Gratitude journal"
     static let gentleStretching = "Gentle stretching"
     static let pmr              = "Progressive muscle relaxation"
+    static let bodyScan         = "Body scan"
     static let readingBook      = "Reading (physical book)"
 
     // Bedtime Prep reminder steps (scheduled before bed with a lead time)
@@ -50,8 +52,8 @@ let remedyLeadTimes: [String: Int] = [
 
 // All wind down candidate labels (compete for the 2 variable Wind Down slots)
 let allWindDownRemedies: [String] = [
-    R.brainDump, R.boringStory, R.breathing478,
-    R.gratitudeJournal, R.gentleStretching, R.pmr, R.readingBook, R.weightedBlanket,
+    R.brainDump, R.boringStory, R.sleepSounds, R.breathing478,
+    R.gratitudeJournal, R.gentleStretching, R.pmr, R.bodyScan, R.readingBook, R.weightedBlanket,
 ]
 
 // All bedtime prep remedy labels
@@ -64,10 +66,12 @@ enum NightlyStepKind: Equatable {
     case temperatureLog
     case brainDump
     case boringStory
+    case sleepSounds
     case fourSevenEightBreathing
     case gratitudeJournal
     case gentleStretching
     case progressiveMuscleRelaxation
+    case bodyScan
     case existingHabit(label: String)
     // Evening reminder to stop a habit X minutes before bed.
     case avoidReminder(label: String, minutesBefore: Int)
@@ -78,10 +82,12 @@ enum NightlyStepKind: Equatable {
         case .temperatureLog:             return "Temperature check"
         case .brainDump:                  return R.brainDump
         case .boringStory:                return R.boringStory
+        case .sleepSounds:                return R.sleepSounds
         case .fourSevenEightBreathing:    return R.breathing478
         case .gratitudeJournal:           return R.gratitudeJournal
         case .gentleStretching:           return R.gentleStretching
         case .progressiveMuscleRelaxation: return R.pmr
+        case .bodyScan:                   return R.bodyScan
         case .existingHabit(let label):   return label
         case .avoidReminder(let label, _): return label
         }
@@ -96,7 +102,9 @@ enum NightlyStepKind: Equatable {
         case .gentleStretching:           return 5
         case .fourSevenEightBreathing:    return 5
         case .progressiveMuscleRelaxation: return 5
+        case .bodyScan:                   return 5
         case .boringStory:                return 20
+        case .sleepSounds:                return 60
         case .existingHabit(let label):
             switch label {
             case R.readingBook:           return 20
@@ -114,10 +122,12 @@ enum NightlyStepKind: Equatable {
         case "Temperature check":         return .temperatureLog
         case R.brainDump:                 return .brainDump
         case R.boringStory:               return .boringStory
+        case R.sleepSounds:               return .sleepSounds
         case R.breathing478:              return .fourSevenEightBreathing
         case R.gratitudeJournal:          return .gratitudeJournal
         case R.gentleStretching:          return .gentleStretching
         case R.pmr:                       return .progressiveMuscleRelaxation
+        case R.bodyScan:                  return .bodyScan
         default:                          return nil
         }
     }
@@ -230,7 +240,7 @@ private let remedyMapping: [AnswerKey: [String]] = [
     AnswerKey(screen: 1, index: 0): [R.dimTheLights, R.noScreens, R.warmShower,
                                       R.breathing478, R.brainDump, R.boringStory],
     AnswerKey(screen: 1, index: 1): [R.dimTheLights, R.noScreens, R.gratitudeJournal,
-                                      R.brainDump, R.breathing478, R.pmr, R.boringStory],
+                                      R.brainDump, R.breathing478, R.pmr, R.bodyScan, R.boringStory],
     AnswerKey(screen: 1, index: 2): [R.coldRoomPrep, R.herbalTea, R.weightedBlanket,
                                       R.breathing478, R.brainDump],
     AnswerKey(screen: 1, index: 3): [R.coldRoomPrep, R.warmShower, R.magnesium, R.weightedBlanket],
@@ -241,11 +251,11 @@ private let remedyMapping: [AnswerKey: [String]] = [
     AnswerKey(screen: 2, index: 1): [R.coldRoomPrep, R.dimTheLights, R.noCaffeine,
                                       R.magnesium, R.boringStory],
     AnswerKey(screen: 2, index: 2): [R.dimTheLights, R.noScreens, R.brainDump,
-                                      R.breathing478, R.pmr],
+                                      R.breathing478, R.pmr, R.bodyScan],
     AnswerKey(screen: 2, index: 3): [R.dimTheLights, R.noScreens, R.brainDump,
-                                      R.breathing478, R.pmr, R.boringStory],
+                                      R.breathing478, R.pmr, R.bodyScan, R.boringStory],
     AnswerKey(screen: 2, index: 4): [R.dimTheLights, R.herbalTea, R.breathing478,
-                                      R.brainDump, R.pmr],
+                                      R.brainDump, R.pmr, R.bodyScan],
     AnswerKey(screen: 2, index: 5): [R.coldRoomPrep, R.warmShower, R.gentleStretching,
                                       R.pmr, R.weightedBlanket],
 
@@ -255,19 +265,33 @@ private let remedyMapping: [AnswerKey: [String]] = [
                                       R.boringStory, R.appBlocking],
     AnswerKey(screen: 5, index: 2): [R.readingBook],
     // index 3 ("Talk or socialize") — no CSV mapping
-    AnswerKey(screen: 5, index: 4): [R.dimTheLights],
-    AnswerKey(screen: 5, index: 5): [R.warmShower],
-    AnswerKey(screen: 5, index: 6): [R.finishWorkouts],
-    AnswerKey(screen: 5, index: 7): [R.noHeavySnacks, R.herbalTea],
-    AnswerKey(screen: 5, index: 8): [R.dimTheLights, R.brainDump, R.breathing478, R.boringStory],
+    AnswerKey(screen: 5, index: 4): [R.warmShower],
+    AnswerKey(screen: 5, index: 5): [R.finishWorkouts],
+    AnswerKey(screen: 5, index: 6): [R.noHeavySnacks, R.herbalTea],
+    AnswerKey(screen: 5, index: 7): [R.boringStory, R.sleepSounds],
+    AnswerKey(screen: 5, index: 8): [R.dimTheLights, R.brainDump],
+    AnswerKey(screen: 5, index: 9): [R.noCaffeine, R.herbalTea],
+    AnswerKey(screen: 5, index: 10): [R.brainDump, R.noScreens, R.appBlocking],
+    AnswerKey(screen: 5, index: 11): [R.noAlcohol, R.herbalTea],
+    // index 12 ("None of the above") — no mapping
 ]
 
 // Pre-bed activities that are positive sleep habits worth keeping in Wind Down.
 // index → remedy label
 private let keptHabitMap: [Int: String] = [
     2: R.readingBook,  // "Read a physical book"
-    4: R.dimTheLights, // "Dim the lights or use warm lighting"
-    5: R.warmShower,   // "Have a shower or bath"
+    4: R.warmShower,   // "Have a shower or bath"
+]
+
+// "What have you tried before?" answers are used as a light avoid list so the
+// first generated routine does not recommend a familiar technique again.
+private let triedRemedyAvoidanceMap: [Int: [String]] = [
+    1: [R.breathing478, R.pmr, R.bodyScan], // Meditation
+    2: [R.noHeavySnacks],                   // Light dinner
+    3: [R.gratitudeJournal, R.brainDump],   // Journaling
+    4: [R.pmr],                             // Therapy
+    5: [R.pmr],                             // CBT-I
+    6: [R.warmShower],                      // Warm bath
 ]
 
 // Wind Down difficulty (lower = easier = shown first in routine)
@@ -279,7 +303,8 @@ private let windDownDifficulty: [String: Int] = [
     R.brainDump:        5,
     R.gentleStretching: 6,
     R.breathing478:     7,
-    R.pmr:              8,
+    R.bodyScan:         8,
+    R.pmr:              9,
 ]
 
 // MARK: - Scoring
@@ -319,7 +344,15 @@ func scoreRemedies(from answers: OnboardingAnswers) -> [String: Int] {
         scores[habit, default: 0] += 2
     }
 
+    for remedy in avoidedRemedies(from: answers.triedBefore) {
+        scores[remedy] = nil
+    }
+
     return scores
+}
+
+private func avoidedRemedies(from triedBefore: Set<Int>) -> Set<String> {
+    Set(triedBefore.flatMap { triedRemedyAvoidanceMap[$0] ?? [] })
 }
 
 // MARK: - Routine Generator
@@ -416,6 +449,7 @@ private func nightlyStepKind(for remedy: String) -> NightlyStepKind? {
     case R.gratitudeJournal: return .gratitudeJournal
     case R.gentleStretching: return .gentleStretching
     case R.pmr:              return .progressiveMuscleRelaxation
+    case R.bodyScan:         return .bodyScan
     case R.readingBook:      return .existingHabit(label: R.readingBook)
     case R.weightedBlanket:  return .existingHabit(label: R.weightedBlanket)
     default:                 return nil
@@ -463,6 +497,8 @@ private func buildGentleExplanation(
             parts.append("We added one thing: a short stretch. A few minutes to release physical tension before you lie down.")
         case .progressiveMuscleRelaxation:
             parts.append("We added one thing: a short body relaxation. Tense and release — it quiets the body surprisingly fast.")
+        case .bodyScan:
+            parts.append("We added one thing: a Body Scan. Five guided minutes moving attention through the body, letting each part go heavy.")
         default:
             break
         }

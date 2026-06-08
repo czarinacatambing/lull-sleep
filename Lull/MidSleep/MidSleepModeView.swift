@@ -9,6 +9,7 @@ struct MidSleepModeView: View {
     @State private var showBoringStory  = false
     @State private var showBodyScan     = false
     @State private var showGetUpPrompt  = false
+    @State private var showGetUpScience = false
     @State private var sessionStart: Date? = nil
     @State private var awakeMinutes: Int = 0
     @State private var minuteTimer: Timer? = nil
@@ -150,7 +151,8 @@ struct MidSleepModeView: View {
                         isInSleepWindow: isInSleepWindow,
                         awakeMinutes: awakeMinutes,
                         pastThreshold: pastThreshold,
-                        onStartGetUp: { showGetUpPrompt = true }
+                        onStartGetUp: { showGetUpPrompt = true },
+                        onViewScience: { showGetUpScience = true }
                     )
                     .padding(.horizontal, 22)
                     .padding(.bottom, 36)
@@ -161,9 +163,13 @@ struct MidSleepModeView: View {
             NightlyBreathingView(isMidSleep: true).environmentObject(state)
         }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
-        .fullScreenCover(isPresented: $showBodyScan)    { MidSleepBodyScanView() }
+        .fullScreenCover(isPresented: $showBodyScan)    { NightlyBodyScanView(isMidSleep: true).environmentObject(state) }
         .fullScreenCover(isPresented: $showGetUpPrompt) {
             GetUpPromptView().environmentObject(state)
+        }
+        .sheet(isPresented: $showGetUpScience) {
+            TwentyMinuteScienceSheet()
+                .presentationDetents([.height(430), .medium])
         }
         .onAppear {
             currentDate = Date()
@@ -190,6 +196,28 @@ struct MidSleepModeView: View {
             ("Boring story",  "~8 min · audio",  false),
             ("Body scan",     "~5 min · guided",  false),
         ]
+    }
+}
+
+struct MidSleepExitButton: View {
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.035))
+                    .overlay(Circle().strokeBorder(Color.lullLine, lineWidth: 1))
+                    .frame(width: 36, height: 36)
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.lullInk3)
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close")
     }
 }
 
@@ -300,6 +328,7 @@ struct MidSleepGetUpFooter: View {
     var awakeMinutes: Int
     var pastThreshold: Bool
     var onStartGetUp: () -> Void
+    var onViewScience: () -> Void
 
     var body: some View {
         if !isInSleepWindow {
@@ -328,7 +357,7 @@ struct MidSleepGetUpFooter: View {
                 .font(.system(size: 12.5))
                 .foregroundColor(.lullInk1)
 
-            Button(action: {}) {
+            Button(action: onViewScience) {
                 Text("Why 20 minutes? · the science →")
                     .font(.system(size: 12))
                     .foregroundColor(.lullAmberSoft)
@@ -382,7 +411,7 @@ struct MidSleepGetUpFooter: View {
                 onStartGetUp()
             }
 
-            Button(action: {}) {
+            Button(action: onViewScience) {
                 Text("Why 20 minutes? · the science")
                     .font(.system(size: 12))
                     .foregroundColor(.lullInk3)
@@ -415,14 +444,87 @@ struct MidSleepGetUpFooter: View {
     }
 }
 
+struct TwentyMinuteScienceSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Capsule()
+                .fill(Color.lullLine)
+                .frame(width: 36, height: 4)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+
+            HStack(spacing: 10) {
+                Image(systemName: "bed.double")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.lullAmber)
+                Text("Why 20 minutes?")
+                    .font(.serif(22))
+                    .foregroundColor(.lullInk0)
+            }
+            .padding(.bottom, 8)
+
+            Text("THE GET-UP PROTOCOL")
+                .font(.mono(11))
+                .kerning(1.2)
+                .foregroundColor(.lullAmberSoft)
+                .padding(.bottom, 22)
+
+            VStack(alignment: .leading, spacing: 16) {
+                SciencePoint(
+                    title: "Protect the bed-sleep link",
+                    detail: "CBT-I uses stimulus control: when you're awake and frustrated in bed, your brain can start learning that bed means effort. Getting up briefly keeps bed paired with sleep."
+                )
+                SciencePoint(
+                    title: "Twenty minutes is a soft threshold",
+                    detail: "It is not a stopwatch rule. It is a practical cue for \"I've been awake long enough that trying harder is probably backfiring.\""
+                )
+                SciencePoint(
+                    title: "Keep the reset boring",
+                    detail: "Dim light, no screens, and something calm or dull help sleep pressure return without adding novelty or reward."
+                )
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.lullBg.ignoresSafeArea())
+    }
+}
+
+private struct SciencePoint: View {
+    var title: String
+    var detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.system(size: 14.5, weight: .semibold))
+                .foregroundColor(.lullInk1)
+            Text(detail)
+                .font(.system(size: 13.5))
+                .foregroundColor(.lullInk2)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 // MARK: - Boring Story
 
 struct MidSleepBoringStoryView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var tts = TTSService()
-    @State private var elapsedSeconds = 0
-    @State private var clockTimer: Timer?
+    @StateObject private var playback = AudioPlaybackService()
     @State private var glowPulse = false
+    @State private var hasFinished = false
+
+    private var elapsedSeconds: Int { Int(playback.elapsed.rounded(.down)) }
+    private var durationSeconds: Int {
+        playback.duration > 0 ? Int(playback.duration.rounded(.up)) : 1200
+    }
 
     var body: some View {
         LullScreen(glow: false) {
@@ -435,13 +537,9 @@ struct MidSleepBoringStoryView: View {
                     Text("BORING STORY")
                         .font(.mono(10.5)).kerning(1.4).foregroundColor(.lullInk4)
                     Spacer()
-                    Button(action: { finish() }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14)).foregroundColor(.lullInk3)
-                    }
-                    .buttonStyle(.plain)
+                    MidSleepExitButton(action: finish)
                 }
-                .padding(.horizontal, 28).padding(.top, 20).padding(.bottom, 36)
+                .padding(.horizontal, 28).padding(.top, 16).padding(.bottom, 32)
 
                 VStack(spacing: 14) {
                     Text("Eyes closed.")
@@ -465,10 +563,10 @@ struct MidSleepBoringStoryView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    Text("\(timeString(elapsedSeconds)) / ~8:00")
+                    Text("\(timeString(elapsedSeconds)) / \(timeString(durationSeconds))")
                         .font(.mono(11)).kerning(1.6).foregroundColor(.lullInk3)
                     GeometryReader { geo in
-                        let pct = min(1, CGFloat(elapsedSeconds) / 480)
+                        let pct = min(1, CGFloat(elapsedSeconds) / CGFloat(max(1, durationSeconds)))
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.white.opacity(0.08))
                             Capsule().fill(Color.lullAmber.opacity(0.7)).frame(width: geo.size.width * pct)
@@ -479,26 +577,65 @@ struct MidSleepBoringStoryView: View {
                 }
                 .padding(.horizontal, 28)
 
-                HStack(spacing: 22) {
-                    circleButton(icon: tts.isPaused ? "play.fill" : "pause.fill", size: 18) { tts.togglePause() }
-                    circleButton(icon: "xmark", size: 14) { finish() }
+                HStack(spacing: 12) {
+                    circleButton(icon: playback.isPlaying ? "pause.fill" : "play.fill", size: 18) {
+                        if playback.isPlaying { playback.pause() }
+                        else { playback.play() }
+                    }
+
+                    Spacer().frame(width: 18)
+
+                    HStack(spacing: 8) {
+                        circleButton(icon: "minus", size: 18, disabled: !playback.canSlowDown) {
+                            playback.speedDown()
+                        }
+                        Text(rateText(playback.playbackRate))
+                            .font(.mono(11))
+                            .kerning(1.2)
+                            .foregroundColor(.lullInk3)
+                            .frame(width: 38)
+                        circleButton(icon: "plus", size: 18, disabled: !playback.canSpeedUp) {
+                            playback.speedUp()
+                        }
+                    }
                 }
                 .padding(.top, 36).padding(.bottom, 52)
             }
         }
-        .onAppear {
-            let story = (0..<2).map { _ in BundledStories.all.randomElement() ?? "" }.joined(separator: "\n\n")
-            tts.append(story); tts.flushRemaining()
-            clockTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                Task { @MainActor in elapsedSeconds += 1 }
-            }
-        }
+        .onAppear { startStory() }
         .onDisappear { finish() }
     }
 
-    private func finish() { tts.stop(); clockTimer?.invalidate(); dismiss() }
+    private func startStory() {
+        guard !hasFinished, let url = BoringStoryAudioLibrary.nextStoryURL() else { return }
+        playback.load(url: url)
+        playback.onFinish = { finish() }
+        playback.play()
+    }
+
+    private func cleanupStory() {
+        playback.onFinish = nil
+        playback.stop()
+    }
+
+    private func finish() {
+        guard !hasFinished else { return }
+        hasFinished = true
+        cleanupStory()
+        dismiss()
+    }
+
     private func timeString(_ s: Int) -> String { String(format: "%d:%02d", s / 60, s % 60) }
-    private func circleButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+    private func rateText(_ rate: Float) -> String {
+        switch rate {
+        case 0.75: return ".75x"
+        case 0.9: return ".9x"
+        case 1.0: return "1x"
+        case 1.5: return "1.5x"
+        default: return "\(rate)x"
+        }
+    }
+    private func circleButton(icon: String, size: CGFloat, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             ZStack {
                 Circle().strokeBorder(Color.lullLine, lineWidth: 1)
@@ -506,128 +643,13 @@ struct MidSleepBoringStoryView: View {
                     .frame(width: 56, height: 56)
                 Image(systemName: icon).font(.system(size: size)).foregroundColor(.lullInk2)
             }
-        }.buttonStyle(.plain)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
     }
 }
 
 // MARK: - Body Scan
-
-struct MidSleepBodyScanView: View {
-    @Environment(\.dismiss) var dismiss
-    @State private var currentStep = 0
-    @State private var secondsLeft = 20
-    @State private var timer: Timer?
-
-    private let steps: [(area: String, instruction: String)] = [
-        ("Feet & toes",    "Let them go heavy. Feel the weight sink into the mattress."),
-        ("Calves & shins", "Release any held tension. Let your legs feel warm and still."),
-        ("Thighs & hips",  "Soften the muscles. Allow the bed to fully support you."),
-        ("Belly",          "With each breath out, let your belly fall. No effort needed."),
-        ("Chest",          "Notice the gentle rise and fall. You don't need to control it."),
-        ("Hands & arms",   "Uncurl your fingers. Let your arms rest heavy at your sides."),
-        ("Shoulders",      "Drop them away from your ears. Feel the space open."),
-        ("Face & jaw",     "Unclench your jaw. Let your eyes be soft behind your lids."),
-    ]
-
-    var body: some View {
-        LullScreen(glow: false) {
-            RadialGradient(colors: [Color.lullAmber.opacity(0.05), .clear],
-                           center: .center, startRadius: 0, endRadius: 200)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                HStack {
-                    Text("BODY SCAN")
-                        .font(.mono(10.5)).kerning(1.4).foregroundColor(.lullInk4)
-                    Spacer()
-                    Text("\(currentStep + 1) / \(steps.count)")
-                        .font(.mono(10.5)).kerning(1).foregroundColor(.lullInk4)
-                }
-                .padding(.horizontal, 28).padding(.top, 20).padding(.bottom, 48)
-
-                if currentStep < steps.count {
-                    let step = steps[currentStep]
-
-                    VStack(spacing: 16) {
-                        Kicker(text: "Focus here")
-                        Text(step.area)
-                            .font(.serif(32)).foregroundColor(.lullAmber)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 28)
-
-                    Text(step.instruction)
-                        .font(.system(size: 15))
-                        .foregroundColor(.lullInk2)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(5)
-                        .frame(maxWidth: 290)
-                        .padding(.top, 24).padding(.horizontal, 28)
-
-                    Spacer()
-
-                    ZStack {
-                        Circle().stroke(Color.lullLine, lineWidth: 1).frame(width: 96, height: 96)
-                        Circle()
-                            .trim(from: 0, to: CGFloat(secondsLeft) / 20)
-                            .stroke(Color.lullAmber.opacity(0.7), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                            .frame(width: 96, height: 96)
-                            .rotationEffect(.degrees(-90))
-                            .animation(.linear(duration: 1), value: secondsLeft)
-                        Text("\(secondsLeft)")
-                            .font(.serif(32)).foregroundColor(.lullInk1)
-                    }
-
-                    Spacer()
-
-                    Button(action: advance) {
-                        Text(currentStep < steps.count - 1 ? "Next area →" : "Done · rest now")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color(hex: "#1a0d06"))
-                            .frame(maxWidth: .infinity).frame(height: 52)
-                            .background(Capsule().fill(Color.lullAmber))
-                            .shadow(color: .lullAmberGlow, radius: 12)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 22).padding(.bottom, 52)
-                } else {
-                    Spacer()
-                    VStack(spacing: 16) {
-                        Text("Scan complete.")
-                            .font(.serif(28)).foregroundColor(.lullInk2)
-                        Text("Let yourself drift.")
-                            .font(.serifItalic(28)).foregroundColor(.lullAmber)
-                    }
-                    Spacer()
-                    Button(action: { dismiss() }) {
-                        Text("Close")
-                            .font(.system(size: 14)).foregroundColor(.lullInk3)
-                    }
-                    .buttonStyle(.plain).padding(.bottom, 52)
-                }
-            }
-        }
-        .onAppear { startTimer() }
-        .onDisappear { timer?.invalidate() }
-    }
-
-    private func startTimer() {
-        secondsLeft = 20
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            Task { @MainActor in
-                if secondsLeft > 0 { secondsLeft -= 1 } else { advance() }
-            }
-        }
-    }
-
-    private func advance() {
-        if currentStep < steps.count - 1 {
-            currentStep += 1
-            startTimer()
-        } else {
-            currentStep = steps.count
-            timer?.invalidate()
-        }
-    }
-}
+// The Mid-Sleep body scan now uses the shared guided-audio NightlyBodyScanView
+// (presented with isMidSleep: true), so the standalone text/timer view was removed.

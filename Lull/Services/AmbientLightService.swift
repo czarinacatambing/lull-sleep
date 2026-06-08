@@ -13,6 +13,10 @@ final class AmbientLightService: ObservableObject {
     struct Reading {
         var lightsLevel: Int       // 0–3
         var confidence: Confidence
+        var iso: Double? = nil
+        var exposureDuration: Double? = nil
+        var darkness: Double? = nil
+        var sampleCount: Int = 0
     }
 
     @Published private(set) var isReading = false
@@ -40,6 +44,9 @@ final class AmbientLightService: ObservableObject {
         }.value
 
         confidence = result.confidence
+        #if DEBUG
+        print("[AmbientLight] confidence=\(result.confidence) level=\(result.lightsLevel) iso=\(result.iso.map { String(format: "%.1f", $0) } ?? "nil") duration=\(result.exposureDuration.map { String(format: "%.4f", $0) } ?? "nil") darkness=\(result.darkness.map { String(format: "%.2f", $0) } ?? "nil") samples=\(result.sampleCount)")
+        #endif
         return result
     }
 
@@ -56,13 +63,25 @@ final class AmbientLightService: ObservableObject {
         session.sessionPreset = .low
         guard session.canAddInput(input) else { return Reading(lightsLevel: 2, confidence: .fallback) }
         session.addInput(input)
+
+        let sampleCounter = SampleCounter()
+        let output = AVCaptureVideoDataOutput()
+        output.alwaysDiscardsLateVideoFrames = true
+        if session.canAddOutput(output) {
+            let queue = DispatchQueue(label: "AmbientLightService.video")
+            output.setSampleBufferDelegate(sampleCounter, queue: queue)
+            session.addOutput(output)
+        }
+
         session.startRunning()
 
-        // Allow AE to settle
-        Thread.sleep(forTimeInterval: 0.5)
+        // Wait for real frames so auto-exposure has a chance to update.
+        sampleCounter.waitForSamples(count: 3, timeout: 1.0)
+        Thread.sleep(forTimeInterval: 0.2)
 
         let iso = Double(device.iso)
         let duration = CMTimeGetSeconds(device.exposureDuration)
+        let sampleCount = sampleCounter.sampleCount
 
         session.stopRunning()
 
@@ -71,7 +90,13 @@ final class AmbientLightService: ObservableObject {
         // Lens-blocked detection: camera compensating at near-maximum in both dimensions
         let maxISO = Double(device.activeFormat.maxISO)
         if iso >= maxISO * 0.95 && duration >= 0.4 {
-            return Reading(lightsLevel: 3, confidence: .lowConfidence)
+            return Reading(
+                lightsLevel: 3,
+                confidence: .lowConfidence,
+                iso: iso,
+                exposureDuration: duration,
+                sampleCount: sampleCount
+            )
         }
 
         // Darkness proxy: log2(iso * duration) — higher = darker scene.
@@ -85,6 +110,43 @@ final class AmbientLightService: ObservableObject {
         default:      lightsLevel = 3  // Mostly dark
         }
 
-        return Reading(lightsLevel: lightsLevel, confidence: .high)
+        return Reading(
+            lightsLevel: lightsLevel,
+            confidence: .high,
+            iso: iso,
+            exposureDuration: duration,
+            darkness: darkness,
+            sampleCount: sampleCount
+        )
+    }
+
+    private final class SampleCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+        private let lock = NSLock()
+        private let semaphore = DispatchSemaphore(value: 0)
+        private var targetSampleCount = 0
+        private(set) var sampleCount = 0
+
+        func waitForSamples(count: Int, timeout: TimeInterval) {
+            lock.lock()
+            targetSampleCount = count
+            lock.unlock()
+
+            _ = semaphore.wait(timeout: .now() + timeout)
+        }
+
+        func captureOutput(
+            _ output: AVCaptureOutput,
+            didOutput sampleBuffer: CMSampleBuffer,
+            from connection: AVCaptureConnection
+        ) {
+            lock.lock()
+            sampleCount += 1
+            let shouldSignal = sampleCount >= targetSampleCount
+            lock.unlock()
+
+            if shouldSignal {
+                semaphore.signal()
+            }
+        }
     }
 }

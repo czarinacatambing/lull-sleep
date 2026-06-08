@@ -17,77 +17,82 @@ struct GetUpPromptView: View {
             AmberGlow(x: 0.5, y: 0.35, radius: 230, opacity: 0.45)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer().frame(height: 16)
+            GeometryReader { geo in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer().frame(height: 16)
 
-                HStack {
-                    Text("GET-UP PROTOCOL")
-                        .font(.mono(10.5))
-                        .kerning(1.4)
-                        .foregroundColor(.lullInk4)
-                    Spacer()
-                    Text("\(GetUpPromptView.timeFmt.string(from: Date())) · 20 MIN AWAKE")
-                        .font(.mono(10.5))
-                        .kerning(1)
-                        .foregroundColor(.lullInk4)
-                }
-                .padding(.horizontal, 28)
-                .padding(.bottom, 32)
+                        HStack {
+                            Text("GET-UP PROTOCOL")
+                                .font(.mono(10.5))
+                                .kerning(1.4)
+                                .foregroundColor(.lullInk4)
+                            Spacer()
+                            Text("\(GetUpPromptView.timeFmt.string(from: Date())) · 20 MIN AWAKE")
+                                .font(.mono(10.5))
+                                .kerning(1)
+                                .foregroundColor(.lullInk4)
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 32)
 
-                VStack(spacing: 16) {
-                    Kicker(text: "The kindest thing for your brain", color: .lullAmberSoft)
-                    (Text("Get out of bed\nfor ")
-                        .font(.serif(30))
-                        .foregroundColor(.lullInk0)
-                    + Text("15 minutes.")
-                        .font(.serifItalic(30))
-                        .foregroundColor(.lullAmber))
-                    .multilineTextAlignment(.center)
-                }
-                .padding(.top, 20)
+                        VStack(spacing: 16) {
+                            Kicker(text: "The kindest thing for your brain", color: .lullAmberSoft)
+                            (Text("Get out of bed\nfor ")
+                                .font(.serif(30))
+                                .foregroundColor(.lullInk0)
+                            + Text("15 minutes.")
+                                .font(.serifItalic(30))
+                                .foregroundColor(.lullAmber))
+                            .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 20)
 
-                Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Check your phone at \(buzzTimeString) — if you see a notification, it's time to go back.")
-                    .font(.system(size: 13.5))
-                    .foregroundColor(.lullInk2)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .frame(maxWidth: 290)
-                    .padding(.top, 16)
+                        Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Check your phone at \(buzzTimeString) — if you see a notification, it's time to go back.")
+                            .font(.system(size: 13.5))
+                            .foregroundColor(.lullInk2)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .frame(maxWidth: 290)
+                            .padding(.top, 16)
 
-                Spacer()
+                        Spacer()
 
-                // Warm lamp + chair illustration
-                GetUpIllustration()
-                    .frame(width: 200, height: 160)
-                    .padding(.top, 40)
+                        // Warm lamp + chair illustration
+                        GetUpIllustration()
+                            .frame(width: 200, height: 160)
+                            .padding(.top, 40)
 
-                Spacer()
+                        Spacer()
 
-                // Timer pill
-                HStack(spacing: 10) {
-                    Ember(size: 5)
-                    Text("SILENT NOTIF AT \(buzzTimeString)")
-                        .font(.mono(12))
-                        .kerning(0.8)
-                        .foregroundColor(.lullInk2)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .background(Capsule().fill(Color.white.opacity(0.03)))
-                .overlay(Capsule().strokeBorder(Color.lullLine, lineWidth: 1))
-                .padding(.top, 20)
+                        // Timer pill
+                        HStack(spacing: 10) {
+                            Ember(size: 5)
+                            Text("SILENT NOTIF AT \(buzzTimeString)")
+                                .font(.mono(12))
+                                .kerning(0.8)
+                                .foregroundColor(.lullInk2)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(Capsule().fill(Color.white.opacity(0.03)))
+                        .overlay(Capsule().strokeBorder(Color.lullLine, lineWidth: 1))
+                        .padding(.top, 20)
 
-                VStack(spacing: 0) {
-                    PrimaryCTA(title: "I'm getting up") {
-                        scheduleGetUpNotification()
-                        dismiss()
+                        VStack(spacing: 0) {
+                            PrimaryCTA(title: "I'm getting up") {
+                                scheduleGetUpNotification()
+                                dismiss()
+                            }
+                            GhostButton(title: "I'd rather stay · try a story") { dismiss() }
+                                .frame(maxWidth: .infinity)
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.top, 36)
+                        .padding(.bottom, 36)
                     }
-                    GhostButton(title: "I'd rather stay · try a story") { dismiss() }
-                        .frame(maxWidth: .infinity)
+                    .frame(minHeight: geo.size.height)
                 }
-                .padding(.horizontal, 22)
-                .padding(.top, 36)
-                .padding(.bottom, 36)
             }
         }
     }
@@ -100,7 +105,8 @@ struct GetUpPromptView: View {
         content.title = "Time to come back."
         content.body = "You've been up 20 minutes. Your bed is waiting — lie back down."
         content.sound = nil
-        content.interruptionLevel = .passive
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 1.0
 
         let fireDate = buzzTime
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)

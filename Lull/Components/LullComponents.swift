@@ -252,51 +252,55 @@ struct SleepScoreSelector: View {
     @Binding var score: Int
     var disabled: Bool = false
 
+    private let labels = ["Awful", "Rough", "Mixed", "Pretty good", "Great"]
+
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             HStack(alignment: .center, spacing: 0) {
                 ForEach(1...5, id: \.self) { n in
                     let selected = score == n
                     let baseSize: CGFloat = 36 + CGFloat(n) * 6  // 42 → 66 pt
 
-                    Button(action: {
-                        guard !disabled else { return }
-                        score = n
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(selected
-                                    ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep],
-                                                                    center: .center, startRadius: 0, endRadius: baseSize / 2))
-                                    : AnyShapeStyle(Color.clear))
-                                .overlay(Circle().strokeBorder(
-                                    selected ? Color.clear : Color.white.opacity(0.12 + Double(n) * 0.04),
-                                    lineWidth: 1.2))
-                                .frame(width: baseSize, height: baseSize)
-                                .shadow(color: selected ? .lullAmberGlow : .clear, radius: 11)
+                    VStack(spacing: 8) {
+                        Button(action: {
+                            guard !disabled else { return }
+                            score = n
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(selected
+                                        ? AnyShapeStyle(RadialGradient(colors: [.lullAmber, .lullAmberDeep],
+                                                                        center: .center, startRadius: 0, endRadius: baseSize / 2))
+                                        : AnyShapeStyle(Color.clear))
+                                    .overlay(Circle().strokeBorder(
+                                        selected ? Color.clear : Color.white.opacity(0.12 + Double(n) * 0.04),
+                                        lineWidth: 1.2))
+                                    .frame(width: baseSize, height: baseSize)
+                                    .shadow(color: selected ? .lullAmberGlow : .clear, radius: 11)
 
-                            if selected {
                                 Text("\(n)")
-                                    .font(.serif(22))
-                                    .foregroundColor(.lullBgDeep)
+                                    .font(.serif(selected ? 22 : 18))
+                                    .foregroundColor(selected ? .lullBgDeep : .lullInk3)
                             }
+                            .frame(width: 72, height: 72)
                         }
-                        .frame(width: 72, height: 72)
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                        .disabled(disabled)
+
+                        Text(labels[n - 1])
+                            .font(.mono(8.5))
+                            .kerning(0.4)
+                            .foregroundColor(selected ? .lullInk1 : .lullInk4)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+                            .frame(height: 24, alignment: .top)
                     }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, minHeight: 72)
-                    .contentShape(Rectangle())
-                    .disabled(disabled)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, 28)
-
-            HStack {
-                Text("WRECKED").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk4)
-                Spacer()
-                Text("FANTASTIC").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk4)
-            }
-            .padding(.horizontal, 32)
         }
     }
 }

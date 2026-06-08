@@ -2,8 +2,182 @@ import SwiftUI
 import Combine
 import UserNotifications
 import ActivityKit
+import FamilyControls
+import ManagedSettings
+
+enum Chronotype: String, Codable {
+    case earlySleeper
+    case steadySleeper
+    case lateSleeper
+    case drifter
+
+    var displayName: String {
+        switch self {
+        case .earlySleeper: return "Early Sleeper"
+        case .steadySleeper: return "Steady Sleeper"
+        case .lateSleeper: return "Late Sleeper"
+        case .drifter: return "Drifter"
+        }
+    }
+
+    var pluralDisplayName: String {
+        switch self {
+        case .earlySleeper: return "Early Sleepers"
+        case .steadySleeper: return "Steady Sleepers"
+        case .lateSleeper: return "Late Sleepers"
+        case .drifter: return "Drifters"
+        }
+    }
+}
+
+enum SleepBottleneck: String, Codable {
+    case preSleepRumination
+    case fragmentedSleep
+    case insufficientDeepSleep
+    case shortSleepWindow
+    case inconsistentRhythm
+
+    var displayName: String {
+        switch self {
+        case .preSleepRumination: return "Pre-sleep rumination"
+        case .fragmentedSleep: return "Fragmented sleep"
+        case .insufficientDeepSleep: return "Insufficient deep sleep"
+        case .shortSleepWindow: return "Short sleep window"
+        case .inconsistentRhythm: return "Inconsistent rhythm"
+        }
+    }
+
+    var suggestedExperiment: String {
+        switch self {
+        case .preSleepRumination: return "Brain Dump"
+        case .fragmentedSleep: return "Dim the lights"
+        case .insufficientDeepSleep: return "Temperature check"
+        case .shortSleepWindow: return "Earlier wind-down"
+        case .inconsistentRhythm: return "Fixed bedtime anchor"
+        }
+    }
+}
+
+struct SleepPatternClassification {
+    var chronotype: Chronotype
+    var bottleneck: SleepBottleneck
+    var isProvisional: Bool
+}
+
+func classifySleepPattern(
+    sleepProblems: Set<Int>,
+    wakingFactors: Set<Int>,
+    currentBedtime: Date,
+    currentWakeTime: Date
+) -> SleepPatternClassification {
+    let racingMind = sleepProblems.contains(0) || sleepProblems.contains(1)
+    let fragmented = sleepProblems.contains(2) || sleepProblems.contains(3)
+    let neuroLean = wakingFactors.contains(2) || wakingFactors.contains(3) || wakingFactors.contains(4)
+    let situational = wakingFactors.contains(0) || wakingFactors.contains(1)
+
+    let duration = sleepDurationMinutes(bedtime: currentBedtime, wakeTime: currentWakeTime)
+    let midpoint = sleepMidpointMinute(bedtime: currentBedtime, wakeTime: currentWakeTime)
+
+    let chronotype: Chronotype
+    if fragmented && (duration < 7 * 60 || wakingFactors.contains(4)) {
+        chronotype = .drifter
+    } else if midpoint <= 2 * 60 + 30 {
+        chronotype = .earlySleeper
+    } else if midpoint >= 4 * 60 || (racingMind && neuroLean) {
+        chronotype = .lateSleeper
+    } else {
+        chronotype = .steadySleeper
+    }
+
+    let bottleneck: SleepBottleneck
+    if racingMind {
+        bottleneck = .preSleepRumination
+    } else if sleepProblems.contains(2) {
+        bottleneck = .fragmentedSleep
+    } else if sleepProblems.contains(3) {
+        bottleneck = .insufficientDeepSleep
+    } else if duration < 7 * 60 {
+        bottleneck = .shortSleepWindow
+    } else {
+        bottleneck = .inconsistentRhythm
+    }
+
+    return SleepPatternClassification(
+        chronotype: chronotype,
+        bottleneck: bottleneck,
+        isProvisional: situational
+    )
+}
+
+private func minuteOfDay(_ date: Date) -> Int {
+    let cal = Calendar.current
+    return cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)
+}
+
+private func sleepDurationMinutes(bedtime: Date, wakeTime: Date) -> Int {
+    let bed = minuteOfDay(bedtime)
+    let wake = minuteOfDay(wakeTime)
+    let raw = wake - bed
+    return raw > 0 ? raw : raw + 24 * 60
+}
+
+private func sleepMidpointMinute(bedtime: Date, wakeTime: Date) -> Int {
+    let bed = minuteOfDay(bedtime)
+    let duration = sleepDurationMinutes(bedtime: bedtime, wakeTime: wakeTime)
+    return (bed + duration / 2) % (24 * 60)
+}
 
 class AppState: ObservableObject {
+    static let maxSleepScore = 5
+    private static let morningRatingNotificationIdentifiers =
+        ["morning_rating_primary", "morning_rating_noon"] +
+        (0..<14).flatMap { ["morning_rating_primary_\($0)", "morning_rating_noon_\($0)"] }
+    private let appBlockingStore = ManagedSettingsStore()
+    private var persistedTimeZoneIdentifier = TimeZone.autoupdatingCurrent.identifier
+
+    static func clampedSleepScore(_ score: Int) -> Int {
+        guard score > 0 else { return 0 }
+        return min(max(score, 1), maxSleepScore)
+    }
+
+    static func clockDurationMinutes(from start: Date,
+                                     to end: Date,
+                                     calendar: Calendar = .autoupdatingCurrent) -> Int {
+        let startComponents = calendar.dateComponents([.hour, .minute], from: start)
+        let endComponents = calendar.dateComponents([.hour, .minute], from: end)
+        let startMinutes = (startComponents.hour ?? 0) * 60 + (startComponents.minute ?? 0)
+        let endMinutes = (endComponents.hour ?? 0) * 60 + (endComponents.minute ?? 0)
+        let raw = endMinutes - startMinutes
+        return raw > 0 ? raw : raw + 24 * 60
+    }
+
+    private static let researchDateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static func researchDateString(_ date: Date) -> String {
+        researchDateFormatter.string(from: date)
+    }
+
+    private func researchDateValue(_ date: Date?) -> ResearchValue {
+        guard let date else { return .null }
+        return .string(Self.researchDateString(date))
+    }
+
+    private static func reanchoredWallClockDate(_ date: Date,
+                                                from oldTimeZone: TimeZone,
+                                                to newTimeZone: TimeZone) -> Date {
+        var oldCalendar = Calendar(identifier: .gregorian)
+        oldCalendar.timeZone = oldTimeZone
+
+        var newCalendar = Calendar(identifier: .gregorian)
+        newCalendar.timeZone = newTimeZone
+
+        let components = oldCalendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        return newCalendar.date(from: components) ?? date
+    }
 
     // MARK: - Launch routing
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
@@ -13,20 +187,46 @@ class AppState: ObservableObject {
     @Published var selectedSleepProblems: Set<Int> = []
     @Published var selectedWakes: Set<Int> = []
     @Published var sleepWindowMinutes: Int = 20
+    @Published var currentBedtime: Date = {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        return Calendar.current.date(bySettingHour: 23, minute: 30, second: 0, of: yesterday) ?? Date()
+    }()
+    @Published var currentWakeTime: Date = {
+        return Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: Date()) ?? Date()
+    }()
+    @Published var targetBedtime: Date = {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        return Calendar.current.date(bySettingHour: 23, minute: 30, second: 0, of: yesterday) ?? Date()
+    }()
+    @Published var targetWakeTime: Date = {
+        return Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: Date()) ?? Date()
+    }()
     @Published var typicalBedtime: Date = {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-        return Calendar.current.date(bySettingHour: 23, minute: 0, second: 0, of: yesterday) ?? Date()
+        return Calendar.current.date(bySettingHour: 22, minute: 30, second: 0, of: yesterday) ?? Date()
     }()
     @Published var typicalWakeTime: Date = {
         return Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: Date()) ?? Date()
     }()
     @Published var selectedPreBedActivities: Set<Int> = []
     @Published var selectedTriedThings: Set<Int> = []
+    @Published var chronotype: Chronotype = .steadySleeper
+    @Published var bottleneck: SleepBottleneck = .inconsistentRhythm
+    @Published var committedRoutineTime: Date? = nil
+    @Published var paywallState = PaywallState()
+    @Published var activePaywallRoute: PaywallRoute? = nil
+    @Published var activePaywallVerdict: PaywallVerdict? = nil
 
     // MARK: - Home / Dashboard
     @Published var showNightlyFlow = false
     @Published var showMidSleepMode = false
+    @Published var showSleepSounds = false
     @Published var showMorningCheckIn = false
+    @Published var appBlockingSelection = FamilyActivitySelection()
+    @Published var appBlockingEnabled = false
+    @Published var appBlockingStartTime: Date = Date()
+    @Published var appBlockingEndTime: Date = Date()
+    @Published var appBlockingGraceMinutes = 5
 
     private var brightnessBeforeShake: CGFloat = UIScreen.main.brightness
 
@@ -58,11 +258,13 @@ class AppState: ObservableObject {
     }
 
     @Published var coreRoutine: [RoutineStep] = [
-        RoutineStep(order: 1, label: R.dimTheLights,  mode: .experiment,  remedyId: .dimTheLights),
-        RoutineStep(order: 2, label: "Brightness check", mode: .inSequence),
-        RoutineStep(order: 3, label: "Temperature check", mode: .inSequence),
-        RoutineStep(order: 4, label: R.brainDump,     mode: .inSequence,  remedyId: .brainDump),
-        RoutineStep(order: 5, label: R.boringStory,   mode: .inSequence,  remedyId: .boringStory),
+        RoutineStep(order: 1, label: R.dimTheLights,       mode: .reminderOnly, leadTimeMins: 75, remedyId: .dimTheLights),
+        RoutineStep(order: 2, label: R.noScreens,          mode: .reminderOnly, leadTimeMins: 75, remedyId: .noScreens),
+        RoutineStep(order: 3, label: R.weightedBlanket,    mode: .experiment,   leadTimeMins: 90, remedyId: .weightedBlanket),
+        RoutineStep(order: 4, label: "Brightness check",   mode: .inSequence, durationLabel: "10s"),
+        RoutineStep(order: 5, label: "Temperature check",  mode: .inSequence, durationLabel: "10s"),
+        RoutineStep(order: 6, label: R.brainDump,          mode: .inSequence, durationLabel: "2m · voice", remedyId: .brainDump),
+        RoutineStep(order: 7, label: R.boringStory,        mode: .inSequence, durationLabel: "AI · 8m", remedyId: .boringStory),
     ]
 
     // MARK: - Generated routine (set during onboarding)
@@ -70,13 +272,68 @@ class AppState: ObservableObject {
     @Published var routineExplanation: String = ""
     @Published var routineShouldStartNow: Bool = false
 
-    func applyGeneratedRoutine(_ routine: GeneratedRoutine) {
+    func applyGeneratedRoutine(_ routine: GeneratedRoutine, scheduleNotifications: Bool = true) {
         generatedRoutine      = routine
         coreRoutine           = routine.toCoreRoutineSteps()
         routineExplanation    = routine.explanation
-        routineShouldStartNow = routine.shouldStartImmediately
+        routineShouldStartNow = shouldOfferImmediateOnboardingRitual
         persist()
-        scheduleAllNotifications()
+        if scheduleNotifications {
+            scheduleAllNotifications()
+        }
+    }
+
+    func refreshOnboardingClassifications() {
+        let result = classifySleepPattern(
+            sleepProblems: selectedSleepProblems,
+            wakingFactors: selectedWakes,
+            currentBedtime: currentBedtime,
+            currentWakeTime: currentWakeTime
+        )
+        chronotype = result.chronotype
+        bottleneck = result.bottleneck
+        persist()
+    }
+
+    var defaultRoutineStartTime: Date {
+        scheduledRoutine.first?.time
+            ?? Calendar.current.date(byAdding: .minute, value: -30, to: targetBedtime)
+            ?? targetBedtime
+    }
+
+    var preferredSleepWindowIsActive: Bool {
+        isCurrentTimeInWindow(
+            from: typicalBedtime,
+            to: Calendar.current.date(byAdding: .minute, value: sleepWindowMinutes, to: typicalBedtime) ?? typicalBedtime
+        )
+    }
+
+    var routineStartWindowIsActive: Bool {
+        isCurrentTimeInWindow(
+            from: defaultRoutineStartTime,
+            to: Calendar.current.date(byAdding: .minute, value: sleepWindowMinutes, to: typicalBedtime) ?? typicalBedtime
+        )
+    }
+
+    var shouldOfferImmediateOnboardingRitual: Bool {
+        routineStartWindowIsActive
+    }
+
+    private func isCurrentTimeInWindow(from start: Date, to end: Date, now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        let nowMinute = minuteOfDay(now, calendar: cal)
+        let startMinute = minuteOfDay(start, calendar: cal)
+        let endMinute = minuteOfDay(end, calendar: cal)
+
+        if startMinute <= endMinute {
+            return nowMinute >= startMinute && nowMinute <= endMinute
+        }
+        return nowMinute >= startMinute || nowMinute <= endMinute
+    }
+
+    private func minuteOfDay(_ date: Date, calendar: Calendar) -> Int {
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        return (components.hour ?? 0) * 60 + (components.minute ?? 0)
     }
 
     // MARK: - Nightly walkthrough state
@@ -92,6 +349,17 @@ class AppState: ObservableObject {
     // MARK: - Prep checklist
     @Published var prepDoneIds: Set<UUID> = []
     @Published var prepDoneDate: Date? = nil
+    @Published var ritualDoneIds: Set<UUID> = []
+    @Published var ritualDoneDate: Date? = nil
+    var suppressPrepLiveActivityForSession = false
+
+    static func defaultAppBlockingStart(from bedtime: Date) -> Date {
+        Calendar.current.date(byAdding: .minute, value: -75, to: bedtime) ?? bedtime
+    }
+
+    static func defaultAppBlockingEnd(from wakeTime: Date) -> Date {
+        wakeTime
+    }
 
     func togglePrepDone(_ id: UUID) {
         if prepDoneIds.contains(id) { prepDoneIds.remove(id) }
@@ -105,8 +373,55 @@ class AppState: ObservableObject {
         }
     }
 
+    func completePrepFromLiveActivity(_ id: UUID) {
+        if !prepDoneIds.contains(id) {
+            prepDoneIds.insert(id)
+            prepDoneDate = Date()
+            persist()
+            scheduleBedtimePrepSummary()
+        }
+        requestedTab = 0
+        LiveActivityService.shared.update(doneIds: prepDoneIds)
+        if prepDoneIds.count == preWindDownSteps.count {
+            LiveActivityService.shared.end(dismissalPolicy: .after(.now + 30))
+        }
+    }
+
+    func toggleRitualDone(_ id: UUID) {
+        if ritualDoneIds.contains(id) { unmarkRitualDone(id) }
+    }
+
+    func unmarkRitualDone(_ id: UUID) {
+        guard ritualDoneIds.contains(id) else { return }
+        ritualDoneIds.remove(id)
+        ritualDoneDate = Date()
+        persist()
+    }
+
+    func markRitualDone(_ id: UUID) {
+        guard !ritualDoneIds.contains(id) else { return }
+        ritualDoneIds.insert(id)
+        ritualDoneDate = Date()
+        persist()
+    }
+
+    func markRitualDone(label: String) {
+        guard let step = windDownSteps.first(where: { $0.label == label }) else { return }
+        markRitualDone(step.id)
+    }
+
+    func markAllRitualDone() {
+        let ids = Set(windDownSteps.map(\.id))
+        if ritualDoneIds != ids {
+            ritualDoneIds = ids
+            ritualDoneDate = Date()
+            persist()
+        }
+    }
+
     func resetPrepIfNeeded() {
-        guard let lastDate = prepDoneDate else { return }
+        let lastDate = [prepDoneDate, ritualDoneDate].compactMap { $0 }.max()
+        guard let lastDate else { return }
         let cal = Calendar.current
         let wc = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
         guard let todayWake = cal.date(bySettingHour: wc.hour ?? 7,
@@ -115,6 +430,9 @@ class AppState: ObservableObject {
         if Date() >= todayWake && lastDate < todayWake {
             prepDoneIds = []
             prepDoneDate = nil
+            ritualDoneIds = []
+            ritualDoneDate = nil
+            suppressPrepLiveActivityForSession = false
             persist()
             scheduleBedtimePrepSummary()
         }
@@ -159,7 +477,14 @@ class AppState: ObservableObject {
     // (with score + delta) to the Live Activity so the confirmation lingers.
     func ingestPendingLiveActivityRating() {
         guard let pending = LiveActivityService.shared.consumePendingRating() else { return }
+        ingestLiveActivityRating(rating: pending.rating, at: pending.at)
+    }
 
+    // URL-driven Live Activity rating path. This mirrors the App Group ingest
+    // path but avoids relying on Button(intent:) firing from the Lock Screen.
+    func ingestLiveActivityRating(rating rawRating: Int, at: Date = Date()) {
+        let rating = Self.clampedSleepScore(rawRating)
+        guard rating > 0 else { return }
         // Capture before logMorningScore/advanceExperiment mutate state.
         let mostRecentRated    = sleepLogs.filter { $0.score > 0 }.sorted { $0.date > $1.date }.first
         let yesterdayCaptured  = mostRecentRated?.score
@@ -167,26 +492,24 @@ class AppState: ObservableObject {
         let variableCaptured   = experimentStatus?.variable
         let preLogNight        = experimentStatus?.night ?? 0
 
-        // 1-5 dot → 1-10 morningScore (matches the in-app SleepScoreSelector scale)
-        let score10 = max(1, min(10, pending.rating * 2))
-        morningScore = score10
+        morningScore = rating
         logMorningScore()
 
         // Show the reward sheet when the app opens.
         pendingMorningReward = PendingMorningReward(
-            score: score10,
+            score: rating,
             yesterday: yesterdayCaptured,
             baseline: baselineCaptured,
             variable: variableCaptured,
             night: preLogNight + 1
         )
 
-        let delta = Double(score10 - baselineCaptured)
-        let baseLabel = sameWeekdayBaselineLabel(for: pending.at)
+        let delta = Double(rating - baselineCaptured)
+        let baseLabel = sameWeekdayBaselineLabel(for: at)
 
         LiveActivityService.shared.publishRatedAndEnd(
-            rating: pending.rating,
-            score: Double(score10),
+            rating: rating,
+            score: Double(rating),
             deltaVsBaseline: delta,
             baselineLabel: baseLabel
         )
@@ -262,6 +585,7 @@ class AppState: ObservableObject {
     // and presents MorningRewardView as a sheet (with mini confetti when
     // the just-logged score is greater than yesterday's).
     @Published var pendingMorningReward: PendingMorningReward? = nil
+    @Published var justTriggeredNightFivePaywall: Bool = false
 
     // Debug-only time-of-day override for testing the morning/evening branches
     // on the Today tab without changing the simulator clock or wake time.
@@ -283,6 +607,57 @@ class AppState: ObservableObject {
             persist()
         }
     }
+
+    #if DEBUG
+    func debugSeedNightFivePaywallReadiness() {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+
+        coreRoutine.removeAll { $0.mode == .experiment }
+        coreRoutine.append(RoutineStep(
+            order: coreRoutine.count + 1,
+            label: R.brainDump,
+            mode: .experiment,
+            durationLabel: "12m",
+            remedyId: .brainDump
+        ))
+        normalizeRoutineOrder()
+
+        func day(_ offset: Int) -> Date {
+            cal.date(byAdding: .day, value: offset, to: today) ?? today
+        }
+
+        var seeded: [SleepLogEntry] = []
+        seeded.append(SleepLogEntry(date: day(-7), variable: R.dimTheLights, variableRemedyId: .dimTheLights, score: 3))
+        seeded.append(SleepLogEntry(date: day(-6), variable: R.noScreens, variableRemedyId: .noScreens, score: 3))
+        seeded.append(SleepLogEntry(date: day(-5), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
+        seeded.append(SleepLogEntry(date: day(-4), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
+        seeded.append(SleepLogEntry(date: day(-3), variable: R.brainDump, variableRemedyId: .brainDump, score: 4))
+        seeded.append(SleepLogEntry(date: day(-2), variable: R.brainDump, variableRemedyId: .brainDump, score: 5))
+
+        var lastNight = SleepLogEntry(date: day(-1), variable: R.brainDump, variableRemedyId: .brainDump, score: 0)
+        lastNight.completedNightlyFlow = true
+        lastNight.actualBedtime = typicalBedtime
+        seeded.append(lastNight)
+
+        sleepLogs = seeded
+        baselineScore = 3
+        morningScore = 0
+        morningHoursSlept = 7.5
+        pendingMorningReward = nil
+        pendingPromotion = nil
+        activePaywallRoute = nil
+        activePaywallVerdict = nil
+        justTriggeredNightFivePaywall = false
+        paywallState = PaywallState(tier: .awaitingVerdict, verdictRevealed: false)
+        hasCompletedOnboarding = true
+        initialTab = 0
+        requestedTab = 0
+        debugForceMorningState = true
+        debugForceEveningState = false
+        persist()
+    }
+    #endif
 
     var lastNightEntry: SleepLogEntry? {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
@@ -344,6 +719,30 @@ class AppState: ObservableObject {
         }
     }
 
+    // One-time data migration: enforces Lull's 1-5 sleep-score scale for any
+    // values saved while the Live Activity path briefly doubled ratings.
+    func normalizeSleepScoreScale() {
+        var changed = false
+
+        let clampedBaseline = Self.clampedSleepScore(baselineScore)
+        if clampedBaseline != baselineScore {
+            baselineScore = clampedBaseline
+            changed = true
+        }
+
+        for i in sleepLogs.indices {
+            let clampedScore = Self.clampedSleepScore(sleepLogs[i].score)
+            if clampedScore != sleepLogs[i].score {
+                sleepLogs[i].score = clampedScore
+                changed = true
+            }
+        }
+
+        if changed {
+            print("[Migration] Normalized sleep scores to the 1-\(Self.maxSleepScore) scale.")
+        }
+    }
+
     // Most recent unrated entry from today or yesterday. Used by the morning
     // rating flow to attribute the score to *last night's* sleep rather than
     // creating a new entry dated today.
@@ -355,6 +754,289 @@ class AppState: ObservableObject {
                 return sleepLogs[i].score == 0 && (cal.isDateInYesterday(d) || cal.isDateInToday(d))
             }
             .max(by: { sleepLogs[$0].date < sleepLogs[$1].date })
+    }
+
+    // MARK: - Telemetry
+
+    func trackAppOpened() {
+        trackAnalytics("app_opened")
+    }
+
+    func flushResearchData() {
+        Task {
+            await ResearchDataService.shared.flushQueued()
+        }
+    }
+
+    func recordNightlySessionStarted() {
+        let ritualStartedAt = Date()
+        updateTodayLog {
+            $0.variable = tonightVariable
+            $0.variableRemedyId = tonightRemedyId
+            $0.actualRitualStart = ritualStartedAt
+        }
+
+        let payload = baseResearchPayload().merging([
+            "night_id": .string(currentNightId ?? ""),
+            "routine_id": .string(routineFingerprint),
+            "tested_remedy_id": .string(tonightRemedyId?.rawValue ?? ""),
+            "tested_remedy_label": .string(tonightVariable),
+            "routine_step_count": .int(nightlyStepTotal),
+            "routine_day_number": .int(experimentStatus?.night ?? 0),
+            "current_bedtime": .string(Self.researchDateString(currentBedtime)),
+            "target_bedtime": .string(Self.researchDateString(targetBedtime)),
+            "expected_ritual_start_at": .string(Self.researchDateString(expectedRitualStartAt)),
+            "actual_ritual_start_at": .string(Self.researchDateString(ritualStartedAt))
+        ]) { _, new in new }
+
+        trackAnalytics("nightly_session_started", [
+            "tested_remedy_id": tonightRemedyId?.rawValue ?? "",
+            "routine_day_number": "\(experimentStatus?.night ?? 0)",
+            "routine_step_count": "\(nightlyStepTotal)",
+            "current_bedtime": Self.researchDateString(currentBedtime),
+            "target_bedtime": Self.researchDateString(targetBedtime),
+            "expected_ritual_start_at": Self.researchDateString(expectedRitualStartAt),
+            "actual_ritual_start_at": Self.researchDateString(ritualStartedAt)
+        ])
+        submitResearch("nightly_session_started", payload: payload)
+    }
+
+    func recordNightlySessionCompleted() {
+        let entry = sleepLogs.first(where: { $0.isToday })
+        trackAnalytics("nightly_session_completed", [
+            "tested_remedy_id": entry?.variableRemedyId?.rawValue ?? tonightRemedyId?.rawValue ?? "",
+            "routine_step_attempt_count": "\(entry?.stepAttempts.count ?? 0)"
+        ])
+
+        let payload = baseResearchPayload().merging([
+            "night_id": .string(entry?.id.uuidString ?? ""),
+            "tested_remedy_id": .string(entry?.variableRemedyId?.rawValue ?? tonightRemedyId?.rawValue ?? ""),
+            "completed_nightly_flow": .bool(entry?.completedNightlyFlow ?? true),
+            "routine_step_attempt_count": .int(entry?.stepAttempts.count ?? 0),
+            "current_bedtime": .string(Self.researchDateString(currentBedtime)),
+            "target_bedtime": .string(Self.researchDateString(targetBedtime)),
+            "expected_ritual_start_at": .string(Self.researchDateString(expectedRitualStartAt)),
+            "actual_ritual_start_at": researchDateValue(entry?.actualRitualStart)
+        ]) { _, new in new }
+        submitResearch("nightly_session_completed", payload: payload)
+    }
+
+    func recordCurrentStepStarted() {
+        guard nightlyStep < nightlyFlowSteps.count else { return }
+        let kind = nightlyFlowSteps[nightlyStep]
+        let label = kind.displayLabel
+        let routineStep = coreRoutine.first { $0.label == label }
+        let remedyId = routineStep?.remedyId ?? RemedyID.fromLabel(label)
+
+        trackAnalytics("routine_step_started", [
+            "remedy_id": remedyId?.rawValue ?? "",
+            "step_label": label,
+            "step_mode": routineStep?.mode.rawValue ?? "",
+            "step_index": "\(nightlyStep + 1)",
+            "tested_remedy_id": tonightRemedyId?.rawValue ?? ""
+        ])
+
+        let payload = baseResearchPayload().merging([
+            "night_id": .string(currentNightId ?? ""),
+            "step_index": .int(nightlyStep + 1),
+            "step_label": .string(label),
+            "remedy_id": .string(remedyId?.rawValue ?? ""),
+            "step_mode": .string(routineStep?.mode.rawValue ?? ""),
+            "tested_remedy_id": .string(tonightRemedyId?.rawValue ?? "")
+        ]) { _, new in new }
+        submitResearch("routine_step_started", payload: payload)
+    }
+
+    func recordSleepSoundAttempt(status: StepStatus,
+                                 config: SleepSoundStepConfig,
+                                 listenedSeconds: Int?) {
+        let configuredSeconds = config.infinite ? nil : (config.durationMinutes ?? 60) * 60
+        recordCurrentStepAttempt(status: status, durationSeconds: listenedSeconds)
+        recordMediaSession(
+            mediaType: "sleep_sound",
+            contentId: config.soundId?.rawValue,
+            configuredDurationSeconds: configuredSeconds,
+            listenedDurationSeconds: listenedSeconds,
+            completed: status == .completed,
+            extra: [
+                "infinite": .bool(config.infinite),
+                "fade_out": .bool(config.fadeOut)
+            ]
+        )
+    }
+
+    func recordBoringStorySession(contentId: String?,
+                                  listenedSeconds: Int,
+                                  totalDurationSeconds: Int,
+                                  status: StepStatus) {
+        recordCurrentStepAttempt(status: status, durationSeconds: listenedSeconds)
+        recordMediaSession(
+            mediaType: "boring_story",
+            contentId: contentId,
+            configuredDurationSeconds: totalDurationSeconds,
+            listenedDurationSeconds: listenedSeconds,
+            completed: status == .completed
+        )
+    }
+
+    func recordBrainDumpSession(durationSeconds: Int,
+                                hasRecording: Bool) {
+        recordMediaSession(
+            mediaType: "brain_dump",
+            contentId: nil,
+            configuredDurationSeconds: 120,
+            listenedDurationSeconds: durationSeconds,
+            completed: durationSeconds > 0,
+            extra: [
+                "has_recording": .bool(hasRecording)
+            ]
+        )
+    }
+
+    private func trackAnalytics(_ event: String,
+                                _ properties: AnalyticsService.Properties = [:]) {
+        var merged = baseAnalyticsProperties()
+        properties.forEach { merged[$0.key] = $0.value }
+        AnalyticsService.track(event, installId: installId, properties: merged)
+    }
+
+    private func submitResearch(_ eventName: String,
+                                payload: [String: ResearchValue]) {
+        let id = installId
+        Task {
+            await ResearchDataService.shared.submit(
+                eventName: eventName,
+                installId: id,
+                payload: payload
+            )
+        }
+    }
+
+    private func recordOnboardingTelemetry(route: String) {
+        let payload = baseResearchPayload().merging([
+            "completion_route": .string(route),
+            "selected_sleep_problem_ids": .intArray(selectedSleepProblems.sorted()),
+            "selected_wake_factor_ids": .intArray(selectedWakes.sorted()),
+            "selected_pre_bed_activity_ids": .intArray(selectedPreBedActivities.sorted()),
+            "selected_tried_thing_ids": .intArray(selectedTriedThings.sorted()),
+            "sleep_window_minutes": .int(sleepWindowMinutes),
+            "chronotype": .string(chronotype.rawValue),
+            "bottleneck": .string(bottleneck.rawValue),
+            "baseline_score": .int(baselineScore),
+            "generated_routine_step_count": .int(coreRoutine.count),
+            "tested_remedy_id": .string(tonightRemedyId?.rawValue ?? "")
+        ]) { _, new in new }
+
+        trackAnalytics("onboarding_completed", [
+            "completion_route": route,
+            "chronotype": chronotype.rawValue,
+            "bottleneck": bottleneck.rawValue,
+            "tested_remedy_id": tonightRemedyId?.rawValue ?? ""
+        ])
+        submitResearch("onboarding_profile_recorded", payload: payload)
+    }
+
+    private func recordMediaSession(mediaType: String,
+                                    contentId: String?,
+                                    configuredDurationSeconds: Int?,
+                                    listenedDurationSeconds: Int?,
+                                    completed: Bool,
+                                    extra: [String: ResearchValue] = [:]) {
+        let analyticsEvent = "\(mediaType)_recorded"
+        trackAnalytics(analyticsEvent, [
+            "media_type": mediaType,
+            "content_id": contentId ?? "",
+            "duration_bucket": durationBucket(listenedDurationSeconds),
+            "completed": completed ? "true" : "false"
+        ])
+
+        var payload = baseResearchPayload().merging([
+            "night_id": .string(currentNightId ?? ""),
+            "media_type": .string(mediaType),
+            "content_id": .string(contentId ?? ""),
+            "configured_duration_seconds": researchInt(configuredDurationSeconds),
+            "listened_duration_seconds": researchInt(listenedDurationSeconds),
+            "completed": .bool(completed),
+            "tested_remedy_id": .string(tonightRemedyId?.rawValue ?? "")
+        ]) { _, new in new }
+        extra.forEach { payload[$0.key] = $0.value }
+        submitResearch("media_session_recorded", payload: payload)
+    }
+
+    private func recordMorningTelemetry(entry: SleepLogEntry) {
+        let scoreBucket = entry.score >= 4 ? "4-5" : "\(entry.score)"
+        trackAnalytics("morning_checkin_completed", [
+            "sleep_score_bucket": scoreBucket,
+            "tested_remedy_id": entry.variableRemedyId?.rawValue ?? "",
+            "has_note": entry.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "false" : "true",
+            "has_voice_note": entry.brainDumpFilePath == nil ? "false" : "true"
+        ])
+
+        let payload = baseResearchPayload().merging([
+            "night_id": .string(entry.id.uuidString),
+            "sleep_score": .int(entry.score),
+            "hours_slept": researchDouble(entry.hoursSlept),
+            "tested_remedy_id": .string(entry.variableRemedyId?.rawValue ?? ""),
+            "tested_remedy_label": .string(entry.variable),
+            "has_note": .bool(!entry.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
+            "has_voice_note": .bool(entry.brainDumpFilePath != nil),
+            "completed_nightly_flow": .bool(entry.completedNightlyFlow),
+            "routine_step_attempt_count": .int(entry.stepAttempts.count),
+            "lights_level": researchInt(entry.lightsLevel),
+            "lights_level_source": .string(entry.lightsLevelSource?.rawValue ?? ""),
+            "perceived_temp": researchInt(entry.perceivedTemp)
+        ]) { _, new in new }
+        submitResearch("morning_checkin_recorded", payload: payload)
+    }
+
+    private func baseAnalyticsProperties() -> AnalyticsService.Properties {
+        [
+            "chronotype": chronotype.rawValue,
+            "bottleneck": bottleneck.rawValue,
+            "has_completed_onboarding": hasCompletedOnboarding ? "true" : "false",
+            "user_tier": paywallState.tier.rawValue
+        ]
+    }
+
+    private func baseResearchPayload() -> [String: ResearchValue] {
+        [
+            "chronotype": .string(chronotype.rawValue),
+            "bottleneck": .string(bottleneck.rawValue),
+            "has_completed_onboarding": .bool(hasCompletedOnboarding),
+            "user_tier": .string(paywallState.tier.rawValue)
+        ]
+    }
+
+    private var currentNightId: String? {
+        sleepLogs.first(where: { $0.isToday })?.id.uuidString
+    }
+
+    private var routineFingerprint: String {
+        coreRoutine
+            .map { "\($0.order):\($0.remedyId?.rawValue ?? $0.label):\($0.mode.rawValue)" }
+            .joined(separator: "|")
+    }
+
+    private func researchInt(_ value: Int?) -> ResearchValue {
+        guard let value else { return .null }
+        return .int(value)
+    }
+
+    private func researchDouble(_ value: Double?) -> ResearchValue {
+        guard let value else { return .null }
+        return .double(value)
+    }
+
+    private func durationBucket(_ seconds: Int?) -> String {
+        guard let seconds else { return "unknown" }
+        switch seconds {
+        case 0: return "0"
+        case 1..<60: return "<1m"
+        case 60..<300: return "1-5m"
+        case 300..<900: return "5-15m"
+        case 900..<1800: return "15-30m"
+        default: return "30m+"
+        }
     }
 
     // MARK: - Export
@@ -385,18 +1067,27 @@ class AppState: ObservableObject {
         lastExportError = nil
 
         let snapshot = PersistedState(
-            schemaVersion: 1,
+            schemaVersion: 7,
             testerName: testerName,
             selectedSleepProblems: selectedSleepProblems,
             selectedWakes: selectedWakes,
             sleepWindowMinutes: sleepWindowMinutes,
+            currentBedtime: currentBedtime,
+            currentWakeTime: currentWakeTime,
+            targetBedtime: targetBedtime,
+            targetWakeTime: targetWakeTime,
             typicalBedtime: typicalBedtime,
             typicalWakeTime: typicalWakeTime,
             selectedPreBedActivities: selectedPreBedActivities,
             selectedTriedThings: selectedTriedThings,
             coreRoutine: coreRoutine,
             routineExplanation: routineExplanation,
-            sleepLogs: sleepLogs
+            sleepLogs: sleepLogs,
+            chronotype: chronotype,
+            bottleneck: bottleneck,
+            committedRoutineTime: committedRoutineTime,
+            timeZoneIdentifier: persistedTimeZoneIdentifier,
+            paywallState: paywallState
         )
 
         let id = installId
@@ -417,34 +1108,82 @@ class AppState: ObservableObject {
 
     init() {
         if let saved = PersistenceStore.shared.load() {
+            persistedTimeZoneIdentifier = saved.timeZoneIdentifier
             _testerName               = Published(initialValue: saved.testerName)
             _selectedSleepProblems    = Published(initialValue: saved.selectedSleepProblems)
             _selectedWakes            = Published(initialValue: saved.selectedWakes)
             _sleepWindowMinutes       = Published(initialValue: saved.sleepWindowMinutes)
+            _currentBedtime           = Published(initialValue: saved.currentBedtime)
+            _currentWakeTime          = Published(initialValue: saved.currentWakeTime)
+            _targetBedtime            = Published(initialValue: saved.targetBedtime)
+            _targetWakeTime           = Published(initialValue: saved.targetWakeTime)
             _typicalBedtime           = Published(initialValue: saved.typicalBedtime)
             _typicalWakeTime          = Published(initialValue: saved.typicalWakeTime)
             _selectedPreBedActivities = Published(initialValue: saved.selectedPreBedActivities)
             _selectedTriedThings      = Published(initialValue: saved.selectedTriedThings)
+            _chronotype               = Published(initialValue: saved.chronotype)
+            _bottleneck               = Published(initialValue: saved.bottleneck)
+            _committedRoutineTime     = Published(initialValue: saved.committedRoutineTime)
+            _paywallState             = Published(initialValue: saved.paywallState)
             _coreRoutine              = Published(initialValue: saved.coreRoutine)
             _routineExplanation       = Published(initialValue: saved.routineExplanation)
             _sleepLogs                = Published(initialValue: saved.sleepLogs)
             _baselineScore            = Published(initialValue: saved.baselineScore)
             _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
             _prepDoneDate             = Published(initialValue: saved.prepDoneDate)
+            _ritualDoneIds            = Published(initialValue: Set(saved.ritualDoneIds))
+            _ritualDoneDate           = Published(initialValue: saved.ritualDoneDate)
             _pendingPromotion         = Published(initialValue: saved.pendingPromotion)
             _recentlyPromotedRemedyId = Published(initialValue: saved.recentlyPromotedRemedyId)
             _recentlyPromotedAt       = Published(initialValue: saved.recentlyPromotedAt)
+            if let data = saved.appBlockingSelectionData,
+               let decoded = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
+                _appBlockingSelection = Published(initialValue: decoded)
+            }
+            _appBlockingEnabled = Published(initialValue: saved.appBlockingEnabled)
+            _appBlockingStartTime = Published(initialValue: saved.appBlockingStartTime ?? Self.defaultAppBlockingStart(from: saved.typicalBedtime))
+            _appBlockingEndTime = Published(initialValue: saved.appBlockingEndTime ?? Self.defaultAppBlockingEnd(from: saved.typicalWakeTime))
+            _appBlockingGraceMinutes = Published(initialValue: saved.appBlockingGraceMinutes)
+            if hasCompletedOnboarding && paywallState.tier == .onboarding {
+                paywallState.tier = .awaitingVerdict
+                paywallState.verdictRevealed = false
+            }
 
             // Run any pending data migrations once.
             if saved.schemaVersion < 2 {
                 DispatchQueue.main.async {
                     self.migrateOrphanedRatings()
-                    self.persist()  // saves with new schemaVersion (default = 2)
+                    self.normalizeSleepScoreScale()
+                    self.persist()  // saves with new schemaVersion (default = 3)
+                }
+            } else if saved.schemaVersion < 3 {
+                DispatchQueue.main.async {
+                    self.normalizeSleepScoreScale()
+                    self.persist()  // saves with new schemaVersion (default = 4)
+                }
+            } else if saved.schemaVersion < 4 {
+                DispatchQueue.main.async {
+                    self.persist()  // saves with new schemaVersion (default = 4)
+                }
+            } else if saved.schemaVersion < 5 {
+                DispatchQueue.main.async {
+                    self.persist()
+                }
+            } else if saved.schemaVersion < 7 {
+                DispatchQueue.main.async {
+                    self.persist()
                 }
             }
 
             // Reschedule on every launch so notifications stay current (e.g. after OS clears them)
-            DispatchQueue.main.async { self.scheduleAllNotifications() }
+            DispatchQueue.main.async {
+                _ = self.handleTimeZoneChangeIfNeeded()
+                self.scheduleAllNotifications()
+                self.refreshAppBlockingShield()
+            }
+        } else {
+            _appBlockingStartTime = Published(initialValue: Self.defaultAppBlockingStart(from: typicalBedtime))
+            _appBlockingEndTime = Published(initialValue: Self.defaultAppBlockingEnd(from: typicalWakeTime))
         }
     }
 
@@ -454,6 +1193,10 @@ class AppState: ObservableObject {
             selectedSleepProblems:    selectedSleepProblems,
             selectedWakes:            selectedWakes,
             sleepWindowMinutes:       sleepWindowMinutes,
+            currentBedtime:           currentBedtime,
+            currentWakeTime:          currentWakeTime,
+            targetBedtime:            targetBedtime,
+            targetWakeTime:           targetWakeTime,
             typicalBedtime:           typicalBedtime,
             typicalWakeTime:          typicalWakeTime,
             selectedPreBedActivities: selectedPreBedActivities,
@@ -461,14 +1204,95 @@ class AppState: ObservableObject {
             coreRoutine:              coreRoutine,
             routineExplanation:       routineExplanation,
             sleepLogs:                sleepLogs,
+            chronotype:               chronotype,
+            bottleneck:               bottleneck,
+            committedRoutineTime:     committedRoutineTime,
+            timeZoneIdentifier:       persistedTimeZoneIdentifier,
+            paywallState:             paywallState,
             baselineScore:            baselineScore,
             prepDoneIds:              Array(prepDoneIds),
             prepDoneDate:             prepDoneDate,
+            ritualDoneIds:            Array(ritualDoneIds),
+            ritualDoneDate:           ritualDoneDate,
             pendingPromotion:         pendingPromotion,
             recentlyPromotedRemedyId: recentlyPromotedRemedyId,
-            recentlyPromotedAt:       recentlyPromotedAt
+            recentlyPromotedAt:       recentlyPromotedAt,
+            appBlockingSelectionData: try? JSONEncoder().encode(appBlockingSelection),
+            appBlockingEnabled:       appBlockingEnabled,
+            appBlockingStartTime:     appBlockingStartTime,
+            appBlockingEndTime:       appBlockingEndTime,
+            appBlockingGraceMinutes:  appBlockingGraceMinutes
         )
         PersistenceStore.shared.save(snapshot)
+    }
+
+    @discardableResult
+    func handleTimeZoneChangeIfNeeded() -> Bool {
+        let currentTimeZone = TimeZone.autoupdatingCurrent
+        guard persistedTimeZoneIdentifier != currentTimeZone.identifier else { return false }
+
+        let previousTimeZone = TimeZone(identifier: persistedTimeZoneIdentifier) ?? currentTimeZone
+        currentBedtime = Self.reanchoredWallClockDate(currentBedtime, from: previousTimeZone, to: currentTimeZone)
+        currentWakeTime = Self.reanchoredWallClockDate(currentWakeTime, from: previousTimeZone, to: currentTimeZone)
+        targetBedtime = Self.reanchoredWallClockDate(targetBedtime, from: previousTimeZone, to: currentTimeZone)
+        targetWakeTime = Self.reanchoredWallClockDate(targetWakeTime, from: previousTimeZone, to: currentTimeZone)
+        typicalBedtime = Self.reanchoredWallClockDate(typicalBedtime, from: previousTimeZone, to: currentTimeZone)
+        typicalWakeTime = Self.reanchoredWallClockDate(typicalWakeTime, from: previousTimeZone, to: currentTimeZone)
+        appBlockingStartTime = Self.reanchoredWallClockDate(appBlockingStartTime, from: previousTimeZone, to: currentTimeZone)
+        appBlockingEndTime = Self.reanchoredWallClockDate(appBlockingEndTime, from: previousTimeZone, to: currentTimeZone)
+        if let routineTime = committedRoutineTime {
+            committedRoutineTime = Self.reanchoredWallClockDate(routineTime, from: previousTimeZone, to: currentTimeZone)
+        }
+        persistedTimeZoneIdentifier = currentTimeZone.identifier
+        persist()
+        return true
+    }
+
+    func sleepWindowWasEdited() {
+        committedRoutineTime = nil
+        persist()
+        scheduleAllNotifications()
+        refreshAppBlockingShield()
+    }
+
+    func configureAppBlocking(selection: FamilyActivitySelection,
+                              enabled: Bool,
+                              startTime: Date,
+                              endTime: Date,
+                              graceMinutes: Int) {
+        appBlockingSelection = selection
+        appBlockingEnabled = enabled
+        appBlockingStartTime = startTime
+        appBlockingEndTime = endTime
+        appBlockingGraceMinutes = graceMinutes
+        persist()
+        refreshAppBlockingShield()
+    }
+
+    func refreshAppBlockingShield(now: Date = Date()) {
+        let hasStep = hasRoutineStep(label: R.appBlocking)
+        let hasTargets = !appBlockingSelection.applicationTokens.isEmpty || !appBlockingSelection.categoryTokens.isEmpty
+        let shouldApply = hasStep && appBlockingEnabled && hasTargets && isWithinAppBlockingWindow(now: now)
+
+        if shouldApply {
+            appBlockingStore.shield.applications = appBlockingSelection.applicationTokens.isEmpty ? nil : appBlockingSelection.applicationTokens
+            appBlockingStore.shield.applicationCategories = appBlockingSelection.categoryTokens.isEmpty ? nil : .specific(appBlockingSelection.categoryTokens)
+        } else {
+            appBlockingStore.clearAllSettings()
+        }
+    }
+
+    func isWithinAppBlockingWindow(now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        let nowMins = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        let startMins = cal.component(.hour, from: appBlockingStartTime) * 60 + cal.component(.minute, from: appBlockingStartTime)
+        let endMins = cal.component(.hour, from: appBlockingEndTime) * 60 + cal.component(.minute, from: appBlockingEndTime)
+
+        if startMins == endMins { return true }
+        if startMins < endMins {
+            return nowMins >= startMins && nowMins < endMins
+        }
+        return nowMins >= startMins || nowMins < endMins
     }
 
     // Upserts today's SleepLogEntry and persists.
@@ -489,59 +1313,277 @@ class AppState: ObservableObject {
         guard nightlyStep < nightlyFlowSteps.count else { return }
         let kind = nightlyFlowSteps[nightlyStep]
         let label = kind.displayLabel
+        let routineStep = coreRoutine.first { $0.label == label }
         let attempt = StepAttempt(
-            remedyId: RemedyID.fromLabel(label),
+            remedyId: routineStep?.remedyId ?? RemedyID.fromLabel(label),
             labelSnapshot: label,
             status: status,
             durationSeconds: durationSeconds
         )
         updateTodayLog { $0.stepAttempts.append(attempt) }
+        if status == .completed {
+            markRitualDone(label: label)
+        }
+
+        let remedyId = attempt.remedyId?.rawValue ?? ""
+        let statusEvent = status == .completed ? "routine_step_completed" : "routine_step_skipped"
+        trackAnalytics(statusEvent, [
+            "remedy_id": remedyId,
+            "step_label": label,
+            "step_mode": routineStep?.mode.rawValue ?? "",
+            "step_index": "\(nightlyStep + 1)",
+            "duration_bucket": durationBucket(durationSeconds),
+            "tested_remedy_id": tonightRemedyId?.rawValue ?? ""
+        ])
+
+        let payload = baseResearchPayload().merging([
+            "night_id": .string(currentNightId ?? ""),
+            "step_attempt_id": .string(UUID().uuidString),
+            "step_index": .int(nightlyStep + 1),
+            "step_label": .string(label),
+            "remedy_id": .string(remedyId),
+            "step_mode": .string(routineStep?.mode.rawValue ?? ""),
+            "status": .string(status.rawValue),
+            "duration_seconds": researchInt(durationSeconds),
+            "tested_remedy_id": .string(tonightRemedyId?.rawValue ?? "")
+        ]) { _, new in new }
+        submitResearch("routine_step_attempt_recorded", payload: payload)
     }
 
     @Published var initialTab: Int = 0
 
     func completeOnboarding() {
         initialTab = 0
+        if paywallState.tier == .onboarding {
+            paywallState.tier = .awaitingVerdict
+            paywallState.verdictRevealed = false
+        }
         hasCompletedOnboarding = true
         persist()
+        recordOnboardingTelemetry(route: "home")
     }
 
     func completeOnboardingToRoutine() {
         initialTab = 1
+        if paywallState.tier == .onboarding {
+            paywallState.tier = .awaitingVerdict
+            paywallState.verdictRevealed = false
+        }
         hasCompletedOnboarding = true
         persist()
+        recordOnboardingTelemetry(route: "routine")
+    }
+
+    func completeOnboardingAndStartRitual() {
+        initialTab = 0
+        requestedTab = 0
+        if paywallState.tier == .onboarding {
+            paywallState.tier = .awaitingVerdict
+            paywallState.verdictRevealed = false
+        }
+        hasCompletedOnboarding = true
+        showNightlyFlow = true
+        persist()
+        recordOnboardingTelemetry(route: "start_ritual")
     }
 
     func logMorningScore() {
+        let score = Self.clampedSleepScore(morningScore)
+        morningScore = score
+        let statusBeforeMutation = experimentStatus
+        var loggedEntry: SleepLogEntry?
+
         if let idx = ratableEntryIndex {
-            sleepLogs[idx].score            = morningScore
+            sleepLogs[idx].score            = score
             sleepLogs[idx].variable         = tonightVariable
             sleepLogs[idx].variableRemedyId = tonightRemedyId
             sleepLogs[idx].actualWakeTime   = Date()
             sleepLogs[idx].hoursSlept       = morningHoursSlept
+            loggedEntry = sleepLogs[idx]
         } else {
             // No recent unrated entry — create one dated yesterday so the dot
             // lands on "last night," not today.
             let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-            var entry = SleepLogEntry(date: yesterday, variable: tonightVariable, score: morningScore)
+            var entry = SleepLogEntry(date: yesterday, variable: tonightVariable, score: score)
             entry.variableRemedyId = tonightRemedyId
             entry.actualWakeTime   = Date()
             entry.hoursSlept       = morningHoursSlept
             sleepLogs.append(entry)
+            loggedEntry = entry
         }
-        // If score is logged before noon, cancel the pending fallback so it doesn't fire today.
-        // It's a repeating daily trigger, so re-adding it resets it to fire from tomorrow onward.
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["morning_rating_noon"])
-        scheduleMorningRatingNotifications()
+        let completedVerdictStatus = experimentStatus
+        clearMorningRatingNotifications()
+        scheduleMorningRatingNotifications(skipToday: true)
+        if shouldTriggerNightFivePaywall(statusBefore: statusBeforeMutation, statusAfter: completedVerdictStatus) {
+            activePaywallVerdict = buildVerdictSnapshot(status: completedVerdictStatus)
+            paywallState.tier = .paywallPending
+            paywallState.verdictRevealed = false
+            justTriggeredNightFivePaywall = true
+            activePaywallRoute = .nightFive
+        } else {
+            justTriggeredNightFivePaywall = false
+        }
         advanceExperiment()
         persist()
-        autoExportIfDue()
+        if let loggedEntry {
+            recordMorningTelemetry(entry: loggedEntry)
+        }
+    }
+
+    private func shouldTriggerNightFivePaywall(statusBefore: ExperimentEngine.Status?,
+                                               statusAfter: ExperimentEngine.Status?) -> Bool {
+        guard paywallState.tier == .awaitingVerdict || paywallState.tier == .paywallPending else { return false }
+        guard paywallState.verdictRevealed == false else { return false }
+        guard let statusAfter, statusAfter.night >= 5 else { return false }
+        return (statusBefore?.night ?? 0) < 5
+    }
+
+    func unlockVerdict(method: UnlockMethod) {
+        paywallState.unlockMethod = method
+        paywallState.verdictRevealed = true
+        switch method {
+        case .subscribe:
+            paywallState.tier = .subscribed
+        case .share:
+            paywallState.tier = .shareUnlocked
+        }
+        persist()
+    }
+
+    func applyRevenueCatEntitlement(isActive: Bool) {
+        if isActive {
+            paywallState.tier = .subscribed
+            paywallState.verdictRevealed = true
+        } else if paywallState.tier == .subscribed {
+            paywallState.tier = .paywallPending
+            paywallState.unlockMethod = nil
+            paywallState.verdictRevealed = false
+        }
+        persist()
+    }
+
+    func markFreeForever() {
+        paywallState.tier = .freeForever
+        paywallState.verdictRevealed = false
+        paywallState.unlockMethod = nil
+        persist()
+    }
+
+    var loggedNightCount: Int {
+        sleepLogs.filter { $0.score > 0 }.count
+    }
+
+    var shouldPresentDay14Prompt: Bool {
+        guard paywallState.tier == .freeForever else { return false }
+        guard paywallState.dismissalCount < 3 else { return false }
+        guard loggedNightCount >= 14 else { return false }
+        if let last = paywallState.lastDismissalAt,
+           let cooldownEnd = Calendar.current.date(byAdding: .day, value: 30, to: last),
+           Date() < cooldownEnd {
+            return false
+        }
+        return true
+    }
+
+    func dismissDay14Prompt() {
+        paywallState.dismissalCount += 1
+        paywallState.lastDismissalAt = Date()
+        persist()
+    }
+
+    func seedDay14Verdict() {
+        activePaywallVerdict = buildVerdictSnapshotFromRecentLogs()
+        paywallState.tier = .paywallPending
+        paywallState.verdictRevealed = false
+        persist()
+    }
+
+    func buildVerdictSnapshotFromRecentLogs() -> PaywallVerdict {
+        buildVerdictSnapshot(status: experimentStatus)
+    }
+
+    private func buildVerdictSnapshot(status: ExperimentEngine.Status?) -> PaywallVerdict {
+        let variable = status?.variable ?? tonightVariable
+        let delta = status?.scoreDelta ?? recentFiveDelta()
+        let outcome: PaywallOutcome = {
+            if delta > 0.3 { return .positive }
+            if delta < -0.15 { return .negative }
+            return .neutral
+        }()
+        let deltaText = status?.scoreDeltaString ?? String(format: "%@%.1f", delta >= 0 ? "+" : "-", abs(delta))
+        let sentence: String = {
+            switch outcome {
+            case .positive:
+                return "\(variable) improved your sleep score across the test window."
+            case .neutral:
+                return "\(variable) landed close to your baseline across the test window."
+            case .negative:
+                return "\(variable) did not improve your sleep score across the test window."
+            }
+        }()
+        return PaywallVerdict(
+            diagnosis: bottleneck.displayName,
+            confirmation: "Confirmed across 5 nights",
+            experiment: "\(variable) · \(experimentDurationLabel(for: variable)) before bed",
+            chronotype: chronotype,
+            scoreDelta: deltaText,
+            outcome: outcome,
+            verdictSentence: sentence,
+            research: researchLine(for: variable),
+            recommendation: nextRecommendation(after: status, outcome: outcome),
+            nightsLogged: loggedNightCount,
+            sparklineScores: sleepLogs.filter { $0.score > 0 }.sorted { $0.date < $1.date }.suffix(14).map(\.score)
+        )
+    }
+
+    private func recentFiveDelta() -> Double {
+        let rated = sleepLogs.filter { $0.score > 0 }.sorted { $0.date < $1.date }
+        let recent = rated.suffix(5)
+        let earlier = rated.dropLast(min(5, rated.count))
+        guard !recent.isEmpty, !earlier.isEmpty else { return 0 }
+        let recentAvg = Double(recent.map(\.score).reduce(0, +)) / Double(recent.count)
+        let earlierAvg = Double(earlier.map(\.score).reduce(0, +)) / Double(earlier.count)
+        return recentAvg - earlierAvg
+    }
+
+    private func experimentDurationLabel(for variable: String) -> String {
+        switch variable {
+        case R.brainDump: return "12 min"
+        case R.breathing478: return "5 min"
+        case R.boringStory: return "20 min"
+        default: return "10 min"
+        }
+    }
+
+    private func researchLine(for variable: String) -> String {
+        switch variable {
+        case R.brainDump:
+            return "Writing down unfinished thoughts before bed can reduce cognitive arousal and make the next step easier to choose."
+        case R.breathing478:
+            return "Extended exhalation patterns are used to shift the nervous system toward a calmer pre-sleep state."
+        case R.dimTheLights:
+            return "Lower evening light exposure helps protect the body's melatonin signal and supports a steadier bedtime rhythm."
+        default:
+            return "The useful signal is not whether a technique sounds right. It is whether your own five-night data moved."
+        }
+    }
+
+    private func nextRecommendation(after status: ExperimentEngine.Status?, outcome: PaywallOutcome) -> String {
+        if outcome == .positive {
+            return "Keep \(status?.variable ?? tonightVariable) in tonight's wind-down and start the next experiment after one steady night."
+        }
+        if let next = status?.nextCandidate {
+            return "Move on to \(next) tonight. Your last five nights are enough to stop guessing."
+        }
+        return "Keep the routine steady tonight and collect one more clean morning rating before changing the variable."
     }
 
     func movePreWindDown(from source: IndexSet, to destination: Int) {
         var section = preWindDownSteps
         section.move(fromOffsets: source, toOffset: destination)
         coreRoutine = section + windDownSteps
+        normalizeRoutineOrder()
+        logRoutineUpdated(kind: "reorder", stepID: section.first?.id)
         persist()
     }
 
@@ -549,7 +1591,116 @@ class AppState: ObservableObject {
         var section = windDownSteps
         section.move(fromOffsets: source, toOffset: destination)
         coreRoutine = preWindDownSteps + section
+        normalizeRoutineOrder()
+        logRoutineUpdated(kind: "reorder", stepID: section.first?.id)
         persist()
+    }
+
+    func moveRoutineStep(_ moving: RoutineStep, before target: RoutineStep, in sectionKind: RoutineSectionKind) {
+        var section = sectionKind == .prep ? routinePrepSteps : routineRitualSteps
+        guard let from = section.firstIndex(where: { $0.id == moving.id }),
+              let to = section.firstIndex(where: { $0.id == target.id }),
+              from != to else { return }
+
+        section.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+
+        switch sectionKind {
+        case .prep:
+            coreRoutine = section + routineRitualSteps
+        case .ritual:
+            coreRoutine = routinePrepSteps + section
+        case .morning:
+            return
+        }
+
+        normalizeRoutineOrder()
+        logRoutineUpdated(kind: "reorder", stepID: moving.id)
+        persist()
+    }
+
+    @discardableResult
+    func addRoutineStep(from item: RoutineLibraryStep) -> RoutineStep {
+        let mode: RoutineMode = item.defaultSection == .ritual ? .inSequence : .reminderOnly
+        var step = RoutineStep(
+            order: coreRoutine.count + 1,
+            label: item.label,
+            mode: mode,
+            leadTimeMins: item.defaultWhen,
+            durationLabel: item.defaultDur,
+            notes: nil,
+            repeatCadence: "every",
+            notifyEnabled: true,
+            remedyId: RemedyID.fromLabel(item.label)
+        )
+        if item.id == "blanket" {
+            step.remedyId = .weightedBlanket
+        }
+        if item.id == "sleep-sounds" {
+            step.sleepSoundConfig = .fresh
+            step.durationLabel = SleepSoundStepConfig.fresh.durationSummary
+            step.remedyId = .sleepSounds
+        }
+
+        switch item.defaultSection {
+        case .prep:
+            coreRoutine = routinePrepSteps + [step] + routineRitualSteps
+        case .ritual:
+            coreRoutine = routinePrepSteps + routineRitualSteps + [step]
+        case .morning:
+            return step
+        }
+        normalizeRoutineOrder()
+        logRoutineUpdated(kind: "add", stepID: step.id)
+        persist()
+        scheduleBedtimePrepNotifications()
+        return step
+    }
+
+    func updateRoutineStep(_ updated: RoutineStep) {
+        guard let idx = coreRoutine.firstIndex(where: { $0.id == updated.id }) else { return }
+        let previous = coreRoutine[idx]
+        if previous.label != updated.label {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ["bedtime_prep_\(previous.label)"]
+            )
+        }
+        coreRoutine[idx] = updated
+        normalizeRoutineOrder()
+        logRoutineUpdated(kind: "edit", stepID: updated.id)
+        persist()
+        scheduleBedtimePrepNotifications()
+    }
+
+    func removeRoutineStep(_ step: RoutineStep) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["bedtime_prep_\(step.label)"]
+        )
+        coreRoutine.removeAll { $0.id == step.id }
+        normalizeRoutineOrder()
+        if step.mode == .experiment {
+            print("[Analytics] experiment_aborted step_id=\(step.id.uuidString) label=\"\(step.label)\"")
+        }
+        logRoutineUpdated(kind: "remove", stepID: step.id)
+        persist()
+        scheduleBedtimePrepNotifications()
+    }
+
+    func hasRoutineStep(label: String) -> Bool {
+        coreRoutine.contains { $0.label.caseInsensitiveCompare(label) == .orderedSame }
+    }
+
+    func sectionKind(for step: RoutineStep) -> RoutineSectionKind {
+        isPrepRoutineStep(step) ? .prep : .ritual
+    }
+
+    private func normalizeRoutineOrder() {
+        for idx in coreRoutine.indices {
+            coreRoutine[idx].order = idx + 1
+        }
+    }
+
+    private func logRoutineUpdated(kind: String, stepID: UUID?) {
+        print("[Analytics] routine_updated kind=\(kind) step_id=\(stepID?.uuidString ?? "unknown")")
     }
 
     @AppStorage("variableIsOverridden") var variableIsOverridden: Bool = false
@@ -673,6 +1824,8 @@ class AppState: ObservableObject {
         content.body = "Lull can help you drift back. One tap, no decisions."
         content.sound = .none
         content.categoryIdentifier = "MID_SLEEP_CHECK"
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 1.0
 
         let fireDate = Calendar.current.date(byAdding: .hour, value: 3, to: typicalBedtime) ?? typicalBedtime
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
@@ -740,7 +1893,7 @@ class AppState: ObservableObject {
 
         let cal = Calendar.current
         for step in prepSteps {
-            let leadMins = Self.prepLeadTimes[step.label] ?? 90
+            let leadMins = step.resolvedLeadTimeMins
             guard let fireDate = cal.date(byAdding: .minute, value: -leadMins, to: typicalBedtime) else { continue }
             var comps = cal.dateComponents([.hour, .minute], from: fireDate)
             comps.second = 0
@@ -817,6 +1970,13 @@ class AppState: ObservableObject {
         return max(1, total)
     }
 
+    var expectedRitualStartAt: Date {
+        let cal = Calendar.current
+        return committedRoutineTime
+            ?? cal.date(byAdding: .minute, value: -windDownDurationMinutes, to: typicalBedtime)
+            ?? typicalBedtime
+    }
+
     // Primary fires at typicalBedtime - <wind-down duration> so starting now lands
     // the user in bed right at bedtime. Follow-up fires 5 min later if still no
     // ritual. cancelWindDownStartNotifications() clears pending requests once the
@@ -831,7 +1991,7 @@ class AppState: ObservableObject {
         let duration = windDownDurationMinutes
         let followupGap = 5
 
-        if let primaryFire = cal.date(byAdding: .minute, value: -duration, to: typicalBedtime) {
+        if let primaryFire = committedRoutineTime ?? cal.date(byAdding: .minute, value: -duration, to: typicalBedtime) {
             var comps = cal.dateComponents([.hour, .minute], from: primaryFire)
             comps.second = 0
 
@@ -850,7 +2010,7 @@ class AppState: ObservableObject {
 
         // Skip follow-up if duration <= followupGap — otherwise it'd land at or past bedtime.
         if duration > followupGap,
-           let followupFire = cal.date(byAdding: .minute, value: -(duration - followupGap), to: typicalBedtime) {
+           let followupFire = cal.date(byAdding: .minute, value: followupGap, to: committedRoutineTime ?? (cal.date(byAdding: .minute, value: -duration, to: typicalBedtime) ?? typicalBedtime)) {
             var comps = cal.dateComponents([.hour, .minute], from: followupFire)
             comps.second = 0
 
@@ -874,51 +2034,70 @@ class AppState: ObservableObject {
         ])
     }
 
-    func scheduleMorningRatingNotifications() {
+    func clearMorningRatingNotifications() {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["morning_rating_primary", "morning_rating_noon"])
+        center.removePendingNotificationRequests(withIdentifiers: Self.morningRatingNotificationIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: Self.morningRatingNotificationIdentifiers)
+    }
 
-        // When Live Activities are enabled, the Sleep Companion card handles
-        // the morning rating from the Lock Screen and we don't need a banner.
-        // Only schedule the notifications as a fallback when the user has
-        // Live Activities disabled in Settings → Lull.
-        if ActivityAuthorizationInfo().areActivitiesEnabled {
-            return
-        }
+    func scheduleMorningRatingNotifications(skipToday: Bool = false) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: Self.morningRatingNotificationIdentifiers)
+
+        // Keep this scheduled even when Live Activities are enabled. A sleep
+        // Live Activity can be removed by iOS before morning on longer sleep
+        // windows, so the notification is the reliability fallback.
 
         let cal = Calendar.current
+        let now = Date()
+        let wakeComps = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
+        let startOffset = skipToday ? 1 : 0
+        let dayOffsets = Array(startOffset..<(startOffset + 14))
 
-        // Primary: 30 minutes after typical wake time, repeats daily
-        if let primaryFire = cal.date(byAdding: .minute, value: 30, to: typicalWakeTime) {
-            var comps = cal.dateComponents([.hour, .minute], from: primaryFire)
-            comps.second = 0
+        for (slot, dayOffset) in dayOffsets.enumerated() {
+            guard let targetDay = cal.date(byAdding: .day, value: dayOffset, to: cal.startOfDay(for: now)),
+                  let wakeAnchor = cal.date(bySettingHour: wakeComps.hour ?? 7,
+                                            minute: wakeComps.minute ?? 0,
+                                            second: 0,
+                                            of: targetDay),
+                  let primaryFire = cal.date(byAdding: .minute, value: 30, to: wakeAnchor)
+            else { continue }
 
-            let content = UNMutableNotificationContent()
-            content.title = "How did you sleep?"
-            content.body = "Take 5 seconds to rate last night. It helps Lull improve your routine."
-            content.sound = .default
-            content.categoryIdentifier = "MORNING_CHECKIN"
+            if primaryFire > now {
+                let content = UNMutableNotificationContent()
+                content.title = "How did you sleep?"
+                content.body = "Take 5 seconds to rate last night. It helps Lull improve your routine."
+                content.sound = .default
+                content.categoryIdentifier = "MORNING_CHECKIN"
+                content.interruptionLevel = .timeSensitive
+                content.relevanceScore = 1.0
 
-            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
-            let request = UNNotificationRequest(identifier: "morning_rating_primary", content: content, trigger: trigger)
-            center.add(request)
+                var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: primaryFire)
+                comps.second = 0
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+                let request = UNNotificationRequest(identifier: "morning_rating_primary_\(slot)", content: content, trigger: trigger)
+                center.add(request)
+            }
+
+            if let noonFire = cal.date(bySettingHour: 12, minute: 0, second: 0, of: targetDay),
+               noonFire > now {
+                let noonContent = UNMutableNotificationContent()
+                noonContent.title = "Still time to log your sleep"
+                noonContent.body = "A quick rating helps track what's working for you."
+                noonContent.sound = .default
+                noonContent.categoryIdentifier = "MORNING_CHECKIN"
+                noonContent.interruptionLevel = .timeSensitive
+                noonContent.relevanceScore = 1.0
+
+                var noonComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: noonFire)
+                noonComps.second = 0
+
+                let noonTrigger = UNCalendarNotificationTrigger(dateMatching: noonComps, repeats: false)
+                let noonRequest = UNNotificationRequest(identifier: "morning_rating_noon_\(slot)", content: noonContent, trigger: noonTrigger)
+                center.add(noonRequest)
+            }
         }
-
-        // Fallback: noon reminder, repeats daily (dismissed by app when score is already logged)
-        var noonComps = DateComponents()
-        noonComps.hour = 12
-        noonComps.minute = 0
-        noonComps.second = 0
-
-        let noonContent = UNMutableNotificationContent()
-        noonContent.title = "Still time to log your sleep"
-        noonContent.body = "A quick rating helps track what's working for you."
-        noonContent.sound = .default
-        noonContent.categoryIdentifier = "MORNING_CHECKIN"
-
-        let noonTrigger = UNCalendarNotificationTrigger(dateMatching: noonComps, repeats: true)
-        let noonRequest = UNNotificationRequest(identifier: "morning_rating_noon", content: noonContent, trigger: noonTrigger)
-        center.add(noonRequest)
     }
 
     func scheduleAllNotifications() {
@@ -949,6 +2128,9 @@ class AppState: ObservableObject {
     }
 
     private func performScheduling() {
+        // A full schedule rebuild should not leave any prior sleep-window
+        // requests behind, especially dynamic "bedtime_prep_<label>" IDs.
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         scheduleBedtimePrepNotifications()
         scheduleMorningRatingNotifications()
         scheduleMidSleepNotification()
@@ -979,6 +2161,7 @@ class AppState: ObservableObject {
         let bed = typicalBedtime
 
         let inSeq = coreRoutine.filter {
+            !isPrepRoutineStep($0) &&
             !Self.hiddenFromRitualDisplay.contains($0.label) && (
                 $0.mode == .inSequence ||
                 ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
@@ -1004,12 +2187,9 @@ class AppState: ObservableObject {
         }
 
         let prepSteps: [ScheduledStep] = coreRoutine
-            .filter {
-                $0.mode == .reminderOnly ||
-                ($0.mode == .experiment && !allWindDownRemedies.contains($0.label))
-            }
+            .filter { isPrepRoutineStep($0) }
             .map { step in
-                let mins = Self.prepLeadTimes[step.label] ?? 90
+                let mins = step.resolvedLeadTimeMins
                 let time = cal.date(byAdding: .minute, value: -mins, to: bed) ?? bed
                 let badge = step.mode == .experiment ? "\(mins) min before bed" : "Reminder · \(mins) min before bed"
                 return ScheduledStep(step: step, time: time, badge: badge)
@@ -1019,10 +2199,7 @@ class AppState: ObservableObject {
     }
 
     var preWindDownSteps: [RoutineStep] {
-        coreRoutine.filter {
-            $0.mode == .reminderOnly ||
-            ($0.mode == .experiment && !allWindDownRemedies.contains($0.label))
-        }
+        routinePrepSteps
     }
 
     private static let hiddenFromRitualDisplay: Set<String> = ["Brightness check", "Temperature check"]
@@ -1034,6 +2211,21 @@ class AppState: ObservableObject {
                 ($0.mode == .experiment && allWindDownRemedies.contains($0.label))
             )
         }
+    }
+
+    var routinePrepSteps: [RoutineStep] {
+        coreRoutine.filter { isPrepRoutineStep($0) }
+    }
+
+    var routineRitualSteps: [RoutineStep] {
+        coreRoutine.filter { !isPrepRoutineStep($0) }
+    }
+
+    private func isPrepRoutineStep(_ step: RoutineStep) -> Bool {
+        step.mode == .reminderOnly ||
+        step.leadTimeMins != nil ||
+        (step.mode == .experiment && step.label == R.weightedBlanket) ||
+        (step.mode == .experiment && !allWindDownRemedies.contains(step.label))
     }
 
     var nightlyFlowSteps: [NightlyStepKind] {
@@ -1054,10 +2246,9 @@ class AppState: ObservableObject {
     }
 
     var sleepDurationString: String {
-        var dur = typicalWakeTime.timeIntervalSince(typicalBedtime)
-        if dur < 0 { dur += 86400 }
-        let h = Int(dur) / 3600
-        let m = (Int(dur) % 3600) / 60
+        let mins = Self.clockDurationMinutes(from: typicalBedtime, to: typicalWakeTime)
+        let h = mins / 60
+        let m = mins % 60
         return m == 0 ? "\(h)h" : "\(h)h \(m)m"
     }
 }
@@ -1082,7 +2273,19 @@ struct RoutineStep: Identifiable, Codable {
     var order: Int
     var label: String
     var mode: RoutineMode
+    var leadTimeMins: Int? = nil
+    var durationLabel: String? = nil
+    var notes: String? = nil
+    var repeatCadence: String? = nil
+    var notifyEnabled: Bool? = nil
     var remedyId: RemedyID? = nil
+    var sleepSoundConfig: SleepSoundStepConfig? = nil
+}
+
+extension RoutineStep {
+    var resolvedLeadTimeMins: Int {
+        leadTimeMins ?? AppState.prepLeadTimes[label] ?? 90
+    }
 }
 
 enum RoutineMode: String, Codable {
@@ -1127,6 +2330,7 @@ struct SleepLogEntry: Identifiable, Codable {
     var perceivedTemp: Int? = nil          // 0=cool 1=just-right 2=warm 3=hot
 
     // Per-night flow observations
+    var actualRitualStart: Date? = nil     // when nightly flow opened
     var actualBedtime: Date? = nil         // when nightly flow finished
     var brainDumpDurationSec: Int? = nil   // 0 = skipped, nil = step not in routine
     var brainDumpFilePath: String? = nil   // relative to Documents dir

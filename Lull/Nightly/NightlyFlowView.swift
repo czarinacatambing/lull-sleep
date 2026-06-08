@@ -6,6 +6,8 @@ import AVFoundation
 struct NightlyFlowView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
+    @State private var didRecordSessionStart = false
+    @State private var recordedStartedStepIndexes: Set<Int> = []
 
     var body: some View {
         ZStack {
@@ -16,28 +18,39 @@ struct NightlyFlowView: View {
                 case .temperatureLog:                NightlyTemperatureView()
                 case .brainDump:                     NightlyBrainDumpView()
                 case .boringStory:                   NightlyBoringStoryView()
+                case .sleepSounds:                   NightlySleepSoundsView()
                 case .fourSevenEightBreathing:       NightlyBreathingView()
                 case .gratitudeJournal:              NightlyGratitudeJournalView()
                 case .gentleStretching:              NightlyGentleStretchingView()
                 case .progressiveMuscleRelaxation:   NightlyProgressiveMuscleRelaxationView()
+                case .bodyScan:                      NightlyBodyScanView()
                 case .existingHabit(let label):      NightlyGenericStepView(label: label)
                 case .avoidReminder:                 EmptyView()
                 }
             } else {
                 NightlyGoodNightView {
                     state.nightlyStep = 0
-                    // End the prep-checklist Live Activity (if still running)
-                    // and start the Sleep Companion that runs through wake.
-                    LiveActivityService.shared.end(dismissalPolicy: .immediate)
-                    LiveActivityService.shared.startSleepActivity(
-                        bedtime: Date(),
-                        wakeTime: state.nextWakeTime()
-                    )
                     dismiss()
                 }
             }
         }
         .animation(.easeInOut(duration: 0.45), value: state.nightlyStep)
+        .onAppear {
+            guard !didRecordSessionStart else { return }
+            didRecordSessionStart = true
+            state.recordNightlySessionStarted()
+            recordCurrentStepStartedIfNeeded()
+        }
+        .onChange(of: state.nightlyStep) { _, _ in
+            recordCurrentStepStartedIfNeeded()
+        }
+    }
+
+    private func recordCurrentStepStartedIfNeeded() {
+        guard state.nightlyStep < state.nightlyFlowSteps.count else { return }
+        guard !recordedStartedStepIndexes.contains(state.nightlyStep) else { return }
+        recordedStartedStepIndexes.insert(state.nightlyStep)
+        state.recordCurrentStepStarted()
     }
 }
 
@@ -47,6 +60,7 @@ struct NightlyBrightnessView: View {
     @EnvironmentObject var state: AppState
     @StateObject private var lightService = AmbientLightService()
     @State private var selectedLevel: Int? = nil
+    @State private var autoDetectedLevel: Int? = nil
     @State private var detectedSource: LightsLevelSource = .selfReported
 
     private let levels: [(label: String, hint: String, icon: String)] = [
@@ -115,7 +129,9 @@ struct NightlyBrightnessView: View {
                         ForEach(Array(levels.enumerated()), id: \.offset) { i, level in
                             Button(action: {
                                 selectedLevel = i
-                                if lightService.confidence != .high { detectedSource = .selfReported }
+                                detectedSource = (lightService.confidence == .high && autoDetectedLevel == i)
+                                    ? .sensor
+                                    : .selfReported
                             }) {
                                 HStack(spacing: 16) {
                                     Image(systemName: level.icon)
@@ -174,9 +190,14 @@ struct NightlyBrightnessView: View {
         }
         .task {
             let result = await lightService.read()
-            if result.confidence != .fallback {
+            if result.confidence == .high {
                 selectedLevel = result.lightsLevel
-                detectedSource = result.confidence == .high ? .sensor : .selfReported
+                autoDetectedLevel = result.lightsLevel
+                detectedSource = .sensor
+            } else {
+                selectedLevel = nil
+                autoDetectedLevel = nil
+                detectedSource = .selfReported
             }
         }
     }
@@ -446,6 +467,7 @@ struct NightlyBrainDumpView: View {
                 $0.brainDumpFilePath = relativePath
             }
             state.recordCurrentStepAttempt(status: .completed, durationSeconds: finalDuration)
+            state.recordBrainDumpSession(durationSeconds: finalDuration, hasRecording: relativePath != nil)
             withAnimation { showDoneMessage = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 state.nightlyStep += 1
@@ -498,13 +520,16 @@ private struct MicPermissionDeniedView: View {
 
 struct NightlyBoringStoryView: View {
     @EnvironmentObject var state: AppState
-    @StateObject private var tts = TTSService()
+    @StateObject private var playback = AudioPlaybackService()
     @State private var glowPulse = false
-    @State private var elapsedSeconds = 0
-    @State private var clockTimer: Timer?
-    @State private var story = ""
     @State private var hasFinished = false
     @State private var isActive = false
+    @State private var activeStoryId: String?
+
+    private var elapsedSeconds: Int { Int(playback.elapsed.rounded(.down)) }
+    private var durationSeconds: Int {
+        playback.duration > 0 ? Int(playback.duration.rounded(.up)) : 1200
+    }
 
     var body: some View {
         LullScreen(glow: false) {
@@ -549,13 +574,13 @@ struct NightlyBoringStoryView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    Text("\(elapsedSeconds.lullTimeString) / ~20:00")
+                    Text("\(elapsedSeconds.lullTimeString) / \(durationSeconds.lullTimeString)")
                         .font(.mono(11))
                         .kerning(1.6)
                         .foregroundColor(.lullInk3)
 
                     GeometryReader { geo in
-                        let pct = min(1, CGFloat(elapsedSeconds) / 1200)
+                        let pct = min(1, CGFloat(elapsedSeconds) / CGFloat(max(1, durationSeconds)))
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.white.opacity(0.08))
                             Capsule().fill(Color.lullAmber.opacity(0.7))
@@ -569,17 +594,37 @@ struct NightlyBoringStoryView: View {
 
                 Spacer()
 
-                HStack(spacing: 22) {
-                    controlButton(icon: tts.isPaused ? "play.fill" : "pause.fill", size: 18) {
-                        tts.togglePause()
+                HStack(spacing: 12) {
+                    controlButton(icon: playback.isPlaying ? "pause.fill" : "play.fill", size: 18) {
+                        if playback.isPlaying { playback.pause() }
+                        else { playback.play() }
                     }
+
+                    Spacer().frame(width: 18)
+
+                    HStack(spacing: 8) {
+                        controlButton(icon: "minus", size: 18, disabled: !playback.canSlowDown) {
+                            playback.speedDown()
+                        }
+                        Text(rateText(playback.playbackRate))
+                            .font(.mono(11))
+                            .kerning(1.2)
+                            .foregroundColor(.lullInk3)
+                            .frame(width: 38)
+                        controlButton(icon: "plus", size: 18, disabled: !playback.canSpeedUp) {
+                            playback.speedUp()
+                        }
+                    }
+
+                    Spacer().frame(width: 6)
+
                     controlButton(icon: "xmark", size: 14) {
-                        finish()
+                        finish(status: .skipped)
                     }
                 }
                 .padding(.bottom, 16)
 
-                GhostButton(title: "Skip") { finish() }
+                GhostButton(title: "Skip") { finish(status: .skipped) }
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 22)
                     .padding(.bottom, 36)
@@ -598,7 +643,17 @@ struct NightlyBoringStoryView: View {
         }
     }
 
-    private func controlButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+    private func rateText(_ rate: Float) -> String {
+        switch rate {
+        case 0.75: return ".75x"
+        case 0.9: return ".9x"
+        case 1.0: return "1x"
+        case 1.5: return "1.5x"
+        default: return "\(rate)x"
+        }
+    }
+
+    private func controlButton(icon: String, size: CGFloat, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             ZStack {
                 Circle()
@@ -611,30 +666,36 @@ struct NightlyBoringStoryView: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
     }
 
     private func startStory() {
         guard !hasFinished else { return }
-        var indices = Array(0..<BundledStories.all.count).shuffled()
-        story = (0..<4).map { _ in BundledStories.all[indices.removeFirst()] }.joined(separator: "\n\n")
-        tts.append(story)
-        tts.flushRemaining()
-        clockTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            Task { @MainActor in elapsedSeconds += 1 }
-        }
+        guard let url = BoringStoryAudioLibrary.nextStoryURL() else { return }
+        activeStoryId = url.deletingPathExtension().lastPathComponent
+        playback.load(url: url)
+        playback.onFinish = { finish(status: .completed) }
+        playback.play()
     }
 
     private func cleanupStory() {
-        tts.stop()
-        clockTimer?.invalidate()
-        clockTimer = nil
+        playback.onFinish = nil
+        playback.stop()
     }
 
-    private func finish() {
+    private func finish(status: StepStatus) {
         guard !hasFinished else { return }
         hasFinished = true
+        let listenedSeconds = elapsedSeconds
+        let totalSeconds = durationSeconds
         cleanupStory()
-        state.recordCurrentStepAttempt(status: .completed, durationSeconds: elapsedSeconds)
+        state.recordBoringStorySession(
+            contentId: activeStoryId,
+            listenedSeconds: listenedSeconds,
+            totalDurationSeconds: totalSeconds,
+            status: status
+        )
         state.nightlyStep += 1
     }
 }
@@ -703,10 +764,70 @@ private struct BreathCue {
         .init(time: 300.5, phase: .exhale,   cycle: 6),
         .init(time: 315.6, phase: .windDown, cycle: 0),
     ]
+
+    // Derived from Whisper word-level transcription of 4-7-3-breathing-v2.m4a (366s).
+    // Despite the filename, the narration is a 4-7-8 exercise over 6 cycles.
+    static let session: [BreathCue] = [
+        .init(time:   0.0, phase: .intro,    cycle: 0),
+        // Cycle 1 (unnumbered intro breath)
+        .init(time:  92.5, phase: .inhale,   cycle: 1),
+        .init(time:  96.8, phase: .hold,     cycle: 1),
+        .init(time: 107.2, phase: .exhale,   cycle: 1),
+        .init(time: 122.6, phase: .rest,     cycle: 0),
+        // Cycle 2
+        .init(time: 128.7, phase: .inhale,   cycle: 2),
+        .init(time: 135.1, phase: .hold,     cycle: 2),
+        .init(time: 144.3, phase: .exhale,   cycle: 2),
+        .init(time: 155.3, phase: .rest,     cycle: 0),
+        // Cycle 3
+        .init(time: 166.3, phase: .inhale,   cycle: 3),
+        .init(time: 172.9, phase: .hold,     cycle: 3),
+        .init(time: 183.0, phase: .exhale,   cycle: 3),
+        .init(time: 197.1, phase: .rest,     cycle: 0),
+        // Cycle 4
+        .init(time: 217.4, phase: .inhale,   cycle: 4),
+        .init(time: 223.5, phase: .hold,     cycle: 4),
+        .init(time: 232.5, phase: .exhale,   cycle: 4),
+        .init(time: 243.6, phase: .rest,     cycle: 0),
+        // Cycle 5
+        .init(time: 259.1, phase: .inhale,   cycle: 5),
+        .init(time: 264.9, phase: .hold,     cycle: 5),
+        .init(time: 274.2, phase: .exhale,   cycle: 5),
+        .init(time: 285.2, phase: .rest,     cycle: 0),
+        // Cycle 6 ("one more cycle")
+        .init(time: 286.6, phase: .inhale,   cycle: 6),
+        .init(time: 292.8, phase: .hold,     cycle: 6),
+        .init(time: 303.2, phase: .exhale,   cycle: 6),
+        .init(time: 318.7, phase: .windDown, cycle: 0),
+    ]
+}
+
+// Top-of-screen breathing progress: one segment per cycle, each filling 0…1.
+private struct SegmentedCycleBar: View {
+    let fills: [Double]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(fills.indices, id: \.self) { i in
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.08))
+                        Capsule()
+                            .fill(Color.lullAmber.opacity(0.7))
+                            .frame(width: geo.size.width * min(1, max(0, fills[i])))
+                    }
+                }
+                .frame(height: 3)
+            }
+        }
+        .animation(.linear(duration: 0.1), value: fills)
+    }
 }
 
 struct NightlyBreathingView: View {
     var isMidSleep: Bool = false
+    var onboardingCopy: String? = nil
+    var onOnboardingNext: (() -> Void)? = nil
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
     @State private var player: AVAudioPlayer?
@@ -717,6 +838,24 @@ struct NightlyBreathingView: View {
     @State private var secondsRemaining = 0
     @State private var elapsed: Double = 0
     @State private var totalDuration: Double = 360
+    @State private var audioFinished = false
+    @State private var viewActive = false
+    @State private var audioStarted = false
+    @State private var isAudioPlaying = false
+    @State private var isFallbackSession = false
+    @State private var playbackRate: Float = 1.0
+    @State private var showOnboardingLine1 = false
+    @State private var showOnboardingLine2 = false
+
+    private var isOnboarding: Bool { onOnboardingNext != nil }
+    private let playbackRates: [Float] = [0.75, 0.9, 1.0, 1.5]
+    private var currentRateIndex: Int {
+        playbackRates.enumerated().min(by: {
+            abs($0.element - playbackRate) < abs($1.element - playbackRate)
+        })?.offset ?? 2
+    }
+    private var canSlowDown: Bool { currentRateIndex > playbackRates.startIndex }
+    private var canSpeedUp: Bool { currentRateIndex < playbackRates.index(before: playbackRates.endIndex) }
 
     private var progress: Double { min(1, elapsed / totalDuration) }
     private var timeRemainingString: String {
@@ -725,37 +864,87 @@ struct NightlyBreathingView: View {
         return m > 0 ? "\(m):\(String(format: "%02d", s))" : "0:\(String(format: "%02d", s))"
     }
 
+    // Cue track for the current context (onboarding vs nightly/mid-sleep session).
+    private var activeCues: [BreathCue] { isOnboarding ? BreathCue.all : BreathCue.session }
+    private var totalCycles: Int { activeCues.map(\.cycle).max() ?? 0 }
+
+    // Per-cycle fill (0…1) for the segmented top bar. A cycle spans from its
+    // inhale cue to the next cycle's inhale (or the wind-down for the last cycle).
+    private var cycleFills: [Double] {
+        guard totalCycles > 0 else { return [] }
+        let starts = (1...totalCycles).map { c in
+            activeCues.first(where: { $0.cycle == c && $0.phase == .inhale })?.time ?? 0
+        }
+        let windDownTime = activeCues.first(where: { $0.phase == .windDown })?.time ?? totalDuration
+        return (0..<totalCycles).map { i in
+            let start = starts[i]
+            let end = i + 1 < totalCycles ? starts[i + 1] : windDownTime
+            guard end > start else { return elapsed >= end ? 1 : 0 }
+            return min(1, max(0, (elapsed - start) / (end - start)))
+        }
+    }
+
     var body: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: 0.4, radius: 260, opacity: 0.5)
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                if isMidSleep {
+                if isMidSleep || isOnboarding {
                     HStack {
-                        BrandMark()
-                        Spacer()
-                        Text("4 · 7 · 8 BREATHING")
-                            .font(.mono(10.5))
-                            .kerning(1.2)
-                            .foregroundColor(.lullInk3)
+                        if isMidSleep {
+                            Text("4 · 7 · 8 BREATHING")
+                                .font(.mono(10.5))
+                                .kerning(1.2)
+                                .foregroundColor(.lullInk3)
+                            Spacer()
+                            MidSleepExitButton {
+                                complete()
+                            }
+                        } else {
+                            BrandMark()
+                            Spacer()
+                        }
                     }
                     .padding(.horizontal, 28)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, isMidSleep ? 14 : 18)
                 } else {
                     NightlyStepHeader(step: state.nightlyStep + 1, total: state.nightlyStepTotal, label: "4 · 7 · 8 Breathing")
                 }
 
+                if !isOnboarding {
+                    SegmentedCycleBar(fills: cycleFills)
+                        .padding(.horizontal, 28)
+                        .padding(.top, isMidSleep ? 0 : 14)
+                        .padding(.bottom, isMidSleep ? 16 : 4)
+                }
+
                 VStack(spacing: 16) {
-                    Kicker(text: currentPhase == .windDown ? "Winding down" : "Follow along")
-                    Text(currentPhase.label)
-                        .font(.serifItalic(32))
-                        .foregroundColor(.lullAmber)
-                        .animation(.easeInOut(duration: 0.4), value: currentPhase.label)
+                    if isOnboarding {
+                        VStack(spacing: 10) {
+                            Text("Let's try the first tool from your routine right now.")
+                                .opacity(showOnboardingLine1 ? 1 : 0)
+                                .offset(y: showOnboardingLine1 ? 0 : 10)
+                            Text("60 seconds to help your brain start downshifting.")
+                                .opacity(showOnboardingLine2 ? 1 : 0)
+                                .offset(y: showOnboardingLine2 ? 0 : 10)
+                        }
+                        .font(.system(size: 16))
+                        .foregroundColor(.lullInk1)
+                        .lineSpacing(5)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 300)
+                    } else {
+                        Kicker(text: currentPhase == .windDown ? "Winding down" : "Follow along")
+                        Text(currentPhase.label)
+                            .font(.serifItalic(32))
+                            .foregroundColor(.lullAmber)
+                            .animation(.easeInOut(duration: 0.4), value: currentPhase.label)
+                    }
                 }
                 .padding(.horizontal, 28)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 36)
+                .padding(.bottom, isOnboarding ? 24 : 36)
 
                 Spacer()
 
@@ -774,7 +963,8 @@ struct NightlyBreathingView: View {
 
                 Spacer()
 
-                VStack(spacing: 8) {
+                if !isOnboarding || audioStarted {
+                    VStack(spacing: 8) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.white.opacity(0.08))
@@ -790,25 +980,80 @@ struct NightlyBreathingView: View {
                         .font(.mono(11))
                         .kerning(1.4)
                         .foregroundColor(.lullInk4)
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal, 28)
-                .padding(.top, 8)
 
-                GhostButton(title: "End early · I'm calm") {
-                    complete()
+                if isOnboarding {
+                    VStack(spacing: 0) {
+                        PrimaryCTA(title: "Next", disabled: !audioFinished) {
+                            onOnboardingNext?()
+                        }
+                        GhostButton(title: "Skip") {
+                            stopSession()
+                            onOnboardingNext?()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 36)
+                } else {
+                    VStack(spacing: 16) {
+                        HStack(spacing: 12) {
+                            controlButton(icon: isAudioPlaying ? "pause.fill" : "play.fill", size: 18) {
+                                if isAudioPlaying { pauseBreathing() }
+                                else { playBreathing() }
+                            }
+
+                            Spacer().frame(width: 18)
+
+                            HStack(spacing: 8) {
+                                controlButton(icon: "minus", size: 18, disabled: !canSlowDown) {
+                                    stepPlaybackRate(-1)
+                                }
+                                Text(rateText(playbackRate))
+                                    .font(.mono(11))
+                                    .kerning(1.2)
+                                    .foregroundColor(.lullInk3)
+                                    .frame(width: 38)
+                                controlButton(icon: "plus", size: 18, disabled: !canSpeedUp) {
+                                    stepPlaybackRate(1)
+                                }
+                            }
+                        }
+
+                        GhostButton(title: "End early · I'm calm") {
+                            complete()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 24)
+                    .padding(.bottom, 36)
                 }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
-                .padding(.top, 24)
-                .padding(.bottom, 36)
             }
         }
-        .onAppear { startSession() }
+        .onAppear {
+            viewActive = true
+            if isOnboarding {
+                startOnboardingIntro()
+            } else {
+                startSession()
+            }
+        }
         .onDisappear { stopSession() }
     }
 
     private func complete() {
         stopSession()
+        if isOnboarding {
+            audioFinished = true
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            return
+        }
         if isMidSleep {
             dismiss()
         } else {
@@ -817,16 +1062,53 @@ struct NightlyBreathingView: View {
         }
     }
 
+    private func rateText(_ rate: Float) -> String {
+        switch rate {
+        case 0.75: return ".75x"
+        case 0.9: return ".9x"
+        case 1.0: return "1x"
+        case 1.5: return "1.5x"
+        default: return "\(rate)x"
+        }
+    }
+
+    private func controlButton(icon: String, size: CGFloat, disabled: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .strokeBorder(Color.lullLine, lineWidth: 1)
+                    .background(Circle().fill(Color.white.opacity(0.02)))
+                    .frame(width: 56, height: 56)
+                Image(systemName: icon)
+                    .font(.system(size: size))
+                    .foregroundColor(.lullInk2)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
+    }
+
     private func startSession() {
-        guard let url = Bundle.main.url(forResource: "478-breathing-revised", withExtension: "mp3") else {
+        audioFinished = false
+        audioStarted = true
+        isFallbackSession = false
+        playbackRate = 1.0
+        let usesShortOnboardingAudio = isOnboarding
+        let audioName = usesShortOnboardingAudio ? "478-breathing-revised" : "4-7-3-breathing-v2"
+        let audioExtension = usesShortOnboardingAudio ? "mp3" : "m4a"
+        guard let url = Bundle.main.url(forResource: audioName, withExtension: audioExtension) else {
             startFallbackTimer(); return
         }
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
             player = try AVAudioPlayer(contentsOf: url)
+            player?.enableRate = true
+            player?.rate = playbackRate
             totalDuration = player?.duration ?? 360
             player?.play()
+            isAudioPlaying = true
         } catch {
             startFallbackTimer(); return
         }
@@ -836,8 +1118,76 @@ struct NightlyBreathingView: View {
     }
 
     private func stopSession() {
+        viewActive = false
+        audioStarted = false
+        isAudioPlaying = false
+        isFallbackSession = false
         pollTimer?.invalidate(); pollTimer = nil
         player?.stop(); player = nil
+    }
+
+    private func pauseBreathing() {
+        if isFallbackSession {
+            pollTimer?.invalidate()
+            pollTimer = nil
+        } else {
+            player?.pause()
+        }
+        isAudioPlaying = false
+    }
+
+    private func playBreathing() {
+        if isFallbackSession {
+            scheduleFallbackTimer()
+        } else {
+            player?.enableRate = true
+            player?.rate = playbackRate
+            player?.play()
+        }
+        isAudioPlaying = true
+    }
+
+    private func stepPlaybackRate(_ direction: Int) {
+        let nextIndex = min(max(currentRateIndex + direction, playbackRates.startIndex), playbackRates.index(before: playbackRates.endIndex))
+        playbackRate = playbackRates[nextIndex]
+        player?.enableRate = true
+        player?.rate = playbackRate
+        if isFallbackSession, isAudioPlaying {
+            scheduleFallbackTimer()
+        }
+    }
+
+    private func animationDuration(for mediaDuration: Double) -> Double {
+        max(0.1, mediaDuration / Double(playbackRate))
+    }
+
+    private func startOnboardingIntro() {
+        audioFinished = false
+        showOnboardingLine1 = false
+        showOnboardingLine2 = false
+        elapsed = 0
+        currentPhase = .intro
+        currentCycle = 0
+        orbScale = 1.0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            guard viewActive else { return }
+            withAnimation(.easeOut(duration: 0.9)) {
+                showOnboardingLine1 = true
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) {
+            guard viewActive else { return }
+            withAnimation(.easeOut(duration: 0.9)) {
+                showOnboardingLine2 = true
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.35) {
+            guard viewActive else { return }
+            startSession()
+        }
     }
 
     @MainActor
@@ -845,7 +1195,8 @@ struct NightlyBreathingView: View {
         guard let player else { return }
         let t = player.currentTime
         elapsed = t
-        let cues = BreathCue.all
+
+        let cues = activeCues
         let activeCue = cues.last(where: { $0.time <= t })
         let nextCue   = cues.first(where: { $0.time > t })
 
@@ -861,21 +1212,24 @@ struct NightlyBreathingView: View {
         if newPhase != currentPhase {
             let phaseDuration = nextCue.map { $0.time - t } ?? 4.0
             currentPhase = newPhase
-            currentCycle = newCycle
-            withAnimation(.easeInOut(duration: phaseDuration)) {
+            if newCycle > 0 { currentCycle = newCycle }  // hold cycle # through rests / wind-down
+            withAnimation(.easeInOut(duration: animationDuration(for: phaseDuration))) {
                 orbScale = newPhase.orbTarget
             }
-        } else if currentCycle != newCycle {
+        } else if newCycle > 0 && currentCycle != newCycle {
             currentCycle = newCycle
         }
 
-        if !player.isPlaying && t > 360 {
+        if !player.isPlaying && t >= max(0, totalDuration - 0.5) {
             complete()
         }
     }
 
     // Fallback: original 4-cycle timer-based version if audio file is missing
     private func startFallbackTimer() {
+        audioStarted = true
+        isAudioPlaying = true
+        isFallbackSession = true
         let cycleSecs = Double(BreathingPhase.inhale.seconds + BreathingPhase.hold.seconds + BreathingPhase.exhale.seconds)
         totalDuration = cycleSecs * 4
         state.breathingPhase = .inhale
@@ -884,7 +1238,12 @@ struct NightlyBreathingView: View {
         currentPhase = .inhale; currentCycle = 1
         secondsRemaining = BreathingPhase.inhale.seconds
 
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+        scheduleFallbackTimer()
+    }
+
+    private func scheduleFallbackTimer() {
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1 / Double(playbackRate), repeats: true) { _ in
             Task { @MainActor in tickFallback() }
         }
     }
@@ -902,12 +1261,12 @@ struct NightlyBreathingView: View {
             state.breathingPhase = .hold
             state.breathingSecondsRemaining = BreathingPhase.hold.seconds
             currentPhase = .hold
-            withAnimation(.easeInOut(duration: Double(BreathingPhase.hold.seconds))) { orbScale = 1.18 }
+            withAnimation(.easeInOut(duration: animationDuration(for: Double(BreathingPhase.hold.seconds)))) { orbScale = 1.18 }
         case .hold:
             state.breathingPhase = .exhale
             state.breathingSecondsRemaining = BreathingPhase.exhale.seconds
             currentPhase = .exhale
-            withAnimation(.easeInOut(duration: Double(BreathingPhase.exhale.seconds))) { orbScale = 0.82 }
+            withAnimation(.easeInOut(duration: animationDuration(for: Double(BreathingPhase.exhale.seconds)))) { orbScale = 0.82 }
         case .exhale:
             if state.breathingCycle >= 4 {
                 pollTimer?.invalidate()
@@ -917,7 +1276,7 @@ struct NightlyBreathingView: View {
             state.breathingPhase = .inhale
             state.breathingSecondsRemaining = BreathingPhase.inhale.seconds
             currentCycle = state.breathingCycle; currentPhase = .inhale
-            withAnimation(.easeInOut(duration: Double(BreathingPhase.inhale.seconds))) { orbScale = 1.18 }
+            withAnimation(.easeInOut(duration: animationDuration(for: Double(BreathingPhase.inhale.seconds)))) { orbScale = 1.18 }
         }
         secondsRemaining = state.breathingSecondsRemaining
     }
@@ -990,14 +1349,8 @@ struct NightlyGoodNightView: View {
     @State private var tipFade: Double = 1
     @State private var emberScale: CGFloat = 1.0
     @State private var canDismiss = false
-
-    private var displayName: String? {
-        let name = state.testerName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return nil }
-        let first = name.components(separatedBy: .whitespaces).first ?? name
-        guard first.count <= 14 else { return nil }
-        return first
-    }
+    @State private var didStartSleepCompanion = false
+    @State private var didRecordCompletion = false
 
     var body: some View {
         ZStack {
@@ -1015,6 +1368,10 @@ struct NightlyGoodNightView: View {
 
             GeometryReader { geo in
                 let w = geo.size.width
+                let h = geo.size.height
+                let heroY = min(280, max(210, h * 0.37))
+                let emberY = min(470, max(heroY + 150, h * 0.66))
+                let tipY = min(600, max(emberY + 104, h - 86))
 
                 // Hero title
                 VStack(alignment: .center, spacing: 0) {
@@ -1023,24 +1380,8 @@ struct NightlyGoodNightView: View {
                         .kerning(10 * 0.18)
                         .foregroundColor(Color.lullAmber.opacity(0.75))
 
-                    Group {
-                        if let name = displayName {
-                            (Text("Good night,\n")
-                                .font(.serif(52))
-                             + Text("\(name).")
-                                .font(.serifItalic(52))
-                                .foregroundColor(Color.lullAmber))
-                        } else if !state.testerName.trimmingCharacters(in: .whitespaces).isEmpty {
-                            Text("Good night.")
-                                .font(.serif(52))
-                        } else {
-                            (Text("Good night,\n")
-                                .font(.serif(52))
-                             + Text("you.")
-                                .font(.serifItalic(52))
-                                .foregroundColor(Color.lullAmber))
-                        }
-                    }
+                    Text("Good night.")
+                        .font(.serif(52))
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .foregroundColor(Color.lullInk0)
@@ -1049,7 +1390,7 @@ struct NightlyGoodNightView: View {
                 }
                 .opacity(heroOpacity * heroFade)
                 .frame(width: w - 64)
-                .position(x: w / 2, y: 280)
+                .position(x: w / 2, y: heroY)
 
                 // Breathing ember
                 Circle()
@@ -1058,7 +1399,7 @@ struct NightlyGoodNightView: View {
                     .shadow(color: Color.lullAmber.opacity(0.9), radius: 7)
                     .shadow(color: Color.lullAmber.opacity(0.5), radius: 24)
                     .scaleEffect(emberScale)
-                    .position(x: w / 2, y: 470)
+                    .position(x: w / 2, y: emberY)
                     .zIndex(10)
 
                 // Mid-sleep tip
@@ -1091,7 +1432,7 @@ struct NightlyGoodNightView: View {
                 }
                 .opacity(tipOpacity * tipFade)
                 .frame(width: w - 64)
-                .position(x: w / 2, y: 600)
+                .position(x: w / 2, y: tipY)
 
                 // Dim overlay — above content but below ember (zIndex 5 < 10)
                 Color(red: 12/255, green: 8/255, blue: 7/255)
@@ -1103,11 +1444,17 @@ struct NightlyGoodNightView: View {
         }
         .ignoresSafeArea()
         .onAppear {
-            state.updateTodayLog {
-                $0.completedNightlyFlow = true
-                $0.actualBedtime = Date()
+            if !didRecordCompletion {
+                didRecordCompletion = true
+                state.updateTodayLog {
+                    $0.completedNightlyFlow = true
+                    $0.actualBedtime = Date()
+                }
+                state.markAllRitualDone()
+                state.persist()
+                state.recordNightlySessionCompleted()
             }
-            state.persist()
+            startSleepCompanionIfNeeded()
 
             if reduceMotion {
                 heroOpacity = 1
@@ -1119,7 +1466,7 @@ struct NightlyGoodNightView: View {
                 }
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
                 canDismiss = true
             }
         }
@@ -1130,12 +1477,26 @@ struct NightlyGoodNightView: View {
         }
     }
 
+    private func startSleepCompanionIfNeeded() {
+        guard !didStartSleepCompanion else { return }
+        didStartSleepCompanion = true
+
+        // End the prep-checklist Live Activity, then start the sleep companion
+        // as soon as the ritual reaches the final screen. The user may lock
+        // the phone here instead of tapping to dismiss.
+        LiveActivityService.shared.end(dismissalPolicy: .immediate)
+        LiveActivityService.shared.startSleepActivity(
+            bedtime: Date(),
+            wakeTime: state.nextWakeTime()
+        )
+    }
+
     private func runAnimation() {
         withAnimation(.easeOut(duration: 3.0)) {
             heroOpacity = 1
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.6) {
-            withAnimation(.easeOut(duration: 2.8)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            withAnimation(.easeOut(duration: 0.8)) {
                 tipOpacity = 1
             }
         }

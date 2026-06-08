@@ -51,11 +51,15 @@ class TTSService: NSObject, ObservableObject {
 
     func togglePause() {
         if synthesizer.isPaused {
-            synthesizer.continueSpeaking()
-            isPaused = false
-        } else {
-            synthesizer.pauseSpeaking(at: .word)
-            isPaused = true
+            guard activateAudioSession() else { return }
+            if synthesizer.continueSpeaking() {
+                isPaused = false
+                isSpeaking = true
+            }
+        } else if synthesizer.isSpeaking {
+            if synthesizer.pauseSpeaking(at: .word) {
+                isPaused = true
+            }
         }
     }
 
@@ -64,6 +68,7 @@ class TTSService: NSObject, ObservableObject {
         buffer = ""
         isSpeaking = false
         isPaused = false
+        deactivateAudioSession()
     }
 
     // MARK: - Private
@@ -81,6 +86,12 @@ class TTSService: NSObject, ObservableObject {
     }
 
     private func speak(_ text: String) {
+        guard activateAudioSession() else {
+            isSpeaking = false
+            isPaused = false
+            return
+        }
+
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate            = 0.30          // slow, deliberate — sleep pace
         utterance.pitchMultiplier = 0.85          // slightly lower than default
@@ -89,12 +100,48 @@ class TTSService: NSObject, ObservableObject {
         synthesizer.speak(utterance)
         isSpeaking = true
     }
+
+    private func activateAudioSession() -> Bool {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .spokenAudio, options: [])
+            try session.setActive(true)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func deactivateAudioSession() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
 }
 
 extension TTSService: AVSpeechSynthesizerDelegate {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            self.isSpeaking = true
+            self.isPaused = false
+        }
+    }
+
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
-            if !synthesizer.isSpeaking { self.isSpeaking = false }
+            if !synthesizer.isSpeaking {
+                self.isSpeaking = false
+                self.isPaused = false
+                self.deactivateAudioSession()
+            }
+        }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            if !synthesizer.isSpeaking {
+                self.isSpeaking = false
+                self.isPaused = false
+                self.deactivateAudioSession()
+            }
         }
     }
 }

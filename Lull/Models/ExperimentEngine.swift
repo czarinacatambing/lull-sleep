@@ -50,14 +50,11 @@ struct ExperimentEngine {
 
         // Prefer stable RemedyID comparison; fall back to display string for old records.
         let experimentLogs = logs.filter { entry in
-            guard entry.score > 0 else { return false }
-            if let eid = entry.variableRemedyId, let rid = remedyId { return eid == rid }
-            return entry.variable == variable
+            isScoredTestNight(entry) && matches(entry, remedyId: remedyId, variable: variable)
         }
         let baselineLogs = logs.filter { entry in
             guard entry.score > 0 else { return false }
-            if let eid = entry.variableRemedyId, let rid = remedyId { return eid != rid }
-            return entry.variable != variable
+            return !isScoredTestNight(entry) || !matches(entry, remedyId: remedyId, variable: variable)
         }
 
         let night = min(experimentLogs.count, 5)
@@ -111,14 +108,11 @@ struct ExperimentEngine {
             // Historical score — prefer RemedyID match for newer records
             let candidateId = RemedyID.fromLabel(candidate)
             let experimentLogs = logs.filter { entry in
-                guard entry.score > 0 else { return false }
-                if let eid = entry.variableRemedyId, let cid = candidateId { return eid == cid }
-                return entry.variable == candidate
+                isScoredTestNight(entry) && matches(entry, remedyId: candidateId, variable: candidate)
             }
             let baselineLogs = logs.filter { entry in
                 guard entry.score > 0 else { return false }
-                if let eid = entry.variableRemedyId, let cid = candidateId { return eid != cid }
-                return entry.variable != candidate
+                return !isScoredTestNight(entry) || !matches(entry, remedyId: candidateId, variable: candidate)
             }
             let historicalScore: Double
             if experimentLogs.isEmpty {
@@ -152,5 +146,16 @@ struct ExperimentEngine {
             .filter { !inRoutine.contains($0.label) }
             .max(by: { $0.total < $1.total })?
             .label
+    }
+
+    private static func isScoredTestNight(_ entry: SleepLogEntry) -> Bool {
+        entry.score > 0 && entry.completedNightlyFlow
+    }
+
+    private static func matches(_ entry: SleepLogEntry, remedyId: RemedyID?, variable: String) -> Bool {
+        if let entryRemedyId = entry.variableRemedyId, let remedyId {
+            return entryRemedyId == remedyId
+        }
+        return entry.variable == variable
     }
 }

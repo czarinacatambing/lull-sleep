@@ -9,7 +9,12 @@ options:
 settings:
   SWIFT_VERSION: "5.10"
   MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "15"
+  CURRENT_PROJECT_VERSION: "28"
+
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios-spm.git
+    from: 5.0.0
 
 targets:
   Lull:
@@ -22,6 +27,7 @@ targets:
           - Resources/Info.plist
     resources:
       - path: Lull/Resources/Assets.xcassets
+      - path: Lull/Resources/Audio
       - path: Lull/Resources/Fonts
     info:
       path: Lull/Resources/Info.plist
@@ -30,7 +36,7 @@ targets:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
         NSMicrophoneUsageDescription: "Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared."
-        NSCameraUsageDescription: "Lull does not use the camera."
+        NSCameraUsageDescription: "Lull briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen."
         ITSAppUsesNonExemptEncryption: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -43,8 +49,20 @@ targets:
           - Fraunces-LightItalic.ttf
           - Fraunces-Regular.ttf
           - JetBrainsMono-Regular.ttf
+        UIBackgroundModes:
+          - audio
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
+        LullAnalyticsEnabled: true
+        LullPostHogAPIKey: "phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX"
+        LullPostHogHost: "https://us.i.posthog.com"
+        LullResearchDataEnabled: true
+        LullResearchDataEndpoint: "https://fqljyviykgfzhskzmoui.functions.supabase.co/lull-research-ingest"
+        LullResearchDataToken: "cf118089939d70d769aff5253a69023e66f2a21523382105e15429ba8fde4a76"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.trylull.app
+            CFBundleURLSchemes:
+              - lull
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     settings:
@@ -57,11 +75,17 @@ targets:
     entitlements:
       path: Lull/Lull.entitlements
       properties:
+        com.apple.developer.family-controls: true
+        com.apple.developer.usernotifications.time-sensitive: true
         com.apple.security.application-groups:
           - group.com.trylull.app
     dependencies:
       - target: LullActivities
         embed: true
+      - package: RevenueCat
+        product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
     scheme:
       testTargets: []
 

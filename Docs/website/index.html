@@ -1,0 +1,1172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Lull — Sleep when your body is ready but your brain won't stop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Meta Pixel Code -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '2851379355254563');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=2851379355254563&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
+
+<script>
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "heroVariant": "ember",
+  "accentHue": 56,
+  "showGrain": true,
+  "ctaCopy": "Claim Founder Early Access"
+}/*EDITMODE-END*/;
+</script>
+<style>
+  :root{
+    --bg-0:#0c0807;          /* near-black warm */
+    --bg-1:#120c0a;
+    --bg-2:#1a110e;
+    --bg-3:#231612;
+    --line:rgba(255,220,190,0.08);
+    --line-strong:rgba(255,220,190,0.14);
+    --ink-0:#f5e7d7;         /* warm paper */
+    --ink-1:#e5d3bf;
+    --ink-2:#b9a691;
+    --ink-3:#8a7a68;
+    --ink-4:#5c4f42;
+    --ember:oklch(74% 0.14 62);      /* amber accent, hue overridden by tweak */
+    --ember-soft:oklch(68% 0.11 62);
+    --ember-deep:oklch(52% 0.12 58);
+    --ember-glow:oklch(78% 0.16 62 / 0.5);
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --serif:'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --sans:'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--ink-1);font-family:var(--sans);font-weight:400;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  ::selection{background:var(--ember);color:#1a0d06}
+
+  /* Film grain overlay */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
+    mix-blend-mode:overlay;opacity:.25;
+  }
+  body.no-grain::before{display:none}
+
+  /* Layout */
+  .wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+  @media (max-width:720px){.wrap{padding:0 22px}}
+
+  /* Nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:linear-gradient(to bottom,rgba(12,8,7,.9),rgba(12,8,7,.55));border-bottom:1px solid var(--line)}
+  nav .bar{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:22px;letter-spacing:-0.01em;color:var(--ink-0)}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--ember);box-shadow:0 0 14px var(--ember-glow), 0 0 32px var(--ember-glow);animation:pulse 3.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+  .nav-links{display:flex;gap:32px;font-size:13.5px;color:var(--ink-2)}
+  .nav-links a:hover{color:var(--ink-0)}
+  .nav-cta{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-0);font-size:13.5px;transition:.2s}
+  .nav-cta:hover{background:rgba(255,220,190,0.04);border-color:var(--ember-soft)}
+  @media (max-width:720px){.nav-links{display:none}}
+
+  /* HERO */
+  .hero{position:relative;padding:96px 0 60px;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0;
+    background:
+      radial-gradient(900px 600px at 50% 80%, oklch(58% 0.14 60 / 0.28), transparent 60%),
+      radial-gradient(600px 400px at 50% 100%, oklch(72% 0.17 58 / 0.18), transparent 60%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+  }
+  .hero-inner{position:relative;z-index:1;display:grid;gap:48px;align-items:center}
+  @media (min-width:960px){.hero-inner{grid-template-columns:1.1fr 0.9fr;gap:72px}}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,220,190,0.02)}
+  .eyebrow .ember{width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 10px var(--ember-glow)}
+  h1.display{font-family:var(--serif);font-weight:300;font-size:clamp(44px,6.2vw,88px);line-height:1.02;letter-spacing:-0.025em;color:var(--ink-0);margin:24px 0 28px}
+  h1.display em{font-style:italic;color:var(--ember);font-weight:300}
+  .lede{font-size:18px;line-height:1.55;color:var(--ink-2);max-width:46ch;margin:0 0 36px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;font-size:14.5px;font-weight:500;transition:.2s;border:1px solid transparent}
+  .btn-primary{background:var(--ember);color:#1a0d06;box-shadow:0 0 0 1px rgba(0,0,0,.3) inset, 0 12px 40px -12px var(--ember-glow)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(0,0,0,.3) inset, 0 16px 48px -10px var(--ember-glow)}
+  .btn-ghost{color:var(--ink-1);border-color:var(--line-strong)}
+  .btn-ghost:hover{background:rgba(255,220,190,0.04)}
+  .btn .arrow{transition:transform .25s}
+  .btn:hover .arrow{transform:translateX(3px)}
+  .tiny{font-size:12.5px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.02em;margin-top:14px}
+
+  /* Phone product image */
+  .phone-stage{position:relative;display:flex;justify-content:center;align-items:center;min-height:620px;isolation:isolate}
+  .phone-image-wrap{
+    position:relative;
+    width:min(342px,82vw);
+    flex-shrink:0;
+  }
+  .phone-image-wrap::before{
+    content:"";
+    position:absolute;
+    inset:11% 4% 5%;
+    z-index:-1;
+    border-radius:50px;
+    background:radial-gradient(circle at 50% 48%, var(--ember-glow), transparent 62%);
+    filter:blur(30px);
+    opacity:.7;
+  }
+  .phone-image-wrap img{
+    display:block;
+    width:100%;
+    height:auto;
+    filter:drop-shadow(0 52px 74px rgba(0,0,0,.76));
+  }
+  .phone-label{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+
+  /* Credibility strip */
+  .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:22px 0;margin-top:48px}
+  .strip-inner{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+  .strip-item{display:flex;align-items:baseline;gap:10px}
+  .strip-num{font-family:var(--serif);font-size:28px;color:var(--ink-0);font-weight:400;letter-spacing:-0.02em}
+  .strip-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+  .strip-rule{width:1px;height:24px;background:var(--line)}
+  @media (max-width:720px){.strip-rule{display:none}.strip-inner{justify-content:flex-start}}
+
+  /* SECTION primitives */
+  section{position:relative;padding:140px 0}
+  .sec-head{display:grid;gap:18px;margin-bottom:72px;max-width:780px}
+  .sec-kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);display:flex;align-items:center;gap:12px}
+  .sec-kicker::before{content:"";width:28px;height:1px;background:var(--ember)}
+  .sec-title{font-family:var(--serif);font-weight:300;font-size:clamp(34px,4.4vw,60px);line-height:1.05;letter-spacing:-0.022em;color:var(--ink-0);margin:0}
+  .sec-title em{font-style:italic;color:var(--ember)}
+  .sec-sub{font-size:17px;line-height:1.6;color:var(--ink-2);max-width:62ch}
+
+  /* PROBLEM */
+  .problem{background:linear-gradient(180deg,var(--bg-0),var(--bg-1))}
+  .two-col{display:grid;gap:64px;align-items:start}
+  @media (min-width:960px){.two-col{grid-template-columns:1fr 1fr;gap:96px}}
+  .gap-list{display:grid;gap:2px}
+  .gap-row{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:22px 0;border-bottom:1px solid var(--line)}
+  .gap-row:first-child{border-top:1px solid var(--line)}
+  .gap-idx{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);width:28px}
+  .gap-thing{font-family:var(--serif);font-size:22px;color:var(--ink-0);font-weight:300;letter-spacing:-0.01em}
+  .gap-miss{font-size:13.5px;color:var(--ink-2);text-align:right;max-width:32ch}
+  @media (max-width:720px){.gap-row{grid-template-columns:auto 1fr;row-gap:6px}.gap-miss{grid-column:2;text-align:left}}
+
+  .quote-card{position:relative;padding:48px 40px;border:1px solid var(--line-strong);border-radius:18px;background:
+    radial-gradient(500px 300px at 10% 0%, oklch(58% 0.14 60 / 0.14), transparent 60%),
+    linear-gradient(180deg,var(--bg-2),var(--bg-1));
+  }
+  .quote-card .mark{font-family:var(--serif);font-size:80px;line-height:.6;color:var(--ember);opacity:.7;display:block;margin-bottom:4px}
+  .quote-text{font-family:var(--serif);font-weight:300;font-size:26px;line-height:1.35;color:var(--ink-0);letter-spacing:-0.01em;margin:0 0 28px;font-style:italic}
+  .quote-cite{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* HOW IT WORKS */
+  .how{background:var(--bg-0);position:relative}
+  .how::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(800px 400px at 80% 20%, oklch(55% 0.12 60 / 0.1), transparent 60%)}
+  .steps{display:grid;gap:16px}
+  @media (min-width:900px){.steps{grid-template-columns:repeat(4,1fr)}}
+  .step{position:relative;padding:32px 26px 28px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1));transition:.3s;min-height:280px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+  .step:hover{border-color:var(--line-strong);transform:translateY(-4px)}
+  .step::after{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ember-soft),transparent);opacity:0;transition:.3s}
+  .step:hover::after{opacity:.8}
+  .step-num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ink-3);margin-bottom:22px}
+  .step-glyph{height:88px;display:flex;align-items:center;justify-content:flex-start;margin-bottom:18px}
+  .step-title{font-family:var(--serif);font-weight:300;font-size:22px;color:var(--ink-0);letter-spacing:-0.01em;line-height:1.15;margin:0 0 10px}
+  .step-body{font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0}
+
+  /* Glyph styles */
+  .glyph{width:60px;height:60px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+  .glyph.g1{background:radial-gradient(circle,oklch(60% 0.12 60 / .5),transparent 70%);border:1px dashed var(--ember-soft)}
+  .glyph.g1::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ember);box-shadow:0 0 12px var(--ember-glow)}
+  .glyph.g2{background:transparent}
+  .glyph.g2 .ring{position:absolute;inset:0;border:1px solid var(--ember-soft);border-radius:50%;opacity:.6}
+  .glyph.g2 .ring.r2{inset:6px;opacity:.4}
+  .glyph.g2 .ring.r3{inset:12px;opacity:.25}
+  .glyph.g2::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--ember);box-shadow:0 0 16px var(--ember-glow)}
+  .glyph.g3{background:linear-gradient(135deg,oklch(58% 0.12 60 / .3),transparent);border:1px solid var(--line-strong);border-radius:14px;width:60px;height:60px}
+  .glyph.g3::after{content:"";width:14px;height:2px;background:var(--ember);border-radius:2px;box-shadow:0 6px 0 var(--ember-soft),0 -6px 0 var(--ember-deep)}
+  .glyph.g4{background:transparent;border:1px solid var(--line-strong);border-radius:50%}
+  .glyph.g4::before{content:"";position:absolute;width:2px;height:22px;background:var(--ember);top:8px;left:50%;transform:translateX(-50%) rotate(30deg);transform-origin:bottom;border-radius:2px}
+  .glyph.g4::after{content:"";position:absolute;width:2px;height:14px;background:var(--ember-soft);top:16px;left:50%;transform:translateX(-50%) rotate(-60deg);transform-origin:bottom;border-radius:2px}
+
+  /* AUDIENCE */
+  .audience{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
+  .aud-grid{display:grid;gap:12px}
+  @media (min-width:900px){.aud-grid{grid-template-columns:repeat(3,1fr)}}
+  .aud-card{padding:40px 32px;border:1px solid var(--line);border-radius:18px;background:
+    radial-gradient(400px 200px at 50% 0%, oklch(58% 0.12 60 / 0.1), transparent 70%),
+    linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    position:relative;overflow:hidden;min-height:340px;display:flex;flex-direction:column;justify-content:space-between
+  }
+  .aud-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin-bottom:22px;display:flex;align-items:center;gap:10px}
+  .aud-tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
+  .aud-head{font-family:var(--serif);font-weight:300;font-size:26px;line-height:1.2;color:var(--ink-0);letter-spacing:-0.015em;margin:0 0 14px}
+  .aud-head em{font-style:italic;color:var(--ember)}
+  .aud-body{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0 0 28px}
+  .aud-foot{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;padding-top:18px;border-top:1px solid var(--line)}
+  .aud-foot strong{color:var(--ink-1);font-weight:500}
+
+  /* FEATURE CALLOUT: Brain dump / Boring story */
+  .loop{background:var(--bg-0);position:relative;overflow:hidden}
+  .loop::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 500px at 20% 50%, oklch(55% 0.12 60 / 0.12), transparent 60%)}
+  .loop-grid{display:grid;gap:80px;align-items:center;position:relative;z-index:1}
+  @media (min-width:900px){.loop-grid{grid-template-columns:1fr 1fr}}
+  .loop-visual{position:relative;aspect-ratio:1/1;max-width:480px;margin:0 auto;width:100%}
+  @media (max-width:899px){.loop-visual{display:none}}
+  .orbit{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line)}
+  .orbit.o2{inset:14%;border-color:var(--line-strong)}
+  .orbit.o3{inset:28%}
+  .orbit-label{position:absolute;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-1);background:var(--bg-1);padding:6px 14px;border-radius:999px;border:1px solid var(--line-strong);white-space:nowrap;display:flex;align-items:center;gap:7px}
+  .orbit-label .ol-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3);flex-shrink:0}
+  .orbit-label.active .ol-dot{background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
+  .orbit-label.active{color:var(--ember);border-color:oklch(58% 0.12 60 / 0.4)}
+  /* positioned inside the container with room to breathe */
+  .orbit-label.l1{top:6%;left:50%;transform:translateX(-50%)}
+  .orbit-label.l2{bottom:6%;left:50%;transform:translateX(-50%)}
+  .orbit-label.l3{top:50%;left:6%;transform:translateY(-50%)}
+  .orbit-label.l4{top:50%;right:6%;transform:translateY(-50%)}
+  .orbit-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:radial-gradient(circle,var(--ember) 0%, var(--ember-deep) 60%, transparent 80%);box-shadow:0 0 80px 20px var(--ember-glow)}
+  .orbit-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--ink-1);box-shadow:0 0 0 3px var(--bg-0)}
+  .loop-list{display:grid;gap:2px}
+  .loop-row{display:grid;grid-template-columns:auto 1fr;gap:20px;padding:20px 0;border-bottom:1px solid var(--line);align-items:start}
+  .loop-row:first-child{border-top:1px solid var(--line)}
+  .loop-idx{font-family:var(--mono);font-size:11px;color:var(--ember);letter-spacing:.15em;padding-top:4px}
+  .loop-h{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--ink-0);margin:0 0 6px;letter-spacing:-0.005em}
+  .loop-b{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0}
+
+  /* COMPARISON */
+  .compare{background:linear-gradient(180deg,var(--bg-0),var(--bg-1))}
+  .cmp{width:100%;border-collapse:collapse;font-size:14px}
+  .cmp th,.cmp td{text-align:left;padding:22px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  .cmp th{font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line-strong)}
+  .cmp .row-label{font-family:var(--serif);font-size:17px;color:var(--ink-0);font-weight:300;letter-spacing:-0.005em;width:28%}
+  .cmp td{color:var(--ink-2)}
+  .cmp .lull-col{color:var(--ink-1)}
+  .cmp .col-lull{background:linear-gradient(180deg,oklch(58% 0.12 60 / 0.08),oklch(58% 0.12 60 / 0.02))}
+  .cmp .col-lull .lull-h{color:var(--ember)}
+  .chip{display:inline-block;padding:3px 9px;border-radius:999px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em}
+  .chip.y{background:oklch(58% 0.12 60 / 0.18);color:var(--ember);border:1px solid oklch(58% 0.12 60 / 0.3)}
+  .chip.n{background:rgba(255,255,255,0.03);color:var(--ink-3);border:1px solid var(--line)}
+
+  /* PRICING */
+  .pricing{background:var(--bg-0);position:relative;overflow:hidden}
+  .pricing::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 50% 40%, oklch(58% 0.14 60 / 0.1), transparent 60%)}
+  .price-card{position:relative;max-width:640px;margin:0 auto;padding:56px 48px;border-radius:22px;border:1px solid var(--line-strong);background:
+    radial-gradient(600px 300px at 50% 0%, oklch(58% 0.14 60 / 0.15), transparent 70%),
+    linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    text-align:center;overflow:hidden;z-index:1
+  }
+  .price-card::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:160px;height:1px;background:linear-gradient(90deg,transparent,var(--ember),transparent)}
+  .price-free{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);margin-bottom:18px}
+  .price-big{font-family:var(--serif);font-weight:300;font-size:clamp(44px,6vw,72px);line-height:1;color:var(--ink-0);letter-spacing:-0.03em;margin:0 0 8px}
+  .price-big .per{font-family:var(--sans);font-size:18px;color:var(--ink-2);font-weight:400;letter-spacing:0;margin-left:6px}
+  .price-sub{font-size:15px;color:var(--ink-2);margin:0 auto 36px;max-width:42ch;line-height:1.6}
+  .price-list{display:flex;justify-content:center;flex-wrap:wrap;gap:12px 28px;margin-bottom:40px;font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.04em}
+  .price-list li{list-style:none;display:flex;align-items:center;gap:8px}
+  .price-list li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ember);box-shadow:0 0 6px var(--ember-glow)}
+
+  /* FAQ */
+  .faq{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
+  .faq-grid{display:grid;gap:48px}
+  @media (min-width:900px){.faq-grid{grid-template-columns:1fr 1.3fr;gap:96px}}
+  .faq-list{display:grid;gap:2px}
+  .faq-item{border-bottom:1px solid var(--line)}
+  .faq-item:first-child{border-top:1px solid var(--line)}
+  .faq-q{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 0;cursor:pointer;font-family:var(--serif);font-size:20px;font-weight:300;color:var(--ink-0);letter-spacing:-0.005em;transition:.2s;width:100%;text-align:left}
+  .faq-q:hover{color:var(--ember)}
+  .faq-q .plus{font-family:var(--mono);font-size:18px;color:var(--ink-3);transition:transform .25s;flex-shrink:0}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);color:var(--ember)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;font-size:14.5px;line-height:1.65;color:var(--ink-2)}
+  .faq-item.open .faq-a{max-height:320px}
+  .faq-a-inner{padding:0 0 24px;max-width:58ch}
+
+  /* FINAL CTA */
+  .final{position:relative;padding:180px 0 140px;background:var(--bg-0);overflow:hidden;text-align:center}
+  .final::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:900px;height:900px;border-radius:50%;background:radial-gradient(circle,oklch(60% 0.16 60 / 0.3) 0%, oklch(55% 0.12 58 / 0.1) 30%, transparent 60%);animation:breathe 6s ease-in-out infinite}
+  .final-inner{position:relative;z-index:1;max-width:760px;margin:0 auto}
+  .final h2{font-family:var(--serif);font-weight:300;font-size:clamp(40px,5.4vw,72px);line-height:1.05;letter-spacing:-0.025em;color:var(--ink-0);margin:0 0 28px}
+  .final h2 em{font-style:italic;color:var(--ember)}
+  .final p{font-size:17px;line-height:1.6;color:var(--ink-2);margin:0 auto 32px;max-width:46ch}
+
+  /* Intent toggle */
+  .intent-toggle{display:inline-flex;gap:0;border:1px solid var(--line-strong);border-radius:999px;padding:4px;margin-bottom:36px;background:rgba(12,8,7,0.6);backdrop-filter:blur(12px)}
+  .intent-btn{padding:9px 20px;border-radius:999px;font-size:13px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:.2s;color:var(--ink-3);border:0;background:transparent}
+  .intent-btn.active{background:var(--ember);color:#1a0d06}
+  .intent-btn:not(.active):hover{color:var(--ink-1)}
+
+  /* Intent panels */
+  .intent-panel{display:none}
+  .intent-panel.active{display:block}
+
+  /* Pre-order panel */
+  .preorder-offer{padding:32px 36px;border:1px solid var(--ember-soft);border-radius:20px;background:radial-gradient(600px 300px at 50% 0%, oklch(58% 0.14 60 / 0.12), transparent 70%),linear-gradient(180deg,var(--bg-2),var(--bg-1));margin-bottom:24px;position:relative;overflow:hidden}
+  .preorder-offer::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--ember),transparent)}
+  .preorder-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin-bottom:14px}
+  .preorder-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
+  .preorder-price{font-family:var(--serif);font-size:clamp(32px,4vw,52px);font-weight:300;color:var(--ink-0);letter-spacing:-0.03em;line-height:1;margin-bottom:6px}
+  .preorder-price .per{font-family:var(--sans);font-size:16px;color:var(--ink-2);font-weight:400;letter-spacing:0;margin-left:4px}
+  .preorder-price .was{font-family:var(--mono);font-size:13px;color:var(--ink-3);text-decoration:line-through;margin-left:10px;letter-spacing:.04em}
+  .preorder-detail{font-size:14px;color:var(--ink-2);line-height:1.55;margin:10px 0 24px}
+
+  /* Shared form */
+  .wait-form{display:flex;gap:10px;max-width:460px;margin:0 auto;padding:6px;border:1px solid var(--line-strong);border-radius:999px;background:rgba(12,8,7,0.6);backdrop-filter:blur(12px)}
+  .wait-form .wf-input{flex:1;background:transparent;border:0;outline:0;color:var(--ink-0);padding:12px 18px;font-size:14.5px;font-family:var(--sans)}
+  .wait-form .wf-input::placeholder{color:var(--ink-3)}
+  .wait-form .wf-submit{padding:12px 22px;border-radius:999px;background:var(--ember);color:#1a0d06;font-weight:500;font-size:14px;transition:.2s;border:0;cursor:pointer;font-family:var(--sans);white-space:nowrap}
+  .wait-form .wf-submit:hover{transform:translateX(1px)}
+  .wait-form .wf-submit:disabled{opacity:.6;cursor:wait}
+  #kit-hidden-host{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;pointer-events:none;opacity:0}
+  .wait-msg{margin-top:18px;min-height:18px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--ink-3);transition:.25s}
+  .wait-msg.err{color:oklch(68% 0.14 30)}
+  .wait-msg.ok{color:var(--ember)}
+  .final-meta{margin-top:22px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3)}
+
+  /* Waitlist secondary panel */
+  .waitlist-desc{font-size:15px;color:var(--ink-2);line-height:1.6;margin:0 auto 24px;max-width:42ch}
+
+  /* FOOTER */
+  footer{border-top:1px solid var(--line);padding:48px 0 40px;background:var(--bg-0)}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
+  .foot-links{display:flex;gap:28px;font-size:13px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.05em}
+  .foot-links a:hover{color:var(--ink-1)}
+  .foot-copy{font-family:var(--mono);font-size:11px;color:var(--ink-4);letter-spacing:.1em}
+
+  /* Tweaks panel */
+  #tweaks-panel{position:fixed;bottom:20px;right:20px;width:280px;background:rgba(18,12,10,0.96);backdrop-filter:blur(20px);border:1px solid var(--line-strong);border-radius:14px;padding:18px;z-index:200;font-size:12.5px;display:none;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+  #tweaks-panel.visible{display:block}
+  #tweaks-panel h4{margin:0 0 14px;font-family:var(--serif);font-weight:400;font-size:15px;color:var(--ink-0);display:flex;align-items:center;justify-content:space-between}
+  #tweaks-panel h4 .tdot{width:7px;height:7px;border-radius:50%;background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
+  .tw-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .tw-row label{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+  .tw-opts{display:flex;gap:6px;flex-wrap:wrap}
+  .tw-opt{padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:11.5px;color:var(--ink-2);cursor:pointer;transition:.15s;background:transparent}
+  .tw-opt.active{background:var(--ember);color:#1a0d06;border-color:var(--ember)}
+  .tw-opt:hover:not(.active){border-color:var(--line-strong);color:var(--ink-1)}
+  .tw-slider{width:100%;-webkit-appearance:none;appearance:none;height:3px;background:var(--line-strong);border-radius:2px;outline:none}
+  .tw-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ember);cursor:pointer;box-shadow:0 0 8px var(--ember-glow)}
+  .tw-check{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--ink-1);font-size:12px}
+  .tw-check input{accent-color:var(--ember)}
+  .tw-input{background:rgba(0,0,0,0.3);border:1px solid var(--line);color:var(--ink-1);padding:7px 10px;border-radius:6px;font-size:12px;font-family:var(--sans);width:100%}
+
+  /* hero image variant */
+  .hero-photo{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:linear-gradient(180deg,#1a100b,#0d0806);border:1px solid var(--line)}
+  .hero-photo::before{content:"BEDROOM SCENE — WARM, DIM, SLIGHTLY MESSED SHEETS";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--ink-4);text-align:center;padding:20px;z-index:2;background:
+    repeating-linear-gradient(45deg,transparent,transparent 10px, rgba(255,220,190,0.02) 10px, rgba(255,220,190,0.02) 11px);
+  }
+
+  /* Ember companion */
+  .companion{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--ember);box-shadow:0 0 20px var(--ember-glow), 0 0 40px var(--ember-glow);pointer-events:none;z-index:2;animation:bob 5s ease-in-out infinite}
+  .companion::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--ember-soft);opacity:.35;animation:ring 4s ease-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.85}50%{transform:translateY(-10px);opacity:1}}
+  @keyframes ring{0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
+  .companion.c-trail{width:8px;height:8px;opacity:.55;animation-delay:-1.2s}
+
+  /* Founder's note */
+  .founder{background:linear-gradient(180deg,var(--bg-1),var(--bg-0));padding:120px 0;position:relative;overflow:hidden}
+  .founder-grid{display:grid;gap:56px;align-items:center}
+  @media (min-width:900px){.founder-grid{grid-template-columns:0.7fr 1.3fr;gap:88px}}
+  .founder-portrait{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:
+    radial-gradient(300px 400px at 30% 40%, oklch(56% 0.10 60 / 0.4), transparent 70%),
+    linear-gradient(160deg,#2a1a12,#0d0806);
+    border:1px solid var(--line);max-width:340px;
+  }
+  .founder-portrait::before{content:"FOUNDER PORTRAIT — SOFT WARM LIGHT, HONEST, UNPOSED";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--ink-4);text-align:center;padding:30px;background:repeating-linear-gradient(45deg,transparent,transparent 10px, rgba(255,220,190,0.02) 10px, rgba(255,220,190,0.02) 11px)}
+  .founder-note{font-family:var(--serif);font-weight:300;font-size:clamp(22px,2.6vw,30px);line-height:1.35;color:var(--ink-0);letter-spacing:-0.01em}
+  .founder-note p{margin:0 0 20px;font-style:italic}
+  .founder-note p::first-letter{color:var(--ember);font-size:1.5em;font-weight:400}
+  .founder-sig{margin-top:28px;display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+  .founder-sig .handwrit{font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;color:var(--ember);letter-spacing:0;text-transform:none}
+
+  /* Social proof strip */
+  .social{background:var(--bg-0);padding:60px 0 40px;position:relative}
+  .social-grid{display:grid;gap:18px}
+  @media (min-width:800px){.social-grid{grid-template-columns:repeat(3,1fr)}}
+  .tcard{position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,#1e140f,#0a0605);border:1px solid var(--line);padding:28px 26px 24px;display:flex;flex-direction:column;gap:20px}
+  .tcard-glow{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,var(--ember) 0%, var(--ember-deep) 50%, transparent 75%);box-shadow:0 0 60px 10px var(--ember-glow);pointer-events:none;opacity:.7}
+  .tcard-body{font-family:var(--serif);font-size:17px;color:var(--ink-1);font-weight:300;font-style:italic;line-height:1.5;letter-spacing:-0.005em;position:relative;z-index:1;margin:0}
+  .tcard-foot{display:flex;flex-direction:column;gap:3px;position:relative;z-index:1}
+  .tcard-name{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-0)}
+  .tcard-meta{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3)}
+
+  /* Variables section */
+  .vars{background:linear-gradient(180deg,var(--bg-0),var(--bg-1));position:relative;overflow:hidden}
+  .vars::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 85% 30%, oklch(55% 0.10 60 / 0.08), transparent 60%)}
+  .vars-grid{display:grid;gap:12px;position:relative;z-index:1}
+  @media (min-width:900px){.vars-grid{grid-template-columns:1fr 1fr 1fr}}
+  .var-col{padding:28px 26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1));display:flex;flex-direction:column;gap:16px;min-height:380px}
+  .var-col.featured{background:
+    radial-gradient(500px 260px at 50% 0%, oklch(58% 0.14 60 / 0.14), transparent 70%),
+    linear-gradient(180deg,var(--bg-3),var(--bg-2));
+    border-color:var(--line-strong);
+  }
+  .var-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .var-title{font-family:var(--serif);font-weight:300;font-size:20px;color:var(--ink-0);letter-spacing:-0.01em;margin:0}
+  .var-title em{font-style:italic;color:var(--ember)}
+  .var-count{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;color:var(--ink-3)}
+  .var-intro{font-size:13px;color:var(--ink-2);line-height:1.55;margin:0}
+  .var-list{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:10px}
+  .var-list li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;color:var(--ink-1);font-family:var(--sans);padding:4px 0}
+  .var-list li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ink-3);flex-shrink:0;position:relative;top:6px}
+  .var-col.featured .var-list li::before{background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
+  .var-list li span{color:var(--ink-3);font-size:12px;margin-left:4px}
+  .var-note{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink-3);line-height:1.5}
+
+  .hero-photo-glow{position:absolute;bottom:20%;right:25%;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,var(--ember) 0%, var(--ember-deep) 50%, transparent 75%);box-shadow:0 0 80px 20px var(--ember-glow);z-index:1}
+
+  /* CONTACT */
+  .contact{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
+  .contact-grid{display:grid;gap:64px;align-items:start;max-width:640px}
+  .contact-form{display:flex;flex-direction:column;gap:14px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.form-row{grid-template-columns:1fr}}
+  .form-field{display:flex;flex-direction:column;gap:6px}
+  .form-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  .form-input,.form-textarea{background:var(--bg-2);border:1px solid var(--line-strong);border-radius:10px;padding:13px 16px;color:var(--ink-0);font-family:var(--sans);font-size:14.5px;font-weight:400;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;resize:none}
+  .form-input::placeholder,.form-textarea::placeholder{color:var(--ink-4)}
+  .form-input:focus,.form-textarea:focus{border-color:var(--ember-soft);box-shadow:0 0 0 3px oklch(74% 0.14 62 / 0.12)}
+  .form-textarea{min-height:130px;line-height:1.55}
+  .contact-msg{font-family:var(--mono);font-size:12px;letter-spacing:.06em;min-height:20px;margin-top:4px}
+  .contact-msg.ok{color:var(--ember)}
+  .contact-msg.err{color:oklch(65% 0.18 20)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap">
+    <div class="bar">
+      <div class="brand"><span class="dot"></span>lull</div>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#who">Who it's for</a>
+        <a href="#loop">The loop</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <a class="nav-cta" href="#waitlist">Join waitlist <span class="arrow">→</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap hero-inner">
+    <div>
+      <span class="eyebrow"><span class="ember"></span>Personalized wind-down coach</span>
+      <h1 class="display">Fall asleep faster<br><em>when your brain won't shut up.</em></h1>
+      <p class="lede">Lull builds your wind-down routine and quietly tests it — one small change per night — until your body finds what <em>actually</em> works.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#waitlist"><span id="cta-copy">Pre-order for $3.99 </span> <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <div class="tiny">7 Nights Free · Lock in 50% off for 1 year</div>
+    </div>
+
+    <!-- Phone mockup — bedtime routine tracker -->
+    <div class="phone-stage">
+      <div class="phone-image-wrap">
+        <img src="assets/lull-hero-phone.png" alt="Lull sleep sound screen playing Heavy Rain on an iPhone" loading="eager" decoding="async">
+      </div>
+      <div class="phone-label">Heavy rain · one calm step · fade out at the end</div>
+    </div>
+  </div>
+
+  <!-- Credibility strip -->
+  <div class="wrap">
+    <div class="strip">
+      <div class="strip-inner">
+        <div class="strip-item"><span class="strip-num">3</span><span class="strip-label">wind-down<br/>methods</span></div>
+        <span class="strip-rule"></span>
+        <div class="strip-item"><span class="strip-num">1</span><span class="strip-label">variable tested<br/>at a time</span></div>
+        <span class="strip-rule"></span>
+        <div class="strip-item"><span class="strip-num">10s</span><span class="strip-label">morning<br/>check-in</span></div>
+        <span class="strip-rule"></span>
+        <div class="strip-item"><span class="strip-num">0</span><span class="strip-label">decisions<br/>in sleep mode</span></div>
+        <span class="strip-rule"></span>
+        <div class="strip-item"><span class="strip-num">CBT-I</span><span class="strip-label">grounded<br/>techniques</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">The gap nobody is building for</div>
+      <h2 class="sec-title">The habits exist.<br/><em>The system doesn't.</em></h2>
+      <p class="sec-sub">Warm baths, dim lights, no screens, melatonin — these are all real tools. Some of them might work for you. But without a system to test them, you're just guessing every night.</p>
+    </div>
+    <div class="two-col">
+      <div class="gap-list">
+        <div class="gap-row"><div class="gap-idx">01</div><div class="gap-thing">No screen rule before bedtime</div><div class="gap-miss">Good habit. But done randomly, there's no way to know if it is actually helping.</div></div>
+        <div class="gap-row"><div class="gap-idx">02</div><div class="gap-thing">Melatonin</div><div class="gap-miss">Maybe effective. But the timing, the dose, and how your body responds? Pure guesswork.</div></div>
+        <div class="gap-row"><div class="gap-idx">03</div><div class="gap-thing">White noise</div><div class="gap-miss">Right for some brains. Wrong for others. No feedback loop to know which you are.</div></div>
+        <div class="gap-row"><div class="gap-idx">04</div><div class="gap-thing">Sleep trackers</div><div class="gap-miss">Tell you how you slept. Never tell you why — or what single thing to change tonight.</div></div>
+        <div class="gap-row"><div class="gap-idx">05</div><div class="gap-thing">Generic sleep hygiene advice</div><div class="gap-miss">Designed for everyone. Which means it's optimized for no one, including you.</div></div>
+      </div>
+
+      <div class="quote-card">
+        <div class="sec-kicker" style="margin-bottom:20px">Lull is the system around the habits.</div>
+        <p class="quote-text" style="font-style:normal;font-size:21px;line-height:1.5">It builds your bedtime routine, tests one variable at a time, and uses your real sleep data to figure out what actually works for your body. Not a prescription. A process you own.</p>
+        <a class="btn btn-primary" href="#waitlist" style="margin-top:28px;display:inline-flex">Pre-order for $3.99 <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="social">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">What early testers are saying</div>
+      <h2 class="sec-title">Real people, <em>real sleep wins </em></h2>
+    </div>
+  <div class="wrap">
+    <div class="social-grid">
+      <div class="tcard">
+        <span class="tcard-glow" style="bottom:10%;right:10%"></span>
+        <p class="tcard-body">"I've tried every sleep app. They all want me to sit up and focus. Lull is the first one that actually meets me where I am at 2am — horizontal, exhausted, brain won't stop."</p>
+        <div class="tcard-foot">
+          <div class="tcard-name">Sarah K.</div>
+          <div class="tcard-meta">New parent · beta tester</div>
+        </div>
+      </div>
+      <div class="tcard">
+        <span class="tcard-glow" style="top:12%;left:14%;width:60px;height:60px"></span>
+        <p class="tcard-body">"The boring story thing sounds ridiculous until you've fallen asleep to it three nights in a row. My brain needs something to latch onto — just not anything interesting."</p>
+        <div class="tcard-foot">
+          <div class="tcard-name">Marcus T.</div>
+          <div class="tcard-meta">Founder · ADHD brain</div>
+        </div>
+      </div>
+      <div class="tcard">
+        <span class="tcard-glow" style="top:30%;right:8%;width:70px;height:70px"></span>
+        <p class="tcard-body">"I was skeptical about the one-variable thing. But after five nights of testing dim lights earlier, my sleep quality got better and I actually believed it — because I saw it myself."</p>
+        <div class="tcard-foot">
+          <div class="tcard-name">Priya M.</div>
+          <div class="tcard-meta">On-call nurse · shift worker</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">How Lull works</div>
+      <h2 class="sec-title">Four pieces. <em>One ritual.</em></h2>
+      <!-- <p class="sec-sub">No content to browse at bedtime. No choices to make. Your routine runs forward — one tap per step — and each morning a ten-second check-in teaches it what actually helped.</p> -->
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01 · Setup</div>
+        <div class="step-glyph"><div class="glyph g1"></div></div>
+        <div>
+          <h3 class="step-title">Build your routine in 3 minutes</h3>
+          <p class="step-body">Six screens, max two taps each. No account creation blocking you. Outputs a starting routine + a default wind-down method chosen for your sleep problem.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02 · Nightly</div>
+        <div class="step-glyph"><div class="glyph g2"><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span></div></div>
+        <div>
+          <h3 class="step-title">Walk through, one step at a time</h3>
+          <p class="step-body">Each step fills the screen. No back button, no navigation, nothing auto-advances. Optional spoken prompts for eyes-closed use.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03 · Wind-down</div>
+        <div class="step-glyph"><div class="glyph g3"></div></div>
+        <div>
+          <h3 class="step-title">Pick the variables worth testing</h3>
+          <p class="step-body">Lights, temperature, warm shower, last caffeine, screens, wind-down method. Add what's relevant, skip what isn't. Order them however works.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04 · Improve</div>
+        <div class="step-glyph"><div class="glyph g4"></div></div>
+        <div>
+          <h3 class="step-title">One variable, five nights, repeat</h3>
+          <p class="step-body">Morning rating correlates with what you did. Each evening, one concrete suggestion — never two at once. If it works, it becomes default.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+<!-- VARIABLES -->
+<!-- <section class="vars">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">The routine menu</div>
+      <h2 class="sec-title">Add the variables <em>worth testing.</em><br/>Skip the ones that aren't.</h2>
+      <p class="sec-sub">Your routine is built from three groups of variables. Pick what fits your life, order them however makes sense, and Lull learns which ones actually move your sleep quality.</p>
+    </div>
+
+    <div class="vars-grid">
+      <div class="var-col">
+        <div class="var-head">
+          <h3 class="var-title">Environmental</h3>
+          <span class="var-count">08</span>
+        </div>
+        <p class="var-intro">Things in the room. Log once or get a timed reminder — "dim lights 60 minutes before bed," "warm shower 90 minutes before bed."</p>
+        <ul class="var-list">
+          <li>Dim lights <span>· timed</span></li>
+          <li>Warm shower or bath <span>· timed</span></li>
+          <li>Bedroom temperature</li>
+          <li>Ambient brightness <span>· auto</span></li>
+          <li>Blackout or eye mask</li>
+          <li>Last screen time</li>
+          <li>White noise on</li>
+          <li>Fresh air / window open</li>
+        </ul>
+        <div class="var-note">Warm bath 90 min before bed drops core temp — one of the best-evidenced sleep onset cues.</div>
+      </div>
+
+      <div class="var-col">
+        <div class="var-head">
+          <h3 class="var-title">Behavioural</h3>
+          <span class="var-count">06+</span>
+        </div>
+        <p class="var-intro">Things you did today. Quick taps. Correlated against sleep quality to find what matters for your body, not a dataset.</p>
+        <ul class="var-list">
+          <li>Last caffeine <span>· time</span></li>
+          <li>Last meal <span>· time</span></li>
+          <li>Alcohol today <span>· y/n</span></li>
+          <li>Exercise completed <span>· y/n</span></li>
+          <li>Last screen off <span>· time</span></li>
+          <li>Custom step <span>· free text</span></li>
+        </ul>
+        <div class="var-note">Add your own. Melatonin taken. Magnesium. Walk after dinner. Whatever you want to test.</div>
+      </div>
+
+      <div class="var-col featured">
+        <div class="var-head">
+          <h3 class="var-title">Wind-down <em>method</em></h3>
+          <span class="var-count">03</span>
+        </div>
+        <p class="var-intro">The cognitive-quieting piece. One method per routine, placed wherever you want. Also available one-tap in mid-sleep mode.</p>
+        <ul class="var-list">
+          <li>Brain dump <span>· voice, one-directional</span></li>
+          <li>Boring story <span>· AI, endless, dull on purpose</span></li>
+          <li>4-7-8 breathing <span>· narrated, eyes-closed</span></li>
+        </ul>
+        <div class="var-note">Voice-only. No reading. No screens after the routine ends. The dark screen is a tap target, not information.</div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- AUDIENCE -->
+<section class="audience" id="who">
+  <span class="companion c-trail" style="top:14%;right:8%"></span>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Who it's for</div>
+      <h2 class="sec-title">Not a demographic. <em>An experience.</em></h2>
+      <p class="sec-sub">The gap between a body that's given up and a brain that won't. If that sentence describes your 2am, Lull was built for you — whatever put you there.</p>
+    </div>
+
+    <div class="aud-grid">
+      <div class="aud-card">
+        <div>
+          <div class="aud-tag">Fragmented sleepers</div>
+          <h3 class="aud-head">Sleep happens in <em>windows.</em></h3>
+          <p class="aud-body">New parents. Shift workers. On-call professionals. Caregivers. The challenge isn't falling asleep once — it's falling asleep fast, and falling back asleep after waking at 3:14am with a full bladder and a loud mind.</p>
+        </div>
+        <div class="aud-foot"><strong>In Lull:</strong> mid-sleep mode, sepia widget, 15-min get-up prompt.</div>
+      </div>
+
+      <div class="aud-card">
+        <div>
+          <div class="aud-tag">Cognitive over-activators</div>
+          <h3 class="aud-head">The brain didn't get <em>the memo.</em></h3>
+          <p class="aud-body">Founders. Remote workers. ADHD brains. High performers who closed the laptop an hour ago and now lie in the dark with a running stack of ideas, anxieties, and half-finished sentences.</p>
+        </div>
+        <div class="aud-foot"><strong>In Lull:</strong> brain dump, then boring story. One-directional.</div>
+      </div>
+
+      <div class="aud-card">
+        <div>
+          <div class="aud-tag">General poor sleepers</div>
+          <h3 class="aud-head">Tired, in bed, <em>wide awake.</em></h3>
+          <p class="aud-body">No specific life circumstance required. You've tried melatonin. You've tried meditation apps. You've concluded you're a bad sleeper. You're probably not — you just haven't found the variable that moves the needle for your body.</p>
+        </div>
+        <div class="aud-foot"><strong>In Lull:</strong> the improvement loop, finding your variable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDER'S NOTE -->
+<!-- <section class="founder">
+  <span class="companion" style="top:20%;left:8%"></span>
+  <span class="companion c-trail" style="bottom:18%;right:12%"></span>
+  <div class="wrap">
+    <div class="founder-grid">
+      <div class="founder-portrait"></div>
+      <div class="founder-note">
+        <div class="sec-kicker" style="margin-bottom:22px">A note from the person building this</div>
+        <p>I started Lull at 3am with a baby on my chest, scrolling through sleep apps that were clearly built by people who had never been this tired.</p>
+        <p>Every one of them wanted me to sit up, focus, breathe on cue, or pick from a content library. None of them wanted to meet me where I actually was — exhausted body, running brain, fifteen minutes before the next feed.</p>
+        <p>So I'm building the app I wished existed. Quiet. One-tap. Grounded in the techniques that actually have evidence behind them. No mascot. No noise. Just the thing, when you need it.</p>
+        <div class="founder-sig">
+          <span class="handwrit">— Czarina</span>
+          <span>Founder · Building solo · One night at a time</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- LOOP FEATURE -->
+<section class="loop" id="loop">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">The one-variable loop</div>
+      <h2 class="sec-title">Behavioural correlation.<br/><em>Yours, not a dataset.</em></h2>
+      <p class="sec-sub">Lull is not a sleep tracker. No REM stages. No HRV. No smart alarm. Just: what did you do, how did you rate it, what's the pattern. Simple enough to trust.</p>
+    </div>
+
+    <div class="loop-grid">
+      <div class="loop-visual">
+        <div class="orbit"></div>
+        <div class="orbit o2"></div>
+        <div class="orbit o3"></div>
+        <span class="orbit-label l1"><span class="ol-dot"></span>Log</span>
+        <span class="orbit-label l3"><span class="ol-dot"></span>Do</span>
+        <span class="orbit-label l4"><span class="ol-dot"></span>Rate</span>
+        <span class="orbit-label active l2"><span class="ol-dot"></span>Adjust</span>
+        <div class="orbit-center"></div>
+        <div class="orbit-dot" style="top:0;left:50%;transform:translate(-50%,-50%)"></div>
+        <div class="orbit-dot" style="bottom:0;left:50%;transform:translate(-50%,50%);background:var(--ember);box-shadow:0 0 0 3px var(--bg-0), 0 0 14px var(--ember-glow)"></div>
+        <div class="orbit-dot" style="top:50%;left:0;transform:translate(-50%,-50%)"></div>
+        <div class="orbit-dot" style="top:50%;right:0;transform:translate(50%,-50%)"></div>
+      </div>
+
+      <div class="loop-list">
+        <div class="loop-row"><div class="loop-idx">N≥5</div><div><h4 class="loop-h">Minimum five data points</h4><p class="loop-b">No premature conclusions. Lull waits until a real pattern exists before it opens its mouth.</p></div></div>
+        <div class="loop-row"><div class="loop-idx">x1</div><div><h4 class="loop-h">One suggestion per evening</h4><p class="loop-b">"Tonight, try dimming lights 60 minutes before bed." Never two at once. Never a checklist.</p></div></div>
+        <div class="loop-row"><div class="loop-idx">5n</div><div><h4 class="loop-h">Runs five nights before verdict</h4><p class="loop-b">If sleep quality rises, the variable becomes a default in your routine. If not, it moves on.</p></div></div>
+        <div class="loop-row"><div class="loop-idx">~</div><div><h4 class="loop-h">Never prescribes</h4><p class="loop-b">Every technique is a hypothesis — including CBT-I get-up prompts. Your body gets the final say.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">vs. the category</div>
+      <h2 class="sec-title">What you won't find in Lull.</h2>
+    </div>
+
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Meditation apps</th>
+          <th>Sleep trackers</th>
+          <th>Content libraries</th>
+          <th class="lull-h col-lull">Lull</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="row-label">Requires active focus</td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td class="col-lull lull-col"><span class="chip n">No</span></td></tr>
+        <tr><td class="row-label">Measures sleep stages</td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip n">No — on purpose</span></td></tr>
+        <tr><td class="row-label">Something to browse at bedtime</td><td><span class="chip y">Large library</span></td><td><span class="chip n">—</span></td><td><span class="chip y">Huge library</span></td><td class="col-lull lull-col"><span class="chip n">Nothing</span></td></tr>
+        <tr><td class="row-label">Credit card for free trial</td><td><span class="chip y">Usually</span></td><td><span class="chip y">Usually</span></td><td><span class="chip y">Always</span></td><td class="col-lull lull-col"><span class="chip n">Never</span></td></tr>
+        <tr><td class="row-label">Designed for mid-sleep waking</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip y">One-tap mode</span></td></tr>
+        <tr><td class="row-label">Learns <em>your</em> specific variable</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip y">Core mechanic</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-head" style="text-align:center;margin-left:auto;margin-right:auto;justify-items:center">
+      <div class="sec-kicker" style="justify-content:center">One price. No tiers.</div>
+      <h2 class="sec-title" style="text-align:center">Seven free nights. <em>Then $6.99.</em></h2>
+    </div>
+
+    <div class="price-card">
+      <div class="price-free">First week · fully free</div>
+      <div class="price-big">$6.99<span class="per">/ month</span></div>
+      <p class="price-sub">No credit card to start. No annual lock-in. No credits to spend. One flat price that stays flat. Cancel any time — we mean it.</p>
+      <ul class="price-list">
+        <li>Full feature access</li>
+        <li>Unlimited brain dumps</li>
+        <li>Unlimited stories</li>
+        <li>All wind-down methods</li>
+        <li>Mid-sleep mode</li>
+      </ul>
+      <a class="btn btn-primary" href="#waitlist">Join the waitlist <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="faq-grid">
+      <div>
+        <div class="sec-kicker">Questions</div>
+        <h2 class="sec-title" style="font-size:clamp(30px,3.8vw,48px);margin-top:14px">Things people ask before <em>2am.</em></h2>
+        <p class="sec-sub" style="margin-top:18px">Still on the fence? The honest answer to most of these: try it for seven nights and see.</p>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item open">
+          <button class="faq-q">Is this a meditation app?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">No. Meditation requires active focus — the opposite of what an over-activated brain needs at 2am. Lull's techniques are passive. Brain dump is one-directional. Boring stories go nowhere on purpose. 4-7-8 breathing has a single pulsing dot and a calm voice.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Does it track my sleep stages?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">No — deliberately. Lull correlates what you <em>did</em> (lights, temperature, wind-down method, get-up prompt) with how you rated sleep the next morning. Behavioural, not biometric. Upstream of sleep, not downstream of it.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Will it actually work for me?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">We don't know — and we say so. Every technique is presented as a hypothesis to test against your own data, not a prescription. The whole product is designed to find which variables move the needle for <em>your</em> body and brain.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">What happens after 7 nights?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">If you want to continue, $6.99/month. If not, nothing happens — no card on file, nothing to cancel, no retention email cascade. We'd rather you leave than feel tricked.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Is the get-up prompt safe?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">CBT-I's stimulus-control technique is a first-line clinical recommendation for insomnia. But it isn't for everyone. If you have a condition affected by sleep loss, are pregnant, operate heavy machinery, or have a history of mania or seizures, talk to your doctor before using it. We show this at onboarding and in Settings.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Does my data leave my phone?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">Brain dump recordings and transcriptions stay on device. Routine and rating data sync via CloudKit (encrypted end-to-end on Apple's infrastructure) so you can move phones. No third-party analytics beyond privacy-first aggregate counts.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final" id="waitlist">
+  <span class="companion" style="top:22%;left:12%"></span>
+  <span class="companion c-trail" style="top:30%;right:14%"></span>
+  <span class="companion c-trail" style="bottom:28%;left:18%;animation-delay:-2s"></span>
+  <div class="wrap final-inner">
+    <h2>Ready to sleep<br/><em>like you used to?</em></h2>
+    <p>Pick your path below. Pre-order locks in the Founder price for the first year. The waitlist is free — no commitment, just a front-row spot.</p>
+
+    <!-- Intent toggle -->
+    <div class="intent-toggle">
+      <button class="intent-btn active" data-panel="preorder">Pre-order · 50% off</button>
+      <button class="intent-btn" data-panel="waitlist">Free waitlist</button>
+    </div>
+
+    <!-- Pre-order panel -->
+    <div class="intent-panel active" id="panel-preorder">
+      <div class="preorder-offer">
+        <div class="preorder-badge">Founder pricing · limited spots</div>
+        <div class="preorder-price">$3.99<span class="per">/ month</span> <span class="was">$6.99</span></div>
+        <div class="preorder-detail">Pay for first month, get 7 nights free + lock in 50% off for 1 year after launch. Cancel any time before then — no questions asked.</div>
+        <form class="wait-form" id="preorder-form" action="https://formspree.io/f/xeevkorq" method="POST" novalidate>
+          <input class="wf-input" aria-label="Email Address" name="email" required placeholder="your@email.com" type="email" autocomplete="email"/>
+          <input type="hidden" name="_subject" value="Lull pre-order — founder pricing"/>
+          <input type="hidden" name="_intent" value="preorder"/>
+          <button type="submit" class="wf-submit"><span class="btn-text">Pre-order →</span></button>
+        </form>
+        <div id="preorder-msg" class="wait-msg" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- Waitlist panel -->
+    <div class="intent-panel" id="panel-waitlist">
+      <p class="waitlist-desc">Get an early invite when Lull opens, plus a full 7-night free trial when you're ready. No card, no commitment — just first in line.</p>
+      <form class="wait-form" id="waitlist-form" action="https://formspree.io/f/xeevkorq" method="POST" novalidate>
+        <input class="wf-input" aria-label="Email Address" name="email" required placeholder="your@email.com" type="email" autocomplete="email"/>
+        <input type="hidden" name="_subject" value="Lull waitlist — free early invite"/>
+        <input type="hidden" name="_intent" value="waitlist"/>
+        <button type="submit" class="wf-submit"><span class="btn-text">Join waitlist →</span></button>
+      </form>
+      <div id="waitlist-msg" class="wait-msg" aria-live="polite"></div>
+    </div>
+
+    <div class="final-meta" style="margin-top:32px">iOS & Android · LAUNCHES WHEN IT'S READY · CANCEL BEFORE THEN, NO CHARGE</div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Get in touch</div>
+      <h2 class="sec-title">Say <em>hello.</em></h2>
+      <p class="sec-sub">Questions, feedback, partnership ideas — we read everything and reply to most of it.</p>
+    </div>
+    <div class="contact-grid">
+      <form class="contact-form" id="contact-form" action="https://formspree.io/f/xeevrjqp" method="POST" novalidate>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="c-name">Name</label>
+            <input class="form-input" id="c-name" name="name" type="text" placeholder="Your name" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="c-email">Email</label>
+            <input class="form-input" id="c-email" name="email" type="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="c-msg">Message</label>
+          <textarea class="form-textarea" id="c-msg" name="message" placeholder="What's on your mind?" required></textarea>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" id="contact-btn">Send message <span class="arrow">→</span></button>
+        </div>
+        <p class="contact-msg" id="contact-msg"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot">
+    <div class="brand" style="font-size:18px"><span class="dot"></span>lull</div>
+    <div class="foot-links">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="foot-copy">© 2026 · BUILT SOLO · ONE NIGHT AT A TIME</div>
+  </div>
+</footer>
+
+<!-- TWEAKS PANEL -->
+<div id="tweaks-panel">
+  <h4>Tweaks <span class="tdot"></span></h4>
+
+  <div class="tw-row">
+    <label>Accent hue</label>
+    <input type="range" min="30" max="90" step="1" value="62" class="tw-slider" id="tw-hue"/>
+  </div>
+
+  <div class="tw-row">
+    <label>CTA copy</label>
+    <div class="tw-opts" id="tw-cta">
+      <button class="tw-opt" data-v="Start 7 free nights">7 free nights</button>
+      <button class="tw-opt" data-v="Try Lull tonight">Try tonight</button>
+      <button class="tw-opt" data-v="Claim Founder Early Access">Claim Founder Early Access – 50% off first year</button>
+    </div>
+  </div>
+
+  <div class="tw-row">
+    <label>Film grain</label>
+    <label class="tw-check"><input type="checkbox" id="tw-grain" checked/> Subtle film grain overlay</label>
+  </div>
+</div>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.closest('.faq-item');
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // TWEAKS protocol
+  const panel = document.getElementById('tweaks-panel');
+  function applyTweaks(t) {
+    document.documentElement.style.setProperty('--ember', `oklch(74% 0.14 ${t.accentHue})`);
+    document.documentElement.style.setProperty('--ember-soft', `oklch(68% 0.11 ${t.accentHue})`);
+    document.documentElement.style.setProperty('--ember-deep', `oklch(52% 0.12 ${t.accentHue - 4})`);
+    document.documentElement.style.setProperty('--ember-glow', `oklch(78% 0.16 ${t.accentHue} / 0.5)`);
+    document.getElementById('cta-copy').textContent = t.ctaCopy;
+    document.body.classList.toggle('no-grain', !t.showGrain);
+    document.getElementById('tw-hue').value = t.accentHue;
+    document.getElementById('tw-grain').checked = t.showGrain;
+    document.querySelectorAll('#tw-cta .tw-opt').forEach(o => o.classList.toggle('active', o.dataset.v === t.ctaCopy));
+  }
+  applyTweaks(TWEAKS);
+
+  function persist(patch) {
+    Object.assign(TWEAKS, patch);
+    try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*'); } catch(e){}
+  }
+
+  document.getElementById('tw-hue').addEventListener('input', e => {
+    const h = Number(e.target.value);
+    applyTweaks({...TWEAKS, accentHue: h});
+    persist({accentHue: h});
+  });
+  document.getElementById('tw-grain').addEventListener('change', e => {
+    applyTweaks({...TWEAKS, showGrain: e.target.checked});
+    persist({showGrain: e.target.checked});
+  });
+  document.querySelectorAll('#tw-cta .tw-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.v;
+      applyTweaks({...TWEAKS, ctaCopy: v});
+      persist({ctaCopy: v});
+    });
+  });
+
+  // Intent toggle
+  document.querySelectorAll('.intent-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = btn.dataset.panel;
+      document.querySelectorAll('.intent-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.intent-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + panel).classList.add('active');
+    });
+  });
+
+  // Shared form submit handler
+  function wireForm(formId, msgId, successText, defaultBtnText) {
+    const form = document.getElementById(formId);
+    const msg = document.getElementById(msgId);
+    if (!form) return;
+    const btn = form.querySelector('.wf-submit');
+    const btnText = btn && btn.querySelector('.btn-text');
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      if (!email) return;
+      btnText.textContent = 'Sending…';
+      btn.disabled = true;
+      msg.textContent = '';
+      msg.className = 'wait-msg';
+      try {
+        const r = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' },
+        });
+        if (r.ok) {
+          fbq('track', 'Lead');
+          form.style.display = 'none';
+          msg.textContent = successText;
+          msg.className = 'wait-msg ok';
+        } else {
+          throw new Error('status ' + r.status);
+        }
+      } catch (err) {
+        btnText.textContent = defaultBtnText;
+        btn.disabled = false;
+        msg.textContent = 'Something went wrong. Please try again.';
+        msg.className = 'wait-msg err';
+      }
+    });
+  }
+
+  // Pre-order — save email then redirect to Stripe
+  (function(){
+    const form = document.getElementById('preorder-form');
+    const msg = document.getElementById('preorder-msg');
+    if (!form) return;
+    const btn = form.querySelector('.wf-submit');
+    const btnText = btn && btn.querySelector('.btn-text');
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      if (!email) return;
+      btnText.textContent = 'One sec…';
+      btn.disabled = true;
+      // Save email in background, don't block on result
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' },
+      }).catch(() => {});
+      // Redirect to Stripe with email pre-filled
+      fbq('track', 'InitiateCheckout');
+      const stripeUrl = 'https://buy.stripe.com/28EcMZ5yebMo3bt47PaR200';
+      window.location.href = stripeUrl + '?prefilled_email=' + encodeURIComponent(email);
+    });
+  })();
+
+  wireForm('waitlist-form', 'waitlist-msg', "You're on the list ✓  Early invite + 7-night trial, coming soon.", 'Join waitlist →');
+  // Contact form handler
+  (function() {
+    const form = document.getElementById('contact-form');
+    const msg  = document.getElementById('contact-msg');
+    const btn  = document.getElementById('contact-btn');
+    if (!form) return;
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name    = form.name.value.trim();
+      const email   = form.email.value.trim();
+      const message = form.message.value.trim();
+      if (!name || !email || !message) {
+        msg.textContent = 'Please fill in all fields.';
+        msg.className = 'contact-msg err';
+        return;
+      }
+      btn.disabled = true;
+      btn.innerHTML = 'Sending… <span class="arrow">→</span>';
+      msg.textContent = '';
+      msg.className = 'contact-msg';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message })
+        });
+        if (res.ok) {
+          msg.textContent = "Message sent ✓  We'll be in touch soon.";
+          msg.className = 'contact-msg ok';
+          form.reset();
+          btn.innerHTML = 'Send message <span class="arrow">→</span>';
+        } else {
+          throw new Error('server');
+        }
+      } catch(_) {
+        msg.textContent = 'Something went wrong. Try emailing czarina@passportglobal.com directly.';
+        msg.className = 'contact-msg err';
+        btn.innerHTML = 'Send message <span class="arrow">→</span>';
+      }
+      btn.disabled = false;
+    });
+  })();
+
+  // Edit mode handshake
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === '__activate_edit_mode') panel.classList.add('visible');
+    if (d.type === '__deactivate_edit_mode') panel.classList.remove('visible');
+  });
+  try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e){}
+</script>
+
+</body>
+</html>

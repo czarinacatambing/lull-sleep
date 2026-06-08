@@ -2,10 +2,15 @@ import SwiftUI
 
 struct HomeTabView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @State private var selectedTab: Int
 
     init() { _selectedTab = State(initialValue: 0) }
     init(initialTab: Int) { _selectedTab = State(initialValue: initialTab) }
+
+    private var miniPlayerVisible: Bool {
+        sleepSoundsAudio.isPlaying
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -18,7 +23,10 @@ struct HomeTabView: View {
                     .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: miniPlayerVisible ? SleepSoundsMiniPlayerLayout.reservedHeight : 0)
+            }
 
             // Custom tab bar
             HStack(spacing: 0) {
@@ -42,17 +50,46 @@ struct HomeTabView: View {
             .overlay(alignment: .top) {
                 Color.lullLine.frame(height: 1)
             }
+
+            if miniPlayerVisible {
+                SleepSoundsMiniPlayer {
+                    state.showSleepSounds = true
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, SleepSoundsMiniPlayerLayout.bottomAboveTabBar)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(2)
+            }
         }
         .ignoresSafeArea(edges: .bottom)
+        .animation(.easeInOut(duration: 0.22), value: miniPlayerVisible)
         // Shake / programmatic activation → jump to tab 2
         .onChange(of: state.showMidSleepMode) { _, active in
             if active {
+                sleepSoundsAudio.stop()
                 selectedTab = 2
                 state.showMidSleepMode = false
             }
         }
+        // Catch the cold-launch race: if the Live Activity / URL handler set
+        // showMidSleepMode = true before this view mounted (welcome splash up),
+        // onChange never fired. Pick it up on first appear.
+        .onAppear {
+            if state.showMidSleepMode {
+                sleepSoundsAudio.stop()
+                selectedTab = 2
+                state.showMidSleepMode = false
+            }
+            if let requested = state.requestedTab {
+                selectedTab = requested
+                state.requestedTab = nil
+            }
+        }
         // Restore brightness when navigating away from Mid-sleep
         .onChange(of: selectedTab) { oldTab, newTab in
+            if newTab == 2 {
+                sleepSoundsAudio.stop()
+            }
             if oldTab == 2 && newTab != 2 {
                 state.restoreBrightnessAfterMidSleep()
             }

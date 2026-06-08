@@ -1,23 +1,34 @@
 import SwiftUI
+import UniformTypeIdentifiers
+import FamilyControls
 
 struct MyRoutineView: View {
     @EnvironmentObject var state: AppState
-    @AppStorage("routineVisitCount") private var visitCount = 0
-    @State private var coachDismissed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var selectedStepID: UUID? = nil
+    @State private var libraryTarget: RoutineSectionKind? = nil
+    @State private var addedLibraryID: String? = nil
+    @State private var showScience = false
     @State private var showChangeConfirm = false
     @State private var showCandidatePicker = false
-    @State private var pendingCandidate: String? = nil
     @State private var showHistoryLegend = false
     @State private var showTonightInProgress = false
 
-    private var showCoach: Bool { !coachDismissed && visitCount <= 3 }
-
+    private var prepSteps: [RoutineStep] { state.routinePrepSteps }
+    private var ritualSteps: [RoutineStep] { state.routineRitualSteps }
     private var candidates: [String] {
         let inRoutine = Set(state.coreRoutine.map(\.label))
-        return allBedroomPrepRemedies.filter { !inRoutine.contains($0) }
+        var seen: Set<String> = []
+        return (allBedroomPrepRemedies + allWindDownRemedies)
+            .filter { seen.insert($0).inserted }
+            .filter { !inRoutine.contains($0) || $0 == state.tonightVariable }
     }
 
     private var suggestedVariable: String? {
+        if state.experimentStatus != nil {
+            return state.tonightVariable
+        }
+
         let routineWithoutExperiment = state.coreRoutine.filter { $0.mode != .experiment }
         return ExperimentEngine.suggestNextVariable(
             logs: state.sleepLogs,
@@ -67,172 +78,168 @@ struct MyRoutineView: View {
         return slots
     }
 
-    private func badgeText(for step: RoutineStep) -> String {
-        state.scheduledRoutine.first { $0.step.id == step.id }?.badge ?? step.mode.label
-    }
-
     var body: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.8, y: -0.08, radius: 260, opacity: 0.55)
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 16)
+            ZStack(alignment: .bottom) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        Spacer().frame(height: 16)
 
-                    // Header
-                    VStack(alignment: .leading, spacing: 6) {
-                        Kicker(text: "Your routine")
-                        Text("My Sleep System")
-                            .font(.serif(30))
-                            .fontWeight(.regular)
-                            .foregroundColor(.lullInk0)
-                        Text("Build your experiment. Test one change at a time. Watch your sleep improve.")
-                            .font(.serifItalic(14.5))
-                            .foregroundColor(.lullAmberSoft)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .lineSpacing(3)
-                            .padding(.top, 2)
-                    }
-                    .padding(.horizontal, Lull.horizontalPad)
-                    .padding(.bottom, 18)
-
-                    // Coach mark
-                    if showCoach {
-                        RoutineCoachMark { coachDismissed = true }
+                        RoutineTopHeader(bedtime: state.typicalBedtime)
                             .padding(.horizontal, 22)
-                            .padding(.bottom, 14)
-                    }
 
-                    // Experiment hero card
-                    ExperimentHeroCard(
-                        showCandidatePicker: $showCandidatePicker,
-                        showChangeConfirm: $showChangeConfirm
-                    )
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 24)
-                    .alert("Change experiment?", isPresented: $showChangeConfirm) {
-                        Button("Keep testing") { }
-                        Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
-                    } message: {
-                        Text("You've only tested \"\(state.tonightVariable)\" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
-                    }
-                    .sheet(isPresented: $showCandidatePicker) {
-                        CandidatePickerSheet(
-                            candidates: candidates,
-                            suggestedVariable: suggestedVariable,
-                            currentVariable: state.tonightVariable
-                        ) { chosen in
-                            state.changeExperimentVariable(to: chosen)
-                            showCandidatePicker = false
-                        }
-                    }
-
-                    // Prep checklist section
-                    RoutineSectionHead(
-                        title: "Prep checklist",
-                        eyebrow: "Start here",
-                        sub: "Do these 30–75 min before bed",
-                        right: "\(state.preWindDownSteps.count) STEPS"
-                    )
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 10)
-
-                    List {
-                        ForEach(state.preWindDownSteps) { step in
-                            PrepListRow(
-                                step: step,
-                                isExperiment: step.mode == .experiment,
-                                chip: badgeText(for: step)
-                            )
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                        }
-                        .onMove(perform: state.movePreWindDown)
-                    }
-                    .environment(\.editMode, .constant(.active))
-                    .scrollDisabled(true)
-                    .listStyle(.plain)
-                    .frame(height: CGFloat(state.preWindDownSteps.count) * 60)
-                    .padding(.horizontal, 22)
-
-                    DragHintLabel()
-                        .padding(.horizontal, 22)
-                        .padding(.top, 4)
-                        .padding(.bottom, 24)
-
-                    // Bedtime ritual section
-                    RoutineSectionHead(
-                        title: "Bedtime ritual",
-                        eyebrow: "In sequence",
-                        sub: "Follow in order when you're getting into bed",
-                        right: "\(state.windDownSteps.count) STEPS"
-                    )
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 10)
-
-                    List {
-                        ForEach(Array(state.windDownSteps.enumerated()), id: \.element.id) { i, step in
-                            RitualListRow(number: i + 1, step: step)
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                        }
-                        .onMove(perform: state.moveWindDown)
-                    }
-                    .environment(\.editMode, .constant(.active))
-                    .scrollDisabled(true)
-                    .listStyle(.plain)
-                    .frame(height: CGFloat(state.windDownSteps.count) * 60)
-                    .padding(.horizontal, 22)
-
-                    DragHintLabel()
-                        .padding(.horizontal, 22)
-                        .padding(.top, 4)
-                        .padding(.bottom, 28)
-
-                    // Progress section
-                    HStack(alignment: .top) {
-                        RoutineSectionHead(
-                            title: "Your progress",
-                            eyebrow: "Last 14 nights",
-                            sub: "Tap any night for details.",
-                            right: avgScoreText ?? ""
+                        ExperimentStrip(
+                            title: state.tonightVariable,
+                            night: max(state.variableNight, 2),
+                            total: 5,
+                            onViewScience: { showScience = true },
+                            onSwitch: {
+                                if state.variableNight > 0 {
+                                    showChangeConfirm = true
+                                } else {
+                                    showCandidatePicker = true
+                                }
+                            }
                         )
-                        Button { showHistoryLegend = true } label: {
-                            Image(systemName: "questionmark.circle")
-                                .font(.system(size: 16))
-                                .foregroundColor(.lullInk4)
-                        }
-                        .padding(.top, 3)
-                    }
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 10)
+                        .padding(.horizontal, 22)
 
-                    ProgressDotsCard(
-                        slots: displaySlots,
-                        sleepLogs: state.sleepLogs,
-                        onTap: { idx in state.selectedDotIndex = idx },
-                        onTodayEmptyTap: {
-                            // Don't persist anything on tap — just show the welcome sheet.
-                            // Entries get created when the wind-down flow runs or the
-                            // morning rating is logged, not on a curiosity tap.
-                            showTonightInProgress = true
+                        RoutineStepSection(
+                            number: "01",
+                            title: "Prep",
+                            suffix: "· before bed",
+                            steps: prepSteps,
+                            section: .prep,
+                            onSelect: { selectedStepID = $0.id },
+                            onMove: { moving, target in
+                                state.moveRoutineStep(moving, before: target, in: .prep)
+                            },
+                            onDelete: { step in
+                                state.removeRoutineStep(step)
+                            },
+                            onAdd: { libraryTarget = .prep }
+                        )
+                        .padding(.horizontal, 22)
+
+                        RoutineStepSection(
+                            number: "02",
+                            title: "Ritual",
+                            suffix: "· in bed",
+                            steps: ritualSteps,
+                            section: .ritual,
+                            onSelect: { selectedStepID = $0.id },
+                            onMove: { moving, target in
+                                state.moveRoutineStep(moving, before: target, in: .ritual)
+                            },
+                            onDelete: { step in
+                                state.removeRoutineStep(step)
+                            },
+                            onAdd: { libraryTarget = .ritual }
+                        )
+                        .padding(.horizontal, 22)
+
+                        RoutineProgressSection(
+                            avgScoreText: avgScoreText,
+                            slots: displaySlots,
+                            sleepLogs: state.sleepLogs,
+                            onInfo: { showHistoryLegend = true },
+                            onTap: { idx in state.selectedDotIndex = idx },
+                            onTodayEmptyTap: { showTonightInProgress = true }
+                        )
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 40)
+                    }
+                }
+
+                if let target = libraryTarget {
+                    StepLibraryOverlay(
+                        addedLibraryID: $addedLibraryID,
+                        targetSection: target,
+                        onClose: { libraryTarget = nil },
+                        onAdd: { item in
+                            guard item.defaultSection != .morning else { return }
+                            addedLibraryID = item.id
+                            let newStep = state.addRoutineStep(from: item)
+                            let delay = reduceMotion ? 0.2 : 0.25
+                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                libraryTarget = nil
+                                selectedStepID = newStep.id
+                                addedLibraryID = nil
+                            }
                         }
                     )
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 28)
+                    .transition(reduceMotion ? .opacity : .asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                        removal: .opacity
+                    ))
+                    .zIndex(2)
+                }
 
-                    ExportDataFooter()
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 36)
+                if let step = selectedStep {
+                    if step.label == R.sleepSounds {
+                        SleepSoundsStep(
+                            initial: step.sleepSoundConfig ?? .fresh,
+                            mode: .editStep,
+                            onSave: { config in
+                                var updated = step
+                                updated.sleepSoundConfig = config
+                                updated.durationLabel = config.infinite ? "∞" : config.durationSummary
+                                state.updateRoutineStep(updated)
+                                selectedStepID = nil
+                            },
+                            onDismiss: { selectedStepID = nil }
+                        )
+                        .id(step.id)
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(3)
+                    } else {
+                        EditStepSheet(
+                            step: step,
+                            section: state.sectionKind(for: step),
+                            onClose: { selectedStepID = nil },
+                            onRemove: {
+                                state.removeRoutineStep(step)
+                                selectedStepID = nil
+                            },
+                            onSave: { updated in
+                                state.updateRoutineStep(updated)
+                                selectedStepID = nil
+                            }
+                        )
+                        .id(step.id)
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(3)
+                    }
                 }
             }
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.28), value: libraryTarget != nil)
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.28), value: selectedStepID)
         }
-        .onAppear { visitCount = min(visitCount + 1, 99) }
-        .fullScreenCover(isPresented: $state.showNightlyFlow) {
-            NightlyFlowView()
+        .alert("Change experiment?", isPresented: $showChangeConfirm) {
+            Button("Keep testing") { }
+            Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
+        } message: {
+            Text("You've only tested \"\(state.tonightVariable)\" for \(state.variableNight) night\(state.variableNight == 1 ? "" : "s"). Switching now means losing that data.")
+        }
+        .sheet(isPresented: $showScience) {
+            ScienceSheet(
+                remedyName: state.tonightVariable,
+                remedyId: state.tonightRemedyId
+            )
+            .presentationDetents([.fraction(0.45)])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showCandidatePicker) {
+            CandidatePickerSheet(
+                candidates: candidates,
+                suggestedVariable: suggestedVariable,
+                currentVariable: state.tonightVariable
+            ) { chosen in
+                state.changeExperimentVariable(to: chosen)
+                showCandidatePicker = false
+            }
         }
         .sheet(isPresented: Binding(
             get: { state.selectedDotIndex != nil },
@@ -248,6 +255,1739 @@ struct MyRoutineView: View {
         .sheet(isPresented: $showTonightInProgress) {
             TonightInProgressView()
         }
+    }
+
+    private var selectedStep: RoutineStep? {
+        guard let selectedStepID else { return nil }
+        return state.coreRoutine.first { $0.id == selectedStepID }
+    }
+}
+
+// MARK: - New Routine Surface
+
+enum RoutineSectionKind: String, CaseIterable, Codable {
+    case prep
+    case ritual
+    case morning
+
+    var title: String {
+        switch self {
+        case .prep: return "Prep"
+        case .ritual: return "Ritual"
+        case .morning: return "Morning"
+        }
+    }
+}
+
+struct RoutineTopHeader: View {
+    var bedtime: Date
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("MY ROUTINE")
+                    .font(.mono(10))
+                    .kerning(1.8)
+                    .foregroundColor(.lullAmberSoft)
+                Text("Tonight")
+                    .font(.serif(30))
+                    .foregroundColor(.lullInk0)
+            }
+
+            Spacer()
+
+            HStack(spacing: 7) {
+                Image(systemName: "moon.fill")
+                    .font(.system(size: 10))
+                Text(Self.timeFormatter.string(from: bedtime))
+                    .font(.mono(10.5))
+            }
+            .foregroundColor(.lullInk1)
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .background(
+                Capsule()
+                    .fill(Color.lullAmber.opacity(0.045))
+                    .overlay(Capsule().strokeBorder(Color.lullLine, lineWidth: 1))
+            )
+        }
+    }
+}
+
+struct ExperimentStrip: View {
+    @State private var pulse = false
+    var title: String
+    var night: Int
+    var total: Int
+    var onViewScience: () -> Void
+    var onSwitch: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.lullAmber.opacity(0.10))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullAmber.opacity(0.18), lineWidth: 1))
+                    Image(systemName: "flask.fill")
+                        .font(.system(size: 17))
+                        .foregroundColor(.lullAmber)
+                }
+                .frame(width: 40, height: 40)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(Color.lullAmber)
+                            .frame(width: 5, height: 5)
+                            .opacity(pulse ? 1 : 0.45)
+                            .shadow(color: .lullAmberGlow, radius: pulse ? 5 : 1)
+                        Text("TESTING · NIGHT \(night)/\(total)")
+                            .font(.mono(9.5))
+                            .kerning(1.35)
+                            .foregroundColor(.lullAmberSoft)
+                    }
+
+                    Text(title)
+                        .font(.serif(17))
+                        .foregroundColor(.lullInk0)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 10)
+
+                HStack(spacing: 4) {
+                    ForEach(0..<total, id: \.self) { index in
+                        Circle()
+                            .fill(index < night ? Color.lullAmber : Color.lullAmber.opacity(0.16))
+                            .frame(width: 6, height: 6)
+                            .shadow(color: index < night ? .lullAmberGlow : .clear, radius: 3)
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                Button(action: onViewScience) {
+                    Text("View science")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundColor(.lullInk1)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 11)
+                                .fill(Color.white.opacity(0.035))
+                                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Color.lullLine, lineWidth: 1))
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onSwitch) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Switch")
+                            .font(.system(size: 12.5, weight: .medium))
+                    }
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 98, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color.lullAmber.opacity(0.08))
+                            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Color.lullAmber.opacity(0.28), lineWidth: 1))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.lullAmber.opacity(0.10), Color.lullAmber.opacity(0.02)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.lullAmber.opacity(0.26), lineWidth: 1))
+        )
+        .onAppear { pulse = true }
+        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulse)
+    }
+}
+
+struct RoutineStepSection: View {
+    var number: String
+    var title: String
+    var suffix: String
+    var steps: [RoutineStep]
+    var section: RoutineSectionKind
+    var onSelect: (RoutineStep) -> Void
+    var onMove: (RoutineStep, RoutineStep) -> Void
+    var onDelete: (RoutineStep) -> Void
+    var onAdd: () -> Void
+    @State private var draggingStep: RoutineStep? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(number)
+                    .font(.mono(10))
+                    .kerning(1.7)
+                    .foregroundColor(.lullAmberSoft)
+                Text(title)
+                    .font(.serif(20))
+                    .foregroundColor(.lullInk0)
+                Text(suffix)
+                    .font(.mono(10))
+                    .kerning(1.1)
+                    .foregroundColor(.lullInk4)
+                Spacer()
+                Text("\(steps.count) STEPS")
+                    .font(.mono(9.5))
+                    .kerning(1.1)
+                    .foregroundColor(.lullInk4)
+            }
+
+            VStack(spacing: 6) {
+                ForEach(steps) { step in
+                    StepRow(
+                        step: step,
+                        section: section,
+                        canDelete: step.mode != .experiment,
+                        onDelete: { onDelete(step) }
+                    ) {
+                        onSelect(step)
+                    }
+                    .opacity(draggingStep?.id == step.id ? 0.55 : 1)
+                    .onDrag {
+                        draggingStep = step
+                        return NSItemProvider(object: step.id.uuidString as NSString)
+                    }
+                    .onDrop(
+                        of: [UTType.text],
+                        delegate: RoutineStepDropDelegate(
+                            target: step,
+                            draggingStep: $draggingStep,
+                            steps: steps,
+                            onMove: onMove
+                        )
+                    )
+                }
+                AddStepRow(action: onAdd)
+            }
+        }
+    }
+}
+
+struct RoutineStepDropDelegate: DropDelegate {
+    let target: RoutineStep
+    @Binding var draggingStep: RoutineStep?
+    let steps: [RoutineStep]
+    var onMove: (RoutineStep, RoutineStep) -> Void
+
+    func dropEntered(info: DropInfo) {
+        guard let draggingStep,
+              draggingStep.id != target.id,
+              steps.contains(where: { $0.id == draggingStep.id }),
+              steps.contains(where: { $0.id == target.id }) else { return }
+        onMove(draggingStep, target)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingStep = nil
+        return true
+    }
+
+    func dropExited(info: DropInfo) { }
+}
+
+struct StepRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var step: RoutineStep
+    var section: RoutineSectionKind
+    var canDelete: Bool
+    var onDelete: () -> Void
+    var action: () -> Void
+    @State private var rowOffset: CGFloat = 0
+
+    private var isExperiment: Bool { step.mode == .experiment }
+    private let deleteWidth: CGFloat = 52
+    private var deleteRevealOpacity: Double {
+        let reveal = max(0, -rowOffset - 10) / max(1, deleteWidth - 10)
+        return min(1, Double(reveal))
+    }
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            if canDelete {
+                Button(action: deleteStep) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(hex: "#e89189"))
+                        .frame(width: 34, height: 34)
+                        .background(
+                            Circle()
+                                .fill(Color(hex: "#e89189").opacity(0.075))
+                                .overlay(Circle().strokeBorder(Color(hex: "#e89189").opacity(0.26), lineWidth: 1))
+                        )
+                }
+                .frame(width: deleteWidth, height: 52, alignment: .center)
+                .opacity(deleteRevealOpacity)
+                .buttonStyle(.plain)
+            }
+
+            Button(action: {
+                if rowOffset < 0 {
+                    closeSwipe()
+                } else {
+                    action()
+                }
+            }) {
+                HStack(spacing: 10) {
+                    DragHandle()
+                        .frame(width: 16)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        Text(step.label)
+                            .font(.serif(15.5))
+                            .foregroundColor(.lullInk0)
+                            .lineLimit(1)
+                        if isExperiment {
+                            Text("TEST")
+                                .font(.mono(8.5))
+                                .kerning(1.2)
+                                .foregroundColor(.lullAmber)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text(metadata)
+                        .font(.mono(10))
+                        .foregroundColor(isExperiment ? .lullAmberSoft : .lullInk3)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(isExperiment ? Color.lullAmber.opacity(0.06) : Color.white.opacity(0.025))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1)
+                        )
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(RoutineRowButtonStyle(reduceMotion: reduceMotion))
+            .offset(x: canDelete ? rowOffset : 0)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 18)
+                    .onChanged { value in
+                        guard canDelete, abs(value.translation.width) > abs(value.translation.height) else { return }
+                        if value.translation.width < 0 {
+                            rowOffset = max(-deleteWidth, value.translation.width)
+                        } else if rowOffset < 0 {
+                            rowOffset = min(0, -deleteWidth + value.translation.width)
+                        }
+                    }
+                    .onEnded { value in
+                        guard canDelete, abs(value.translation.width) > abs(value.translation.height) else { return }
+                        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.16)) {
+                            if value.translation.width < -30 {
+                                rowOffset = -deleteWidth
+                            } else {
+                                rowOffset = 0
+                            }
+                        }
+                    }
+            )
+        }
+    }
+
+    private func closeSwipe() {
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.16)) {
+            rowOffset = 0
+        }
+    }
+
+    private func deleteStep() {
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.16)) {
+            rowOffset = 0
+        }
+        onDelete()
+    }
+
+    private var metadata: String {
+        switch section {
+        case .prep:
+            return "\(step.resolvedLeadTimeMins)m"
+        case .ritual:
+            return step.durationLabel ?? defaultDuration(for: step.label)
+        case .morning:
+            return "Soon"
+        }
+    }
+
+    private func defaultDuration(for label: String) -> String {
+        switch label {
+        case "Brightness check", "Temperature check": return "10s"
+        case R.brainDump: return "2m · voice"
+        case R.boringStory: return "AI · 8m"
+        case "4·7·8 breathing", R.breathing478: return "5m"
+        case "Body scan": return "5m"
+        default: return "\(NightlyStepKind.forLabel(label)?.estimatedMinutes ?? 5)m"
+        }
+    }
+}
+
+struct RoutineRowButtonStyle: ButtonStyle {
+    var reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.995 : 1)
+            .brightness(configuration.isPressed ? 0.03 : 0)
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: configuration.isPressed ? 0.12 : 0.16), value: configuration.isPressed)
+    }
+}
+
+struct DragHandle: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<2, id: \.self) { _ in
+                VStack(spacing: 3) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Circle()
+                            .fill(Color.lullInk4)
+                            .frame(width: 3, height: 3)
+                    }
+                }
+            }
+        }
+        .frame(width: 18, height: 24)
+        .contentShape(Rectangle())
+    }
+}
+
+struct AddStepRow: View {
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Add step")
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .foregroundColor(.lullAmberSoft)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.lullAmber.opacity(0.025))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                            .foregroundColor(Color.lullAmber.opacity(0.34))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct RoutineProgressSection: View {
+    var avgScoreText: String?
+    var slots: [DotSlot]
+    var sleepLogs: [SleepLogEntry]
+    var onInfo: () -> Void
+    var onTap: (Int) -> Void
+    var onTodayEmptyTap: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("03")
+                    .font(.mono(10))
+                    .kerning(1.7)
+                    .foregroundColor(.lullAmberSoft)
+                Text("Progress")
+                    .font(.serif(20))
+                    .foregroundColor(.lullInk0)
+                Text("· last 14 nights")
+                    .font(.mono(10))
+                    .kerning(1.1)
+                    .foregroundColor(.lullInk4)
+                Spacer()
+                if let avgScoreText {
+                    Text(avgScoreText)
+                        .font(.mono(9.5))
+                        .kerning(1.1)
+                        .foregroundColor(.lullInk4)
+                }
+                Button(action: onInfo) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.lullInk4)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            ProgressDotsCard(
+                slots: slots,
+                sleepLogs: sleepLogs,
+                onTap: onTap,
+                onTodayEmptyTap: onTodayEmptyTap
+            )
+        }
+    }
+}
+
+struct EditStepSheet: View {
+    @EnvironmentObject var state: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var step: RoutineStep
+    var section: RoutineSectionKind
+    var onClose: () -> Void
+    var onRemove: () -> Void
+    var onSave: (RoutineStep) -> Void
+
+    @State private var label: String
+    @State private var leadTime: Double
+    @State private var notes: String
+    @State private var notifyEnabled: Bool
+    @State private var sheetDragOffset: CGFloat = 0
+    @State private var appBlockingSelection = FamilyActivitySelection()
+    @State private var appBlockingEnabled = false
+    @State private var appBlockingStartTime = Date()
+    @State private var appBlockingEndTime = Date()
+    @State private var appBlockingGraceMinutes = 5
+    @State private var showFamilyActivityPicker = false
+
+    init(step: RoutineStep,
+         section: RoutineSectionKind,
+         onClose: @escaping () -> Void,
+         onRemove: @escaping () -> Void,
+         onSave: @escaping (RoutineStep) -> Void) {
+        self.step = step
+        self.section = section
+        self.onClose = onClose
+        self.onRemove = onRemove
+        self.onSave = onSave
+        _label = State(initialValue: step.label)
+        _leadTime = State(initialValue: Double(step.resolvedLeadTimeMins))
+        _notes = State(initialValue: step.notes ?? "")
+        _notifyEnabled = State(initialValue: step.notifyEnabled ?? true)
+    }
+
+    private var isAppBlockingStep: Bool {
+        step.remedyId == .appBlocking || step.label == R.appBlocking
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Color.black.opacity(backdropOpacity)
+                .ignoresSafeArea()
+                .onTapGesture { onClose() }
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
+                    Capsule()
+                        .fill(Color.lullLineStrong)
+                        .frame(width: 36, height: 4)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 6)
+                        .padding(.bottom, 2)
+
+                    HStack {
+                        Text("EDIT STEP · \(section.title.uppercased())")
+                            .font(.mono(10))
+                            .kerning(1.55)
+                            .foregroundColor(.lullAmberSoft)
+                        Spacer()
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.lullInk2)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.04))
+                                        .overlay(Circle().strokeBorder(Color.lullLine, lineWidth: 1))
+                                )
+                                .frame(width: 44, height: 44)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if isAppBlockingStep {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("STEP · \(step.label.uppercased())")
+                                .font(.mono(10))
+                                .kerning(2)
+                                .foregroundColor(.lullInk3)
+                            Text("Your lock window")
+                                .font(.serif(28))
+                                .foregroundColor(.lullInk0)
+                        }
+                    } else {
+                        TextField("", text: $label)
+                            .font(.serif(28))
+                            .foregroundColor(.lullInk0)
+                            .tint(.lullAmber)
+                            .padding(.bottom, 8)
+                            .overlay(alignment: .bottom) {
+                                Rectangle()
+                                    .fill(Color.lullLineStrong)
+                                    .frame(height: 1)
+                            }
+                    }
+
+                    if section == .prep {
+                        WhenSlider(value: $leadTime)
+                    }
+
+                    if isAppBlockingStep {
+                        InlineAppBlockingSection(
+                            selection: $appBlockingSelection,
+                            enabled: $appBlockingEnabled,
+                            startTime: $appBlockingStartTime,
+                            endTime: $appBlockingEndTime,
+                            graceMinutes: $appBlockingGraceMinutes,
+                            showPicker: $showFamilyActivityPicker,
+                            bedtime: state.typicalBedtime,
+                            wakeTime: state.typicalWakeTime
+                        )
+                    } else {
+                        StepScienceInline(step: step)
+
+                        ToggleRow(isOn: $notifyEnabled, title: "NOTIFY")
+
+                        VStack(alignment: .leading, spacing: 9) {
+                            Text("NOTES · optional")
+                                .font(.mono(10))
+                                .kerning(1.5)
+                                .foregroundColor(.lullInk3)
+                            TextEditor(text: $notes)
+                                .font(.system(size: 14))
+                                .foregroundColor(.lullInk1)
+                                .scrollContentBackground(.hidden)
+                                .frame(minHeight: 56)
+                                .padding(8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.black.opacity(0.28))
+                                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullLine, lineWidth: 1))
+                                )
+                                .overlay(alignment: .topLeading) {
+                                    if notes.isEmpty {
+                                        Text("Add a note for yourself...")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.lullInk3)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 16)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
+                        }
+                    }
+
+                    HStack(spacing: 10) {
+                        if step.mode != .experiment {
+                            Button(action: onRemove) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "trash")
+                                    Text("Remove")
+                                }
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(Color(hex: "#e89189"))
+                                .frame(height: 48)
+                                .padding(.horizontal, 18)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(hex: "#e89189").opacity(0.05))
+                                        .overlay(Capsule().strokeBorder(Color(hex: "#e89189").opacity(0.35), lineWidth: 1))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        Button(action: save) {
+                            Text("Save")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.lullBgDeep)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 48)
+                                .background(Capsule().fill(Color.lullAmber))
+                                .shadow(color: .lullAmberGlow, radius: 14, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.top, 4)
+                    .padding(.bottom, 22)
+                }
+                .padding(.horizontal, 22)
+            }
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.88)
+            .background(
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.lullBg2, Color.lullBg1],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28)
+                            .strokeBorder(Color.lullLineStrong, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.55), radius: 34, y: -8)
+            )
+            .offset(y: sheetDragOffset)
+            .optionalSimultaneousGesture(dismissDragGesture, isEnabled: !isAppBlockingStep)
+        }
+        .familyActivityPicker(isPresented: $showFamilyActivityPicker, selection: $appBlockingSelection)
+        .onAppear(perform: hydrateAppBlockingState)
+    }
+
+    private var backdropOpacity: Double {
+        let progress = min(1, sheetDragOffset / 260)
+        return 0.55 - (0.18 * Double(progress))
+    }
+
+    private var dismissDragGesture: some Gesture {
+        DragGesture(minimumDistance: 14, coordinateSpace: .global)
+            .onChanged { value in
+                guard isDismissDrag(value) else { return }
+                sheetDragOffset = max(0, value.translation.height)
+            }
+            .onEnded { value in
+                guard isDismissDrag(value) else {
+                    settleSheet()
+                    return
+                }
+
+                let shouldDismiss = value.translation.height > 110 || value.predictedEndTranslation.height > 220
+                if shouldDismiss {
+                    dismissWithDrag()
+                } else {
+                    settleSheet()
+                }
+            }
+    }
+
+    private func isDismissDrag(_ value: DragGesture.Value) -> Bool {
+        return value.translation.height > 0 && abs(value.translation.height) > abs(value.translation.width) * 1.15
+    }
+
+    private func settleSheet() {
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.18) : .spring(response: 0.28, dampingFraction: 0.86)) {
+            sheetDragOffset = 0
+        }
+    }
+
+    private func dismissWithDrag() {
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.16) : .easeOut(duration: 0.18)) {
+            sheetDragOffset = UIScreen.main.bounds.height
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.08 : 0.12)) {
+            onClose()
+        }
+    }
+
+    private func save() {
+        var updated = step
+        if !isAppBlockingStep {
+            updated.label = label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? step.label : label.trimmingCharacters(in: .whitespacesAndNewlines)
+            updated.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
+            updated.notifyEnabled = notifyEnabled
+        }
+        if section == .prep {
+            updated.leadTimeMins = Int((leadTime / 5).rounded() * 5)
+        }
+        if isAppBlockingStep {
+            state.configureAppBlocking(
+                selection: appBlockingSelection,
+                enabled: appBlockingEnabled,
+                startTime: appBlockingStartTime,
+                endTime: appBlockingEndTime,
+                graceMinutes: appBlockingGraceMinutes
+            )
+        }
+        onSave(updated)
+    }
+
+    private func hydrateAppBlockingState() {
+        guard isAppBlockingStep else { return }
+        appBlockingSelection = state.appBlockingSelection
+        appBlockingEnabled = state.appBlockingEnabled
+        appBlockingStartTime = state.appBlockingStartTime
+        appBlockingEndTime = state.appBlockingEndTime
+        appBlockingGraceMinutes = state.appBlockingGraceMinutes
+
+        let defaultStart = Calendar.current.date(
+            byAdding: .minute,
+            value: -30,
+            to: state.typicalBedtime
+        ) ?? state.typicalBedtime
+
+        if appBlockingSelection.applicationTokens.isEmpty &&
+            appBlockingSelection.categoryTokens.isEmpty &&
+            !state.appBlockingEnabled {
+            appBlockingEnabled = true
+            appBlockingStartTime = defaultStart
+            appBlockingEndTime = state.typicalWakeTime
+        }
+    }
+}
+
+struct WhenSlider: View {
+    @Binding var value: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("WHEN")
+                    .font(.mono(10))
+                    .kerning(1.5)
+                    .foregroundColor(.lullInk3)
+                Spacer()
+                Text("\(Int(value)) min before bed")
+                    .font(.mono(10))
+                    .foregroundColor(.lullAmber)
+            }
+
+            Slider(value: Binding(
+                get: { value },
+                set: { value = ($0 / 5).rounded() * 5 }
+            ), in: 30...120, step: 5)
+            .tint(.lullAmber)
+
+            HStack {
+                ForEach(["30m", "60m", "90m", "120m"], id: \.self) { tick in
+                    Text(tick)
+                        .font(.mono(9))
+                        .foregroundColor(.lullInk4)
+                    if tick != "120m" { Spacer() }
+                }
+            }
+        }
+    }
+}
+
+struct StepScienceInline: View {
+    var step: RoutineStep
+
+    private var impact: RemedyImpact? {
+        (step.remedyId ?? RemedyID.fromLabel(step.label))?.impact
+    }
+
+    var body: some View {
+        if let impact {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text("SCIENCE")
+                        .font(.mono(10))
+                        .kerning(1.5)
+                        .foregroundColor(.lullInk3)
+                    Spacer()
+                    Text(impact.highlight)
+                        .font(.mono(10))
+                        .foregroundColor(.lullAmber)
+                }
+
+                Text(impact.science)
+                    .font(.system(size: 12.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.lullAmber.opacity(0.035))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1))
+            )
+        }
+    }
+}
+
+@MainActor
+final class AppBlockingAccessProbe: ObservableObject {
+    static let shared = AppBlockingAccessProbe()
+
+    @Published private(set) var statusText = "Not checked"
+    @Published private(set) var detailText = "Make the Screen Time authorization call on this device to confirm whether Lull has app-blocking access."
+    @Published private(set) var isChecking = false
+    @Published private(set) var isApproved = false
+
+    private init() {
+        refresh()
+    }
+
+    func refresh() {
+        switch AuthorizationCenter.shared.authorizationStatus {
+        case .approved, .approvedWithDataAccess:
+            isApproved = true
+            statusText = "Access approved"
+            detailText = "Family Controls is authorized for this install. App blocking can be built on this device/profile."
+        case .denied:
+            isApproved = false
+            statusText = "Access denied"
+            detailText = "The device denied Screen Time access for Lull. Try again from a signed build on your phone."
+        case .notDetermined:
+            isApproved = false
+            statusText = "Not requested"
+            detailText = "Tap Check access to ask iOS for Screen Time app-blocking authorization."
+        @unknown default:
+            isApproved = false
+            statusText = "Unknown status"
+            detailText = "iOS returned a Family Controls status this build does not recognize."
+        }
+        print("[AppBlocking] authorizationStatus=\(statusText)")
+    }
+
+    func requestAccess() async {
+        isChecking = true
+        defer { isChecking = false }
+
+        do {
+            try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+            refresh()
+        } catch {
+            isApproved = false
+            statusText = "Request failed"
+            detailText = error.localizedDescription
+            print("[AppBlocking] requestAuthorization failed: \(error)")
+        }
+    }
+}
+
+struct InlineAppBlockingSection: View {
+    @ObservedObject private var probe = AppBlockingAccessProbe.shared
+    @Binding var selection: FamilyActivitySelection
+    @Binding var enabled: Bool
+    @Binding var startTime: Date
+    @Binding var endTime: Date
+    @Binding var graceMinutes: Int
+    @Binding var showPicker: Bool
+    var bedtime: Date
+    var wakeTime: Date
+
+    private let graceOptions = [0, 5, 10, 15]
+
+    private var appCount: Int { selection.applicationTokens.count }
+    private var categoryCount: Int { selection.categoryTokens.count }
+    private var totalCount: Int { appCount + categoryCount }
+
+    private var statusColor: Color {
+        probe.isApproved ? .lullAmber : Color(hex: "#e89189")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 8) {
+                Text("APP BLOCKING")
+                    .font(.mono(10))
+                    .kerning(1.5)
+                    .foregroundColor(.lullInk3)
+                Spacer()
+                Text(probe.statusText.uppercased())
+                    .font(.mono(9.5))
+                    .kerning(1.1)
+                    .foregroundColor(statusColor)
+            }
+
+            Text(probe.detailText)
+                .font(.system(size: 12.5))
+                .foregroundColor(.lullInk2)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if probe.isApproved {
+                AppBlockingLeadTimeCard(
+                    startTime: $startTime,
+                    endTime: $endTime,
+                    bedtime: bedtime,
+                    wakeTime: wakeTime
+                )
+
+                HStack(spacing: 10) {
+                    AppBlockingTimeTile(
+                        title: "LOCK AT",
+                        value: timeFormatter.string(from: startTime),
+                        detail: ""
+                    )
+                    AppBlockingTimeTile(
+                        title: "UNLOCK AT",
+                        value: timeFormatter.string(from: endTime),
+                        detail: ""
+                    )
+                }
+
+                BedtimeHintCard(
+                    bedtime: bedtime,
+                    lockTime: startTime
+                )
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("BLOCKING · \(totalCount) \(totalCount == 1 ? "app" : "apps")")
+                            .font(.mono(10))
+                            .kerning(1.5)
+                            .foregroundColor(.lullInk3)
+                        Spacer()
+                        if categoryCount > 0 {
+                            Text("\(categoryCount) categories")
+                                .font(.mono(9.5))
+                                .foregroundColor(.lullAmber)
+                        }
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(displayBadges, id: \.self) { badge in
+                                AppBlockingBadge(title: badge)
+                            }
+
+                            Button(action: { showPicker = true }) {
+                                VStack(spacing: 6) {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                                        .foregroundColor(Color.lullAmber.opacity(0.45))
+                                        .frame(width: 54, height: 54)
+                                        .overlay(
+                                            Image(systemName: "plus")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(.lullAmber)
+                                        )
+                                    Text(totalCount == 0 ? "Add" : "Edit")
+                                        .font(.system(size: 12.5, weight: .medium))
+                                        .foregroundColor(.lullAmberSoft)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("GRACE WARNING")
+                            .font(.mono(10))
+                            .kerning(1.5)
+                            .foregroundColor(.lullInk3)
+                        Spacer()
+                        Text(graceMinutes == 0 ? "Off" : "\(graceMinutes) min")
+                            .font(.mono(9.5))
+                            .foregroundColor(.lullAmber)
+                    }
+
+                    HStack(spacing: 8) {
+                        ForEach(graceOptions, id: \.self) { option in
+                            Button(action: { graceMinutes = option }) {
+                                Text(option == 0 ? "Off" : "\(option)m")
+                                    .font(.mono(10))
+                                    .foregroundColor(graceMinutes == option ? .lullBgDeep : .lullInk3)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 34)
+                                    .background(
+                                        Capsule()
+                                            .fill(graceMinutes == option ? Color.lullAmber : Color.white.opacity(0.03))
+                                            .overlay(Capsule().strokeBorder(graceMinutes == option ? Color.lullAmber : Color.lullLine, lineWidth: 1))
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                HStack {
+                    Text("ENABLE")
+                        .font(.mono(10))
+                        .kerning(1.5)
+                        .foregroundColor(.lullInk3)
+                    Spacer()
+                    Toggle("", isOn: $enabled)
+                        .labelsHidden()
+                        .tint(.lullAmber)
+                }
+
+                Text("Always allowed: Lull, Messages, Phone, Clock.")
+                    .font(.mono(9.5))
+                    .foregroundColor(.lullInk4)
+            } else {
+                Button {
+                    Task { await probe.requestAccess() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if probe.isChecking {
+                            ProgressView()
+                                .tint(.lullBgDeep)
+                        } else {
+                            Image(systemName: "lock.shield")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text("Check access")
+                            .font(.system(size: 13.5, weight: .medium))
+                    }
+                    .foregroundColor(.lullBgDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(Capsule().fill(Color.lullAmber))
+                }
+                .buttonStyle(.plain)
+                .disabled(probe.isChecking)
+                .opacity(probe.isChecking ? 0.75 : 1)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.lullAmber.opacity(0.035))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1))
+        )
+        .onAppear { probe.refresh() }
+    }
+
+    private var timeFormatter: DateFormatter {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }
+
+    private var displayBadges: [String] {
+        var badges: [String] = []
+        if appCount > 0 {
+            for index in 1...min(appCount, 5) {
+                badges.append("App \(index)")
+            }
+        }
+        if badges.isEmpty && categoryCount > 0 {
+            for index in 1...min(categoryCount, 3) {
+                badges.append("Category \(index)")
+            }
+        }
+        return badges
+    }
+}
+
+struct AppBlockingBadge: View {
+    var title: String
+
+    private var initials: String {
+        String(title.prefix(1)).uppercased()
+    }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.lullAmber.opacity(0.14))
+                    .frame(width: 54, height: 54)
+                Text(initials)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(.lullInk0)
+                Image(systemName: "lock.circle.fill")
+                    .font(.system(size: 15))
+                    .foregroundColor(.lullAmber)
+                    .offset(x: 5, y: -5)
+            }
+            Text(title)
+                .font(.system(size: 11.5))
+                .foregroundColor(.lullInk2)
+                .lineLimit(1)
+        }
+        .frame(width: 54)
+    }
+}
+
+struct BedtimeHintCard: View {
+    var bedtime: Date
+    var lockTime: Date
+
+    private var message: String {
+        let diff = Int(bedtime.timeIntervalSince(lockTime) / 60)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        let bedtimeText = formatter.string(from: bedtime)
+        if diff > 0 {
+            return "Bedtime is \(bedtimeText) — locking \(diff) min earlier helps you wind down."
+        }
+        if diff < 0 {
+            return "Bedtime is \(bedtimeText) — this starts \(abs(diff)) min after lights-out."
+        }
+        return "Bedtime is \(bedtimeText) — locking right at bedtime keeps the handoff clean."
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.lullAmber)
+            Text(message)
+                .font(.system(size: 12.5))
+                .foregroundColor(.lullInk1)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.lullAmber.opacity(0.04))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullAmber.opacity(0.2), lineWidth: 1))
+        )
+    }
+}
+
+struct AppBlockingLeadTimeCard: View {
+    @Binding var startTime: Date
+    @Binding var endTime: Date
+    var bedtime: Date
+    var wakeTime: Date
+
+    private let leadOptions = [0, 15, 30, 60, 90, 120]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("START BLOCKING")
+                        .font(.mono(9.5))
+                        .kerning(1.4)
+                        .foregroundColor(.lullInk3)
+                    Text(leadSummary)
+                        .font(.serif(24))
+                        .foregroundColor(.lullInk0)
+                }
+                Spacer()
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        Circle()
+                            .fill(Color.lullAmber.opacity(0.10))
+                            .overlay(Circle().strokeBorder(Color.lullAmber.opacity(0.25), lineWidth: 1))
+                    )
+            }
+
+            Slider(
+                value: Binding(
+                    get: { Double(selectedLeadIndex) },
+                    set: { value in
+                        let index = max(0, min(leadOptions.count - 1, Int(value.rounded())))
+                        applyLead(leadOptions[index], feedback: true)
+                    }
+                ),
+                in: 0...Double(leadOptions.count - 1),
+                step: 1
+            )
+            .tint(.lullAmber)
+
+            HStack {
+                ForEach(leadOptions, id: \.self) { minutes in
+                    Text(tickLabel(minutes))
+                        .font(.mono(8.5))
+                        .foregroundColor(minutes == selectedLeadMinutes ? .lullAmber : .lullInk4)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Label(timeFormatter.string(from: bedtime), systemImage: "moon.fill")
+                Spacer()
+                Label(timeFormatter.string(from: wakeTime), systemImage: "sun.horizon.fill")
+            }
+            .font(.mono(9.5))
+            .foregroundColor(.lullInk3)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.025))
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.lullLine, lineWidth: 1))
+        )
+        .onAppear {
+            applyLead(selectedLeadMinutes, feedback: false)
+        }
+        .onChange(of: bedtime) { _, _ in
+            applyLead(selectedLeadMinutes, feedback: false)
+        }
+        .onChange(of: wakeTime) { _, newValue in
+            endTime = newValue
+        }
+    }
+
+    private var selectedLeadMinutes: Int {
+        let current = minutesBeforeBed(startTime, bedtime: bedtime)
+        return leadOptions.min(by: { abs($0 - current) < abs($1 - current) }) ?? 30
+    }
+
+    private var selectedLeadIndex: Int {
+        leadOptions.firstIndex(of: selectedLeadMinutes) ?? 2
+    }
+
+    private var leadSummary: String {
+        selectedLeadMinutes == 0 ? "At bedtime" : "\(selectedLeadMinutes) min before bed"
+    }
+
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }
+
+    private func tickLabel(_ minutes: Int) -> String {
+        minutes == 0 ? "0" : "\(minutes)m"
+    }
+
+    private func applyLead(_ minutes: Int, feedback: Bool) {
+        let nextStart = Calendar.current.date(byAdding: .minute, value: -minutes, to: bedtime) ?? bedtime
+        if feedback && selectedLeadMinutes != minutes {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+        startTime = nextStart
+        endTime = wakeTime
+    }
+
+    private func minutesBeforeBed(_ start: Date, bedtime: Date) -> Int {
+        let diff = (minutesOfDay(bedtime) - minutesOfDay(start) + 1440) % 1440
+        return diff <= 720 ? diff : 0
+    }
+
+    private func minutesOfDay(_ date: Date) -> Int {
+        let cal = Calendar.current
+        return cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)
+    }
+}
+
+struct AppBlockingTimeTile: View {
+    var title: String
+    var value: String
+    var detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.mono(9.5))
+                .kerning(1.5)
+                .foregroundColor(.lullInk3)
+            Text(value)
+                .font(.serif(20))
+                .foregroundColor(.lullInk0)
+            Text(detail)
+                .font(.system(size: 11.5))
+                .foregroundColor(.lullInk3)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.03))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
+        )
+    }
+}
+
+struct Segmented: View {
+    @Binding var selected: String
+    var options: [String]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(options, id: \.self) { option in
+                Button(action: { selected = option }) {
+                    Text(option.uppercased())
+                        .font(.mono(9.5))
+                        .kerning(1)
+                        .foregroundColor(selected == option ? .lullBgDeep : .lullInk3)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(
+                            Capsule()
+                                .fill(selected == option ? Color.lullAmber : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(
+            Capsule()
+                .fill(Color.black.opacity(0.20))
+                .overlay(Capsule().strokeBorder(Color.lullLine, lineWidth: 1))
+        )
+    }
+}
+
+struct ToggleRow: View {
+    @Binding var isOn: Bool
+    var title: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.mono(10))
+                .kerning(1.5)
+                .foregroundColor(.lullInk3)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(.lullAmber)
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func optionalSimultaneousGesture<G: Gesture>(_ gesture: G, isEnabled: Bool) -> some View {
+        if isEnabled {
+            simultaneousGesture(gesture)
+        } else {
+            self
+        }
+    }
+}
+
+struct RoutineLibraryStep: Identifiable {
+    let id: String
+    let label: String
+    let icon: String
+    let blurb: String
+    let effect: String
+    let defaultSection: RoutineSectionKind
+    let category: String
+    let defaultWhen: Int?
+    let defaultDur: String?
+}
+
+let STEP_LIBRARY: [RoutineLibraryStep] = [
+    .init(id: "lights", label: "Dim the lights", icon: "lightbulb", blurb: "Drop ambient lighting", effect: "-6 min", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
+    .init(id: "screens", label: "No screens", icon: "iphone.slash", blurb: "Phone & laptop off", effect: "-9 min", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
+    .init(id: "app-blocking", label: R.appBlocking, icon: "lock.shield", blurb: "Block time-sink apps", effect: "locks", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
+    .init(id: "shower", label: "Warm shower", icon: "shower", blurb: "Drops core temp on exit", effect: "-7 min", defaultSection: .prep, category: "Wind down", defaultWhen: 90, defaultDur: nil),
+    .init(id: "mag", label: "Magnesium glycinate", icon: "pills", blurb: "200-400 mg, 30m before bed", effect: "-4 min", defaultSection: .prep, category: "Wind down", defaultWhen: 45, defaultDur: nil),
+    .init(id: "caffeine", label: "Caffeine cutoff", icon: "drop", blurb: "No coffee after 2 PM", effect: "+0.6/5", defaultSection: .prep, category: "Wind down", defaultWhen: 120, defaultDur: nil),
+    .init(id: "cool", label: "Cool the room", icon: "thermometer.snowflake", blurb: "Set thermostat to 65°F", effect: "+0.4/5", defaultSection: .prep, category: "Environment", defaultWhen: 90, defaultDur: nil),
+    .init(id: "curtain", label: "Blackout curtains", icon: "curtains.closed", blurb: "Block ambient morning light", effect: "+0.5/5", defaultSection: .prep, category: "Environment", defaultWhen: 60, defaultDur: nil),
+    .init(id: "blanket", label: "Weighted blanket", icon: "sparkles", blurb: "10% of bodyweight", effect: "-11 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "night"),
+    .init(id: "bright", label: "Brightness check", icon: "sun.max", blurb: "Phone to lowest brightness", effect: "-2 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
+    .init(id: "temp", label: "Temperature check", icon: "thermometer", blurb: "Log the room temp", effect: "logs", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
+    .init(id: "dump", label: "Brain dump", icon: "mic", blurb: "Voice memo, 2 min", effect: "-4 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "2m · voice"),
+    .init(id: "story", label: "Boring story", icon: "book.closed", blurb: "AI narrates, ~8 min", effect: "-12 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "AI · 8m"),
+    .init(id: "guided-meditation", label: "Guided meditation", icon: "figure.mind.and.body", blurb: "Coming soon", effect: "", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: nil),
+    .init(id: "sleep-sounds", label: R.sleepSounds, icon: "water.waves", blurb: "Ambient audio loop", effect: "masks", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "1 hr"),
+    .init(id: "breath", label: "4·7·8 breathing", icon: "wind", blurb: "Slow exhale protocol", effect: "-5 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m"),
+    .init(id: "scan", label: "Body scan", icon: "sparkles", blurb: "Guided, 5 min", effect: "-3 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m"),
+    .init(id: "sunlight", label: "Sunlight, 10 min", icon: "sun.max", blurb: "Outside within 30m of waking", effect: "+0.7/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
+    .init(id: "cold", label: "Cold water", icon: "drop", blurb: "Cold rinse, 30 sec", effect: "+0.5/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
+    .init(id: "no-phone", label: "No phone, 30 min", icon: "iphone.slash", blurb: "Delay first screen", effect: "+0.4/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
+]
+
+struct StepLibraryOverlay: View {
+    @EnvironmentObject var state: AppState
+    @Binding var addedLibraryID: String?
+    var targetSection: RoutineSectionKind
+    var onClose: () -> Void
+    var onAdd: (RoutineLibraryStep) -> Void
+
+    @State private var query = ""
+    @State private var selectedCategory: String
+
+    init(addedLibraryID: Binding<String?>,
+         targetSection: RoutineSectionKind,
+         onClose: @escaping () -> Void,
+         onAdd: @escaping (RoutineLibraryStep) -> Void) {
+        _addedLibraryID = addedLibraryID
+        self.targetSection = targetSection
+        self.onClose = onClose
+        self.onAdd = onAdd
+        _selectedCategory = State(initialValue: targetSection == .ritual ? "In Bed" : "Before Bed")
+    }
+
+    private var categories: [String] {
+        [targetSection == .ritual ? "In Bed" : "Before Bed"]
+    }
+
+    private var availableLibraryItems: [RoutineLibraryStep] {
+        let baseItems = STEP_LIBRARY.filter {
+            switch targetSection {
+            case .prep:
+                return $0.defaultSection == .prep
+            case .ritual:
+                return $0.defaultSection == .ritual
+            case .morning:
+                return false
+            }
+        }
+
+        guard let appBlocking = STEP_LIBRARY.first(where: { $0.id == "app-blocking" }) else {
+            return baseItems
+        }
+
+        switch targetSection {
+        case .prep:
+            return baseItems
+        case .ritual:
+            let ritualScopedAppBlocking = RoutineLibraryStep(
+                id: "app-blocking-ritual",
+                label: appBlocking.label,
+                icon: appBlocking.icon,
+                blurb: appBlocking.blurb,
+                effect: appBlocking.effect,
+                defaultSection: .ritual,
+                category: "In bed",
+                defaultWhen: nil,
+                defaultDur: "night"
+            )
+            return [ritualScopedAppBlocking] + baseItems
+        case .morning:
+            return baseItems
+        }
+    }
+
+    private var filteredGroups: [(String, [RoutineLibraryStep])] {
+        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let visible = availableLibraryItems.filter { item in
+            let group = groupName(for: item)
+            let categoryMatch = group == selectedCategory
+            let queryMatch = normalizedQuery.isEmpty || item.label.lowercased().contains(normalizedQuery)
+            return categoryMatch && queryMatch
+        }
+        return categories.compactMap { group in
+            let rows = visible.filter { groupName(for: $0) == group }
+            return rows.isEmpty ? nil : (group, rows)
+        }
+    }
+
+    private func groupName(for item: RoutineLibraryStep) -> String {
+        item.defaultSection == .ritual ? "In Bed" : "Before Bed"
+    }
+
+    var body: some View {
+        LullScreen(glow: true, glowX: 0.5, glowY: -0.04, glowRadius: 260, glowOpacity: 0.60) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.lullInk2)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.04))
+                                    .overlay(Circle().strokeBorder(Color.lullLine, lineWidth: 1))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
+                    Text("STEP LIBRARY")
+                        .font(.mono(10))
+                        .kerning(1.7)
+                        .foregroundColor(.lullInk3)
+                    Spacer()
+                    Color.clear.frame(width: 36, height: 36)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 16)
+                .padding(.bottom, 18)
+
+                Text("Add a step")
+                    .font(.serif(28))
+                    .foregroundColor(.lullInk0)
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 16)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundColor(.lullInk3)
+                    TextField("Search \(availableLibraryItems.count) sleep tactics...", text: $query)
+                        .font(.system(size: 14))
+                        .foregroundColor(.lullInk0)
+                        .tint(.lullAmber)
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.black.opacity(0.24))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                )
+                .padding(.horizontal, 22)
+                .padding(.bottom, 12)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(categories, id: \.self) { category in
+                            Button(action: { selectedCategory = category }) {
+                                Text(category)
+                                    .font(.mono(10))
+                                    .foregroundColor(selectedCategory == category ? .lullAmber : .lullInk3)
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 32)
+                                    .background(
+                                        Capsule()
+                                            .fill(selectedCategory == category ? Color.lullAmber.opacity(0.10) : Color.clear)
+                                            .overlay(Capsule().strokeBorder(selectedCategory == category ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1))
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                }
+                .padding(.bottom, 18)
+
+                ScrollView(showsIndicators: false) {
+                    if filteredGroups.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("NO MATCHES")
+                                .font(.mono(10))
+                                .kerning(1.6)
+                                .foregroundColor(.lullInk3)
+                                Text("Try a different word - you can also describe what you want to do.")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullInk3)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 22)
+                        .padding(.top, 16)
+                    } else {
+                        VStack(alignment: .leading, spacing: 18) {
+                            ForEach(filteredGroups, id: \.0) { group, rows in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(group.uppercased())
+                                        .font(.mono(9.5))
+                                        .kerning(1.6)
+                                        .foregroundColor(.lullInk3)
+                                    VStack(spacing: 6) {
+                                        ForEach(rows) { item in
+                                            LibraryRow(
+                                                item: item,
+                                                isActive: state.hasRoutineStep(label: item.label),
+                                                isExperiment: state.tonightVariable == item.label,
+                                                isAdding: addedLibraryID == item.id,
+                                                onAdd: { onAdd(item) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 34)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct LibraryRow: View {
+    var item: RoutineLibraryStep
+    var isActive: Bool
+    var isExperiment: Bool
+    var isAdding: Bool
+    var onAdd: () -> Void
+
+    private var isComingSoon: Bool { item.id == "guided-meditation" }
+    private var disabled: Bool { isActive || isComingSoon }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 11)
+                    .fill(Color.black.opacity(0.18))
+                    .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Color.lullLine, lineWidth: 1))
+                Image(systemName: item.icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(isActive ? .lullAmber : .lullInk2)
+            }
+            .frame(width: 38, height: 38)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(item.label)
+                        .font(.serif(15))
+                        .foregroundColor(isComingSoon ? .lullInk2 : .lullInk0)
+                        .lineLimit(1)
+                    if isExperiment {
+                        Text("TESTING")
+                            .font(.mono(8.5))
+                            .kerning(1.2)
+                            .foregroundColor(.lullAmber)
+                    }
+                }
+                Text(item.blurb)
+                    .font(.system(size: 11.5))
+                    .foregroundColor(isComingSoon ? .lullAmberSoft : .lullInk3)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isComingSoon {
+                Text("Coming soon")
+                    .font(.mono(9.5))
+                    .foregroundColor(.lullInk4)
+            } else {
+                Text(item.effect)
+                    .font(.mono(9.5))
+                    .foregroundColor(.lullAmberSoft)
+                    .padding(.horizontal, 8)
+                    .frame(height: 24)
+                    .background(
+                        Capsule()
+                            .fill(Color.lullAmber.opacity(0.055))
+                            .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.25), lineWidth: 1))
+                    )
+            }
+
+            Button(action: onAdd) {
+                ZStack {
+                    Circle()
+                        .fill((isActive || isAdding) ? Color.lullAmber.opacity(0.14) : Color.white.opacity(0.035))
+                        .overlay(Circle().strokeBorder((isActive || isAdding) ? Color.lullAmber.opacity(0.42) : Color.lullLineStrong, lineWidth: 1))
+                    Image(systemName: (isActive || isAdding) ? "checkmark" : "plus")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor((isActive || isAdding) ? .lullAmber : .lullInk2)
+                }
+                .frame(width: 28, height: 28)
+                .scaleEffect(isAdding ? 1.1 : 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(disabled)
+            .opacity(isComingSoon ? 0.55 : 1)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isExperiment ? Color.lullAmber.opacity(0.06) : Color.white.opacity(0.025))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1)
+                )
+        )
+        .animation(.easeOut(duration: 0.18), value: isAdding)
     }
 }
 
@@ -284,7 +2024,8 @@ struct RoutineCoachMark: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 11))
                     .foregroundColor(.lullInk3)
-                    .padding(6)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
         }
@@ -1074,13 +2815,13 @@ struct CandidatePickerSheet: View {
 
     private var surfacedSuggestion: String? {
         guard let s = suggestedVariable,
-              s != currentVariable,
-              candidates.contains(s) else { return nil }
+              !s.isEmpty,
+              s != "No experiment running" else { return nil }
         return s
     }
 
     private var otherCandidates: [String] {
-        candidates.filter { $0 != surfacedSuggestion }
+        candidates.filter { $0 != surfacedSuggestion && $0 != currentVariable }
     }
 
     var body: some View {
@@ -1093,6 +2834,8 @@ struct CandidatePickerSheet: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 14)).foregroundColor(.lullInk3)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -1115,7 +2858,13 @@ struct CandidatePickerSheet: View {
                                 .padding(.horizontal, 22)
                                 .padding(.bottom, 10)
 
-                            Button(action: { onSelect(suggestion) }) {
+                            Button(action: {
+                                if suggestion == currentVariable {
+                                    dismiss()
+                                } else {
+                                    onSelect(suggestion)
+                                }
+                            }) {
                                 HStack(spacing: 14) {
                                     Ember(size: 5)
                                     Text(suggestion)

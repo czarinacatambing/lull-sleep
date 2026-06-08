@@ -4,10 +4,11 @@ import ActivityKit
 private let appGroupSuite = "group.com.trylull.app"
 private let pendingTogglesKey = "lull_pendingPrepToggles"
 
-struct TogglePrepItemIntent: AppIntent {
+struct TogglePrepItemIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Mark prep item done"
     static var description = IntentDescription("Toggles a bedtime prep item from the lock screen.")
     static var isDiscoverable: Bool = false
+    static var openAppWhenRun: Bool = false
 
     @Parameter(title: "Item ID")
     var itemId: String

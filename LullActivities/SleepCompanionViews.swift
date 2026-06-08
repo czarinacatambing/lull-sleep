@@ -11,8 +11,8 @@ import WidgetKit
 // we render the wake UI anyway. Whenever iOS redraws the Lock Screen (glance,
 // notification, system schedule) the user sees the flip without us pushing.
 extension LullSleepAttributes.ContentState {
-    var effectivePhase: Phase {
-        if phase == .sleeping && Date() >= wakeTime {
+    func effectivePhase(isStale: Bool = false) -> Phase {
+        if phase == .sleeping && (isStale || Date() >= wakeTime) {
             return .awaitingRating
         }
         return phase
@@ -45,7 +45,7 @@ struct SleepCompanionLockScreenView: View {
 
     var body: some View {
         Group {
-            switch state.effectivePhase {
+            switch state.effectivePhase(isStale: context.isStale) {
             case .sleeping:
                 SleepingLockCard(state: state)
             case .awaitingRating:
@@ -122,7 +122,7 @@ private struct SleepingLockCard: View {
                     .font(.system(size: 12.5))
                     .foregroundColor(LullLA.ink3)
                 Spacer()
-                Button(intent: LullOpenMidSleepIntent()) {
+                Link(destination: URL(string: "lull://midsleep")!) {
                     Text("Mid-Sleep mode")
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundColor(LullLA.ink1)
@@ -137,7 +137,6 @@ private struct SleepingLockCard: View {
                                 )
                         )
                 }
-                .buttonStyle(.borderless)
             }
             .padding(.top, 10)
         }
@@ -153,6 +152,11 @@ private struct SleepingLockCard: View {
                 )
             }
         )
+        // Backup tap target: if Link("lull://midsleep") fails for any reason
+        // (Live Activity Link quirks), tapping anywhere else on the card still
+        // navigates to Mid-Sleep mode. widgetURL is iOS's first-class
+        // tap-to-open mechanism for widget surfaces.
+        .widgetURL(URL(string: "lull://midsleep"))
     }
 }
 
@@ -186,21 +190,8 @@ private struct WakeLockCard: View {
                 .padding(.top, 4)
 
             // Rating row
-            RatingDotRow(currentRating: state.rating, numbered: true)
+            RatingDotRow(currentRating: state.rating, numbered: true, showLabels: true)
                 .padding(.top, 2)
-
-            // Anchor labels
-            HStack {
-                Text("ROUGH")
-                    .font(LullLAFont.mono(size: 8))
-                    .tracking(1.3)
-                    .foregroundColor(LullLA.ink3)
-                Spacer()
-                Text("RESTED")
-                    .font(LullLAFont.mono(size: 8))
-                    .tracking(1.3)
-                    .foregroundColor(LullLA.ink3)
-            }
         }
         .padding(16)
         .background(LullLA.cardWake)
@@ -235,7 +226,7 @@ private struct ConfirmLockCard: View {
                 CheckGlyph()
                     .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Thanks — your score is ready")
+                    Text("Your score is saved")
                         .font(.system(size: 14))
                         .foregroundColor(LullLA.ink1)
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -257,6 +248,7 @@ private struct ConfirmLockCard: View {
         }
         .padding(16)
         .background(LullLA.cardConfirm)
+        .widgetURL(URL(string: "lull://reward"))
     }
 }
 
@@ -265,35 +257,54 @@ private struct ConfirmLockCard: View {
 struct RatingDotRow: View {
     let currentRating: Int?
     let numbered: Bool
+    var showLabels = false
     var dotSize: CGFloat = 30
     var hitSize: CGFloat = 44
+    var labelSize: CGFloat = 7.5
 
-    private let labels = ["Wrecked", "Rough", "OK", "Good", "Great"]
+    private let labels = ["Awful", "Rough", "Mixed", "Pretty good", "Great"]
 
     var body: some View {
         HStack(spacing: 4) {
             ForEach(1...5, id: \.self) { n in
                 let filled = (currentRating ?? 0) >= n
                 Button(intent: LullRateSleepIntent(rating: n)) {
-                    ZStack {
-                        Circle()
-                            .fill(filled ? LullLA.amber : Color.clear)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(
-                                        filled ? LullLA.amberSoft : LullLA.amber.opacity(0.35),
-                                        lineWidth: filled ? 1.0 : 1.4
-                                    )
-                            )
-                            .shadow(color: filled ? LullLA.amberGlow : .clear, radius: filled ? 6 : 0)
-                            .frame(width: dotSize, height: dotSize)
-                        if numbered {
-                            Text("\(n)")
-                                .font(LullLAFont.fraunces(size: 13, weight: .regular))
-                                .foregroundColor(filled ? LullLA.onAmber : LullLA.amberSoft)
+                    VStack(spacing: showLabels ? 3 : 0) {
+                        ZStack {
+                            Circle()
+                                .fill(filled ? LullLA.amber : Color.clear)
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(
+                                            filled ? LullLA.amberSoft : LullLA.amber.opacity(0.35),
+                                            lineWidth: filled ? 1.0 : 1.4
+                                        )
+                                )
+                                .shadow(color: filled ? LullLA.amberGlow : .clear, radius: filled ? 6 : 0)
+                                .frame(width: dotSize, height: dotSize)
+                            if numbered {
+                                Text("\(n)")
+                                    .font(LullLAFont.fraunces(size: 13, weight: .regular))
+                                    .foregroundColor(filled ? LullLA.onAmber : LullLA.amberSoft)
+                            }
+                        }
+                        .frame(width: hitSize, height: hitSize)
+
+                        if showLabels {
+                            Text(labels[n - 1])
+                                .font(LullLAFont.mono(size: labelSize))
+                                .tracking(0.4)
+                                .foregroundColor(filled ? LullLA.amberSoft : LullLA.ink3)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.65)
+                                .frame(width: hitSize, height: 20, alignment: .top)
                         }
                     }
-                    .frame(width: hitSize, height: hitSize)
+                    .frame(
+                        width: hitSize,
+                        height: showLabels ? hitSize + 23 : hitSize
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
@@ -373,7 +384,7 @@ struct DISleepBottom: View {
                 .font(.system(size: 12))
                 .foregroundColor(LullLA.ink3)
             Spacer()
-            Button(intent: LullOpenMidSleepIntent()) {
+            Link(destination: URL(string: "lull://midsleep")!) {
                 Text("Mid-Sleep mode")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(LullLA.ink1)
@@ -388,7 +399,6 @@ struct DISleepBottom: View {
                             )
                     )
             }
-            .buttonStyle(.plain)
         }
     }
 }
@@ -419,7 +429,13 @@ struct DIWakeLeading: View {
 struct DIWakeTrailing: View {
     let state: LullSleepAttributes.ContentState
     private var sleptText: String {
-        let mins = max(0, Int(state.wakeTime.timeIntervalSince(state.bedtime) / 60))
+        let cal = Calendar.autoupdatingCurrent
+        let bed = cal.dateComponents([.hour, .minute], from: state.bedtime)
+        let wake = cal.dateComponents([.hour, .minute], from: state.wakeTime)
+        let bedMinutes = (bed.hour ?? 0) * 60 + (bed.minute ?? 0)
+        let wakeMinutes = (wake.hour ?? 0) * 60 + (wake.minute ?? 0)
+        let raw = wakeMinutes - bedMinutes
+        let mins = raw > 0 ? raw : raw + 24 * 60
         let h = mins / 60
         let m = mins % 60
         return "\(h)h \(m)m"
@@ -440,7 +456,14 @@ struct DIWakeTrailing: View {
 struct DIWakeBottom: View {
     let state: LullSleepAttributes.ContentState
     var body: some View {
-        RatingDotRow(currentRating: state.rating, numbered: false, dotSize: 22, hitSize: 44)
+        RatingDotRow(
+            currentRating: state.rating,
+            numbered: true,
+            showLabels: true,
+            dotSize: 22,
+            hitSize: 44,
+            labelSize: 6.5
+        )
             .padding(.horizontal, 6)
     }
 }
