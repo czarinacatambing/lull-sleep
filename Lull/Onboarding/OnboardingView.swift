@@ -1253,6 +1253,7 @@ struct OnbMethodologyView: View {
                 }
 
                 PrimaryCTA(title: canProceed ? "Show my routine" : "Building...", disabled: !canProceed) {
+                    UIImpactFeedbackGenerator(style: .light).prepare()
                     step = 6
                 }
                 .padding(.horizontal, 20)
@@ -1316,7 +1317,7 @@ struct OnbRoutineReadyView: View {
     var body: some View {
         routineContent
         .onAppear {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            playRevealHaptic()
         }
     }
 
@@ -1464,6 +1465,11 @@ struct OnbRoutineReadyView: View {
             return "A small, testable step for your \(state.bottleneck.displayName.lowercased())."
         }
     }
+
+    private func playRevealHaptic() {
+        let feedback = UIImpactFeedbackGenerator(style: .light)
+        feedback.impactOccurred(intensity: 0.65)
+    }
 }
 
 // MARK: - Trial Paywall
@@ -1475,135 +1481,150 @@ struct OnbTrialPaywallView: View {
     @State private var statusMessage: String?
 
     var body: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(colors: [.lullBg, .lullBg1], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            TrialSky()
-                .ignoresSafeArea()
-
+        LullScreen(glow: true, glowX: 0.5, glowY: 0.04, glowRadius: 320, glowOpacity: 0.62) {
             GeometryReader { geo in
-                let compact = geo.size.height < 740
+                let compact = geo.size.height < 760
+                let bottomInset = max(geo.safeAreaInsets.bottom, 12)
 
                 VStack(spacing: 0) {
                     ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Spacer().frame(height: compact ? 82 : 96)
+                        VStack(spacing: compact ? 18 : 22) {
+                            Spacer().frame(height: compact ? 18 : 28)
+                            BrandMark(large: false)
+                                .padding(.bottom, compact ? 4 : 8)
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                (Text("Try ")
-                                    .foregroundColor(.lullInk0)
-                                 + Text("7 days")
-                                    .font(.serifItalic(compact ? 34 : 38))
-                                    .foregroundColor(.lullAmber)
-                                 + Text(" free")
-                                    .foregroundColor(.lullInk0))
-                                    .font(.serif(compact ? 34 : 38, weight: .semibold))
-                                    .lineSpacing(2)
-
-                                Text("Unlock your wind-down ritual tonight.")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.lullInk2)
-                            }
-
-                            HStack(spacing: 8) {
-                                Text("★★★★★")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .kerning(1.6)
-                                    .foregroundColor(.lullAmber)
-                                Text("\"It's been great for me\"")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.lullInk0)
-                                Text("- Beth M.")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.lullInk2)
-                            }
-                            .padding(.top, 16)
-
-                            VStack(spacing: compact ? 11 : 14) {
-                                TrialBenefit(
-                                    title: "A routine built for your brain",
-                                    detail: "Personalized to what actually keeps you up"
-                                )
-                                TrialBenefit(
-                                    title: "Block the 1am scroll",
-                                    detail: "Lock distracting apps through your sleep window"
-                                )
-                                TrialBenefit(
-                                    title: "Quiet the overthinking",
-                                    detail: "Brain dump + 4-7-8 breathing, guided step by step"
-                                )
-                                TrialBenefit(
-                                    title: "A nudge when it's time",
-                                    detail: "Gentle reminders that keep you on track - never naggy"
-                                )
-                                TrialBenefit(
-                                    title: "Drift off, then silence",
-                                    detail: "Sleep sounds that fade out on their own"
-                                )
-                            }
-                            .padding(.top, compact ? 18 : 22)
-
+                            trialHero(compact: compact)
+                            TrialQuoteCard()
+                            trialBenefits(compact: compact)
                             TrialReassuranceCard()
-                                .padding(.top, compact ? 18 : 22)
 
-                            Text("Free for 7 nights - no card, no charge.\nAfter that, Lull is $49.99/yr ($4.17/mo) only if you choose to stay.")
+                            Text("Free for 7 nights. No card, no charge.\nAfter that, Lull is $49.99/yr only if you choose to stay.")
                                 .font(.system(size: 13))
-                                .foregroundColor(.lullInk2)
+                                .foregroundColor(.lullInk3)
                                 .lineSpacing(4)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
-                                .padding(.top, 16)
 
                             if let statusMessage {
                                 Text(statusMessage)
                                     .font(.system(size: 12))
-                                    .foregroundColor(.lullInk3)
+                                    .foregroundColor(.lullAmberSoft)
+                                    .lineSpacing(3)
                                     .multilineTextAlignment(.center)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.top, 10)
                             }
 
-                            Spacer().frame(height: compact ? 124 : 132)
+                            Spacer().frame(height: compact ? 116 : 128)
                         }
-                        .padding(.horizontal, 26)
+                        .padding(.horizontal, Lull.horizontalPad)
+                        .frame(maxWidth: 430)
+                        .frame(maxWidth: .infinity)
                     }
 
-                    VStack(spacing: 14) {
-                        TrialCTA {
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            state.completeOnboarding()
-                        }
-
-                        HStack(spacing: 24) {
-                            footerButton("Terms") {
-                                open("https://trylull.com/terms")
-                            }
-                            footerButton("Privacy") {
-                                open("https://trylull.com/privacy")
-                            }
-                            footerButton(subscriptions.isLoading ? "Restoring" : "Restore") {
-                                Task { await restore() }
-                            }
-                        }
-                        .padding(.bottom, compact ? 18 : 24)
-                    }
-                    .padding(.horizontal, 26)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.lullBg.opacity(0.0), Color.lullBg.opacity(0.94), Color.lullBg],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    bottomBar(bottomInset: bottomInset)
                 }
             }
         }
     }
 
+    private func trialHero(compact: Bool) -> some View {
+        VStack(spacing: 10) {
+            Kicker(text: "Your first week", color: .lullAmberSoft)
+
+            VStack(spacing: -2) {
+                Text("Try 7 nights")
+                    .font(.serif(compact ? 38 : 44, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                    .minimumScaleFactor(0.86)
+                    .lineLimit(1)
+                Text("free")
+                    .font(.serifItalic(compact ? 40 : 46))
+                    .foregroundColor(.lullAmber)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+
+            Text("Start your wind-down ritual tonight, then decide after you've actually slept.")
+                .font(.system(size: 14.5))
+                .foregroundColor(.lullInk2)
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 310)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func trialBenefits(compact: Bool) -> some View {
+        VStack(spacing: compact ? 10 : 12) {
+            TrialBenefit(
+                title: "A routine built for your brain",
+                detail: "Personalized to what actually keeps you up"
+            )
+            TrialBenefit(
+                title: "Block the 1am scroll",
+                detail: "Lock distracting apps through your sleep window"
+            )
+            TrialBenefit(
+                title: "Quiet the overthinking",
+                detail: "Brain dump + guided breathing, step by step"
+            )
+            TrialBenefit(
+                title: "A nudge when it's time",
+                detail: "Gentle reminders that keep you on track"
+            )
+            TrialBenefit(
+                title: "Drift off, then silence",
+                detail: "Sleep sounds that fade out on their own"
+            )
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.035))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+        )
+    }
+
+    private func bottomBar(bottomInset: CGFloat) -> some View {
+        VStack(spacing: 12) {
+            TrialCTA {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                state.completeOnboarding()
+            }
+
+            HStack(spacing: 26) {
+                footerButton("Terms") {
+                    open("https://trylull.com/terms")
+                }
+                footerButton("Privacy") {
+                    open("https://trylull.com/privacy")
+                }
+                footerButton(subscriptions.isLoading ? "Restoring" : "Restore") {
+                    Task { await restore() }
+                }
+            }
+        }
+        .padding(.horizontal, Lull.horizontalPad)
+        .padding(.top, 22)
+        .padding(.bottom, bottomInset + 6)
+        .background(
+            LinearGradient(
+                colors: [Color.lullBg.opacity(0.0), Color.lullBg.opacity(0.96), Color.lullBg],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
     private func footerButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12))
+                .font(.mono(10))
+                .kerning(0.8)
                 .foregroundColor(.lullInk3)
         }
         .buttonStyle(.plain)
@@ -1628,60 +1649,65 @@ struct OnbTrialPaywallView: View {
     }
 }
 
-private struct TrialSky: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .bottom) {
-                RadialGradient(
-                    colors: [Color(hex: "#3a2a1a"), Color(hex: "#160f09"), .lullBg],
-                    center: UnitPoint(x: 0.5, y: -0.2),
-                    startRadius: 0,
-                    endRadius: 290
-                )
-                Circle()
-                    .fill(Color.lullInk0.opacity(0.9))
-                    .frame(width: 32, height: 32)
-                    .shadow(color: Color.lullInk0.opacity(0.28), radius: 12)
-                    .position(x: UIScreen.main.bounds.width * 0.78, y: 58)
-                Ellipse()
-                    .fill(Color(hex: "#1a120a").opacity(0.74))
-                    .frame(width: UIScreen.main.bounds.width * 1.35, height: 86)
-                    .offset(y: 48)
-            }
-            .frame(height: 230)
-
-            Spacer()
-        }
-    }
-}
-
 private struct TrialBenefit: View {
     var title: String
     var detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 13) {
+        HStack(alignment: .top, spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "#7BC47F").opacity(0.16))
-                    .frame(width: 24, height: 24)
+                    .fill(Color.lullAmber.opacity(0.12))
+                    .frame(width: 22, height: 22)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "#7BC47F"))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.lullAmber)
             }
             .padding(.top, 1)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.lullInk0)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(detail)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12.5))
                     .foregroundColor(.lullInk2)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct TrialQuoteCard: View {
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("★★★★★")
+                .font(.system(size: 12, weight: .semibold))
+                .kerning(1.2)
+                .foregroundColor(.lullAmber)
+                .lineLimit(1)
+                .layoutPriority(1)
+
+            Text("\"It's been great for me\"")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.lullInk0)
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+
+            Text("- Beth M.")
+                .font(.system(size: 12))
+                .foregroundColor(.lullInk3)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .background(Capsule().fill(Color.white.opacity(0.045)))
+        .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
     }
 }
 
@@ -1690,11 +1716,11 @@ private struct TrialReassuranceCard: View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(hex: "#7BC47F").opacity(0.16))
+                    .fill(Color.lullAmber.opacity(0.10))
                     .frame(width: 34, height: 34)
                 Image(systemName: "lock.open.fill")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(hex: "#7BC47F"))
+                    .foregroundColor(.lullAmber)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1714,7 +1740,7 @@ private struct TrialReassuranceCard: View {
             RoundedRectangle(cornerRadius: 18)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "#241809"), Color(hex: "#150e07")],
+                        colors: [Color.lullAmber.opacity(0.09), Color.white.opacity(0.025)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -1722,7 +1748,7 @@ private struct TrialReassuranceCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color(hex: "#7BC47F").opacity(0.22), lineWidth: 1)
+                .strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1)
         )
     }
 }
@@ -1734,16 +1760,18 @@ private struct TrialCTA: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text("Start my free week")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(Color(hex: "#1a1109"))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.lullBgDeep)
                 Text("No payment info needed")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6d5a3f"))
+                    .font(.mono(9.5))
+                    .kerning(0.8)
+                    .foregroundColor(.lullBgDeep.opacity(0.72))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 58)
-            .background(Capsule().fill(Color.lullInk0))
-            .shadow(color: Color.lullInk0.opacity(0.24), radius: 22, y: 10)
+            .background(Capsule().fill(Color.lullAmber))
+            .shadow(color: Color.lullAmberGlow, radius: 16)
+            .shadow(color: Color.black.opacity(0.4), radius: 12, y: 8)
         }
         .buttonStyle(.plain)
     }
