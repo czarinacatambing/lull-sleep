@@ -166,6 +166,29 @@ struct DashboardView: View {
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            state.presentUpgradePaywall()
+                        }
+                    }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullAmber)
+                                .frame(width: 18)
+                            Text("Upgrade to premium")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.lullInk0)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider().background(Color.lullLine).padding(.horizontal, 12)
+
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                             showSettings = true
                         }
                     }) {
@@ -1066,7 +1089,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomerCenter = false
-    @State private var didExpireTrial = false
+    @State private var seededNightCount: Int? = nil
     @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
     @State private var initialSleepScheduleSignature: String? = nil
 
@@ -1178,32 +1201,9 @@ struct SettingsSheet: View {
                         #if DEBUG
                         VStack(alignment: .leading, spacing: 12) {
                             Kicker(text: "Debug")
-                            Button {
-                                state.debugSeedSevenNightsAndExpireTrial()
-                                didExpireTrial = true
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: didExpireTrial ? "checkmark.circle.fill" : "timer")
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.lullAmber)
-                                        .frame(width: 22)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Seed 7-night paywall test")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.lullInk0)
-                                        Text(didExpireTrial
-                                             ? "Seven nights seeded. RevenueCat paywall requested."
-                                             : "Creates 7 completed nights with ratings, then expires the trial.")
-                                            .font(.system(size: 12.5))
-                                            .foregroundColor(.lullInk3)
-                                            .lineSpacing(2)
-                                    }
-                                    Spacer()
-                                }
-                                .padding(14)
-                                .lullCard(radius: 14, accent: didExpireTrial)
-                            }
-                            .buttonStyle(.plain)
+                            debugSeedButton(count: 3, kind: .milestone)
+                            debugSeedButton(count: 6, kind: .paywall)
+                            debugSeedButton(count: 7, kind: .paywall)
                         }
                         .padding(.horizontal, 22)
                         .padding(.bottom, 22)
@@ -1282,6 +1282,70 @@ struct SettingsSheet: View {
                 }
         }
     }
+
+    #if DEBUG
+    private enum DebugSeedKind {
+        case milestone
+        case paywall
+    }
+
+    private func debugSeedButton(count: Int, kind: DebugSeedKind) -> some View {
+        let didSeed = seededNightCount == count
+        return Button {
+            state.debugSeedCompletedNightsAndExpireTrial(count: count, presentMilestone: kind == .milestone)
+            seededNightCount = count
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: didSeed ? "checkmark.circle.fill" : "timer")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(debugSeedTitle(count: count, kind: kind))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.lullInk0)
+                    Text(didSeed
+                         ? debugSeedCompleteText(count: count, kind: kind)
+                         : debugSeedDescription(count: count, kind: kind))
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(2)
+                }
+                Spacer()
+            }
+            .padding(14)
+            .lullCard(radius: 14, accent: didSeed)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func debugSeedDescription(count: Int, kind: DebugSeedKind) -> String {
+        switch kind {
+        case .milestone:
+            return "Creates \(count) completed nights with ratings, then shows the milestone card."
+        case .paywall:
+            return "Creates \(count) completed nights with ratings, then expires the trial."
+        }
+    }
+
+    private func debugSeedTitle(count: Int, kind: DebugSeedKind) -> String {
+        switch kind {
+        case .milestone:
+            return "Seed \(count)-night milestone test"
+        case .paywall:
+            return "Seed \(count)-night paywall test"
+        }
+    }
+
+    private func debugSeedCompleteText(count: Int, kind: DebugSeedKind) -> String {
+        switch kind {
+        case .milestone:
+            return "\(count) nights seeded. Milestone card requested."
+        case .paywall:
+            return "\(count) nights seeded. RevenueCat paywall requested."
+        }
+    }
+    #endif
 
     private func refreshLiveActivitiesStatus() {
         liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
