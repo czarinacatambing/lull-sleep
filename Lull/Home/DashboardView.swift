@@ -316,7 +316,7 @@ struct DashboardView: View {
         .padding(.top, 32)
         .padding(.bottom, 24)
 
-        StreakStatusCard(summary: state.streakSummary, selectedTab: $selectedTab, prominent: true)
+        StreakMoonStrip(summary: state.streakSummary, selectedTab: $selectedTab)
             .padding(.horizontal, 22)
             .padding(.bottom, 16)
 
@@ -386,7 +386,7 @@ struct DashboardView: View {
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
 
-        StreakStatusCard(summary: state.streakSummary, selectedTab: $selectedTab, prominent: false)
+        StreakMoonStrip(summary: state.streakSummary, selectedTab: $selectedTab)
             .padding(.horizontal, 22)
             .padding(.bottom, 36)
     }
@@ -571,18 +571,18 @@ struct DashboardView: View {
 
                 // Title
                 Text("Earn tonight's moon")
-                    .font(.serif(26))
+                    .font(.serif(23))
                     .foregroundColor(.lullInk0)
-                    .padding(.top, 10)
+                    .padding(.top, 4)
 
                 // Description
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     (Text("Finish the guided wind-down to keep your bedtime rhythm alive. ")
                         .foregroundColor(.lullInk1)
                     + Text("You can skip a step and still complete the ritual.")
                         .foregroundColor(.lullInk2))
-                    .font(.system(size: 13.5))
-                    .lineSpacing(3)
+                    .font(.system(size: 13))
+                    .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
 
                     // Sub-copy
@@ -591,7 +591,7 @@ struct DashboardView: View {
                          : "Finish prep first (\(remaining) left), then we'll start the wind-down sequence.")
                         .font(.system(size: 12.5))
                         .foregroundColor(.lullInk2)
-                        .lineSpacing(3)
+                        .lineSpacing(4)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -603,12 +603,12 @@ struct DashboardView: View {
                 }
                 .disabled(!allPrepDone)
                 .opacity(allPrepDone ? 1 : 0.45)
-                .padding(.top, 24)
+                .padding(.top, 18)
             }
             .font(.system(size: 13))
             .padding(.horizontal, 22)
-            .padding(.top, 22)
-            .padding(.bottom, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 22)
         }
         .background(
             RoundedRectangle(cornerRadius: 26)
@@ -746,6 +746,12 @@ struct StreakStatusCard: View {
     var summary: StreakSummary
     @Binding var selectedTab: Int
     var prominent: Bool
+    var progressAvgScoreText: String? = nil
+    var progressSlots: [DotSlot] = []
+    var progressSleepLogs: [SleepLogEntry] = []
+    var progressOnInfo: (() -> Void)? = nil
+    var progressOnTap: ((Int) -> Void)? = nil
+    var progressOnTodayEmptyTap: (() -> Void)? = nil
 
     private var title: String {
         if summary.completedNights == 0 { return "Start your streak tonight" }
@@ -759,55 +765,142 @@ struct StreakStatusCard: View {
         return "\(summary.completedNights) of \(summary.expectedNights) nights completed"
     }
 
+    private var showsProgress: Bool {
+        !progressSlots.isEmpty
+    }
+
     var body: some View {
-        Button { selectedTab = 1 } label: {
-            VStack(alignment: .leading, spacing: prominent ? 16 : 12) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Kicker(text: "Current streak", color: .lullAmberSoft)
-                        Text(title)
-                            .font(.serif(prominent ? 32 : 22))
-                            .foregroundColor(.lullInk0)
+        Group {
+            if showsProgress {
+                cardContent
+            } else {
+                Button { selectedTab = 1 } label: {
+                    cardContent
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: prominent ? 16 : 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Kicker(text: "Current streak", color: .lullAmberSoft)
+                    Text(title)
+                        .font(.serif(prominent ? 32 : 22))
+                        .foregroundColor(.lullInk0)
+                }
+                Spacer()
+                Text(summary.expectedNights == 0 ? "--" : "\(summary.completionRate)%")
+                    .font(.mono(11))
+                    .kerning(1)
+                    .foregroundColor(.lullAmberSoft)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.lullAmber.opacity(0.12)))
+            }
+
+            if !showsProgress {
+                StreakMoonRow(nights: summary.last13, large: prominent)
+            }
+
+            HStack(alignment: .center) {
+                Text(subtitle)
+                    .font(.system(size: prominent ? 13.5 : 12.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(3)
+                Spacer()
+                Text("ROUTINE")
+                    .font(.mono(9.5))
+                    .kerning(1.2)
+                    .foregroundColor(.lullInk4)
+            }
+
+            if showsProgress {
+                Divider()
+                    .background(Color.lullLine)
+                    .padding(.top, 4)
+
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Last 14 nights")
+                        .font(.mono(10))
+                        .kerning(1.1)
+                        .foregroundColor(.lullInk4)
+                    if let progressAvgScoreText {
+                        Text(progressAvgScoreText)
+                            .font(.mono(9.5))
+                            .kerning(1.1)
+                            .foregroundColor(.lullInk4)
                     }
                     Spacer()
-                    Text(summary.expectedNights == 0 ? "--" : "\(summary.completionRate)%")
-                        .font(.mono(11))
-                        .kerning(1)
-                        .foregroundColor(.lullAmberSoft)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(Color.lullAmber.opacity(0.12)))
+                    if let progressOnInfo {
+                        Button(action: progressOnInfo) {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.lullInk4)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
-                StreakMoonRow(nights: summary.last13, large: prominent)
-
-                HStack(alignment: .center) {
-                    Text(subtitle)
-                        .font(.system(size: prominent ? 13.5 : 12.5))
-                        .foregroundColor(.lullInk2)
-                        .lineSpacing(3)
-                    Spacer()
-                    Text("ROUTINE")
-                        .font(.mono(9.5))
-                        .kerning(1.2)
-                        .foregroundColor(.lullInk4)
-                }
+                ProgressDotsCard(
+                    slots: progressSlots,
+                    sleepLogs: progressSleepLogs,
+                    onTap: progressOnTap ?? { _ in },
+                    onTodayEmptyTap: progressOnTodayEmptyTap ?? {},
+                    showsFrame: false
+                )
             }
-            .padding(.horizontal, prominent ? 20 : 16)
-            .padding(.vertical, prominent ? 20 : 16)
-            .background(
-                RoundedRectangle(cornerRadius: prominent ? 24 : 18)
-                    .fill(LinearGradient(
-                        colors: [Color.lullAmber.opacity(prominent ? 0.14 : 0.08), Color.lullAmber.opacity(0.02)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: prominent ? 24 : 18)
-                            .strokeBorder(Color.lullAmber.opacity(prominent ? 0.34 : 0.24), lineWidth: 1)
-                    )
-            )
-            .shadow(color: Color.black.opacity(prominent ? 0.42 : 0.24), radius: prominent ? 24 : 14, y: prominent ? 16 : 8)
+        }
+        .padding(.horizontal, prominent ? 20 : 16)
+        .padding(.vertical, prominent ? 20 : 16)
+        .background(
+            RoundedRectangle(cornerRadius: prominent ? 24 : 18)
+                .fill(LinearGradient(
+                    colors: [Color.lullAmber.opacity(prominent ? 0.14 : 0.08), Color.lullAmber.opacity(0.02)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .overlay(
+                    RoundedRectangle(cornerRadius: prominent ? 24 : 18)
+                        .strokeBorder(Color.lullAmber.opacity(prominent ? 0.34 : 0.24), lineWidth: 1)
+                )
+        )
+        .shadow(color: Color.black.opacity(prominent ? 0.42 : 0.24), radius: prominent ? 24 : 14, y: prominent ? 16 : 8)
+    }
+}
+
+private struct StreakMoonStrip: View {
+    var summary: StreakSummary
+    @Binding var selectedTab: Int
+
+    private var caption: String {
+        if summary.expectedNights == 0 {
+            return "Tonight can earn your first moon"
+        }
+        return "\(summary.completedNights) of \(summary.expectedNights) nights"
+    }
+
+    var body: some View {
+        Button { selectedTab = 1 } label: {
+            HStack(spacing: 12) {
+                StreakMoonRow(nights: summary.last13, large: false)
+                Text(caption)
+                    .font(.mono(10.5))
+                    .kerning(0.7)
+                    .foregroundColor(.lullInk3)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.lullInk4)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
     }

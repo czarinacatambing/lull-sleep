@@ -91,7 +91,17 @@ struct MyRoutineView: View {
                         RoutineTopHeader(bedtime: state.typicalBedtime)
                             .padding(.horizontal, 22)
 
-                        StreakStatusCard(summary: state.streakSummary, selectedTab: .constant(1), prominent: false)
+                        StreakStatusCard(
+                            summary: state.streakSummary,
+                            selectedTab: .constant(1),
+                            prominent: false,
+                            progressAvgScoreText: avgScoreText,
+                            progressSlots: displaySlots,
+                            progressSleepLogs: state.sleepLogs,
+                            progressOnInfo: { showHistoryLegend = true },
+                            progressOnTap: { idx in state.selectedDotIndex = idx },
+                            progressOnTodayEmptyTap: { showTonightInProgress = true }
+                        )
                         .padding(.horizontal, 22)
 
                         RoutineStepSection(
@@ -152,16 +162,7 @@ struct MyRoutineView: View {
                         )
                         .padding(.horizontal, 22)
 
-                        RoutineProgressSection(
-                            avgScoreText: avgScoreText,
-                            slots: displaySlots,
-                            sleepLogs: state.sleepLogs,
-                            onInfo: { showHistoryLegend = true },
-                            onTap: { idx in state.selectedDotIndex = idx },
-                            onTodayEmptyTap: { showTonightInProgress = true }
-                        )
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 40)
+                        Spacer().frame(height: 40)
                     }
                 }
 
@@ -2721,8 +2722,18 @@ struct ProgressDotsCard: View {
     var sleepLogs: [SleepLogEntry]
     var onTap: (Int) -> Void
     var onTodayEmptyTap: () -> Void = {}
+    var showsFrame: Bool = true
 
-    private var loggedCount: Int { slots.filter { $0.dotState == .rated }.count }
+    private var completedCount: Int {
+        slots.filter { slot in
+            switch slot.dotState {
+            case .rated, .unratedLocked, .inProgress:
+                return true
+            case .skipped, .todayEmpty, .future:
+                return false
+            }
+        }.count
+    }
 
     private var pastSlotCount: Int {
         let todayStart = Calendar.current.startOfDay(for: Date())
@@ -2789,7 +2800,7 @@ struct ProgressDotsCard: View {
                     Spacer()
                 }
                 Spacer()
-                Text("\(loggedCount) / \(pastSlotCount) logged")
+                Text("\(completedCount) / \(pastSlotCount) completed")
                     .font(.mono(10.5))
                     .kerning(0.8)
                     .foregroundColor(.lullInk3)
@@ -2797,11 +2808,13 @@ struct ProgressDotsCard: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color.white.opacity(0.025))
-                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.lullLine, lineWidth: 1))
-        )
+        .background {
+            if showsFrame {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.white.opacity(0.025))
+                    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.lullLine, lineWidth: 1))
+            }
+        }
     }
 
     @ViewBuilder
