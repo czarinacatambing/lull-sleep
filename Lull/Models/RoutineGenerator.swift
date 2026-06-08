@@ -29,6 +29,7 @@ enum R {
     static let warmShower      = "Warm shower or bath"
     static let magnesium       = "Magnesium glycinate"
     static let herbalTea       = "Herbal tea"
+    static let blackoutCurtains = "Blackout curtains"
 
     // Bedtime Ritual steps (passive/physical, done in bed — no lead time)
     static let weightedBlanket = "Weighted blanket"
@@ -48,6 +49,7 @@ let remedyLeadTimes: [String: Int] = [
     R.warmShower:       90,
     R.magnesium:        45,
     R.herbalTea:        45,
+    R.blackoutCurtains: 90,
 ]
 
 // All wind down candidate labels (compete for the 2 variable Wind Down slots)
@@ -57,7 +59,12 @@ let allWindDownRemedies: [String] = [
 ]
 
 // All bedtime prep remedy labels
-let allBedroomPrepRemedies: [String] = Array(remedyLeadTimes.keys)
+let allBedroomPrepRemedies: [String] = [
+    R.noAlcohol, R.noCaffeine, R.noScreens, R.appBlocking,
+    R.finishWorkouts, R.noHeavySnacks, R.dimTheLights,
+    R.coldRoomPrep, R.warmShower, R.magnesium, R.herbalTea,
+    R.blackoutCurtains,
+]
 
 // MARK: - Nightly Step Kind
 
@@ -160,6 +167,11 @@ struct GeneratedRoutine {
     var explanation: String
     var keptHabitLabels: [String]
     var shouldStartImmediately: Bool
+    var remedyIds: [RemedyID] = []
+    var introOrder: [RemedyID] = []
+    var backlog: [RemedyID] = []
+    var reinforcedRemedyIds: [RemedyID] = []
+    var showHealthScreening: Bool = false
 
     var totalMinutes: Int { steps.reduce(0) { $0 + $1.estimatedMinutes } }
 
@@ -196,6 +208,7 @@ struct GeneratedRoutine {
 struct OnboardingAnswers {
     let sleepProblems: Set<Int>
     let wakingFactors: Set<Int>
+    let satisfaction: Int
     let mainWindowMinutes: Int
     let typicalBedtime: Date
     let typicalWakeTime: Date
@@ -205,6 +218,7 @@ struct OnboardingAnswers {
     init(from state: AppState) {
         sleepProblems     = state.selectedSleepProblems
         wakingFactors     = state.selectedWakes
+        satisfaction       = state.baselineScore
         mainWindowMinutes = state.sleepWindowMinutes
         typicalBedtime    = state.typicalBedtime
         typicalWakeTime   = state.typicalWakeTime
@@ -226,218 +240,370 @@ struct OnboardingAnswers {
     }
 }
 
-// MARK: - Remedy ↔ Onboarding Mapping
+// MARK: - Routine Engine Config
 
-// (screen, answerIndex) → remedy labels that score points for this answer.
-// Screen 5 (pre-bed activities) carries 2x weight in scoreRemedies().
-private struct AnswerKey: Hashable {
-    let screen: Int
-    let index: Int
+private enum Phenotype: Hashable {
+    case a, b, c, d, other, all
 }
 
-private let remedyMapping: [AnswerKey: [String]] = [
-    // Screen 1 — Sleep Problems (+1 per selection)
-    AnswerKey(screen: 1, index: 0): [R.dimTheLights, R.noScreens, R.warmShower,
-                                      R.breathing478, R.brainDump, R.boringStory],
-    AnswerKey(screen: 1, index: 1): [R.dimTheLights, R.noScreens, R.gratitudeJournal,
-                                      R.brainDump, R.breathing478, R.pmr, R.bodyScan, R.boringStory],
-    AnswerKey(screen: 1, index: 2): [R.coldRoomPrep, R.herbalTea, R.weightedBlanket,
-                                      R.breathing478, R.brainDump],
-    AnswerKey(screen: 1, index: 3): [R.coldRoomPrep, R.warmShower, R.magnesium, R.weightedBlanket],
+private enum Habit: Hashable {
+    case scroll, tv, readBook, talk, showerBath, exercise
+    case eatSnack, podcast, chores, coffee, alcohol, work, none
+}
 
-    // Screen 2 — Waking Factors / Situation (+1 per selection)
-    AnswerKey(screen: 2, index: 0): [R.dimTheLights, R.herbalTea, R.gentleStretching,
-                                      R.warmShower, R.brainDump, R.breathing478],
-    AnswerKey(screen: 2, index: 1): [R.coldRoomPrep, R.dimTheLights, R.noCaffeine,
-                                      R.magnesium, R.boringStory],
-    AnswerKey(screen: 2, index: 2): [R.dimTheLights, R.noScreens, R.brainDump,
-                                      R.breathing478, R.pmr, R.bodyScan],
-    AnswerKey(screen: 2, index: 3): [R.dimTheLights, R.noScreens, R.brainDump,
-                                      R.breathing478, R.pmr, R.bodyScan, R.boringStory],
-    AnswerKey(screen: 2, index: 4): [R.dimTheLights, R.herbalTea, R.breathing478,
-                                      R.brainDump, R.pmr, R.bodyScan],
-    AnswerKey(screen: 2, index: 5): [R.coldRoomPrep, R.warmShower, R.gentleStretching,
-                                      R.pmr, R.weightedBlanket],
+private struct RoutineEngineConfig {
+    static let q1Weight = 3
+    static let q4Weight = 1
+    static let popularityWeight = 3
+}
 
-    // Screen 5 — Pre-Bed Activities (+2 per selection, "Screen 4" 2x weight in spec)
-    AnswerKey(screen: 5, index: 0): [R.dimTheLights, R.noScreens, R.brainDump, R.appBlocking],
-    AnswerKey(screen: 5, index: 1): [R.dimTheLights, R.noScreens, R.readingBook,
-                                      R.boringStory, R.appBlocking],
-    AnswerKey(screen: 5, index: 2): [R.readingBook],
-    // index 3 ("Talk or socialize") — no CSV mapping
-    AnswerKey(screen: 5, index: 4): [R.warmShower],
-    AnswerKey(screen: 5, index: 5): [R.finishWorkouts],
-    AnswerKey(screen: 5, index: 6): [R.noHeavySnacks, R.herbalTea],
-    AnswerKey(screen: 5, index: 7): [R.boringStory, R.sleepSounds],
-    AnswerKey(screen: 5, index: 8): [R.dimTheLights, R.brainDump],
-    AnswerKey(screen: 5, index: 9): [R.noCaffeine, R.herbalTea],
-    AnswerKey(screen: 5, index: 10): [R.brainDump, R.noScreens, R.appBlocking],
-    AnswerKey(screen: 5, index: 11): [R.noAlcohol, R.herbalTea],
-    // index 12 ("None of the above") — no mapping
+private struct RemedyConfig {
+    let id: RemedyID
+    let label: String
+    let strength: (Set<Phenotype>) -> Int
+    let popularity: Int
+    let difficulty: Int
+    let phenotypes: Set<Phenotype>
+    let habitTriggers: Set<Habit>
+    let gate: Habit?
+    let requiresPhenotype: Set<Phenotype>
+    let leadTimeMinutes: Int?
+    let isWindDown: Bool
+    let order: Int
+
+    func strengthValue(for phenotypes: Set<Phenotype>) -> Int {
+        strength(phenotypes)
+    }
+}
+
+private struct ScoredRemedy {
+    let config: RemedyConfig
+    let matchPoints: Int
+    let clinicalScore: Int
+    let rank: Int
+}
+
+private let remedyConfigs: [RemedyConfig] = [
+    .init(id: .noCaffeine, label: R.noCaffeine, strength: { _ in 3 }, popularity: 0, difficulty: 3,
+          phenotypes: [.a, .b, .c], habitTriggers: [.coffee], gate: .coffee, requiresPhenotype: [],
+          leadTimeMinutes: 360, isWindDown: false, order: 0),
+    .init(id: .noAlcohol, label: R.noAlcohol, strength: { _ in 3 }, popularity: 0, difficulty: 3,
+          phenotypes: [.c, .d], habitTriggers: [.alcohol], gate: .alcohol, requiresPhenotype: [.c, .d],
+          leadTimeMinutes: 180, isWindDown: false, order: 1),
+    .init(id: .noScreens, label: R.noScreens, strength: { _ in 3 }, popularity: 0, difficulty: 3,
+          phenotypes: [.a, .b], habitTriggers: [.scroll, .tv, .work], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 75, isWindDown: false, order: 2),
+    .init(id: .appBlocking, label: R.appBlocking, strength: { _ in 3 }, popularity: 0, difficulty: 3,
+          phenotypes: [.a, .b], habitTriggers: [.scroll], gate: .scroll, requiresPhenotype: [],
+          leadTimeMinutes: 75, isWindDown: false, order: 3),
+    .init(id: .dimTheLights, label: R.dimTheLights, strength: { _ in 2 }, popularity: 2, difficulty: 2,
+          phenotypes: [.a], habitTriggers: [.scroll, .tv], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 75, isWindDown: false, order: 4),
+    .init(id: .coldRoomPrep, label: R.coldRoomPrep, strength: { _ in 2 }, popularity: 1, difficulty: 1,
+          phenotypes: [.a, .c], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 90, isWindDown: false, order: 5),
+    .init(id: .noHeavySnacks, label: R.noHeavySnacks, strength: { _ in 2 }, popularity: 0, difficulty: 2,
+          phenotypes: [.a, .d], habitTriggers: [.eatSnack], gate: .eatSnack, requiresPhenotype: [],
+          leadTimeMinutes: 120, isWindDown: false, order: 6),
+    .init(id: .finishWorkouts, label: R.finishWorkouts, strength: { _ in 2 }, popularity: 0, difficulty: 2,
+          phenotypes: [.a], habitTriggers: [.exercise], gate: .exercise, requiresPhenotype: [],
+          leadTimeMinutes: 180, isWindDown: false, order: 7),
+    .init(id: .weightedBlanket, label: R.weightedBlanket, strength: { $0.contains(.b) ? 2 : 1 }, popularity: 2, difficulty: 1,
+          phenotypes: [.a, .b, .c], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 8),
+    .init(id: .magnesium, label: R.magnesium, strength: { _ in 1 }, popularity: 1, difficulty: 1,
+          phenotypes: [.a, .c], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 45, isWindDown: false, order: 9),
+    .init(id: .herbalTea, label: R.herbalTea, strength: { _ in 1 }, popularity: 2, difficulty: 1,
+          phenotypes: [.a], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 45, isWindDown: false, order: 10),
+    .init(id: .brainDump, label: R.brainDump, strength: { _ in 3 }, popularity: 1, difficulty: 1,
+          phenotypes: [.b], habitTriggers: [.work, .talk], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 11),
+    .init(id: .progressiveMuscleRelaxation, label: R.pmr, strength: { _ in 2 }, popularity: 1, difficulty: 2,
+          phenotypes: [.a, .b], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 12),
+    .init(id: .bodyScan, label: R.bodyScan, strength: { _ in 2 }, popularity: 1, difficulty: 1,
+          phenotypes: [.a, .b], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 13),
+    .init(id: .boringStory, label: R.boringStory, strength: { _ in 2 }, popularity: 2, difficulty: 1,
+          phenotypes: [.a, .b], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 14),
+    .init(id: .gratitudeJournal, label: R.gratitudeJournal, strength: { _ in 1 }, popularity: 1, difficulty: 1,
+          phenotypes: [.b], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 15),
+    .init(id: .gentleStretching, label: R.gentleStretching, strength: { _ in 1 }, popularity: 1, difficulty: 2,
+          phenotypes: [.a], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 16),
+    .init(id: .readingBook, label: R.readingBook, strength: { _ in 1 }, popularity: 1, difficulty: 2,
+          phenotypes: [.a, .b], habitTriggers: [.readBook], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 17),
+    .init(id: .sleepSounds, label: R.sleepSounds, strength: { _ in 1 }, popularity: 2, difficulty: 1,
+          phenotypes: [.a, .b, .c, .d], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 18),
+    .init(id: .breathing478, label: R.breathing478, strength: { _ in 1 }, popularity: 2, difficulty: 1,
+          phenotypes: [.a, .b], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: nil, isWindDown: true, order: 19),
+    .init(id: .blackoutCurtains, label: R.blackoutCurtains, strength: { _ in 1 }, popularity: 1, difficulty: 1,
+          phenotypes: [.a, .c], habitTriggers: [], gate: nil, requiresPhenotype: [],
+          leadTimeMinutes: 90, isWindDown: false, order: 20),
 ]
 
-// Pre-bed activities that are positive sleep habits worth keeping in Wind Down.
-// index → remedy label
-private let keptHabitMap: [Int: String] = [
-    2: R.readingBook,  // "Read a physical book"
-    4: R.warmShower,   // "Have a shower or bath"
+private var remedyConfigById: [RemedyID: RemedyConfig] {
+    Dictionary(uniqueKeysWithValues: remedyConfigs.map { ($0.id, $0) })
+}
+
+private let warmBathConfig = RemedyConfig(
+    id: .warmShower,
+    label: R.warmShower,
+    strength: { _ in 1 },
+    popularity: 2,
+    difficulty: 1,
+    phenotypes: [],
+    habitTriggers: [],
+    gate: nil,
+    requiresPhenotype: [],
+    leadTimeMinutes: 90,
+    isWindDown: false,
+    order: -1
+)
+
+private func config(for id: RemedyID) -> RemedyConfig? {
+    id == .warmShower ? warmBathConfig : remedyConfigById[id]
+}
+
+private let baselineRemedyIds: [RemedyID] = [.noScreens, .dimTheLights, .sleepSounds]
+
+private let habitDerivedBaselineIds: [Habit: [RemedyID]] = [
+    .coffee: [.noCaffeine],
+    .eatSnack: [.noHeavySnacks],
+    .scroll: [.appBlocking],
+    .exercise: [.finishWorkouts],
 ]
 
-// "What have you tried before?" answers are used as a light avoid list so the
-// first generated routine does not recommend a familiar technique again.
-private let triedRemedyAvoidanceMap: [Int: [String]] = [
-    1: [R.breathing478, R.pmr, R.bodyScan], // Meditation
-    2: [R.noHeavySnacks],                   // Light dinner
-    3: [R.gratitudeJournal, R.brainDump],   // Journaling
-    4: [R.pmr],                             // Therapy
-    5: [R.pmr],                             // CBT-I
-    6: [R.warmShower],                      // Warm bath
-]
+// MARK: - Answer Mapping
 
-// Wind Down difficulty (lower = easier = shown first in routine)
-private let windDownDifficulty: [String: Int] = [
-    R.boringStory:      1,
-    R.readingBook:      2,
-    R.weightedBlanket:  3,
-    R.gratitudeJournal: 4,
-    R.brainDump:        5,
-    R.gentleStretching: 6,
-    R.breathing478:     7,
-    R.bodyScan:         8,
-    R.pmr:              9,
-]
+private func selectedPhenotypes(from answers: OnboardingAnswers) -> Set<Phenotype> {
+    let allProblemOptionCount = 5
+    if answers.sleepProblems == Set(0..<allProblemOptionCount) {
+        return [.all]
+    }
+
+    var result: Set<Phenotype> = []
+    if answers.sleepProblems.contains(0) { result.insert(.a) }
+    if answers.sleepProblems.contains(1) { result.insert(.b) }
+    if answers.sleepProblems.contains(2) { result.insert(.c) }
+    if answers.sleepProblems.contains(3) { result.insert(.d) }
+    if answers.sleepProblems.contains(4) { result.insert(.other) }
+    return result
+}
+
+private func selectedHabits(from answers: OnboardingAnswers) -> Set<Habit> {
+    var result: Set<Habit> = []
+    if answers.preBedActivities.contains(0) { result.insert(.scroll) }
+    if answers.preBedActivities.contains(1) { result.insert(.tv) }
+    if answers.preBedActivities.contains(2) { result.insert(.readBook) }
+    if answers.preBedActivities.contains(3) { result.insert(.talk) }
+    if answers.preBedActivities.contains(4) { result.insert(.showerBath) }
+    if answers.preBedActivities.contains(5) { result.insert(.exercise) }
+    if answers.preBedActivities.contains(6) { result.insert(.eatSnack) }
+    if answers.preBedActivities.contains(7) { result.insert(.podcast) }
+    if answers.preBedActivities.contains(8) { result.insert(.chores) }
+    if answers.preBedActivities.contains(9) { result.insert(.coffee) }
+    if answers.preBedActivities.contains(10) { result.insert(.work) }
+    if answers.preBedActivities.contains(11) { result.insert(.alcohol) }
+    if answers.preBedActivities.contains(12) { result.insert(.none) }
+    return result
+}
+
+private func starterSetSize(for satisfaction: Int) -> Int {
+    switch satisfaction {
+    case 1, 2: return 5
+    case 3:    return 4
+    default:   return 3
+    }
+}
+
+private func usesBaselinePath(_ phenotypes: Set<Phenotype>) -> Bool {
+    phenotypes == [.other] || phenotypes == [.all] || phenotypes.isEmpty
+}
 
 // MARK: - Scoring
 
-/// Scores every remedy against the user's onboarding answers.
-/// - Screen 1 & 2 selections → +1 per mapped remedy
-/// - Screen 5 selections (pre-bed activities) → +2 per mapped remedy
-/// - "Dim the lights" always gets +3 extra
-/// - Up to 2 kept positive habits each get +2
 func scoreRemedies(from answers: OnboardingAnswers) -> [String: Int] {
-    var scores: [String: Int] = [:]
-
-    for idx in answers.sleepProblems {
-        for remedy in remedyMapping[AnswerKey(screen: 1, index: idx)] ?? [] {
-            scores[remedy, default: 0] += 1
-        }
-    }
-
-    for idx in answers.wakingFactors {
-        for remedy in remedyMapping[AnswerKey(screen: 2, index: idx)] ?? [] {
-            scores[remedy, default: 0] += 1
-        }
-    }
-
-    for idx in answers.preBedActivities {
-        for remedy in remedyMapping[AnswerKey(screen: 5, index: idx)] ?? [] {
-            scores[remedy, default: 0] += 2
-        }
-    }
-
-    scores[R.dimTheLights, default: 0] += 3
-
-    let keptHabits = answers.preBedActivities
-        .compactMap { keptHabitMap[$0] }
-        .prefix(2)
-    for habit in keptHabits {
-        scores[habit, default: 0] += 2
-    }
-
-    for remedy in avoidedRemedies(from: answers.triedBefore) {
-        scores[remedy] = nil
-    }
-
-    return scores
+    let phenotypes = selectedPhenotypes(from: answers)
+    let habits = selectedHabits(from: answers)
+    return scoredRemedies(phenotypes: phenotypes, habits: habits)
+        .reduce(into: [:]) { $0[$1.config.label] = $1.clinicalScore }
 }
 
-private func avoidedRemedies(from triedBefore: Set<Int>) -> Set<String> {
-    Set(triedBefore.flatMap { triedRemedyAvoidanceMap[$0] ?? [] })
+private func scoredRemedies(phenotypes: Set<Phenotype>, habits: Set<Habit>) -> [ScoredRemedy] {
+    remedyConfigs.compactMap { config in
+        guard config.id != .warmShower else { return nil }
+        if let gate = config.gate, !habits.contains(gate) { return nil }
+        if !config.requiresPhenotype.isEmpty && config.requiresPhenotype.isDisjoint(with: phenotypes) {
+            return nil
+        }
+
+        let phenotypeMatches = config.phenotypes.intersection(phenotypes).count
+        let habitMatches = config.habitTriggers.intersection(habits).count
+        let matchPoints = RoutineEngineConfig.q1Weight * phenotypeMatches
+            + RoutineEngineConfig.q4Weight * habitMatches
+        let strength = config.strengthValue(for: phenotypes)
+        let clinicalScore = strength * matchPoints
+        guard clinicalScore > 0 else { return nil }
+
+        let rank = clinicalScore + RoutineEngineConfig.popularityWeight * config.popularity
+        return ScoredRemedy(config: config, matchPoints: matchPoints, clinicalScore: clinicalScore, rank: rank)
+    }
+    .sorted(by: scoredSort(phenotypes: phenotypes))
+}
+
+private func scoredSort(phenotypes: Set<Phenotype>) -> (ScoredRemedy, ScoredRemedy) -> Bool {
+    { lhs, rhs in
+        if lhs.rank != rhs.rank { return lhs.rank > rhs.rank }
+        let lhsStrength = lhs.config.strengthValue(for: phenotypes)
+        let rhsStrength = rhs.config.strengthValue(for: phenotypes)
+        if lhsStrength != rhsStrength { return lhsStrength > rhsStrength }
+        if lhs.config.difficulty != rhs.config.difficulty {
+            return lhs.config.difficulty < rhs.config.difficulty
+        }
+        return lhs.config.order < rhs.config.order
+    }
 }
 
 // MARK: - Routine Generator
-//
-// Gentle Reset philosophy for the first routine:
-// • Bedtime Prep: Dim the lights always + max 1 additional. App Blocking never shown.
-// • Wind Down: 2 fixed checks + existing positive habits (up to 2) + at most 1 new method.
-//   A new method is only added when the user has no Wind Down habits already AND the
-//   scoring produced at least one Wind Down candidate (i.e. a real sleep-onset signal).
 
 func generateStartingRoutine(from answers: OnboardingAnswers) -> GeneratedRoutine {
+    let phenotypes = selectedPhenotypes(from: answers)
+    let habits = selectedHabits(from: answers)
     let isCloseToBedtime = answers.timeToTargetBedtimeMinutes <= 60
-    let scores = scoreRemedies(from: answers)
+    let totalSlots = starterSetSize(for: answers.satisfaction)
+    let scoredSlotCount = max(0, totalSlots - 1)
 
-    // Stable iteration order for kept habits (Set order is non-deterministic)
-    let keptHabitLabels = answers.preBedActivities
-        .sorted()
-        .compactMap { keptHabitMap[$0] }
-        .prefix(1)
-        .map { $0 }
+    let selectedScored: [RemedyID]
+    let backlogIds: [RemedyID]
+    if usesBaselinePath(phenotypes) {
+        let baseline = baselineSelection(habits: habits, limit: scoredSlotCount)
+        selectedScored = baseline.selected
+        backlogIds = baseline.backlog
+    } else {
+        let scored = scoredRemedies(phenotypes: phenotypes, habits: habits)
+        selectedScored = scored.prefix(scoredSlotCount).map(\.config.id)
+        backlogIds = scored.dropFirst(scoredSlotCount).map(\.config.id)
+    }
 
-    let prepSteps    = buildInitialPrepSteps()
-    let windDownSteps = buildInitialWindDownSteps(scores: scores, keptHabitLabels: Array(keptHabitLabels))
-
-    let explanation = buildGentleExplanation(
-        windDown: windDownSteps,
-        prep: prepSteps,
-        keptHabits: Array(keptHabitLabels)
+    let remedyIds = [.warmShower] + selectedScored.filter { $0 != .warmShower }
+    let reinforcedIds = reinforcedRemedyIds(habits: habits)
+    let introOrder = buildIntroOrder(remedyIds: remedyIds, phenotypes: phenotypes)
+    let avoidReminders = buildPrepSteps(remedyIds: remedyIds)
+    let windDownSteps = buildWindDownSteps(remedyIds: remedyIds)
+    let showHealth = phenotypes.contains(.d) || phenotypes.contains(.all)
+    let explanation = buildRoutineExplanation(
+        remedyIds: remedyIds,
+        reinforcedRemedyIds: reinforcedIds,
+        showHealthScreening: showHealth
     )
 
     return GeneratedRoutine(
         steps: windDownSteps,
-        avoidReminders: prepSteps,
+        avoidReminders: avoidReminders,
         explanation: explanation,
-        keptHabitLabels: Array(keptHabitLabels),
-        shouldStartImmediately: isCloseToBedtime
+        keptHabitLabels: reinforcedIds.compactMap { config(for: $0)?.label },
+        shouldStartImmediately: isCloseToBedtime,
+        remedyIds: remedyIds,
+        introOrder: introOrder,
+        backlog: backlogIds,
+        reinforcedRemedyIds: reinforcedIds,
+        showHealthScreening: showHealth
     )
 }
 
-// Bedtime Prep: start with only Dim the lights. Others are introduced one at a time
-// through the experiment cycle so the checklist doesn't feel overwhelming on night 1.
-private func buildInitialPrepSteps() -> [NightlyStepKind] {
-    [.avoidReminder(label: R.dimTheLights, minutesBefore: remedyLeadTimes[R.dimTheLights]!)]
+private func baselineSelection(habits: Set<Habit>, limit: Int) -> (selected: [RemedyID], backlog: [RemedyID]) {
+    var orderedIds = baselineRemedyIds
+    for habit in HabitOrder.baselineDerived where habits.contains(habit) {
+        orderedIds.append(contentsOf: habitDerivedBaselineIds[habit] ?? [])
+    }
+
+    let deduped = orderedIds.reduce(into: [RemedyID]()) { result, id in
+        if id != .warmShower && !result.contains(id) {
+            result.append(id)
+        }
+    }
+
+    return (Array(deduped.prefix(limit)), Array(deduped.dropFirst(limit)))
 }
 
-// Wind Down cap: 2 fixed checks + existing Wind Down habits (up to 2) OR 1 new method.
-// A new method is added only when the user has no Wind Down habits and scoring signals
-// a sleep-onset issue (at least one Wind Down remedy scored > 0).
-private func buildInitialWindDownSteps(
-    scores: [String: Int],
-    keptHabitLabels: [String]
-) -> [NightlyStepKind] {
+private enum HabitOrder {
+    static let baselineDerived: [Habit] = [.coffee, .scroll, .eatSnack, .exercise]
+}
+
+private func reinforcedRemedyIds(habits: Set<Habit>) -> [RemedyID] {
+    var ids: [RemedyID] = []
+    if habits.contains(.readBook) { ids.append(.readingBook) }
+    if habits.contains(.showerBath) { ids.append(.warmShower) }
+    return ids
+}
+
+private func buildPrepSteps(remedyIds: [RemedyID]) -> [NightlyStepKind] {
+    remedyIds.compactMap { id in
+        guard let config = config(for: id), !config.isWindDown else { return nil }
+        return .avoidReminder(label: config.label, minutesBefore: config.leadTimeMinutes ?? 90)
+    }
+}
+
+private func buildWindDownSteps(remedyIds: [RemedyID]) -> [NightlyStepKind] {
     var steps: [NightlyStepKind] = [.brightnessCheck, .temperatureLog]
-
-    // Only readingBook lives in allWindDownRemedies; warmShower and dimTheLights are Bedtime Prep.
-    let windDownKeptHabits = keptHabitLabels.filter { allWindDownRemedies.contains($0) }
-    for label in windDownKeptHabits {
-        steps.append(.existingHabit(label: label))
-    }
-
-    // If the user already has Wind Down habits, don't pile on anything new.
-    guard windDownKeptHabits.isEmpty else { return steps }
-
-    // Use the scoring pool as the signal check: if nothing mapped to a Wind Down remedy,
-    // there's nothing meaningful to add for this user right now.
-    let hasSignal = allWindDownRemedies.contains { (scores[$0] ?? 0) > 0 }
-    guard hasSignal else { return steps }
-
-    // Add exactly one new method — top scorer, easiest on a tie-break.
-    let topCandidate = allWindDownRemedies
-        .compactMap { remedy -> (label: String, score: Int)? in
-            guard let score = scores[remedy], score > 0 else { return nil }
-            return (remedy, score)
+    for id in remedyIds {
+        guard let config = config(for: id), config.isWindDown else { continue }
+        if let kind = nightlyStepKind(for: config.label) {
+            steps.append(kind)
         }
-        .sorted { lhs, rhs in
-            if lhs.score != rhs.score { return lhs.score > rhs.score }
-            return (windDownDifficulty[lhs.label] ?? 99) < (windDownDifficulty[rhs.label] ?? 99)
-        }
-        .first
-
-    if let candidate = topCandidate, let kind = nightlyStepKind(for: candidate.label) {
-        steps.append(kind)
     }
-
     return steps
+}
+
+private func buildIntroOrder(remedyIds: [RemedyID], phenotypes: Set<Phenotype>) -> [RemedyID] {
+    let configs = remedyIds.compactMap { config(for: $0) }
+    guard let opener = configs.sorted(by: introOpenerSort(phenotypes: phenotypes)).first else {
+        return remedyIds
+    }
+
+    var ordered: [RemedyID] = [opener.id]
+    if let strongest = configs
+        .filter({ $0.id != opener.id })
+        .sorted(by: introStrengthSort(phenotypes: phenotypes))
+        .first {
+        ordered.append(strongest.id)
+    }
+
+    let rest = configs
+        .filter { !ordered.contains($0.id) }
+        .sorted {
+            if $0.difficulty != $1.difficulty { return $0.difficulty < $1.difficulty }
+            return $0.order < $1.order
+        }
+        .map(\.id)
+
+    return ordered + rest
+}
+
+private func introOpenerSort(phenotypes: Set<Phenotype>) -> (RemedyConfig, RemedyConfig) -> Bool {
+    { lhs, rhs in
+        if lhs.difficulty != rhs.difficulty { return lhs.difficulty < rhs.difficulty }
+        if lhs.popularity != rhs.popularity { return lhs.popularity > rhs.popularity }
+        return lhs.order < rhs.order
+    }
+}
+
+private func introStrengthSort(phenotypes: Set<Phenotype>) -> (RemedyConfig, RemedyConfig) -> Bool {
+    { lhs, rhs in
+        let lhsStrength = lhs.strengthValue(for: phenotypes)
+        let rhsStrength = rhs.strengthValue(for: phenotypes)
+        if lhsStrength != rhsStrength { return lhsStrength > rhsStrength }
+        if lhs.difficulty != rhs.difficulty { return lhs.difficulty < rhs.difficulty }
+        return lhs.order < rhs.order
+    }
 }
 
 // Converts a scored remedy name to its NightlyStepKind.
@@ -445,6 +611,7 @@ private func nightlyStepKind(for remedy: String) -> NightlyStepKind? {
     switch remedy {
     case R.brainDump:        return .brainDump
     case R.boringStory:      return .boringStory
+    case R.sleepSounds:      return .sleepSounds
     case R.breathing478:     return .fourSevenEightBreathing
     case R.gratitudeJournal: return .gratitudeJournal
     case R.gentleStretching: return .gentleStretching
@@ -458,83 +625,35 @@ private func nightlyStepKind(for remedy: String) -> NightlyStepKind? {
 
 // MARK: - Explanation Builder
 
-private func buildGentleExplanation(
-    windDown: [NightlyStepKind],
-    prep: [NightlyStepKind],
-    keptHabits: [String]
+private func buildRoutineExplanation(
+    remedyIds: [RemedyID],
+    reinforcedRemedyIds: [RemedyID],
+    showHealthScreening: Bool
 ) -> String {
-    var parts: [String] = ["We kept things super simple for your first few nights."]
+    var parts: [String] = ["We built a starter routine from your sleep pattern and bedtime habits."]
 
-    for habit in keptHabits {
-        switch habit {
-        case R.readingBook:
-            parts.append("You already read before bed — that's one of the best things you can do, so we kept it in.")
-        case R.dimTheLights:
-            parts.append("You already dim the lights before bed. That's already working for you.")
-        case R.warmShower:
-            parts.append("You already shower before bed — the temperature drop afterward is a genuine sleep trigger.")
-        default:
-            parts.append("We kept your \(habit) habit — you already do this well.")
+    if remedyIds.contains(.warmShower) {
+        if reinforcedRemedyIds.contains(.warmShower) {
+            parts.append("You already shower or bathe at night, so we’ll focus on timing it about 90 minutes before sleep.")
+        } else {
+            parts.append("A warm shower or bath is included by default because the post-shower temperature drop helps cue sleep.")
         }
     }
 
-    // New Wind Down method (anything beyond the two fixed checks and existing habits)
-    let newSteps = windDown.dropFirst(2).filter {
-        if case .existingHabit = $0 { return false }
-        return true
-    }
-    for step in newSteps {
-        switch step {
-        case .brainDump:
-            parts.append("We added one thing: a quick Brain Dump. Two minutes to empty your head before you close your eyes.")
-        case .boringStory:
-            parts.append("We added one thing: a Boring Story. It gives your mind something mild to follow instead of looping on the day.")
-        case .fourSevenEightBreathing:
-            parts.append("We added one thing: 4-7-8 Breathing. Five minutes to signal your nervous system that it's safe to rest.")
-        case .gratitudeJournal:
-            parts.append("We added one thing: a quick Gratitude note. It shifts focus off the day's noise before you sleep.")
-        case .gentleStretching:
-            parts.append("We added one thing: a short stretch. A few minutes to release physical tension before you lie down.")
-        case .progressiveMuscleRelaxation:
-            parts.append("We added one thing: a short body relaxation. Tense and release — it quiets the body surprisingly fast.")
-        case .bodyScan:
-            parts.append("We added one thing: a Body Scan. Five guided minutes moving attention through the body, letting each part go heavy.")
-        default:
-            break
-        }
+    if reinforcedRemedyIds.contains(.readingBook) {
+        parts.append("You already read a physical book, so we’ll reinforce that instead of treating it like a new prescription.")
     }
 
-    for step in prep {
-        guard case .avoidReminder(let label, let minutesBefore) = step else { continue }
-        let timeLabel = minutesBefore >= 60 ? "\(minutesBefore / 60)h" : "\(minutesBefore) min"
-        switch label {
-        case R.dimTheLights:
-            parts.append("Dim the lights \(timeLabel) before bed — it tells your brain the day is ending.")
-        case R.noScreens:
-            parts.append("Put screens away \(timeLabel) before bed. Blue light delays melatonin by up to 30 minutes.")
-        case R.finishWorkouts:
-            parts.append("Finish workouts \(timeLabel) before bed — cortisol from exercise takes a few hours to clear.")
-        case R.noHeavySnacks:
-            parts.append("No heavy snacks \(timeLabel) before bed — digestion raises core temperature and works against sleep onset.")
-        case R.noAlcohol:
-            parts.append("Skip alcohol \(timeLabel) before bed — even one drink fragments sleep in the second half of the night.")
-        case R.noCaffeine:
-            parts.append("Cut off caffeine \(timeLabel) before bed — it has a long half-life and stays active longer than most people expect.")
-        case R.coldRoomPrep:
-            parts.append("Cool your room \(timeLabel) before bed — a drop in core temperature is a key trigger for sleep onset.")
-        case R.warmShower:
-            parts.append("Time your shower \(timeLabel) before bed — the post-shower temperature drop helps trigger sleep.")
-        case R.magnesium:
-            parts.append("Take Magnesium glycinate \(timeLabel) before bed — it's one of the better-evidenced supplements for sleep quality.")
-        case R.herbalTea:
-            parts.append("Herbal tea \(timeLabel) before bed — the ritual and mild calming effects both help signal wind-down.")
-        case R.weightedBlanket:
-            parts.append("Use your weighted blanket — the gentle pressure activates the parasympathetic nervous system.")
-        default:
-            break
-        }
+    let selectedLabels = remedyIds
+        .filter { $0 != .warmShower }
+        .compactMap { config(for: $0)?.label }
+    if !selectedLabels.isEmpty {
+        parts.append("Your first scored remedies are \(selectedLabels.joined(separator: ", ")).")
     }
 
-    parts.append("Once this feels easy, we'll layer in more.")
+    if showHealthScreening {
+        parts.append("Because unrefreshed sleep can have physical causes, we’ll also show a gentle health screening prompt.")
+    }
+
     return parts.joined(separator: " ")
 }

@@ -337,13 +337,18 @@ class AppState: ObservableObject {
         RoutineStep(order: 4, label: "Brightness check",   mode: .inSequence, durationLabel: "10s"),
         RoutineStep(order: 5, label: "Temperature check",  mode: .inSequence, durationLabel: "10s"),
         RoutineStep(order: 6, label: R.brainDump,          mode: .inSequence, durationLabel: "2m · voice", remedyId: .brainDump),
-        RoutineStep(order: 7, label: R.boringStory,        mode: .inSequence, durationLabel: "AI · 8m", remedyId: .boringStory),
+        RoutineStep(order: 7, label: R.boringStory,        mode: .inSequence, durationLabel: BoringStoryStepConfig.fresh.durationSummary, remedyId: .boringStory),
     ]
 
     // MARK: - Generated routine (set during onboarding)
     @Published var generatedRoutine: GeneratedRoutine? = nil
     @Published var routineExplanation: String = ""
     @Published var routineShouldStartNow: Bool = false
+    @Published var generatedRoutineRemedyIds: [RemedyID] = []
+    @Published var routineIntroOrder: [RemedyID] = []
+    @Published var routineBacklog: [RemedyID] = []
+    @Published var routineReinforcedRemedyIds: [RemedyID] = []
+    @Published var showHealthScreening: Bool = false
 
     func applyGeneratedRoutine(_ routine: GeneratedRoutine, scheduleNotifications: Bool = true) {
         generatedRoutine      = routine
@@ -351,6 +356,11 @@ class AppState: ObservableObject {
         convertExperimentStepsToHabits()
         routineExplanation    = routine.explanation
         routineShouldStartNow = shouldOfferImmediateOnboardingRitual
+        generatedRoutineRemedyIds = routine.remedyIds
+        routineIntroOrder = routine.introOrder
+        routineBacklog = routine.backlog
+        routineReinforcedRemedyIds = routine.reinforcedRemedyIds
+        showHealthScreening = routine.showHealthScreening
         if paywallState.originalGeneratedRoutine == nil {
             paywallState.originalGeneratedRoutine = coreRoutine
         }
@@ -761,11 +771,11 @@ class AppState: ObservableObject {
     }
 
     #if DEBUG
-    func debugSeedSevenNightsAndExpireTrial() {
+    func debugSeedCompletedNightsAndExpireTrial(count requestedCount: Int, presentMilestone: Bool = false) {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        let scores = [3, 4, 3, 4, 4, 5, 4]
-        let variables = [
+        let seedScores = [3, 4, 3, 4, 4, 5, 4]
+        let seedVariables = [
             R.brainDump,
             R.brainDump,
             R.brainDump,
@@ -774,6 +784,11 @@ class AppState: ObservableObject {
             R.sleepSounds,
             R.sleepSounds
         ]
+        let seedHoursSlept = [6.5, 7.0, 7.0, 7.5, 7.5, 8.0, 7.5]
+        let count = min(max(requestedCount, 0), seedScores.count)
+        let scores = Array(seedScores.prefix(count))
+        let variables = Array(seedVariables.prefix(count))
+        let hoursSlept = Array(seedHoursSlept.prefix(count))
         let routineSteps = coreRoutine.filter { $0.mode != .reminderOnly }
 
         sleepLogs = scores.enumerated().map { index, score in
@@ -796,7 +811,7 @@ class AppState: ObservableObject {
             entry.actualRitualStart = cal.date(byAdding: .minute, value: -45, to: bedtime)
             entry.actualBedtime = bedtime
             entry.actualWakeTime = wakeTime
-            entry.hoursSlept = [6.5, 7.0, 7.0, 7.5, 7.5, 8.0, 7.5][index]
+            entry.hoursSlept = hoursSlept[index]
             entry.lightsLevel = min(3, 1 + (index % 3))
             entry.lightsLevelSource = .selfReported
             entry.perceivedTemp = index % 4
@@ -836,8 +851,24 @@ class AppState: ObservableObject {
         requestedTab = 0
         debugForceMorningState = false
         debugForceEveningState = false
+
+        let shouldPresentMilestone = presentMilestone && isMilestoneDay(count)
+        if shouldPresentMilestone {
+            pendingStreakMilestoneDay = count
+            acknowledgedStreakMilestoneDays.remove(count)
+            streakMilestonePaywallPromptedDays.remove(count)
+            activeRevenueCatPaywall = nil
+            activeStreakMilestone = buildStreakMilestonePresentation(day: count)
+        }
+
         persist()
-        evaluateTrialStatus()
+        if !shouldPresentMilestone {
+            evaluateTrialStatus()
+        }
+    }
+
+    func debugSeedSevenNightsAndExpireTrial() {
+        debugSeedCompletedNightsAndExpireTrial(count: 7)
     }
     #endif
 
@@ -1454,7 +1485,7 @@ class AppState: ObservableObject {
         lastExportError = nil
 
         let snapshot = PersistedState(
-            schemaVersion: 7,
+            schemaVersion: 10,
             testerName: testerName,
             selectedSleepProblems: selectedSleepProblems,
             selectedWakes: selectedWakes,
@@ -1469,6 +1500,11 @@ class AppState: ObservableObject {
             selectedTriedThings: selectedTriedThings,
             coreRoutine: coreRoutine,
             routineExplanation: routineExplanation,
+            generatedRoutineRemedyIds: generatedRoutineRemedyIds,
+            routineIntroOrder: routineIntroOrder,
+            routineBacklog: routineBacklog,
+            routineReinforcedRemedyIds: routineReinforcedRemedyIds,
+            showHealthScreening: showHealthScreening,
             sleepLogs: sleepLogs,
             chronotype: chronotype,
             bottleneck: bottleneck,
@@ -1514,6 +1550,11 @@ class AppState: ObservableObject {
             _paywallState             = Published(initialValue: saved.paywallState)
             _coreRoutine              = Published(initialValue: saved.coreRoutine)
             _routineExplanation       = Published(initialValue: saved.routineExplanation)
+            _generatedRoutineRemedyIds = Published(initialValue: saved.generatedRoutineRemedyIds)
+            _routineIntroOrder        = Published(initialValue: saved.routineIntroOrder)
+            _routineBacklog           = Published(initialValue: saved.routineBacklog)
+            _routineReinforcedRemedyIds = Published(initialValue: saved.routineReinforcedRemedyIds)
+            _showHealthScreening      = Published(initialValue: saved.showHealthScreening)
             _sleepLogs                = Published(initialValue: saved.sleepLogs)
             _baselineScore            = Published(initialValue: saved.baselineScore)
             _prepDoneIds              = Published(initialValue: Set(saved.prepDoneIds))
@@ -1613,6 +1654,11 @@ class AppState: ObservableObject {
             selectedTriedThings:      selectedTriedThings,
             coreRoutine:              coreRoutine,
             routineExplanation:       routineExplanation,
+            generatedRoutineRemedyIds: generatedRoutineRemedyIds,
+            routineIntroOrder:        routineIntroOrder,
+            routineBacklog:           routineBacklog,
+            routineReinforcedRemedyIds: routineReinforcedRemedyIds,
+            showHealthScreening:      showHealthScreening,
             sleepLogs:                sleepLogs,
             chronotype:               chronotype,
             bottleneck:               bottleneck,
@@ -2086,6 +2132,11 @@ class AppState: ObservableObject {
             step.sleepSoundConfig = .fresh
             step.durationLabel = SleepSoundStepConfig.fresh.durationSummary
             step.remedyId = .sleepSounds
+        }
+        if item.id == "story" {
+            step.boringStoryConfig = .fresh
+            step.durationLabel = BoringStoryStepConfig.fresh.durationSummary
+            step.remedyId = .boringStory
         }
 
         switch item.defaultSection {
@@ -2748,6 +2799,7 @@ struct RoutineStep: Identifiable, Codable {
     var notifyEnabled: Bool? = nil
     var remedyId: RemedyID? = nil
     var sleepSoundConfig: SleepSoundStepConfig? = nil
+    var boringStoryConfig: BoringStoryStepConfig? = nil
 }
 
 extension RoutineStep {

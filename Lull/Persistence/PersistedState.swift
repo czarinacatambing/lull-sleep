@@ -13,7 +13,8 @@ struct PersistedState: Codable {
     //   7 — timezone identifier for re-anchoring wall-clock sleep times
     //   8 — app-managed trial and premium/free routine snapshots
     //   9 — streak milestone queue and acknowledgement state
-    var schemaVersion: Int = 9
+    //   10 — generated routine engine metadata
+    var schemaVersion: Int = 10
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -38,6 +39,11 @@ struct PersistedState: Codable {
     // Routine — mutated by experiment engine
     var coreRoutine: [RoutineStep]
     var routineExplanation: String
+    var generatedRoutineRemedyIds: [RemedyID] = []
+    var routineIntroOrder: [RemedyID] = []
+    var routineBacklog: [RemedyID] = []
+    var routineReinforcedRemedyIds: [RemedyID] = []
+    var showHealthScreening: Bool = false
 
     // Per-night history
     var sleepLogs: [SleepLogEntry]
@@ -72,7 +78,7 @@ struct PersistedState: Codable {
     var appBlockingGraceMinutes: Int = 5
     var gentleBlockingBypassedUntil: Date? = nil
 
-    init(schemaVersion: Int = 9,
+    init(schemaVersion: Int = 10,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
@@ -87,6 +93,11 @@ struct PersistedState: Codable {
          selectedTriedThings: Set<Int>,
          coreRoutine: [RoutineStep],
          routineExplanation: String,
+         generatedRoutineRemedyIds: [RemedyID] = [],
+         routineIntroOrder: [RemedyID] = [],
+         routineBacklog: [RemedyID] = [],
+         routineReinforcedRemedyIds: [RemedyID] = [],
+         showHealthScreening: Bool = false,
          sleepLogs: [SleepLogEntry],
          chronotype: Chronotype = .steadySleeper,
          bottleneck: SleepBottleneck = .inconsistentRhythm,
@@ -134,6 +145,11 @@ struct PersistedState: Codable {
         self.trialCustomizedRoutine   = trialCustomizedRoutine
         self.coreRoutine              = coreRoutine
         self.routineExplanation       = routineExplanation
+        self.generatedRoutineRemedyIds = generatedRoutineRemedyIds
+        self.routineIntroOrder        = routineIntroOrder
+        self.routineBacklog           = routineBacklog
+        self.routineReinforcedRemedyIds = routineReinforcedRemedyIds
+        self.showHealthScreening      = showHealthScreening
         self.sleepLogs                = sleepLogs
         self.baselineScore            = baselineScore
         self.prepDoneIds              = prepDoneIds
@@ -177,6 +193,11 @@ struct PersistedState: Codable {
         trialCustomizedRoutine   = try? c.decodeIfPresent([RoutineStep].self,  forKey: .trialCustomizedRoutine)
         coreRoutine              = try c.decode([RoutineStep].self,           forKey: .coreRoutine)
         routineExplanation       = try c.decode(String.self,                  forKey: .routineExplanation)
+        generatedRoutineRemedyIds = (try? c.decodeIfPresent([RemedyID].self,  forKey: .generatedRoutineRemedyIds)) ?? []
+        routineIntroOrder        = (try? c.decodeIfPresent([RemedyID].self,   forKey: .routineIntroOrder)) ?? []
+        routineBacklog           = (try? c.decodeIfPresent([RemedyID].self,   forKey: .routineBacklog)) ?? []
+        routineReinforcedRemedyIds = (try? c.decodeIfPresent([RemedyID].self, forKey: .routineReinforcedRemedyIds)) ?? []
+        showHealthScreening      = (try? c.decodeIfPresent(Bool.self,         forKey: .showHealthScreening)) ?? false
         sleepLogs                = try c.decode([SleepLogEntry].self,         forKey: .sleepLogs)
         testerName               = (try? c.decodeIfPresent(String.self,             forKey: .testerName))   ?? ""
         baselineScore            = (try? c.decodeIfPresent(Int.self,                forKey: .baselineScore))   ?? 0

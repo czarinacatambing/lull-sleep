@@ -16,6 +16,7 @@ enum RemedyID: String, Codable, CaseIterable {
     case magnesium
     case herbalTea
     case weightedBlanket
+    case blackoutCurtains
 
     // Wind Down interactive
     case brainDump
@@ -44,6 +45,7 @@ enum RemedyID: String, Codable, CaseIterable {
         case R.magnesium:        return .magnesium
         case R.herbalTea:        return .herbalTea
         case R.weightedBlanket:  return .weightedBlanket
+        case R.blackoutCurtains: return .blackoutCurtains
         case R.brainDump:        return .brainDump
         case R.boringStory:      return .boringStory
         case R.sleepSounds:      return .sleepSounds
@@ -153,6 +155,13 @@ extension RemedyID {
                 highlight: "+10%",
                 suffix: " on average.",
                 science: "Deep pressure stimulation activates the parasympathetic nervous system, reducing cortisol and boosting serotonin. Studies show it lowers physiological arousal and subjective anxiety before sleep."
+            )
+        case .blackoutCurtains:
+            return RemedyImpact(
+                prefix: "Users like you woke up ",
+                highlight: "less often",
+                suffix: " from light.",
+                science: "Reducing overnight and early-morning light helps protect melatonin and keeps the sleep environment stable. Blackout curtains are a low-effort environmental support for people sensitive to light."
             )
         case .brainDump:
             return RemedyImpact(
