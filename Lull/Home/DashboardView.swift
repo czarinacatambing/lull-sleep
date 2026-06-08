@@ -1086,7 +1086,7 @@ struct SettingsSheet: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Kicker(text: "Debug")
                             Button {
-                                state.debugExpireTrialForRevenueCatPaywall()
+                                state.debugSeedSevenNightsAndExpireTrial()
                                 didExpireTrial = true
                             } label: {
                                 HStack(spacing: 12) {
@@ -1095,12 +1095,12 @@ struct SettingsSheet: View {
                                         .foregroundColor(.lullAmber)
                                         .frame(width: 22)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Expire trial paywall test")
+                                        Text("Seed 7-night paywall test")
                                             .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.lullInk0)
                                         Text(didExpireTrial
-                                             ? "RevenueCat paywall requested."
-                                             : "Ends the local trial and opens the RevenueCat paywall.")
+                                             ? "Seven nights seeded. RevenueCat paywall requested."
+                                             : "Creates 7 completed nights with ratings, then expires the trial.")
                                             .font(.system(size: 12.5))
                                             .foregroundColor(.lullInk3)
                                             .lineSpacing(2)

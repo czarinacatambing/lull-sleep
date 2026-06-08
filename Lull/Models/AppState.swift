@@ -761,14 +761,76 @@ class AppState: ObservableObject {
     }
 
     #if DEBUG
-    func debugExpireTrialForRevenueCatPaywall() {
+    func debugSeedSevenNightsAndExpireTrial() {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let scores = [3, 4, 3, 4, 4, 5, 4]
+        let variables = [
+            R.brainDump,
+            R.brainDump,
+            R.brainDump,
+            R.boringStory,
+            R.boringStory,
+            R.sleepSounds,
+            R.sleepSounds
+        ]
+        let routineSteps = coreRoutine.filter { $0.mode != .reminderOnly }
+
+        sleepLogs = scores.enumerated().map { index, score in
+            let daysAgo = scores.count - index
+            let day = cal.date(byAdding: .day, value: -daysAgo, to: today) ?? today
+            var bedtimeComponents = cal.dateComponents([.hour, .minute], from: typicalBedtime)
+            bedtimeComponents.year = cal.component(.year, from: day)
+            bedtimeComponents.month = cal.component(.month, from: day)
+            bedtimeComponents.day = cal.component(.day, from: day)
+            let seededBedtime = cal.date(from: bedtimeComponents) ?? day
+            let bedtime = cal.date(byAdding: .minute, value: index * 3, to: seededBedtime) ?? seededBedtime
+            let wakeTime = cal.date(byAdding: .hour, value: 8, to: bedtime) ?? typicalWakeTime
+            let variable = variables[index]
+            var entry = SleepLogEntry(
+                date: day,
+                variable: variable,
+                variableRemedyId: RemedyID.fromLabel(variable),
+                score: score
+            )
+            entry.actualRitualStart = cal.date(byAdding: .minute, value: -45, to: bedtime)
+            entry.actualBedtime = bedtime
+            entry.actualWakeTime = wakeTime
+            entry.hoursSlept = [6.5, 7.0, 7.0, 7.5, 7.5, 8.0, 7.5][index]
+            entry.lightsLevel = min(3, 1 + (index % 3))
+            entry.lightsLevelSource = .selfReported
+            entry.perceivedTemp = index % 4
+            entry.brainDumpDurationSec = variable == R.brainDump ? 120 + index * 12 : nil
+            entry.completedNightlyFlow = true
+            entry.stepAttempts = routineSteps.map { step in
+                StepAttempt(
+                    remedyId: step.remedyId ?? RemedyID.fromLabel(step.label),
+                    labelSnapshot: step.label,
+                    status: .completed,
+                    durationSeconds: NightlyStepKind.forLabel(step.label).map { $0.estimatedMinutes * 60 }
+                )
+            }
+            return entry
+        }
+
+        baselineScore = 3
+        morningScore = 0
+        morningHoursSlept = 7.5
+        pendingPromotion = nil
+        justTriggeredNightFivePaywall = false
+        prepDoneIds = []
+        ritualDoneIds = []
+        selectedDotIndex = nil
+
         if paywallState.originalGeneratedRoutine == nil {
             paywallState.originalGeneratedRoutine = coreRoutine
         }
+        paywallState.trialCustomizedRoutine = coreRoutine
         paywallState.tier = .trial
         paywallState.trialStartedAt = Calendar.current.date(byAdding: .day, value: -8, to: Date())
         paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())
         paywallState.trialExpiredAt = nil
+        paywallState.verdictRevealed = true
         hasCompletedOnboarding = true
         initialTab = 0
         requestedTab = 0
