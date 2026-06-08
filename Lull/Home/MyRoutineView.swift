@@ -214,6 +214,22 @@ struct MyRoutineView: View {
                                     state.presentUpgradePaywall()
                                 }
                         }
+                    } else if step.label == R.boringStory {
+                        BoringStoryStep(
+                            initial: step.boringStoryConfig ?? .fresh,
+                            onSave: { config in
+                                var updated = step
+                                updated.boringStoryConfig = config
+                                updated.durationLabel = config.durationSummary
+                                updated.remedyId = .boringStory
+                                state.updateRoutineStep(updated)
+                                selectedStepID = nil
+                            },
+                            onDismiss: { selectedStepID = nil }
+                        )
+                        .id(step.id)
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(3)
                     } else {
                         EditStepSheet(
                             step: step,
@@ -664,6 +680,9 @@ struct StepRow: View {
         case .prep:
             return "\(step.resolvedLeadTimeMins)m"
         case .ritual:
+            if step.label == R.boringStory {
+                return (step.boringStoryConfig ?? .fresh).durationSummary
+            }
             return step.durationLabel ?? defaultDuration(for: step.label)
         case .morning:
             return "Soon"
@@ -674,7 +693,7 @@ struct StepRow: View {
         switch label {
         case "Brightness check", "Temperature check": return "10s"
         case R.brainDump: return "2m · voice"
-        case R.boringStory: return "AI · 8m"
+        case R.boringStory: return BoringStoryStepConfig.fresh.durationSummary
         case "4·7·8 breathing", R.breathing478: return "5m"
         case "Body scan": return "5m"
         default: return "\(NightlyStepKind.forLabel(label)?.estimatedMinutes ?? 5)m"
@@ -1772,7 +1791,7 @@ let STEP_LIBRARY: [RoutineLibraryStep] = [
     .init(id: "bright", label: "Brightness check", icon: "sun.max", blurb: "Phone to lowest brightness", effect: "-2 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
     .init(id: "temp", label: "Temperature check", icon: "thermometer", blurb: "Log the room temp", effect: "logs", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
     .init(id: "dump", label: "Brain dump", icon: "mic", blurb: "Voice memo, 2 min", effect: "-4 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "2m · voice"),
-    .init(id: "story", label: "Boring story", icon: "book.closed", blurb: "AI narrates, ~8 min", effect: "-12 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "AI · 8m"),
+    .init(id: "story", label: "Boring story", icon: "book.closed", blurb: "Slow audio story", effect: "-12 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: BoringStoryStepConfig.fresh.durationSummary),
     .init(id: "guided-meditation", label: "Guided meditation", icon: "figure.mind.and.body", blurb: "Coming soon", effect: "", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: nil),
     .init(id: "sleep-sounds", label: R.sleepSounds, icon: "water.waves", blurb: "Ambient audio loop", effect: "masks", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "1 hr"),
     .init(id: "breath", label: "4·7·8 breathing", icon: "wind", blurb: "Slow exhale protocol", effect: "-5 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m"),

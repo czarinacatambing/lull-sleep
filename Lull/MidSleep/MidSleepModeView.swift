@@ -193,7 +193,7 @@ struct MidSleepModeView: View {
     private var toolkitItems: [(primary: String, sub: String, featured: Bool)] {
         [
             ("4·7·8 breath", "In · hold · out", isInSleepWindow),
-            ("Boring story",  "~8 min · audio",  false),
+            ("Boring story",  "random · audio",  false),
             ("Body scan",     "~5 min · guided",  false),
         ]
     }
@@ -520,6 +520,7 @@ struct MidSleepBoringStoryView: View {
     @StateObject private var playback = AudioPlaybackService()
     @State private var glowPulse = false
     @State private var hasFinished = false
+    @State private var activeStory: BoringStoryId?
 
     private var elapsedSeconds: Int { Int(playback.elapsed.rounded(.down)) }
     private var durationSeconds: Int {
@@ -546,6 +547,15 @@ struct MidSleepBoringStoryView: View {
                         .font(.serif(26)).foregroundColor(.lullInk2)
                     Text("Just listen.")
                         .font(.serifItalic(26)).foregroundColor(.lullAmber)
+                    if let activeStory {
+                        Text(activeStory.title)
+                            .font(.mono(9.5))
+                            .kerning(1.2)
+                            .foregroundColor(.lullInk4)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .padding(.horizontal, 28)
+                    }
                 }
                 .multilineTextAlignment(.center)
 
@@ -583,7 +593,12 @@ struct MidSleepBoringStoryView: View {
                         else { playback.play() }
                     }
 
-                    Spacer().frame(width: 18)
+                    circleButton(icon: "shuffle", size: 17) {
+                        shuffleStory()
+                    }
+                    .accessibilityLabel("Shuffle story")
+
+                    Spacer().frame(width: 6)
 
                     HStack(spacing: 8) {
                         circleButton(icon: "minus", size: 18, disabled: !playback.canSlowDown) {
@@ -607,8 +622,18 @@ struct MidSleepBoringStoryView: View {
     }
 
     private func startStory() {
-        guard !hasFinished, let url = BoringStoryAudioLibrary.nextStoryURL() else { return }
-        playback.load(url: url)
+        guard !hasFinished, let asset = BoringStoryAudioLibrary.randomStoryAsset() else { return }
+        loadStory(asset)
+    }
+
+    private func shuffleStory() {
+        guard !hasFinished, let asset = BoringStoryAudioLibrary.randomStoryAsset(excluding: activeStory) else { return }
+        loadStory(asset)
+    }
+
+    private func loadStory(_ asset: BoringStoryAudioAsset) {
+        activeStory = asset.story
+        playback.load(url: asset.url)
         playback.onFinish = { finish() }
         playback.play()
     }

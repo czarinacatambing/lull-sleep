@@ -531,6 +531,14 @@ struct NightlyBoringStoryView: View {
         playback.duration > 0 ? Int(playback.duration.rounded(.up)) : 1200
     }
 
+    private var configuredStep: RoutineStep? {
+        state.coreRoutine.first { $0.label == R.boringStory }
+    }
+
+    private var config: BoringStoryStepConfig {
+        configuredStep?.boringStoryConfig ?? .fresh
+    }
+
     var body: some View {
         LullScreen(glow: false) {
             RadialGradient(
@@ -672,9 +680,9 @@ struct NightlyBoringStoryView: View {
 
     private func startStory() {
         guard !hasFinished else { return }
-        guard let url = BoringStoryAudioLibrary.nextStoryURL() else { return }
-        activeStoryId = url.deletingPathExtension().lastPathComponent
-        playback.load(url: url)
+        guard let asset = BoringStoryAudioLibrary.asset(for: config) else { return }
+        activeStoryId = asset.story.rawValue
+        playback.load(url: asset.url)
         playback.onFinish = { finish(status: .completed) }
         playback.play()
     }

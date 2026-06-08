@@ -25,6 +25,7 @@
 		2A8BFC6FBA480460BA7E0DF5 /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518622E3CFB58A6544BC915C /* LullApp.swift */; };
 		30C48EF1D2833AD03BC1935B /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FAE3AADB1930BEAF0A5DB7C /* GetUpPromptView.swift */; };
 		3AB3CE190336096C8C514DF2 /* body-scan.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 314611656FF7FA25CCA486F1 /* body-scan.mp3 */; };
+		3C0B67389DF1E93F6C4A0C11 /* in captivity.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6A37F3D94D9C1A95B3E30D21 /* in captivity.m4a */; };
 		3BECEFD5D2118ED5EFF56CE7 /* PaywallFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACF80872924DF0878268335 /* PaywallFlowView.swift */; };
 		486DFEC1713842956C633CDD /* heavy-rain.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 66A3F3D308227C10A3257F1D /* heavy-rain.m4a */; };
 		4975CF3B4196D5FFE5FEDBF4 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D82CC80B0E14181CF12FB6EB /* ActivityKit.framework */; };
@@ -43,8 +44,10 @@
 		6B66A96B7AF9AAA97AEB300A /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */; };
 		7329C8F2642D56559A2E19B6 /* birds.m4a in Resources */ = {isa = PBXBuildFile; fileRef = EBB84945EB9224377BA8698F /* birds.m4a */; };
 		747AE8FCEF1CCD40051C5692 /* ResearchDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A6A4DAF1FD7C9EADC79FE1A /* ResearchDataService.swift */; };
+		74F1181CFE5CF8E7E1E317D2 /* Natural History of Selborne - letters 1-6.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A4D86C8EF45E406295B1D771 /* Natural History of Selborne - letters 1-6.m4a */; };
 		8954243D140D5948A8113811 /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEC3B0EFE8401B5BE6410A1 /* AudioPlaybackService.swift */; };
 		8976ED87CC800F8A9452AF76 /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD7C80E32E0B7CF96FC33BE /* MorningRewardView.swift */; };
+		89E401D3382DBBA60D5660C1 /* Natural History of Selborne - letters 7-13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CA695BA5510A2C9876F2453E /* Natural History of Selborne - letters 7-13.m4a */; };
 		8BB5A83D5A667F669874BBD8 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD77CDB91F6518BB26395E1 /* AnalyticsService.swift */; };
 		8E63DB47160563298AE75B6E /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BBF9E8C8D14ED72BBA159EE6 /* 478-breathing-revised.mp3 */; };
 		8ECC376C5DFBDEE08FA879BD /* boring-story-01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 103DEBD8E0D92A2520CF355A /* boring-story-01.mp3 */; };
@@ -82,6 +85,7 @@
 		D2E329F1C668A6E1FE23C7ED /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8758EF8768BF14B3DB8630DD /* RevenueCatUI */; };
 		D4FCC2FB096E9828F15905BD /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C1D840B4D324BD2398203A /* PendingPromotion.swift */; };
 		D8A0312CE53BD9F177E80FB1 /* lake.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 69EC5108E1FAA5C9BC07089B /* lake.m4a */; };
+		D8D1E4A3F1B2238C2E70E4A5 /* rules of east and west.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E32905AE8D81B70D0E5F7C63 /* rules of east and west.m4a */; };
 		E2F6F22AFD1E841B36CEDF9D /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922E3A735BFD405971B0A32A /* LullSleepAttributes.swift */; };
 		E3CF98B5C45E60574B05D170 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */; };
 		E48CFA2EC5402130519FA91B /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92AE10983629698DB935D9 /* PersistedState.swift */; };
@@ -154,6 +158,7 @@
 		654DCA458866903EEF3B823A /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
 		61F0C6E6D2CB4B6F9D2C9A01 /* StreakMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakMilestoneView.swift; sourceTree = "<group>"; };
 		66A3F3D308227C10A3257F1D /* heavy-rain.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "heavy-rain.m4a"; sourceTree = "<group>"; };
+		6A37F3D94D9C1A95B3E30D21 /* in captivity.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "in captivity.m4a"; sourceTree = "<group>"; };
 		69EC5108E1FAA5C9BC07089B /* lake.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = lake.m4a; sourceTree = "<group>"; };
 		6D99D336272FBA1B2B4855F7 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
 		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -171,6 +176,7 @@
 		98B0DDCB101CFACF018241D3 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9A62CD53FC82D21AD52CF0A3 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
 		9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
+		A4D86C8EF45E406295B1D771 /* Natural History of Selborne - letters 1-6.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Natural History of Selborne - letters 1-6.m4a"; sourceTree = "<group>"; };
 		A6B11A89266A2BB853502200 /* MidSleepModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MidSleepModeView.swift; sourceTree = "<group>"; };
 		B0376FDB43062AFB889D3098 /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
 		B0B1C54DC00EE00260C19CD3 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
@@ -181,6 +187,7 @@
 		C839CE47A7EBAE076B7BF096 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
 		C90C508C6CD8BC5FA3FF2A21 /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
 		C9F20223C7DA2A7FAC4749E7 /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
+		CA695BA5510A2C9876F2453E /* Natural History of Selborne - letters 7-13.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Natural History of Selborne - letters 7-13.m4a"; sourceTree = "<group>"; };
 		CD947544D9101E2AC407DBAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CDEBF4A31C3D6BD29D3E7CF3 /* ambient.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = ambient.m4a; sourceTree = "<group>"; };
 		CF78A2B998193B94B990E54E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -196,6 +203,7 @@
 		DD883DF344382B1B7BAF123A /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
 		EBB84945EB9224377BA8698F /* birds.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = birds.m4a; sourceTree = "<group>"; };
 		EC5AF7D1DC92796A58350ACE /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
+		E32905AE8D81B70D0E5F7C63 /* rules of east and west.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
 		F22F2E8574F38842A81E664B /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		F2D672346153DDFAB0134A27 /* TogglePrepItemIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglePrepItemIntent.swift; sourceTree = "<group>"; };
 		F80F43006C39DB668F529235 /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
@@ -301,6 +309,10 @@
 				314611656FF7FA25CCA486F1 /* body-scan.mp3 */,
 				103DEBD8E0D92A2520CF355A /* boring-story-01.mp3 */,
 				FE98FFAC5BD9E579FE511543 /* boring-story-02.mp3 */,
+				6A37F3D94D9C1A95B3E30D21 /* in captivity.m4a */,
+				A4D86C8EF45E406295B1D771 /* Natural History of Selborne - letters 1-6.m4a */,
+				CA695BA5510A2C9876F2453E /* Natural History of Selborne - letters 7-13.m4a */,
+				E32905AE8D81B70D0E5F7C63 /* rules of east and west.m4a */,
 				2AA0968DD1F396B03D6A0433 /* sleep */,
 			);
 			path = Audio;
@@ -591,8 +603,12 @@
 				BF4F7965EF93059ACE79FA54 /* boring-story-02.mp3 in Resources */,
 				4F45E091C51656DF6D015646 /* green-noise.m4a in Resources */,
 				486DFEC1713842956C633CDD /* heavy-rain.m4a in Resources */,
+				3C0B67389DF1E93F6C4A0C11 /* in captivity.m4a in Resources */,
 				D8A0312CE53BD9F177E80FB1 /* lake.m4a in Resources */,
 				0F7AB337C2748C116595985E /* min-solf.m4a in Resources */,
+				74F1181CFE5CF8E7E1E317D2 /* Natural History of Selborne - letters 1-6.m4a in Resources */,
+				89E401D3382DBBA60D5660C1 /* Natural History of Selborne - letters 7-13.m4a in Resources */,
+				D8D1E4A3F1B2238C2E70E4A5 /* rules of east and west.m4a in Resources */,
 				CC86C2BA1B67F32C008D38CC /* solf.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
