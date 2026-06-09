@@ -384,8 +384,19 @@ class AppState: ObservableObject {
     }
 
     func evaluateTrialStatus() {
+        if isTrialActive {
+            if paywallState.tier != .trial && paywallState.tier != .subscribed {
+                paywallState.tier = .trial
+                paywallState.trialExpiredAt = nil
+                paywallState.verdictRevealed = true
+                restorePremiumRoutineIfAvailable()
+                persist()
+                scheduleAllNotifications()
+                refreshAppBlockingShield()
+            }
+            return
+        }
         guard paywallState.tier == .trial else { return }
-        guard !isTrialActive else { return }
         expireTrialAndPresentPaywall()
     }
 
@@ -400,12 +411,27 @@ class AppState: ObservableObject {
             presentPendingStreakMilestoneIfEligible()
             return
         }
+        if isTrialActive {
+            if paywallState.tier != .trial {
+                paywallState.tier = .trial
+                paywallState.trialExpiredAt = nil
+                paywallState.verdictRevealed = true
+                persist()
+            }
+            presentPendingStreakMilestoneIfEligible()
+            return
+        }
         guard context == .trialExpired else { return }
         completeTrialDowngrade()
     }
 
     func expireTrialAndPresentPaywall() {
         guard paywallState.tier == .trial else { return }
+        guard !isTrialActive else {
+            paywallState.trialExpiredAt = nil
+            persist()
+            return
+        }
         paywallState.trialExpiredAt = paywallState.trialExpiredAt ?? Date()
         activeRevenueCatPaywall = .trialExpired
         persist()
@@ -413,6 +439,13 @@ class AppState: ObservableObject {
 
     private func completeTrialDowngrade() {
         guard paywallState.tier != .subscribed else { return }
+        guard !isTrialActive else {
+            paywallState.tier = .trial
+            paywallState.trialExpiredAt = nil
+            paywallState.verdictRevealed = true
+            persist()
+            return
+        }
         if paywallState.trialCustomizedRoutine == nil {
             paywallState.trialCustomizedRoutine = coreRoutine
         }
@@ -436,7 +469,7 @@ class AppState: ObservableObject {
     }
 
     private func captureTrialRoutineEdit() {
-        guard paywallState.tier == .trial else { return }
+        guard isTrialActive else { return }
         paywallState.trialCustomizedRoutine = coreRoutine
     }
 
@@ -474,6 +507,14 @@ class AppState: ObservableObject {
         scheduledRoutine.first?.time
             ?? Calendar.current.date(byAdding: .minute, value: -30, to: targetBedtime)
             ?? targetBedtime
+    }
+
+    var firstBedtimePrepDueTime: Date {
+        let cal = Calendar.current
+        let prepDueTimes = routinePrepSteps.map { step in
+            cal.date(byAdding: .minute, value: -step.resolvedLeadTimeMins, to: typicalBedtime) ?? typicalBedtime
+        }
+        return prepDueTimes.min() ?? defaultRoutineStartTime
     }
 
     var preferredSleepWindowIsActive: Bool {
@@ -749,10 +790,10 @@ class AppState: ObservableObject {
 
     @Published var justTriggeredNightFivePaywall: Bool = false
 
+    #if DEBUG
     // Debug-only time-of-day override for testing the morning/evening branches
     // on the Today tab without changing the simulator clock or wake time.
-    // Mutually exclusive (set one → other clears). Wrapped in #if DEBUG at the
-    // UI layer so they're never reachable on TestFlight or App Store builds.
+    // Mutually exclusive (set one → other clears).
     @Published var debugForceMorningState: Bool = false
     @Published var debugForceEveningState: Bool = false
 
@@ -770,8 +811,11 @@ class AppState: ObservableObject {
         }
     }
 
-    #if DEBUG
-    func debugSeedCompletedNightsAndExpireTrial(count requestedCount: Int, presentMilestone: Bool = false) {
+    func debugSeedCompletedNightsAndExpireTrial(
+        count requestedCount: Int,
+        presentMilestone: Bool = false,
+        expireTrial: Bool = true
+    ) {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         let seedScores = [3, 4, 3, 4, 4, 5, 4]
@@ -842,8 +886,14 @@ class AppState: ObservableObject {
         }
         paywallState.trialCustomizedRoutine = coreRoutine
         paywallState.tier = .trial
-        paywallState.trialStartedAt = Calendar.current.date(byAdding: .day, value: -8, to: Date())
-        paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        if expireTrial {
+            paywallState.trialStartedAt = Calendar.current.date(byAdding: .day, value: -8, to: Date())
+            paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        } else if !paywallState.isTrialActive() {
+            let now = Date()
+            paywallState.trialStartedAt = paywallState.trialStartedAt ?? now
+            paywallState.trialEndsAt = Calendar.current.date(byAdding: .day, value: 7, to: now)
+        }
         paywallState.trialExpiredAt = nil
         paywallState.verdictRevealed = true
         hasCompletedOnboarding = true
@@ -1130,7 +1180,9 @@ class AppState: ObservableObject {
         }
 
         if !removed.isEmpty {
+            #if DEBUG
             print("[Migration] Consolidated \(removed.count) orphaned rating entr\(removed.count == 1 ? "y" : "ies").")
+            #endif
         }
     }
 
@@ -1154,7 +1206,9 @@ class AppState: ObservableObject {
         }
 
         if changed {
+            #if DEBUG
             print("[Migration] Normalized sleep scores to the 1-\(Self.maxSleepScore) scale.")
+            #endif
         }
     }
 
@@ -1586,6 +1640,10 @@ class AppState: ObservableObject {
             }
             if hasCompletedOnboarding && paywallState.tier == .onboarding {
                 startTrialIfNeeded()
+            } else if paywallState.isTrialActive() && paywallState.tier != .subscribed {
+                paywallState.tier = .trial
+                paywallState.trialExpiredAt = nil
+                paywallState.verdictRevealed = true
             } else if paywallState.tier == .awaitingVerdict ||
                         paywallState.tier == .paywallPending ||
                         paywallState.tier == .shareUnlocked ||
@@ -1732,7 +1790,11 @@ class AppState: ObservableObject {
     }
 
     func refreshAppBlockingShield(now: Date = Date()) {
-        let hasStep = hasRoutineStep(label: R.appBlocking)
+        let hasStep = coreRoutine.contains { step in
+            step.enforcementMode == .enforced ||
+            step.remedyId == .appBlocking ||
+            step.label == R.appBlocking
+        }
         let hasTargets = !appBlockingSelection.applicationTokens.isEmpty || !appBlockingSelection.categoryTokens.isEmpty
         let bypassed = paywallState.gentleBlockingBypassedUntil.map { now < $0 } ?? false
         let shouldApply = hasStep &&
@@ -1856,6 +1918,7 @@ class AppState: ObservableObject {
         startTrialIfNeeded()
         hasCompletedOnboarding = true
         persist()
+        scheduleNotificationsAfterCommitmentIfNeeded()
         recordOnboardingTelemetry(route: "home")
     }
 
@@ -1864,6 +1927,7 @@ class AppState: ObservableObject {
         startTrialIfNeeded()
         hasCompletedOnboarding = true
         persist()
+        scheduleNotificationsAfterCommitmentIfNeeded()
         recordOnboardingTelemetry(route: "routine")
     }
 
@@ -1874,7 +1938,19 @@ class AppState: ObservableObject {
         hasCompletedOnboarding = true
         showNightlyFlow = true
         persist()
+        scheduleNotificationsAfterCommitmentIfNeeded()
         recordOnboardingTelemetry(route: "start_ritual")
+    }
+
+    func commitRoutineReminder(at time: Date) {
+        committedRoutineTime = time
+        persist()
+        scheduleAllNotifications()
+    }
+
+    private func scheduleNotificationsAfterCommitmentIfNeeded() {
+        guard committedRoutineTime != nil else { return }
+        scheduleAllNotifications()
     }
 
     func logMorningScore() {
@@ -2186,7 +2262,9 @@ class AppState: ObservableObject {
         coreRoutine.removeAll { $0.id == step.id }
         normalizeRoutineOrder()
         if step.mode == .experiment {
+            #if DEBUG
             print("[Analytics] experiment_aborted step_id=\(step.id.uuidString) label=\"\(step.label)\"")
+            #endif
         }
         captureTrialRoutineEdit()
         logRoutineUpdated(kind: "remove", stepID: step.id)
@@ -2209,7 +2287,9 @@ class AppState: ObservableObject {
     }
 
     private func logRoutineUpdated(kind: String, stepID: UUID?) {
+        #if DEBUG
         print("[Analytics] routine_updated kind=\(kind) step_id=\(stepID?.uuidString ?? "unknown")")
+        #endif
     }
 
     @AppStorage("variableIsOverridden") var variableIsOverridden: Bool = false
@@ -2620,7 +2700,9 @@ class AppState: ObservableObject {
     }
 
     func scheduleAllNotifications() {
+        #if DEBUG
         print("[NotifDebug] scheduleAllNotifications() called. bedtime=\(typicalBedtime), windDownDuration=\(windDownDurationMinutes)min, prepSteps=\(preWindDownSteps.count), windDownSteps=\(windDownSteps.count)")
+        #endif
 
         // UNUserNotificationCenter.add silently drops requests until permission
         // is granted. If status is .notDetermined we have to request first,
@@ -2629,17 +2711,23 @@ class AppState: ObservableObject {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { [weak self] settings in
             guard let self = self else { return }
+            #if DEBUG
             print("[NotifDebug] auth status: \(settings.authorizationStatus.rawValue) (0=notDetermined, 1=denied, 2=authorized, 3=provisional)")
+            #endif
 
             switch settings.authorizationStatus {
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    #if DEBUG
                     print("[NotifDebug] permission prompt resolved: granted=\(granted), error=\(error?.localizedDescription ?? "nil")")
+                    #endif
                     guard granted else { return }
                     DispatchQueue.main.async { self.performScheduling() }
                 }
             case .denied:
+                #if DEBUG
                 print("[NotifDebug] permission denied — user must re-enable in Settings → Lull → Notifications")
+                #endif
             default:
                 DispatchQueue.main.async { self.performScheduling() }
             }
@@ -2654,11 +2742,14 @@ class AppState: ObservableObject {
         scheduleMorningRatingNotifications()
         scheduleMidSleepNotification()
         scheduleWindDownStartNotifications()
+        #if DEBUG
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dumpPendingNotifications()
         }
+        #endif
     }
 
+    #if DEBUG
     // Diagnostic — prints the next fire date of every pending request so we can
     // verify scheduling without poking around in Settings.
     func dumpPendingNotifications() {
@@ -2670,6 +2761,7 @@ class AppState: ObservableObject {
             }
         }
     }
+    #endif
 
     // MARK: - Canonical schedule
 
@@ -2798,6 +2890,8 @@ struct RoutineStep: Identifiable, Codable {
     var repeatCadence: String? = nil
     var notifyEnabled: Bool? = nil
     var remedyId: RemedyID? = nil
+    var category: RoutineCategory? = nil
+    var enforcementMode: RemedyEnforcementMode? = nil
     var sleepSoundConfig: SleepSoundStepConfig? = nil
     var boringStoryConfig: BoringStoryStepConfig? = nil
 }
@@ -2805,6 +2899,12 @@ struct RoutineStep: Identifiable, Codable {
 extension RoutineStep {
     var resolvedLeadTimeMins: Int {
         leadTimeMins ?? AppState.prepLeadTimes[label] ?? 90
+    }
+
+    var isScreenBlockingConfigurationStep: Bool {
+        enforcementMode == .enforced ||
+        remedyId == .appBlocking ||
+        label == R.appBlocking
     }
 }
 

@@ -67,10 +67,14 @@ enum AnalyticsService {
             request.httpBody = try JSONEncoder().encode(payload)
             let (_, response) = try await URLSession.shared.data(for: request)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                #if DEBUG
                 print("[AnalyticsService] capture failed HTTP \(http.statusCode)")
+                #endif
             }
         } catch {
+            #if DEBUG
             print("[AnalyticsService] capture failed: \(error.localizedDescription)")
+            #endif
         }
     }
 

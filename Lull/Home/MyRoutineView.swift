@@ -111,7 +111,7 @@ struct MyRoutineView: View {
                             steps: prepSteps,
                             section: .prep,
                             onSelect: { step in
-                                if state.canCustomizeRoutine || step.label == R.appBlocking || step.remedyId == .appBlocking {
+                                if state.canCustomizeRoutine || step.isScreenBlockingConfigurationStep {
                                     selectedStepID = step.id
                                 } else {
                                     state.presentUpgradePaywall()
@@ -140,7 +140,7 @@ struct MyRoutineView: View {
                             steps: ritualSteps,
                             section: .ritual,
                             onSelect: { step in
-                                if state.canCustomizeRoutine || step.label == R.appBlocking || step.remedyId == .appBlocking {
+                                if state.canCustomizeRoutine || step.isScreenBlockingConfigurationStep {
                                     selectedStepID = step.id
                                 } else {
                                     state.presentUpgradePaywall()
@@ -245,7 +245,7 @@ struct MyRoutineView: View {
                                 selectedStepID = nil
                             },
                             onSave: { updated in
-                                if step.label == R.appBlocking || step.remedyId == .appBlocking || state.canCustomizeRoutine {
+                                if step.isScreenBlockingConfigurationStep || state.canCustomizeRoutine {
                                     if state.canCustomizeRoutine {
                                         state.updateRoutineStep(updated)
                                     }
@@ -846,7 +846,7 @@ struct EditStepSheet: View {
     }
 
     private var isAppBlockingStep: Bool {
-        step.remedyId == .appBlocking || step.label == R.appBlocking
+        step.isScreenBlockingConfigurationStep
     }
 
     var body: some View {
@@ -1196,7 +1196,7 @@ final class AppBlockingAccessProbe: ObservableObject {
     static let shared = AppBlockingAccessProbe()
 
     @Published private(set) var statusText = "Not checked"
-    @Published private(set) var detailText = "Make the Screen Time authorization call on this device to confirm whether Lull has app-blocking access."
+    @Published private(set) var detailText = "Allow Screen Time access so Lull can help reduce distracting apps during your bedtime window."
     @Published private(set) var isChecking = false
     @Published private(set) var isApproved = false
 
@@ -1209,21 +1209,23 @@ final class AppBlockingAccessProbe: ObservableObject {
         case .approved, .approvedWithDataAccess:
             isApproved = true
             statusText = "Access approved"
-            detailText = "Family Controls is authorized for this install. App blocking can be built on this device/profile."
+            detailText = "Screen Time access is enabled. Lull can apply your selected app limits during bedtime."
         case .denied:
             isApproved = false
             statusText = "Access denied"
-            detailText = "The device denied Screen Time access for Lull. Try again from a signed build on your phone."
+            detailText = "Screen Time access is off for Lull. You can enable it from iOS Settings when you want app blocking."
         case .notDetermined:
             isApproved = false
             statusText = "Not requested"
-            detailText = "Tap Check access to ask iOS for Screen Time app-blocking authorization."
+            detailText = "Tap Check access to let iOS ask for Screen Time permission."
         @unknown default:
             isApproved = false
             statusText = "Unknown status"
-            detailText = "iOS returned a Family Controls status this build does not recognize."
+            detailText = "Lull could not read the current Screen Time permission. Check Settings and try again."
         }
+        #if DEBUG
         print("[AppBlocking] authorizationStatus=\(statusText)")
+        #endif
     }
 
     func requestAccess() async {
@@ -1237,7 +1239,9 @@ final class AppBlockingAccessProbe: ObservableObject {
             isApproved = false
             statusText = "Request failed"
             detailText = error.localizedDescription
+            #if DEBUG
             print("[AppBlocking] requestAuthorization failed: \(error)")
+            #endif
         }
     }
 }

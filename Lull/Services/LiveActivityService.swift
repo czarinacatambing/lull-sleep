@@ -70,7 +70,9 @@ class LiveActivityService {
                 pushType: nil
             )
         } catch {
+            #if DEBUG
             print("[LiveActivity] Failed to start: \(error)")
+            #endif
         }
     }
 
@@ -128,12 +130,16 @@ class LiveActivityService {
 
     func startSleepActivity(bedtime: Date, wakeTime: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            #if DEBUG
             print("[LiveActivity] Sleep activity not started: Live Activities are disabled for Lull.")
+            #endif
             return
         }
         let effectiveWakeTime = wakeTimeAnchoredAfter(bedtime: bedtime, wakeTime: wakeTime)
         guard effectiveWakeTime > bedtime else {
+            #if DEBUG
             print("[LiveActivity] Sleep activity not started: wakeTime (\(effectiveWakeTime)) is not after bedtime (\(bedtime)).")
+            #endif
             return
         }
 
@@ -143,7 +149,9 @@ class LiveActivityService {
         // not preserve the old phase: a prior wake/rated activity would hide
         // the sleeping-state Mid-Sleep affordance on the next night.
         if let existing = sleepActivities.first {
+            #if DEBUG
             print("[LiveActivity] Refreshing existing sleep activity as sleeping until \(effectiveWakeTime).")
+            #endif
             let state = LullSleepAttributes.ContentState(
                 phase: .sleeping,
                 bedtime: bedtime,
@@ -179,9 +187,13 @@ class LiveActivityService {
                 ),
                 pushType: nil
             )
+            #if DEBUG
             print("[LiveActivity] Started sleep activity \(activity.id) from \(bedtime) to \(effectiveWakeTime).")
+            #endif
         } catch {
+            #if DEBUG
             print("[LiveActivity] Failed to start sleep activity: \(error)")
+            #endif
         }
     }
 

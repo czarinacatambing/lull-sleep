@@ -15,7 +15,9 @@ final class PersistenceStore {
         do {
             return try decoder.decode(PersistedState.self, from: data)
         } catch {
+            #if DEBUG
             print("PersistenceStore: decode failed — \(error)")
+            #endif
             return nil
         }
     }

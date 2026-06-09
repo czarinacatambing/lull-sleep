@@ -7,7 +7,9 @@ struct DashboardView: View {
     @Binding var selectedTab: Int
     @State private var showMenu = false
     @State private var showSettings = false
+    #if DEBUG
     @State private var showBrainDumps = false
+    #endif
     @State private var currentDate = Date()
     @State private var glowPulse = false
 
@@ -32,8 +34,10 @@ struct DashboardView: View {
     // MARK: - Morning state predicate
 
     private var isMorningState: Bool {
+        #if DEBUG
         if state.debugForceMorningState { return true }
         if state.debugForceEveningState { return false }
+        #endif
         guard let wake = todaysWakeTime else { return false }
         let cal = Calendar.current
         // Upper bound: the later of wake + 4h OR 11 AM. This keeps the morning
@@ -102,7 +106,18 @@ struct DashboardView: View {
     private var ritualDoneCount: Int {
         ritualSteps.filter { state.ritualDoneIds.contains($0.id) }.count
     }
-    private var allRitualDone: Bool { ritualDoneCount == ritualSteps.count && !ritualSteps.isEmpty }
+    private var completedWindDownTonight: Bool {
+        let cal = Calendar.current
+        let bedtimeDay = state.bedtimeDate(for: currentDate, calendar: cal)
+        return state.sleepLogs.contains {
+            $0.completedNightlyFlow && cal.isDate($0.date, inSameDayAs: bedtimeDay)
+        }
+    }
+    private var allRitualStepsDone: Bool { ritualDoneCount == ritualSteps.count && !ritualSteps.isEmpty }
+    private var sleepTargetDone: Bool { completedWindDownTonight || allRitualStepsDone }
+    private var ritualDisplayTotal: Int { ritualSteps.count + 1 }
+    private var ritualDisplayDoneCount: Int { ritualDoneCount + (sleepTargetDone ? 1 : 0) }
+    private var allRitualDone: Bool { ritualDisplayDoneCount == ritualDisplayTotal }
 
     private func scheduledTime(for step: RoutineStep) -> String {
         state.scheduledRoutine.first { $0.step.id == step.id }?.timeString ?? ""
@@ -207,54 +222,10 @@ struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button(action: {
-                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            showBrainDumps = true
-                        }
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullInk2)
-                                .frame(width: 18)
-                            Text("Brain Dumps")
-                                .font(.system(size: 14))
-                                .foregroundColor(.lullInk1)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.plain)
-
-                    Divider().background(Color.lullLine).padding(.horizontal, 12)
-
-                    debugMenuItem(
-                        label: "Force morning state",
-                        active: state.debugForceMorningState
-                    ) {
-                        state.debugForceMorningState.toggle()
-                        if state.debugForceMorningState {
-                            state.debugForceEveningState = false
-                        }
-                    }
-                    debugMenuItem(
-                        label: "Force evening state",
-                        active: state.debugForceEveningState
-                    ) {
-                        state.debugForceEveningState.toggle()
-                        if state.debugForceEveningState {
-                            state.debugForceMorningState = false
-                        }
-                    }
-                    debugMenuItem(
-                        label: "Clear today's rating",
-                        active: false
-                    ) {
-                        state.debugClearTodaysRating()
-                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-                    }
+                    #if DEBUG
+                    debugMenuDivider
+                    debugMenuContent
+                    #endif
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 14)
@@ -275,10 +246,70 @@ struct DashboardView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
+        #if DEBUG
         .sheet(isPresented: $showBrainDumps) {
             BrainDumpsBrowser()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        #endif
+    }
+
+    #if DEBUG
+    private var debugMenuDivider: some View {
+        Divider().background(Color.lullLine).padding(.horizontal, 12)
+    }
+
+    private var debugMenuContent: some View {
+        Group {
+            Button(action: {
+                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    showBrainDumps = true
+                }
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullInk2)
+                        .frame(width: 18)
+                    Text("Brain Dumps")
+                        .font(.system(size: 14))
+                        .foregroundColor(.lullInk1)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Divider().background(Color.lullLine).padding(.horizontal, 12)
+
+            debugMenuItem(
+                label: "Force morning state",
+                active: state.debugForceMorningState
+            ) {
+                state.debugForceMorningState.toggle()
+                if state.debugForceMorningState {
+                    state.debugForceEveningState = false
+                }
+            }
+            debugMenuItem(
+                label: "Force evening state",
+                active: state.debugForceEveningState
+            ) {
+                state.debugForceEveningState.toggle()
+                if state.debugForceEveningState {
+                    state.debugForceMorningState = false
+                }
+            }
+            debugMenuItem(
+                label: "Clear today's rating",
+                active: false
+            ) {
+                state.debugClearTodaysRating()
+                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
+            }
         }
     }
 
@@ -299,6 +330,7 @@ struct DashboardView: View {
         }
         .buttonStyle(.plain)
     }
+    #endif
 
     // MARK: - Top bar (shared)
 
@@ -654,7 +686,7 @@ struct DashboardView: View {
             HStack(spacing: 12) {
                 Kicker(text: "The ritual · in sequence")
                 Spacer()
-                Text("\(ritualDoneCount)/\(ritualSteps.count) done")
+                Text("\(ritualDisplayDoneCount)/\(ritualDisplayTotal) done")
                     .font(.mono(10.5))
                     .kerning(0.6)
                     .foregroundColor(allRitualDone ? .lullAmber : .lullInk3)
@@ -683,12 +715,12 @@ struct DashboardView: View {
                     .frame(width: 38, alignment: .leading)
                     ZStack {
                         RoundedRectangle(cornerRadius: 7)
-                            .fill(allRitualDone ? Color.lullAmber.opacity(0.24) : Color.clear)
+                            .fill(sleepTargetDone ? Color.lullAmber.opacity(0.24) : Color.clear)
                             .frame(width: 22, height: 22)
                         RoundedRectangle(cornerRadius: 7)
-                            .strokeBorder(allRitualDone ? Color.lullAmber.opacity(0.45) : Color.white.opacity(0.16), lineWidth: 1.4)
+                            .strokeBorder(sleepTargetDone ? Color.lullAmber.opacity(0.45) : Color.white.opacity(0.16), lineWidth: 1.4)
                             .frame(width: 22, height: 22)
-                        if allRitualDone {
+                        if sleepTargetDone {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(.lullAmber)
@@ -696,8 +728,8 @@ struct DashboardView: View {
                     }
                     Text("Sleep")
                         .font(.system(size: 13.5))
-                        .foregroundColor(allRitualDone ? .lullInk3 : .lullInk1)
-                        .strikethrough(allRitualDone, color: Color.lullAmber.opacity(0.45))
+                        .foregroundColor(sleepTargetDone ? .lullInk3 : .lullInk1)
+                        .strikethrough(sleepTargetDone, color: Color.lullAmber.opacity(0.45))
                     Spacer()
                     Text("\(state.sleepDurationString) target")
                         .font(.mono(10))
@@ -1202,7 +1234,7 @@ struct SettingsSheet: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Kicker(text: "Debug")
                             debugSeedButton(count: 3, kind: .milestone)
-                            debugSeedButton(count: 6, kind: .paywall)
+                            debugSeedButton(count: 6, kind: .activeTrial)
                             debugSeedButton(count: 7, kind: .paywall)
                         }
                         .padding(.horizontal, 22)
@@ -1285,6 +1317,7 @@ struct SettingsSheet: View {
 
     #if DEBUG
     private enum DebugSeedKind {
+        case activeTrial
         case milestone
         case paywall
     }
@@ -1292,7 +1325,11 @@ struct SettingsSheet: View {
     private func debugSeedButton(count: Int, kind: DebugSeedKind) -> some View {
         let didSeed = seededNightCount == count
         return Button {
-            state.debugSeedCompletedNightsAndExpireTrial(count: count, presentMilestone: kind == .milestone)
+            state.debugSeedCompletedNightsAndExpireTrial(
+                count: count,
+                presentMilestone: kind == .milestone,
+                expireTrial: kind == .paywall
+            )
             seededNightCount = count
         } label: {
             HStack(spacing: 12) {
@@ -1321,6 +1358,8 @@ struct SettingsSheet: View {
 
     private func debugSeedDescription(count: Int, kind: DebugSeedKind) -> String {
         switch kind {
+        case .activeTrial:
+            return "Creates \(count) completed nights with ratings and keeps the trial active."
         case .milestone:
             return "Creates \(count) completed nights with ratings, then shows the milestone card."
         case .paywall:
@@ -1330,6 +1369,8 @@ struct SettingsSheet: View {
 
     private func debugSeedTitle(count: Int, kind: DebugSeedKind) -> String {
         switch kind {
+        case .activeTrial:
+            return "Seed \(count)-night active trial test"
         case .milestone:
             return "Seed \(count)-night milestone test"
         case .paywall:
@@ -1339,6 +1380,8 @@ struct SettingsSheet: View {
 
     private func debugSeedCompleteText(count: Int, kind: DebugSeedKind) -> String {
         switch kind {
+        case .activeTrial:
+            return "\(count) nights seeded. Trial remains active."
         case .milestone:
             return "\(count) nights seeded. Milestone card requested."
         case .paywall:

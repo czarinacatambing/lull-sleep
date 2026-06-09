@@ -58,7 +58,9 @@ enum ExportService {
 
         let (data, response) = try await URLSession.shared.data(for: req)
         let bodyText = String(data: data, encoding: .utf8) ?? ""
+        #if DEBUG
         print("[ExportService] response: \(response) body: \(bodyText)")
+        #endif
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             throw ExportError.httpError(http.statusCode, bodyText)
         }

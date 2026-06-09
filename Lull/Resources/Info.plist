@@ -32,17 +32,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LullAnalyticsEnabled</key>
-	<true/>
-	<key>LullPostHogAPIKey</key>
-	<string>phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX</string>
-	<key>LullPostHogHost</key>
-	<string>https://us.i.posthog.com</string>
+	<false/>
 	<key>LullResearchDataEnabled</key>
-	<true/>
-	<key>LullResearchDataEndpoint</key>
-	<string>https://fqljyviykgfzhskzmoui.functions.supabase.co/lull-research-ingest</string>
-	<key>LullResearchDataToken</key>
-	<string>cf118089939d70d769aff5253a69023e66f2a21523382105e15429ba8fde4a76</string>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Lull briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen.</string>
 	<key>NSMicrophoneUsageDescription</key>
@@ -53,10 +45,10 @@
 	<true/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fraunces-Light.ttf</string>
-		<string>Fraunces-LightItalic.ttf</string>
-		<string>Fraunces-Regular.ttf</string>
-		<string>JetBrainsMono-Regular.ttf</string>
+		<string>Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf</string>
+		<string>Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf</string>
+		<string>JetBrainsMono-VariableFont_wght.ttf</string>
+		<string>JetBrainsMono-Italic-VariableFont_wght.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

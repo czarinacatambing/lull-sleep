@@ -85,7 +85,7 @@ struct PaywallState: Codable {
     var trialHasStarted: Bool { trialStartedAt != nil && trialEndsAt != nil }
 
     func isTrialActive(now: Date = Date()) -> Bool {
-        guard tier == .trial, let trialEndsAt else { return false }
+        guard trialStartedAt != nil, let trialEndsAt else { return false }
         return now < trialEndsAt
     }
 }
@@ -445,6 +445,7 @@ struct PricingSheet: View {
 
 struct RevenueCatPaywallSheet: View {
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
+    @Environment(\.openURL) private var openURL
     let context: RevenueCatPaywallContext
     let onSubscribed: () -> Void
     let onClose: () -> Void
@@ -496,6 +497,12 @@ struct RevenueCatPaywallSheet: View {
                 .onRequestedDismissal(onClose)
                 .ignoresSafeArea()
 
+            VStack {
+                Spacer()
+                legalLinks
+            }
+            .padding(.bottom, 14)
+
             VStack(alignment: .trailing, spacing: 10) {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
@@ -522,6 +529,29 @@ struct RevenueCatPaywallSheet: View {
             .padding(.top, 16)
             .padding(.trailing, 16)
         }
+    }
+
+    private var legalLinks: some View {
+        HStack(spacing: 18) {
+            legalButton("Terms", url: "https://trylull.com/terms")
+            legalButton("Privacy", url: "https://trylull.com/privacy")
+        }
+        .font(.mono(10))
+        .foregroundColor(.lullInk2)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Capsule().fill(Color.black.opacity(0.38)))
+        .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+    }
+
+    private func legalButton(_ title: String, url: String) -> some View {
+        Button(title) {
+            if let url = URL(string: url) {
+                openURL(url)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 
     private var unavailableView: some View {

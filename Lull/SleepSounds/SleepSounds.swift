@@ -283,7 +283,9 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
 
     private func reportPlaybackError(_ message: String) {
         lastPlaybackError = message
+        #if DEBUG
         print("[SleepSounds] \(message)")
+        #endif
     }
 
     private func crossfade(from oldPlayer: AVAudioPlayer, to newPlayer: AVAudioPlayer) {
@@ -402,7 +404,9 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
         lastPlaybackError = nil
         resetPlayerAdvanceTracking(recoveredPlayer)
         updateNowPlaying()
+        #if DEBUG
         print("[SleepSounds] Recovered unexpected stop for \(soundId.rawValue)")
+        #endif
     }
 
     private func updateRemaining() {
