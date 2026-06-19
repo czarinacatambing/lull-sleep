@@ -7,49 +7,106 @@ struct SleepCompanionWidget: Widget {
         ActivityConfiguration(for: LullSleepAttributes.self) { context in
             SleepCompanionLockScreenView(context: context)
         } dynamicIsland: { context in
-            let phase = context.state.effectivePhase(isStale: context.isStale)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    switch phase {
-                    case .sleeping:       DISleepLeading(state: context.state)
-                    case .awaitingRating: DIWakeLeading(state: context.state)
-                    case .rated:          DIConfirmLeading()
-                    }
+                    DIPhaseLeadingView(state: context.state, isStale: context.isStale)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    switch phase {
-                    case .sleeping:       DISleepTrailing(state: context.state)
-                    case .awaitingRating: DIWakeTrailing(state: context.state)
-                    case .rated:          DIConfirmTrailing(state: context.state)
-                    }
+                    DIPhaseTrailingView(state: context.state, isStale: context.isStale)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    switch phase {
-                    case .sleeping:       DISleepBottom()
-                    case .awaitingRating: DIWakeBottom(state: context.state)
-                    case .rated:          EmptyView()
-                    }
+                    DIPhaseBottomView(state: context.state, isStale: context.isStale)
                 }
             } compactLeading: {
-                Image(systemName: compactGlyph(for: phase))
-                    .font(.system(size: 13))
-                    .foregroundColor(LullLA.amber)
+                DIPhaseCompactGlyphView(state: context.state, isStale: context.isStale, size: 13)
             } compactTrailing: {
-                CompactTrailingView(state: context.state, phase: phase)
+                DIPhaseCompactTrailingView(state: context.state, isStale: context.isStale)
             } minimal: {
-                Image(systemName: compactGlyph(for: phase))
-                    .font(.system(size: 12))
-                    .foregroundColor(LullLA.amber)
+                DIPhaseCompactGlyphView(state: context.state, isStale: context.isStale, size: 12)
             }
-            .widgetURL(URL(string: phase == .sleeping ? "lull://midsleep" : "lull://reward"))
+            .widgetURL(URL(string: "tenthirty://liveactivity"))
         }
     }
+}
 
-    private func compactGlyph(for phase: LullSleepAttributes.ContentState.Phase) -> String {
-        switch phase {
-        case .sleeping:       return "moon.fill"
-        case .awaitingRating: return "sun.horizon.fill"
-        case .rated:          return "checkmark"
+private func compactGlyph(for phase: LullSleepAttributes.ContentState.Phase) -> String {
+    switch phase {
+    case .sleeping:       return "moon.fill"
+    case .awaitingRating: return "sun.horizon.fill"
+    case .rated:          return "checkmark"
+    }
+}
+
+private struct DIPhaseLeadingView: View {
+    let state: LullSleepAttributes.ContentState
+    let isStale: Bool
+
+    var body: some View {
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            switch state.effectivePhase(at: timeline.date, isStale: isStale) {
+            case .sleeping:       DISleepLeading(state: state)
+            case .awaitingRating: DIWakeLeading(state: state)
+            case .rated:          DIConfirmLeading()
+            }
+        }
+    }
+}
+
+private struct DIPhaseTrailingView: View {
+    let state: LullSleepAttributes.ContentState
+    let isStale: Bool
+
+    var body: some View {
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            switch state.effectivePhase(at: timeline.date, isStale: isStale) {
+            case .sleeping:       DISleepTrailing(state: state)
+            case .awaitingRating: DIWakeTrailing(state: state)
+            case .rated:          DIConfirmTrailing(state: state)
+            }
+        }
+    }
+}
+
+private struct DIPhaseBottomView: View {
+    let state: LullSleepAttributes.ContentState
+    let isStale: Bool
+
+    var body: some View {
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            switch state.effectivePhase(at: timeline.date, isStale: isStale) {
+            case .sleeping:       DISleepBottom()
+            case .awaitingRating: DIWakeBottom(state: state)
+            case .rated:          EmptyView()
+            }
+        }
+    }
+}
+
+private struct DIPhaseCompactGlyphView: View {
+    let state: LullSleepAttributes.ContentState
+    let isStale: Bool
+    let size: CGFloat
+
+    var body: some View {
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            let phase = state.effectivePhase(at: timeline.date, isStale: isStale)
+            Image(systemName: compactGlyph(for: phase))
+                .font(.system(size: size))
+                .foregroundColor(LullLA.amber)
+        }
+    }
+}
+
+private struct DIPhaseCompactTrailingView: View {
+    let state: LullSleepAttributes.ContentState
+    let isStale: Bool
+
+    var body: some View {
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            CompactTrailingView(
+                state: state,
+                phase: state.effectivePhase(at: timeline.date, isStale: isStale)
+            )
         }
     }
 }

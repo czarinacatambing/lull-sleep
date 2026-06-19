@@ -12,6 +12,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>TenThirty</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -20,10 +22,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.trylull.app</string>
+			<string>com.tenthirty.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>lull</string>
+				<string>tenthirty</string>
 			</array>
 		</dict>
 	</array>
@@ -32,13 +34,23 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LullAnalyticsEnabled</key>
-	<false/>
+	<string>$(LULL_ANALYTICS_ENABLED)</string>
+	<key>LullAnalyticsCohort</key>
+	<string>$(LULL_ANALYTICS_COHORT)</string>
+	<key>LullPostHogAPIKey</key>
+	<string>$(LULL_POSTHOG_API_KEY)</string>
+	<key>LullPostHogHost</key>
+	<string>$(LULL_POSTHOG_HOST)</string>
 	<key>LullResearchDataEnabled</key>
-	<false/>
+	<string>$(LULL_RESEARCH_DATA_ENABLED)</string>
+	<key>LullResearchDataEndpoint</key>
+	<string>$(LULL_RESEARCH_DATA_ENDPOINT)</string>
+	<key>LullResearchDataToken</key>
+	<string>$(LULL_RESEARCH_DATA_TOKEN)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Lull briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen.</string>
+	<string>TenThirty briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared.</string>
+	<string>TenThirty uses your microphone to record your brain dump. Recordings stay on your device and are never shared.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>

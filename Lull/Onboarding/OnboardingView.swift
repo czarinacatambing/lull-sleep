@@ -1,9 +1,11 @@
 import SwiftUI
+import FamilyControls
 
 // Onboarding coordinator — a quick profile, then a generated routine.
 struct OnboardingView: View {
     @EnvironmentObject var state: AppState
     @State private var step = 0
+    @State private var didTrackStart = false
 
     var body: some View {
         ZStack {
@@ -20,12 +22,40 @@ struct OnboardingView: View {
             case 4: OnbPreBedView(step: $step)
             case 5: OnbMethodologyView(step: $step)
             case 6: OnbRoutineReadyView(step: $step)
-            case 7: OnbTrialPaywallView()
+            case 7: OnbCommitmentView(step: $step)
+            case 8: OnbAppBlockingCommitmentView(step: $step)
+            case 9: OnbTrialPaywallView()
             default: EmptyView()
             }
         }
         .animation(step == 6 ? .easeInOut(duration: 0.7) : .easeInOut(duration: 0.28), value: step)
         .transition(.opacity)
+        .onAppear {
+            if !didTrackStart {
+                didTrackStart = true
+                state.trackOnboardingStarted()
+            }
+            state.trackOnboardingScreen(screenName(for: step))
+        }
+        .onChange(of: step) { _, newStep in
+            state.trackOnboardingScreen(screenName(for: newStep))
+        }
+    }
+
+    private func screenName(for step: Int) -> String {
+        switch step {
+        case 0: return "sleep_problem"
+        case 1: return "baseline_rating"
+        case 2: return "promise"
+        case 3: return "bedtime"
+        case 4: return "pre_bed"
+        case 5: return "methodology"
+        case 6: return "routine_ready"
+        case 7: return "commitment"
+        case 8: return "app_blocking_commitment"
+        case 9: return "trial_paywall"
+        default: return "unknown"
+        }
     }
 }
 
@@ -976,13 +1006,8 @@ struct OnbPreBedView: View {
     private let options = [
         "Use my phone or scroll",
         "Watch TV or screens",
-        "Read a physical book",
-        "Talk or socialize",
-        "Have a shower or bath",
         "Exercise (evening workout)",
         "Eat or have a snack",
-        "Listen to a podcast",
-        "Do chores",
         "Drink coffee",
         "Work",
         "Have a nightcap or alcohol",
@@ -1005,7 +1030,7 @@ struct OnbPreBedView: View {
                             .font(.serif(28))
                             .foregroundColor(.lullInk0)
                             .padding(.top, 10)
-                        Text("This helps us understand what to recommend you")
+                        Text("Just the habits that tend to work against sleep — pick any that sound like you.")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(3)
@@ -1171,93 +1196,131 @@ struct ChipFlow: Layout {
 struct OnbMethodologyView: View {
     @Binding var step: Int
     @EnvironmentObject var state: AppState
-    @State private var revealedLineCount = 0
     @State private var orbExpanded = false
     @State private var canProceed = false
+    @State private var didPlayGeneratedHaptic = false
 
-    private let totalRevealLines = 5
+    private static let bedtimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm"
+        return f
+    }()
+
+    private let sleepProblemLabels = [
+        0: "Struggling to fall asleep",
+        1: "racing mind",
+        2: "can’t fall back asleep",
+        3: "waking up unrefreshed",
+        4: "something else",
+    ]
+
+    private let preBedActivityLabels = [
+        0: "using your phone or scrolling",
+        1: "watching TV or screens",
+        2: "exercising in the evening",
+        3: "eating or snacking",
+        4: "drinking coffee",
+        5: "working",
+        6: "having a nightcap or alcohol",
+    ]
+
+    private var bedtimeText: String {
+        Self.bedtimeFormatter.string(from: state.targetBedtime)
+    }
+
+    private var flaggedLabels: [String] {
+        let problemLabels = state.selectedSleepProblems
+            .sorted()
+            .compactMap { sleepProblemLabels[$0] }
+        let activityLabels = state.selectedPreBedActivities
+            .sorted()
+            .compactMap { preBedActivityLabels[$0] }
+        return problemLabels + activityLabels
+    }
+
+    private var flaggedText: String {
+        let labels = flaggedLabels
+        guard !labels.isEmpty else { return "your sleep pattern." }
+        return labels.joined(separator: ", ") + "."
+    }
 
     var body: some View {
-        LullScreen(glowX: 0.5, glowY: 0.1, glowRadius: 260, glowOpacity: 0.55) {
-            VStack(spacing: 0) {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Spacer().frame(height: 16)
-                        OnbTopBar(step: 4, total: 4, onBack: { step = 4 })
+        LullScreen(glowX: 0.5, glowY: 0.18, glowRadius: 280, glowOpacity: 0.52) {
+            GeometryReader { geo in
+                let compact = geo.size.height < 760
+                let orbSize: CGFloat = compact ? 136 : 156
+                let titleSize: CGFloat = compact ? 25 : 27
+                let bodySize: CGFloat = compact ? 13.5 : 14.5
 
-                        HStack {
-                            Spacer()
-                            Circle()
-                                .fill(RadialGradient(
-                                    stops: [
-                                        .init(color: Color.lullAmber.opacity(0.72), location: 0),
-                                        .init(color: .lullAmberDeep, location: 0.62),
-                                        .init(color: Color(hex: "#50280f").opacity(0.62), location: 1),
-                                    ],
-                                    center: UnitPoint(x: 0.48, y: 0.35),
-                                    startRadius: 0,
-                                    endRadius: 88
-                                ))
-                                .frame(width: 176, height: 176)
-                                .shadow(color: .lullAmberGlow, radius: orbExpanded ? 42 : 22)
-                                .scaleEffect(orbExpanded ? 1.12 : 0.9)
-                                .animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: orbExpanded)
-                            Spacer()
+                VStack(spacing: 0) {
+                    Spacer().frame(height: compact ? 24 : 40)
+
+                    BrandMark(large: false)
+
+                    Spacer(minLength: compact ? 36 : 70)
+
+                    Circle()
+                        .fill(RadialGradient(
+                            stops: [
+                                .init(color: Color(hex: "#ffc370"), location: 0),
+                                .init(color: Color.lullAmberSoft, location: 0.55),
+                                .init(color: Color.lullAmberDeep, location: 1),
+                            ],
+                            center: UnitPoint(x: 0.48, y: 0.34),
+                            startRadius: 0,
+                            endRadius: orbSize * 0.5
+                        ))
+                        .frame(width: orbSize, height: orbSize)
+                        .overlay(alignment: .topLeading) {
+                            Ellipse()
+                                .fill(Color.white.opacity(0.46))
+                                .frame(width: orbSize * 0.38, height: orbSize * 0.22)
+                                .rotationEffect(.degrees(2))
+                                .offset(x: orbSize * 0.14, y: orbSize * 0.14)
+                                .blur(radius: 0.4)
                         }
-                        .padding(.top, 22)
-                        .padding(.bottom, 38)
+                        .shadow(color: .lullAmberGlow, radius: orbExpanded ? 42 : 24)
+                        .scaleEffect(orbExpanded ? 1.04 : 0.94)
+                        .animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: orbExpanded)
 
-                        VStack(alignment: .leading, spacing: 18) {
-                            reveal(1) {
-                                Kicker(text: "Informed by CBT-I", color: .lullAmberSoft)
-                            }
+                    Spacer(minLength: compact ? 58 : 90)
 
-                            reveal(2) {
-                                (Text("A wind-down\nroutine for a brain\nthat ")
-                                    .foregroundColor(.lullInk0)
-                                 + Text("won't switch\noff.")
-                                    .font(.serifItalic(30))
-                                    .foregroundColor(.lullAmber))
-                                    .font(.serif(30))
-                                    .lineSpacing(3)
-                            }
+                    VStack(spacing: 14) {
+                        Text("Built around your \(bedtimeText)\nbedtime —")
+                            .font(.serif(titleSize, weight: .semibold))
+                            .foregroundColor(.lullInk0)
+                            .lineSpacing(4)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.82)
+                            .frame(maxWidth: 330)
 
-                            reveal(3) {
-                                Text("Lull builds a personalized wind-down routine for overthinkers and neurodivergent minds.")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.lullInk2)
-                                    .lineSpacing(5)
-                            }
-
-                            reveal(4) {
-                                Text("It gets you to pre-commit, removes the distractions, and walks you through it step by step — so winding down actually happens.")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.lullInk2)
-                                    .lineSpacing(5)
-                            }
-
-                            reveal(5) {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Divider().background(Color.lullLine)
-                                    Text("CBT-I outperforms sleep medication at 12-month follow-up (Trauer et al., 2015).")
-                                        .font(.mono(11))
-                                        .foregroundColor(.lullInk3)
-                                        .lineSpacing(4)
-                                }
-                                .padding(.top, 4)
-                            }
-                        }
-                        .padding(.horizontal, Lull.horizontalPad)
-                        .padding(.bottom, 126)
+                        (
+                            Text("shaped by what you flagged:\n")
+                                .foregroundColor(.lullInk2)
+                            + Text(flaggedText)
+                                .foregroundColor(.lullAmber)
+                        )
+                        .font(.system(size: bodySize, weight: .semibold))
+                        .lineSpacing(4)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 306)
                     }
-                }
+                    .padding(.horizontal, Lull.horizontalPad)
 
-                PrimaryCTA(title: canProceed ? "Show my routine" : "Building...", disabled: !canProceed) {
-                    UIImpactFeedbackGenerator(style: .light).prepare()
-                    step = 6
+                    Spacer()
+
+                    PrimaryCTA(title: "Show my routine", disabled: !canProceed) {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        step = 6
+                    }
+                    .opacity(canProceed ? 1 : 0.58)
+                    .padding(.horizontal, Lull.horizontalPad)
+
+                    Kicker(text: "Informed by CBT-I", color: .lullInk3)
+                        .padding(.top, 26)
+                        .padding(.bottom, compact ? 24 : 34)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 36)
+                .frame(width: geo.size.width, height: geo.size.height)
             }
         }
         .onAppear {
@@ -1270,28 +1333,21 @@ struct OnbMethodologyView: View {
             state.refreshOnboardingClassifications()
             let answers = OnboardingAnswers(from: state)
             state.applyGeneratedRoutine(generateStartingRoutine(from: answers), scheduleNotifications: false)
+            let generatedFeedback = UINotificationFeedbackGenerator()
+            generatedFeedback.prepare()
             orbExpanded = true
-            revealedLineCount = 0
             canProceed = false
-            for index in 1...totalRevealLines {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35 + Double(index) * 0.7) {
-                    withAnimation(.easeOut(duration: 0.45)) {
-                        revealedLineCount = index
-                    }
-                }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35 + Double(totalRevealLines) * 0.7 + 3.0) {
+            didPlayGeneratedHaptic = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.easeOut(duration: 0.35)) {
                     canProceed = true
                 }
+                if !didPlayGeneratedHaptic {
+                    generatedFeedback.notificationOccurred(.success)
+                    didPlayGeneratedHaptic = true
+                }
             }
         }
-    }
-
-    private func reveal<Content: View>(_ index: Int, @ViewBuilder content: () -> Content) -> some View {
-        content()
-            .opacity(revealedLineCount >= index ? 1 : 0)
-            .offset(y: revealedLineCount >= index ? 0 : 10)
     }
 
 }
@@ -1450,25 +1506,543 @@ struct OnbRoutineReadyView: View {
     }
 
     private func whyLine(for label: String) -> String {
-        switch label {
-        case R.brainDump:
-            return "Racing thoughts often need a place to unload loops before lights-out."
-        case R.boringStory:
-            return "Gives your mind something low-stakes to follow instead of chasing the day."
-        case R.breathing478:
-            return "The same brake you felt at the start, now available in the wind-down."
-        case R.dimTheLights:
-            return "Moves your body clock toward the target window without a hard shove."
-        case R.warmShower:
-            return "Uses a temperature drop to make sleep onset easier."
-        default:
-            return "A small, testable step for your \(state.bottleneck.displayName.lowercased())."
-        }
+        RemedyID.fromLabel(label)?.routineRevealBenefit
+            ?? "Supports the sleep pattern we found in your answers."
     }
 
     private func playRevealHaptic() {
         let feedback = UIImpactFeedbackGenerator(style: .light)
-        feedback.impactOccurred(intensity: 0.65)
+        feedback.prepare()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            feedback.impactOccurred(intensity: 0.65)
+        }
+    }
+}
+
+// MARK: - Commitment
+
+struct OnbCommitmentView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+    @State private var isConfirming = false
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    private var reminderTime: Date { state.firstBedtimePrepDueTime }
+
+    private var timeString: String { OnbCommitmentView.timeFmt.string(from: reminderTime) }
+
+    private var nextStep: Int {
+        9
+    }
+
+    var body: some View {
+        LullScreen(glow: true, glowX: 0.48, glowY: 0.16, glowRadius: 290, glowOpacity: 0.64) {
+            GeometryReader { geo in
+                let compact = geo.size.height < 740
+
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: compact ? 18 : 22) {
+                            Spacer().frame(height: compact ? 20 : 34)
+                            BrandMark(large: false)
+
+                            VStack(spacing: 12) {
+                                Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
+
+                                VStack(spacing: 0) {
+                                    Text("We'll send you")
+                                        .font(.serif(compact ? 32 : 36, weight: .semibold))
+                                        .foregroundColor(.lullInk0)
+                                    Text("a reminder")
+                                        .font(.serifItalic(compact ? 34 : 38))
+                                        .foregroundColor(.lullAmber)
+                                }
+                                .multilineTextAlignment(.center)
+
+                                Text("Then the app will walk you through your ritual.")
+                                    .font(.system(size: 14.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(4)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 310)
+                            }
+                            .padding(.top, compact ? 12 : 22)
+
+                            VStack(spacing: 20) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "bell.badge")
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.lullAmber)
+                                        .frame(width: 38, height: 38)
+                                        .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("First bedtime prep")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.lullInk1)
+                                        Text(timeString)
+                                            .font(.mono(12))
+                                            .kerning(0.7)
+                                            .foregroundColor(.lullInk3)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.lullInk4)
+                                }
+
+                                Text(timeString.lowercased())
+                                    .font(.serifItalic(compact ? 54 : 64))
+                                    .foregroundColor(.lullAmber)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .minimumScaleFactor(0.86)
+                                    .lineLimit(1)
+
+                                HStack(spacing: 8) {
+                                    Image(systemName: "sparkle")
+                                        .font(.system(size: 11, weight: .regular))
+                                        .foregroundColor(.lullAmberSoft)
+                                    Text("Locked to your first bedtime prep step")
+                                        .font(.mono(10))
+                                        .kerning(0.7)
+                                        .foregroundColor(.lullInk3)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(22)
+                            .background(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .fill(Color.white.opacity(0.04))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+                            )
+                            .padding(.horizontal, Lull.horizontalPad)
+
+                            Text("No streak pressure. No daily nagging. Just a specific time so tonight's plan has a place to land.")
+                                .font(.mono(11))
+                                .foregroundColor(.lullInk3)
+                                .lineSpacing(4)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 310)
+
+                            if isConfirming {
+                                confirmation
+                            }
+
+                            Spacer().frame(height: 122)
+                        }
+                        .frame(maxWidth: 430)
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    bottomBar
+                }
+            }
+        }
+    }
+
+    private var confirmation: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.lullAmber)
+            Text("Time saved for \(timeString)")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.lullInk1)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Capsule().fill(Color.lullAmber.opacity(0.11)))
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            PrimaryCTA(title: isConfirming ? "Saving..." : "Yes, remind me", disabled: isConfirming) {
+                guard !isConfirming else { return }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                isConfirming = true
+                state.commitRoutineReminder(at: reminderTime)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
+                    step = nextStep
+                }
+            }
+
+            GhostButton(title: "Not tonight") {
+                step = nextStep
+            }
+        }
+        .padding(.horizontal, Lull.horizontalPad)
+        .padding(.top, 18)
+        .padding(.bottom, 34)
+        .background(
+            LinearGradient(
+                colors: [Color.lullBg.opacity(0), Color.lullBg.opacity(0.96), Color.lullBg],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+}
+
+// MARK: - App-Blocking Commitment
+
+struct OnbAppBlockingCommitmentView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+    @ObservedObject private var probe = AppBlockingAccessProbe.shared
+    @State private var selection = FamilyActivitySelection()
+    @State private var showPicker = false
+    @State private var isSaving = false
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    private var lockAt: Date { state.typicalBedtime }
+    private var unlockAt: Date { state.typicalWakeTime }
+    private var appCount: Int { selection.applicationTokens.count }
+    private var categoryCount: Int { selection.categoryTokens.count }
+    private var selectedCount: Int { appCount + categoryCount }
+    private var hasSelection: Bool { selectedCount > 0 }
+
+    var body: some View {
+        LullScreen(glow: true, glowX: 0.48, glowY: 0.16, glowRadius: 290, glowOpacity: 0.64) {
+            GeometryReader { geo in
+                let compact = geo.size.height < 740
+
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: compact ? 14 : 18) {
+                            Spacer().frame(height: compact ? 18 : 30)
+                            BrandMark(large: false)
+
+                            VStack(spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
+                                    OnbPremiumChip()
+                                }
+                                (Text("What should TenThirty ")
+                                    .foregroundColor(.lullInk0)
+                                 + Text("lock away?")
+                                    .font(.serifItalic(compact ? 34 : 38))
+                                    .foregroundColor(.lullAmber))
+                                    .font(.serif(compact ? 32 : 36, weight: .semibold))
+                                    .multilineTextAlignment(.center)
+
+                                Text("During your sleep window, TenThirty blocks the apps that keep you scrolling. It only runs at night, and you can bypass it any night you need to.")
+                                    .font(.system(size: 14.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(4)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 318)
+                            }
+                            .padding(.top, compact ? 10 : 18)
+
+                            HStack(spacing: 10) {
+                                OnbBlockingTimeTile(
+                                    title: "LOCK AT",
+                                    value: Self.timeFmt.string(from: lockAt)
+                                )
+                                OnbBlockingTimeTile(
+                                    title: "UNLOCK AT",
+                                    value: Self.timeFmt.string(from: unlockAt)
+                                )
+                            }
+                            .padding(.horizontal, Lull.horizontalPad)
+
+                            accessCard
+                                .padding(.horizontal, Lull.horizontalPad)
+
+                            appPickerCard
+                                .padding(.horizontal, Lull.horizontalPad)
+
+                            Spacer().frame(height: hasSelection && probe.isApproved ? 128 : 92)
+                        }
+                        .frame(maxWidth: 430)
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    bottomBar
+                }
+            }
+        }
+        .familyActivityPicker(isPresented: $showPicker, selection: $selection)
+        .onAppear {
+            selection = state.appBlockingSelection
+            probe.refresh()
+        }
+    }
+
+    private var accessCard: some View {
+        VStack(alignment: .leading, spacing: probe.isApproved ? 0 : 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("STEP 1 · APP BLOCKING")
+                    .font(.mono(10))
+                    .kerning(1.3)
+                    .foregroundColor(.lullInk3)
+                Spacer()
+                Text(probe.isApproved ? "ACCESS APPROVED" : probe.statusText.uppercased())
+                    .font(.mono(9.5))
+                    .kerning(1)
+                    .foregroundColor(probe.isApproved ? Color(hex: "#8fce93") : .lullAmber)
+            }
+
+            if !probe.isApproved {
+                Text(probe.detailText)
+                    .font(.system(size: 13))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await probe.requestAccess() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if probe.isChecking {
+                            ProgressView()
+                                .tint(.lullBgDeep)
+                        } else {
+                            Image(systemName: "lock.shield")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text("Check access")
+                            .font(.system(size: 14.5, weight: .semibold))
+                    }
+                    .foregroundColor(.lullBgDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Capsule().fill(Color.lullAmber))
+                    .shadow(color: .lullAmberGlow, radius: 12, y: 4)
+                }
+                .buttonStyle(.plain)
+                .disabled(probe.isChecking)
+                .opacity(probe.isChecking ? 0.75 : 1)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(probe.isApproved ? Color(hex: "#8fce93").opacity(0.25) : Color.lullAmber.opacity(0.16), lineWidth: 1)
+        )
+    }
+
+    private var appPickerCard: some View {
+        Button {
+            guard probe.isApproved else { return }
+            showPicker = true
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Text("STEP 2 · CHOOSE APPS")
+                        .font(.mono(10))
+                        .kerning(1.3)
+                        .foregroundColor(probe.isApproved ? .lullInk1 : .lullInk3)
+                    if selectedCount > 0 {
+                        Text("· \(selectedCount) SELECTED")
+                            .font(.mono(10))
+                            .kerning(1.0)
+                            .foregroundColor(.lullAmber)
+                    }
+                    Spacer()
+                    Image(systemName: probe.isApproved ? "chevron.right" : "lock.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(probe.isApproved ? .lullAmber : .lullInk4)
+                }
+
+                HStack(spacing: 10) {
+                    ForEach(selectionSlots, id: \.self) { slot in
+                        OnbBlockingSelectionSlot(kind: slot)
+                    }
+                }
+
+                if selectedCount > 0 {
+                    Text(selectionSummary)
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(probe.isApproved ? Color.white.opacity(0.04) : Color.white.opacity(0.025))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        probe.isApproved ? Color.lullAmber.opacity(0.16) : Color.lullLineStrong,
+                        style: StrokeStyle(lineWidth: 1, dash: probe.isApproved ? [] : [5, 5])
+                    )
+            )
+            .opacity(probe.isApproved ? 1 : 0.52)
+        }
+        .buttonStyle(.plain)
+        .disabled(!probe.isApproved)
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            if probe.isApproved && hasSelection {
+                PrimaryCTA(title: isSaving ? "Saving..." : "Lock it in for tonight", disabled: isSaving) {
+                    guard !isSaving else { return }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    isSaving = true
+                    state.configureAppBlocking(
+                        selection: selection,
+                        enabled: true,
+                        startTime: lockAt,
+                        endTime: unlockAt,
+                        graceMinutes: state.appBlockingGraceMinutes
+                    )
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+                        step = 9
+                    }
+                }
+            }
+
+            GhostButton(title: "Not tonight") {
+                step = 9
+            }
+        }
+        .padding(.horizontal, Lull.horizontalPad)
+        .padding(.top, 18)
+        .padding(.bottom, 34)
+        .background(
+            LinearGradient(
+                colors: [Color.lullBg.opacity(0), Color.lullBg.opacity(0.96), Color.lullBg],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    private var selectionSlots: [OnbBlockingSelectionSlot.Kind] {
+        var slots: [OnbBlockingSelectionSlot.Kind] = []
+        let tokenCount = min(selectedCount, 3)
+        for index in 0..<tokenCount {
+            slots.append(index < appCount ? .app : .category)
+        }
+        while slots.count < 3 {
+            slots.append(.empty)
+        }
+        return slots
+    }
+
+    private var selectionSummary: String {
+        var parts: [String] = []
+        if appCount > 0 {
+            parts.append("\(appCount) \(appCount == 1 ? "app" : "apps")")
+        }
+        if categoryCount > 0 {
+            parts.append("\(categoryCount) \(categoryCount == 1 ? "category" : "categories")")
+        }
+        return parts.joined(separator: " · ")
+    }
+}
+
+private struct OnbBlockingTimeTile: View {
+    var title: String
+    var value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.mono(10))
+                .kerning(1.2)
+                .foregroundColor(.lullInk4)
+            Text(value)
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundColor(.lullInk1)
+                .minimumScaleFactor(0.82)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.035))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.lullLineStrong, lineWidth: 1)
+        )
+    }
+}
+
+private struct OnbPremiumChip: View {
+    var body: some View {
+        Text("PREMIUM")
+            .font(.mono(8.5))
+            .kerning(1.1)
+            .foregroundColor(.lullAmber)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(Color.lullAmber.opacity(0.10)))
+            .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.28), lineWidth: 1))
+    }
+}
+
+private struct OnbBlockingSelectionSlot: View {
+    enum Kind: Hashable {
+        case app
+        case category
+        case empty
+    }
+
+    var kind: Kind
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(border, style: StrokeStyle(lineWidth: 1, dash: kind == .empty ? [5, 5] : []))
+                )
+                .frame(width: 50, height: 50)
+
+            Image(systemName: icon)
+                .font(.system(size: kind == .empty ? 17 : 16, weight: .semibold))
+                .foregroundColor(iconColor)
+        }
+    }
+
+    private var icon: String {
+        switch kind {
+        case .app: return "app.fill"
+        case .category: return "square.grid.2x2.fill"
+        case .empty: return "plus"
+        }
+    }
+
+    private var background: Color {
+        kind == .empty ? Color.clear : Color.lullAmber.opacity(0.10)
+    }
+
+    private var border: Color {
+        kind == .empty ? Color.lullLineStrong : Color.lullAmber.opacity(0.30)
+    }
+
+    private var iconColor: Color {
+        kind == .empty ? .lullInk4 : .lullAmber
     }
 }
 
@@ -1498,7 +2072,7 @@ struct OnbTrialPaywallView: View {
                             trialBenefits(compact: compact)
                             TrialReassuranceCard()
 
-                            Text("Free for 7 nights. No card, no charge.\nAfter that, Lull is $49.99/yr only if you choose to stay.")
+                            Text("Free for 7 nights. No card, no charge.\nAfter that, TenThirty is $49.99/yr only if you choose to stay.")
                                 .font(.system(size: 13))
                                 .foregroundColor(.lullInk3)
                                 .lineSpacing(4)
@@ -1597,10 +2171,10 @@ struct OnbTrialPaywallView: View {
 
             HStack(spacing: 26) {
                 footerButton("Terms") {
-                    open("https://trylull.com/terms")
+                    open("https://tenthirty.app/terms")
                 }
                 footerButton("Privacy") {
-                    open("https://trylull.com/privacy")
+                    open("https://tenthirty.app/privacy")
                 }
                 footerButton(subscriptions.isLoading ? "Restoring" : "Restore") {
                     Task { await restore() }
@@ -1644,7 +2218,7 @@ struct OnbTrialPaywallView: View {
             state.applyRevenueCatEntitlement(isActive: true)
             state.completeOnboarding()
         } else {
-            statusMessage = subscriptions.lastErrorMessage ?? "No active Lull Pro purchase was found."
+            statusMessage = subscriptions.lastErrorMessage ?? "No active TenThirty Premium purchase was found."
         }
     }
 }
@@ -1727,7 +2301,7 @@ private struct TrialReassuranceCard: View {
                 Text("Nothing to enter. Nothing to cancel.")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.lullInk0)
-                Text("We won't ask for payment details to start your trial. Decide if Lull's worth it after you've actually slept.")
+                Text("We won't ask for payment details to start your trial. Decide if TenThirty's worth it after you've actually slept.")
                     .font(.system(size: 12))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(2)

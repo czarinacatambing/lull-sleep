@@ -40,7 +40,7 @@ enum LullSubscriptionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingOffering:
-            return "No RevenueCat offering is configured for Lull."
+            return "No RevenueCat offering is configured for TenThirty."
         case .missingPackage(let product):
             return "The \(product.rawValue) product is not available in the current RevenueCat offering."
         }

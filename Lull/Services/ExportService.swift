@@ -1,12 +1,12 @@
 import Foundation
 
 // Sends a snapshot of the user's sleep data to a Google Apps Script webhook
-// which appends it as a row to a Google Sheet owned by the Lull team.
+// which appends it as a row to a Google Sheet owned by the TenThirty team.
 // No personal identifiers are sent — only a per-install UUID.
 enum ExportService {
 
     // ── Setup ─────────────────────────────────────────────────────────────────
-    // 1. In your Lull team Google Sheet, open Extensions → Apps Script.
+    // 1. In your TenThirty team Google Sheet, open Extensions → Apps Script.
     // 2. Paste the Apps Script code from the project README into Code.gs.
     // 3. Deploy → New deployment → type "Web app" → execute as "Me" → access
     //    "Anyone". Copy the resulting /exec URL and paste it below.

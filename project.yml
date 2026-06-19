@@ -1,4 +1,4 @@
-name: Lull
+name: TenThirty
 options:
   bundleIdPrefix: com.trylull
   deploymentTarget:
@@ -8,13 +8,23 @@ options:
 
 settings:
   SWIFT_VERSION: "5.10"
-  MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "35"
+  MARKETING_VERSION: "2.0.1"
+  CURRENT_PROJECT_VERSION: "4"
+  LULL_ANALYTICS_ENABLED: "NO"
+  LULL_ANALYTICS_COHORT: ""
+  LULL_RESEARCH_DATA_ENABLED: "NO"
+  LULL_POSTHOG_API_KEY: ""
+  LULL_POSTHOG_HOST: "https://us.i.posthog.com"
+  LULL_RESEARCH_DATA_ENDPOINT: ""
+  LULL_RESEARCH_DATA_TOKEN: ""
 
 packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios-spm.git
     from: 5.0.0
+  PostHog:
+    url: https://github.com/PostHog/posthog-ios.git
+    from: 3.59.3
 
 targets:
   Lull:
@@ -36,8 +46,9 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
-        NSMicrophoneUsageDescription: "Lull uses your microphone to record your brain dump. Recordings stay on your device and are never shared."
-        NSCameraUsageDescription: "Lull briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen."
+        CFBundleDisplayName: TenThirty
+        NSMicrophoneUsageDescription: "TenThirty uses your microphone to record your brain dump. Recordings stay on your device and are never shared."
+        NSCameraUsageDescription: "TenThirty briefly checks your room lighting during wind-down. The camera is never recorded or shown on screen."
         ITSAppUsesNonExemptEncryption: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -54,16 +65,22 @@ targets:
           - audio
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
-        LullAnalyticsEnabled: false
-        LullResearchDataEnabled: false
+        LullAnalyticsEnabled: "$(LULL_ANALYTICS_ENABLED)"
+        LullAnalyticsCohort: "$(LULL_ANALYTICS_COHORT)"
+        LullPostHogAPIKey: "$(LULL_POSTHOG_API_KEY)"
+        LullPostHogHost: "$(LULL_POSTHOG_HOST)"
+        LullResearchDataEnabled: "$(LULL_RESEARCH_DATA_ENABLED)"
+        LullResearchDataEndpoint: "$(LULL_RESEARCH_DATA_ENDPOINT)"
+        LullResearchDataToken: "$(LULL_RESEARCH_DATA_TOKEN)"
         CFBundleURLTypes:
-          - CFBundleURLName: com.trylull.app
+          - CFBundleURLName: com.tenthirty.app
             CFBundleURLSchemes:
-              - lull
+              - tenthirty
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app
+      PRODUCT_NAME: TenThirty
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
       CODE_SIGN_STYLE: Automatic
@@ -84,6 +101,8 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: PostHog
+        product: PostHog
     scheme:
       testTargets: []
 
@@ -106,7 +125,7 @@ targets:
     info:
       path: LullActivities/Info.plist
       properties:
-        CFBundleDisplayName: LullActivities
+        CFBundleDisplayName: TenThirty Activities
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         NSExtension:

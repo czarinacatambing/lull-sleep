@@ -12,6 +12,8 @@ struct DashboardView: View {
     #endif
     @State private var currentDate = Date()
     @State private var glowPulse = false
+    @AppStorage("hasDismissedAppBlockingOffer") private var hasDismissedAppBlockingOffer = false
+    private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private static let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEEE · h:mm a"; return f
@@ -160,14 +162,12 @@ struct DashboardView: View {
                 withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
                     glowPulse = true
                 }
-                if !isMorningState && !state.preWindDownSteps.isEmpty && !state.suppressPrepLiveActivityForSession {
-                    LiveActivityService.shared.startIfNeeded(
-                        prepSteps: state.preWindDownSteps,
-                        doneIds: state.prepDoneIds,
-                        bedtime: state.typicalBedtime,
-                        leadTimes: AppState.prepLeadTimes
-                    )
-                }
+                state.refreshPrepLiveActivityIfEligible()
+            }
+            .onReceive(minuteTimer) { date in
+                currentDate = date
+                state.resetPrepIfNeeded()
+                state.refreshPrepLiveActivityIfEligible()
             }
 
             // Menu overlay
@@ -441,6 +441,21 @@ struct DashboardView: View {
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
 
+        if shouldShowAppBlockingOffer {
+            AppBlockingOfferCard(
+                timeRange: appBlockingOfferTimeRange,
+                onAdd: {
+                    hasDismissedAppBlockingOffer = true
+                    state.startAppBlockingOfferSetup()
+                },
+                onDismiss: {
+                    hasDismissedAppBlockingOffer = true
+                }
+            )
+            .padding(.horizontal, 22)
+            .padding(.bottom, 16)
+        }
+
         StreakMoonStrip(summary: state.streakSummary, selectedTab: $selectedTab)
             .padding(.horizontal, 22)
             .padding(.bottom, 36)
@@ -475,6 +490,112 @@ struct DashboardView: View {
         .buttonStyle(.plain)
     }
 
+    private struct AppBlockingOfferCard: View {
+        let timeRange: String
+        let onAdd: () -> Void
+        let onDismiss: () -> Void
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center, spacing: 8) {
+                    Kicker(text: "Unlock · app blocking", color: .lullAmberSoft)
+                    Text("PREMIUM")
+                        .font(.mono(9.5))
+                        .kerning(1.2)
+                        .foregroundColor(.lullAmber)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .overlay(
+                            Capsule().stroke(Color.lullAmber.opacity(0.35), lineWidth: 1)
+                        )
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.lullInk3)
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss app blocking offer")
+                }
+
+                Text("You've completed a wind-down.")
+                    .font(.mono(10))
+                    .kerning(1.4)
+                    .foregroundColor(.lullAmber)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Lock the scroll away")
+                        .font(.serif(28))
+                        .foregroundColor(.lullInk0)
+                    Text("tonight?")
+                        .font(.serifItalic(30))
+                        .foregroundColor(.lullAmber)
+                }
+                .lineSpacing(2)
+
+                Text("During your sleep window, TenThirty blocks the apps that pull you back in. Runs only at night — bypass any night you need to.")
+                    .font(.system(size: 14.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(4)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.lullAmber)
+                    Text(timeRange)
+                        .font(.system(size: 13.5, weight: .medium))
+                        .foregroundColor(.lullInk1)
+                    Spacer()
+                }
+                .padding(.horizontal, 13)
+                .padding(.vertical, 11)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.lullBg2.opacity(0.72))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.lullLineStrong, lineWidth: 1)
+                )
+
+                HStack(spacing: 10) {
+                    Button(action: onAdd) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Add scroll-lock")
+                                .font(.system(size: 14.5, weight: .semibold))
+                        }
+                        .foregroundColor(.lullBgDeep)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(Capsule().fill(Color.lullAmber))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: onDismiss) {
+                        Text("Not now")
+                            .font(.system(size: 14.5, weight: .medium))
+                            .foregroundColor(.lullInk2)
+                            .frame(width: 96, height: 46)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(hex: "#18130B"))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.lullAmber.opacity(0.24), lineWidth: 1)
+            )
+            .shadow(color: Color.lullAmber.opacity(0.08), radius: 22, x: 0, y: 12)
+        }
+    }
+
     // MARK: - Tonight preview data
 
     // Tonight is the NEXT test night. After rating last night, that's
@@ -497,6 +618,16 @@ struct DashboardView: View {
             return DashboardView.timeFmt.string(from: first.time)
         }
         return DashboardView.timeFmt.string(from: state.typicalBedtime)
+    }
+
+    private var shouldShowAppBlockingOffer: Bool {
+        state.shouldOfferAppBlockingAfterFirstNight && !hasDismissedAppBlockingOffer
+    }
+
+    private var appBlockingOfferTimeRange: String {
+        let start = AppState.defaultAppBlockingStart(from: state.typicalBedtime)
+        let end = AppState.defaultAppBlockingEnd(from: state.typicalWakeTime)
+        return "\(DashboardView.timeFmt.string(from: start)) - \(DashboardView.timeFmt.string(from: end))"
     }
 
     // MARK: - Prep Checklist Card
@@ -838,13 +969,15 @@ struct StreakStatusCard: View {
     }
 
     private var cardContent: some View {
-        VStack(alignment: .leading, spacing: prominent ? 16 : 12) {
+        VStack(alignment: .leading, spacing: prominent ? 10 : 12) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: prominent ? 5 : 8) {
                     Kicker(text: "Current streak", color: .lullAmberSoft)
                     Text(title)
-                        .font(.serif(prominent ? 32 : 22))
+                        .font(.serif(prominent ? 26 : 22))
                         .foregroundColor(.lullInk0)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                 }
                 Spacer()
                 Text(summary.expectedNights == 0 ? "--" : "\(summary.completionRate)%")
@@ -865,6 +998,7 @@ struct StreakStatusCard: View {
                     .font(.system(size: prominent ? 13.5 : 12.5))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(3)
+                    .lineLimit(2)
                 Spacer()
                 Text("ROUTINE")
                     .font(.mono(9.5))
@@ -875,7 +1009,6 @@ struct StreakStatusCard: View {
             if showsProgress {
                 Divider()
                     .background(Color.lullLine)
-                    .padding(.top, 4)
 
                 HStack(alignment: .center, spacing: 8) {
                     Text("Last 14 nights")
@@ -892,9 +1025,9 @@ struct StreakStatusCard: View {
                     if let progressOnInfo {
                         Button(action: progressOnInfo) {
                             Image(systemName: "questionmark.circle")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.lullInk4)
-                                .frame(width: 28, height: 28)
+                                .frame(width: 24, height: 24)
                                 .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
@@ -906,12 +1039,13 @@ struct StreakStatusCard: View {
                     sleepLogs: progressSleepLogs,
                     onTap: progressOnTap ?? { _ in },
                     onTodayEmptyTap: progressOnTodayEmptyTap ?? {},
-                    showsFrame: false
+                    showsFrame: false,
+                    compact: prominent
                 )
             }
         }
-        .padding(.horizontal, prominent ? 20 : 16)
-        .padding(.vertical, prominent ? 20 : 16)
+        .padding(.horizontal, prominent ? 16 : 16)
+        .padding(.vertical, prominent ? 14 : 16)
         .background(
             RoundedRectangle(cornerRadius: prominent ? 24 : 18)
                 .fill(LinearGradient(
@@ -1121,7 +1255,9 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomerCenter = false
+    #if DEBUG
     @State private var seededNightCount: Int? = nil
+    #endif
     @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
     @State private var initialSleepScheduleSignature: String? = nil
 
@@ -1241,7 +1377,7 @@ struct SettingsSheet: View {
                         .padding(.bottom, 22)
                         #endif
 
-                        // Help improve Lull card
+                        // Help improve app card
                         Button {
                             if state.isPaidPremium {
                                 showCustomerCenter = true
@@ -1250,11 +1386,11 @@ struct SettingsSheet: View {
                             }
                         } label: {
                             HStack {
-                                Text(state.isPaidPremium ? "Manage Lull Premium" : "Upgrade to Lull Premium")
+                                Text(state.isPaidPremium ? "Manage TenThirty Premium" : "Upgrade to TenThirty Premium")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.lullInk0)
                                 Spacer()
-                                Text(state.isPaidPremium ? "ACTIVE →" : (state.trialDaysRemainingText ?? "PRO →"))
+                                Text(state.isPaidPremium ? "ACTIVE →" : (state.trialDaysRemainingText ?? "PREMIUM →"))
                                     .font(.mono(10.5))
                                     .kerning(1.1)
                                     .foregroundColor(.lullAmber)
@@ -1265,9 +1401,6 @@ struct SettingsSheet: View {
                         .buttonStyle(.plain)
                         .padding(.horizontal, 22)
                         .padding(.bottom, 18)
-
-                        ExportDataFooter()
-                            .padding(.horizontal, 22)
 
                         Spacer().frame(height: 40)
                     }

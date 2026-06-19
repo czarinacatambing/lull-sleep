@@ -3,7 +3,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Lull — Sleep when your body is ready but your brain won't stop</title>
+<title>TenThirty — Sleep when your body is ready but your brain won't stop</title>
+<meta name="description" content="TenThirty builds your personalized wind-down routine and removes the distractions, so sleep can happen when it needs to."/>
+<meta property="og:title" content="TenThirty — A distraction-free bedtime ritual that works"/>
+<meta property="og:description" content="TenThirty builds your personalized wind-down routine and removes the distractions, so sleep can happen when it needs to."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://trytenthirty.com/"/>
+<meta property="og:image" content="https://trytenthirty.com/assets/tenthirty-social-card.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="TenThirty social card showing a distraction-free bedtime ritual that works"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="TenThirty — A distraction-free bedtime ritual that works"/>
+<meta name="twitter:description" content="TenThirty builds your personalized wind-down routine and removes the distractions, so sleep can happen when it needs to."/>
+<meta name="twitter:image" content="https://trytenthirty.com/assets/tenthirty-social-card.png"/>
+<link rel="canonical" href="https://trytenthirty.com/"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -30,7 +44,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   "heroVariant": "ember",
   "accentHue": 56,
   "showGrain": true,
-  "ctaCopy": "Claim Founder Early Access"
+  "ctaCopy": "Download now"
 }/*EDITMODE-END*/;
 </script>
 <style>
@@ -86,7 +100,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   @media (max-width:720px){.nav-links{display:none}}
 
   /* HERO */
-  .hero{position:relative;padding:96px 0 60px;overflow:hidden}
+  .hero{position:relative;padding:64px 0 60px;overflow:hidden}
   .hero-bg{position:absolute;inset:0;z-index:0;
     background:
       radial-gradient(900px 600px at 50% 80%, oklch(58% 0.14 60 / 0.28), transparent 60%),
@@ -99,7 +113,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .eyebrow .ember{width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 10px var(--ember-glow)}
   h1.display{font-family:var(--serif);font-weight:300;font-size:clamp(44px,6.2vw,88px);line-height:1.02;letter-spacing:-0.025em;color:var(--ink-0);margin:24px 0 28px}
   h1.display em{font-style:italic;color:var(--ember);font-weight:300}
-  .lede{font-size:18px;line-height:1.55;color:var(--ink-2);max-width:46ch;margin:0 0 36px}
+  .lede{font-size:18px;line-height:1.55;color:var(--ink-2);max-width:46ch;margin:0 0 26px}
   .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
   .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;font-size:14.5px;font-weight:500;transition:.2s;border:1px solid transparent}
   .btn-primary{background:var(--ember);color:#1a0d06;box-shadow:0 0 0 1px rgba(0,0,0,.3) inset, 0 12px 40px -12px var(--ember-glow)}
@@ -109,6 +123,18 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .btn .arrow{transition:transform .25s}
   .btn:hover .arrow{transform:translateX(3px)}
   .tiny{font-size:12.5px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.02em;margin-top:14px}
+  .download-stack{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:26px}
+  .hero .download-stack{margin-top:0}
+  .app-store-badge{display:inline-flex;align-items:center;transition:transform .2s ease,filter .2s ease}
+  .app-store-badge:hover{transform:translateY(-1px);filter:drop-shadow(0 16px 28px rgba(0,0,0,.34))}
+  .qr-lockup{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,220,190,0.035)}
+  .qr-lockup img{width:82px;height:82px;border-radius:10px;background:#fff;display:block}
+  .qr-copy{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;line-height:1.45;color:var(--ink-3);max-width:17ch}
+  .qr-copy strong{display:block;color:var(--ink-1);font-weight:500}
+  @media(max-width:560px){
+    .download-stack{gap:14px}
+    .qr-lockup{width:100%;max-width:245px}
+  }
 
   /* Phone product image */
   .phone-stage{position:relative;display:flex;justify-content:center;align-items:center;min-height:620px;isolation:isolate}
@@ -154,24 +180,82 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .sec-sub{font-size:17px;line-height:1.6;color:var(--ink-2);max-width:62ch}
 
   /* PROBLEM */
-  .problem{background:linear-gradient(180deg,var(--bg-0),var(--bg-1))}
-  .two-col{display:grid;gap:64px;align-items:start}
-  @media (min-width:960px){.two-col{grid-template-columns:1fr 1fr;gap:96px}}
-  .gap-list{display:grid;gap:2px}
-  .gap-row{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:22px 0;border-bottom:1px solid var(--line)}
-  .gap-row:first-child{border-top:1px solid var(--line)}
-  .gap-idx{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);width:28px}
-  .gap-thing{font-family:var(--serif);font-size:22px;color:var(--ink-0);font-weight:300;letter-spacing:-0.01em}
-  .gap-miss{font-size:13.5px;color:var(--ink-2);text-align:right;max-width:32ch}
-  @media (max-width:720px){.gap-row{grid-template-columns:auto 1fr;row-gap:6px}.gap-miss{grid-column:2;text-align:left}}
-
-  .quote-card{position:relative;padding:48px 40px;border:1px solid var(--line-strong);border-radius:18px;background:
-    radial-gradient(500px 300px at 10% 0%, oklch(58% 0.14 60 / 0.14), transparent 60%),
-    linear-gradient(180deg,var(--bg-2),var(--bg-1));
+  .problem{
+    background:linear-gradient(180deg,var(--bg-0),var(--bg-1));
+    overflow:hidden;
   }
-  .quote-card .mark{font-family:var(--serif);font-size:80px;line-height:.6;color:var(--ember);opacity:.7;display:block;margin-bottom:4px}
-  .quote-text{font-family:var(--serif);font-weight:300;font-size:26px;line-height:1.35;color:var(--ink-0);letter-spacing:-0.01em;margin:0 0 28px;font-style:italic}
-  .quote-cite{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+  .problem::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(900px 420px at 18% 15%, oklch(58% 0.14 60 / 0.13), transparent 60%),
+      radial-gradient(700px 360px at 82% 76%, oklch(55% 0.12 60 / 0.08), transparent 62%);
+  }
+  .problem-wrap{position:relative;z-index:1;max-width:1120px}
+  .bedtime-chart{
+    position:relative;
+    padding:44px 40px 34px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:
+      radial-gradient(540px 240px at 12% 0%, oklch(58% 0.14 60 / 0.13), transparent 68%),
+      linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    overflow:hidden;
+  }
+  .bedtime-chart::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ember-soft),transparent);opacity:.7}
+  .bedtime-axis{position:relative;height:20px}
+  .bedtime-tick{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:12px;color:var(--ink-4);white-space:nowrap}
+  .bedtime-target-line{position:absolute;top:78px;bottom:58px;width:0;border-left:1px dashed var(--line-strong);z-index:5}
+  .bedtime-target-flag{position:absolute;top:72px;transform:translateX(-50%);background:var(--bg-2);border:1px solid var(--line-strong);color:var(--ink-1);font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;z-index:6}
+  .bedtime-row{position:relative;height:96px;margin-top:64px}
+  .bedtime-rowlabel{position:absolute;left:0;top:-26px;z-index:8;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;background:var(--bg-2);padding:4px 10px 4px 0}
+  .bedtime-track{position:absolute;left:0;right:0;top:38px;height:14px;background:rgba(12,8,7,.72);border:1px solid var(--line);border-radius:8px}
+  .bedtime-band{position:absolute;top:38px;height:14px;border-radius:8px}
+  .bedtime-band.before{background:linear-gradient(90deg,rgba(200,98,58,.16),#c8623a);border:1px solid rgba(200,98,58,.42)}
+  .bedtime-band.after{background:linear-gradient(90deg,rgba(233,147,63,.3),var(--ember));border:1px solid rgba(233,147,63,.5)}
+  .bedtime-reasons{position:absolute;top:-2px;width:100%;display:flex;justify-content:space-around;font-size:12px;color:#f0c0a8;pointer-events:none}
+  .bedtime-reasons span{background:rgba(12,8,7,.68);border:1px solid var(--line);padding:3px 8px;border-radius:999px;transform:translateY(-25px);white-space:nowrap}
+  .bedtime-afterlabel{position:absolute;top:-27px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ember-soft);background:rgba(12,8,7,.68);border:1px solid oklch(58% 0.12 60 / 0.3);border-radius:999px;padding:3px 8px;transform:translateX(-50%);white-space:nowrap}
+  .bedtime-asleep{position:absolute;top:30px;transform:translateX(-50%);z-index:7;text-align:center}
+  .bedtime-asleep .dot{width:30px;height:30px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:0;border:1px solid var(--line-strong);box-shadow:0 0 0 3px var(--bg-2)}
+  .bedtime-asleep .dot::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+  .bedtime-asleep.before .dot{background:#c8623a;color:#1a0e08}
+  .bedtime-asleep.after .dot{background:var(--ember);color:#1a1109;box-shadow:0 0 0 3px var(--bg-2),0 0 22px -4px var(--ember)}
+  .bedtime-asleep .t{font-family:var(--mono);font-size:11px;color:var(--ink-0);margin-top:6px;white-space:nowrap}
+  .bedtime-stat{position:absolute;right:-2px;top:6px;z-index:8;text-align:right}
+  .bedtime-stat .big{font-family:var(--serif);font-weight:300;font-size:28px;letter-spacing:-0.02em;color:var(--ink-0)}
+  .bedtime-stat.before .big{color:#c8623a}
+  .bedtime-stat.after .big{color:var(--ember-soft)}
+  .bedtime-stat .cap{font-size:10.5px;color:var(--ink-4);letter-spacing:.12em;text-transform:uppercase;font-family:var(--mono)}
+  .bedtime-foot{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:70px}
+  .bedtime-foot > div{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1));padding:26px 24px}
+  .bedtime-foot h3{font-family:var(--serif);font-weight:300;font-size:22px;line-height:1.2;color:var(--ink-0);letter-spacing:-0.01em;margin:0 0 8px}
+  .bedtime-foot p{color:var(--ink-2);font-size:14px;line-height:1.55;margin:0}
+  .bedtime-foot .after h3{color:var(--ember-soft)}
+  @media(max-width:760px){
+    .problem{padding:96px 0}
+    .bedtime-chart{padding:36px 18px 28px}
+    .bedtime-target-line{top:70px;bottom:54px}
+    .bedtime-target-flag{top:64px}
+    .bedtime-row{height:138px;margin-top:72px}
+    .bedtime-row + .bedtime-row{margin-top:34px}
+    .bedtime-rowlabel{top:-32px}
+    .bedtime-track,.bedtime-band{top:44px}
+    .bedtime-reasons{top:14px;font-size:10px;justify-content:space-between;gap:8px}
+    .bedtime-reasons span{transform:none;white-space:normal;line-height:1.15;max-width:48%;padding:2px 5px;text-align:center}
+    .bedtime-afterlabel{top:18px;left:12.5%!important;transform:none;font-size:11px}
+    .bedtime-asleep{top:66px}
+    .bedtime-asleep.before{left:auto!important;right:0;transform:none;text-align:right}
+    .bedtime-asleep.before .dot{margin-left:auto;margin-right:0}
+    .bedtime-asleep.after{text-align:left}
+    .bedtime-asleep.after .dot{margin-left:0}
+    .bedtime-stat{position:absolute;top:-42px;right:0;left:auto;text-align:right;margin-top:0}
+    .bedtime-stat .big{font-size:23px}
+    .bedtime-foot{grid-template-columns:1fr;margin-top:52px}
+    .bedtime-target-flag{transform:translateX(-18%)}
+  }
 
   /* HOW IT WORKS */
   .how{background:var(--bg-0);position:relative}
@@ -201,6 +285,28 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .glyph.g4{background:transparent;border:1px solid var(--line-strong);border-radius:50%}
   .glyph.g4::before{content:"";position:absolute;width:2px;height:22px;background:var(--ember);top:8px;left:50%;transform:translateX(-50%) rotate(30deg);transform-origin:bottom;border-radius:2px}
   .glyph.g4::after{content:"";position:absolute;width:2px;height:14px;background:var(--ember-soft);top:16px;left:50%;transform:translateX(-50%) rotate(-60deg);transform-origin:bottom;border-radius:2px}
+
+  /* WHAT'S INSIDE */
+  .inside{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
+  .inside-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .inside-card{
+    position:relative;
+    min-height:218px;
+    padding:30px 26px 26px;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:
+      radial-gradient(360px 180px at 50% 0%, oklch(58% 0.12 60 / 0.1), transparent 70%),
+      linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    overflow:hidden;
+    transition:border-color .2s ease,transform .2s ease;
+  }
+  .inside-card:hover{border-color:var(--line-strong);transform:translateY(-3px)}
+  .inside-card h3{font-family:var(--serif);font-weight:300;font-size:22px;line-height:1.15;color:var(--ink-0);letter-spacing:-0.01em;margin:0 0 10px}
+  .inside-card p{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin:0}
+  .inside-tag{display:inline-block;margin-top:16px;padding:4px 10px;border:1px solid oklch(58% 0.12 60 / 0.3);border-radius:999px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);background:oklch(58% 0.12 60 / 0.12)}
+  @media(max-width:900px){.inside-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.inside-grid{grid-template-columns:1fr}.inside-card{min-height:auto}}
 
   /* AUDIENCE */
   .audience{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
@@ -249,14 +355,15 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 
   /* COMPARISON */
   .compare{background:linear-gradient(180deg,var(--bg-0),var(--bg-1))}
+  .cmp-scroll{overflow-x:auto}
   .cmp{width:100%;border-collapse:collapse;font-size:14px}
   .cmp th,.cmp td{text-align:left;padding:22px 16px;border-bottom:1px solid var(--line);vertical-align:top}
   .cmp th{font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line-strong)}
   .cmp .row-label{font-family:var(--serif);font-size:17px;color:var(--ink-0);font-weight:300;letter-spacing:-0.005em;width:28%}
   .cmp td{color:var(--ink-2)}
-  .cmp .lull-col{color:var(--ink-1)}
-  .cmp .col-lull{background:linear-gradient(180deg,oklch(58% 0.12 60 / 0.08),oklch(58% 0.12 60 / 0.02))}
-  .cmp .col-lull .lull-h{color:var(--ember)}
+  .cmp .tenthirty-col{color:var(--ink-1)}
+  .cmp .col-tenthirty{background:linear-gradient(180deg,oklch(58% 0.12 60 / 0.08),oklch(58% 0.12 60 / 0.02))}
+  .cmp .col-tenthirty .tenthirty-h{color:var(--ember)}
   .chip{display:inline-block;padding:3px 9px;border-radius:999px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em}
   .chip.y{background:oklch(58% 0.12 60 / 0.18);color:var(--ember);border:1px solid oklch(58% 0.12 60 / 0.3)}
   .chip.n{background:rgba(255,255,255,0.03);color:var(--ink-3);border:1px solid var(--line)}
@@ -264,19 +371,22 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   /* PRICING */
   .pricing{background:var(--bg-0);position:relative;overflow:hidden}
   .pricing::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 50% 40%, oklch(58% 0.14 60 / 0.1), transparent 60%)}
-  .price-card{position:relative;max-width:640px;margin:0 auto;padding:56px 48px;border-radius:22px;border:1px solid var(--line-strong);background:
-    radial-gradient(600px 300px at 50% 0%, oklch(58% 0.14 60 / 0.15), transparent 70%),
-    linear-gradient(180deg,var(--bg-2),var(--bg-1));
-    text-align:center;overflow:hidden;z-index:1
-  }
-  .price-card::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:160px;height:1px;background:linear-gradient(90deg,transparent,var(--ember),transparent)}
-  .price-free{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);margin-bottom:18px}
-  .price-big{font-family:var(--serif);font-weight:300;font-size:clamp(44px,6vw,72px);line-height:1;color:var(--ink-0);letter-spacing:-0.03em;margin:0 0 8px}
-  .price-big .per{font-family:var(--sans);font-size:18px;color:var(--ink-2);font-weight:400;letter-spacing:0;margin-left:6px}
-  .price-sub{font-size:15px;color:var(--ink-2);margin:0 auto 36px;max-width:42ch;line-height:1.6}
-  .price-list{display:flex;justify-content:center;flex-wrap:wrap;gap:12px 28px;margin-bottom:40px;font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.04em}
-  .price-list li{list-style:none;display:flex;align-items:center;gap:8px}
-  .price-list li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ember);box-shadow:0 0 6px var(--ember-glow)}
+  .price-grid{position:relative;z-index:1;display:grid;grid-template-columns:0.95fr 1fr 1.1fr;gap:18px}
+  .plan{position:relative;border:1px solid var(--line);border-radius:20px;padding:34px 30px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1));overflow:hidden}
+  .plan.prem{border-color:oklch(58% 0.12 60 / 0.32);background:
+    radial-gradient(420px 220px at 50% 0%, oklch(58% 0.14 60 / 0.14), transparent 72%),
+    linear-gradient(180deg,var(--bg-3),var(--bg-2))}
+  .plan.best::before{content:"Best value";position:absolute;top:16px;right:18px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);border:1px solid oklch(58% 0.12 60 / 0.32);border-radius:999px;padding:4px 9px;background:oklch(58% 0.12 60 / 0.1)}
+  .plan-title{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px}
+  .plan.prem .plan-title{color:var(--ember)}
+  .plan-amount{font-family:var(--serif);font-weight:300;font-size:clamp(42px,5vw,58px);line-height:1;color:var(--ink-0);letter-spacing:-0.03em;margin-bottom:8px}
+  .plan-amount small{font-family:var(--sans);font-size:16px;color:var(--ink-2);letter-spacing:0;margin-left:4px}
+  .plan-note{font-family:var(--mono);font-size:12px;color:var(--ink-3);letter-spacing:.04em;margin-bottom:24px;line-height:1.45}
+  .plan ul{list-style:none;padding:0;margin:0;display:grid;gap:11px}
+  .plan li{position:relative;padding-left:22px;color:var(--ink-2);font-size:14px;line-height:1.45}
+  .plan li::before{content:"";position:absolute;left:4px;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--ember);box-shadow:0 0 6px var(--ember-glow)}
+  .price-reassure{position:relative;z-index:1;margin:28px 0 0;color:var(--ink-3);font-size:14px;line-height:1.6;max-width:72ch}
+  @media(max-width:980px){.price-grid{grid-template-columns:1fr}.plan.best::before{position:static;display:inline-block;margin-bottom:14px}}
 
   /* FAQ */
   .faq{background:linear-gradient(180deg,var(--bg-1),var(--bg-0))}
@@ -300,26 +410,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   .final h2{font-family:var(--serif);font-weight:300;font-size:clamp(40px,5.4vw,72px);line-height:1.05;letter-spacing:-0.025em;color:var(--ink-0);margin:0 0 28px}
   .final h2 em{font-style:italic;color:var(--ember)}
   .final p{font-size:17px;line-height:1.6;color:var(--ink-2);margin:0 auto 32px;max-width:46ch}
-
-  /* Intent toggle */
-  .intent-toggle{display:inline-flex;gap:0;border:1px solid var(--line-strong);border-radius:999px;padding:4px;margin-bottom:36px;background:rgba(12,8,7,0.6);backdrop-filter:blur(12px)}
-  .intent-btn{padding:9px 20px;border-radius:999px;font-size:13px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:.2s;color:var(--ink-3);border:0;background:transparent}
-  .intent-btn.active{background:var(--ember);color:#1a0d06}
-  .intent-btn:not(.active):hover{color:var(--ink-1)}
-
-  /* Intent panels */
-  .intent-panel{display:none}
-  .intent-panel.active{display:block}
-
-  /* Pre-order panel */
-  .preorder-offer{padding:32px 36px;border:1px solid var(--ember-soft);border-radius:20px;background:radial-gradient(600px 300px at 50% 0%, oklch(58% 0.14 60 / 0.12), transparent 70%),linear-gradient(180deg,var(--bg-2),var(--bg-1));margin-bottom:24px;position:relative;overflow:hidden}
-  .preorder-offer::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--ember),transparent)}
-  .preorder-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin-bottom:14px}
-  .preorder-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 8px var(--ember-glow)}
-  .preorder-price{font-family:var(--serif);font-size:clamp(32px,4vw,52px);font-weight:300;color:var(--ink-0);letter-spacing:-0.03em;line-height:1;margin-bottom:6px}
-  .preorder-price .per{font-family:var(--sans);font-size:16px;color:var(--ink-2);font-weight:400;letter-spacing:0;margin-left:4px}
-  .preorder-price .was{font-family:var(--mono);font-size:13px;color:var(--ink-3);text-decoration:line-through;margin-left:10px;letter-spacing:.04em}
-  .preorder-detail{font-size:14px;color:var(--ink-2);line-height:1.55;margin:10px 0 24px}
+  .final .download-stack{justify-content:center;margin-top:30px}
+  .final .qr-lockup{text-align:left}
 
   /* Shared form */
   .wait-form{display:flex;gap:10px;max-width:460px;margin:0 auto;padding:6px;border:1px solid var(--line-strong);border-radius:999px;background:rgba(12,8,7,0.6);backdrop-filter:blur(12px)}
@@ -449,16 +541,15 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 <nav>
   <div class="wrap">
     <div class="bar">
-      <div class="brand"><span class="dot"></span>lull</div>
+      <div class="brand"><span class="dot"></span>TenThirty</div>
       <div class="nav-links">
         <a href="#how">How it works</a>
         <a href="#who">Who it's for</a>
-        <a href="#loop">The loop</a>
+        <a href="#inside">What's inside</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
       </div>
-      <a class="nav-cta" href="#waitlist">Join waitlist <span class="arrow">→</span></a>
     </div>
   </div>
 </nav>
@@ -470,18 +561,23 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <div>
       <span class="eyebrow"><span class="ember"></span>Personalized wind-down coach</span>
       <h1 class="display">Fall asleep faster<br><em>when your brain won't shut up.</em></h1>
-      <p class="lede">Lull builds your wind-down routine and quietly tests it — one small change per night — until your body finds what <em>actually</em> works.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="#waitlist"><span id="cta-copy">Pre-order for $3.99 </span> <span class="arrow">→</span></a>
-        <a class="btn btn-ghost" href="#how">See how it works</a>
+      <p class="lede">TenThirty builds your personalized wind-down routine. It gets you to pre-commit, removes the distractions, and walks you through it step by step — so bedtime happens when you need it to.</p>
+      <div class="download-stack" aria-label="Download TenThirty">
+        <a class="app-store-badge" href="https://apps.apple.com/us/app/tenthirty-sleep-routine/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598" style="display: inline-block;">
+          <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1781136000" alt="Download on the App Store" style="width: 245px; height: 82px; vertical-align: middle; object-fit: contain;" />
+        </a>
+        <div class="qr-lockup">
+          <img src="assets/tenthirty-app-store-qr.png" alt="QR code to download TenThirty on the App Store" loading="lazy" decoding="async">
+          <div class="qr-copy"><strong>Scan to download</strong> TenThirty for iPhone</div>
+        </div>
       </div>
-      <div class="tiny">7 Nights Free · Lock in 50% off for 1 year</div>
+      <div class="tiny">7 Nights Free · Premium features in free trial</div>
     </div>
 
     <!-- Phone mockup — bedtime routine tracker -->
     <div class="phone-stage">
       <div class="phone-image-wrap">
-        <img src="assets/lull-hero-phone.png" alt="Lull sleep sound screen playing Heavy Rain on an iPhone" loading="eager" decoding="async">
+        <img src="assets/tenthirty-hero-phone.png" alt="TenThirty sleep sound screen playing Heavy Rain on an iPhone" loading="eager" decoding="async">
       </div>
       <div class="phone-label">Heavy rain · one calm step · fade out at the end</div>
     </div>
@@ -509,25 +605,68 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 
 <!-- PROBLEM -->
 <section class="problem">
-  <div class="wrap">
+  <div class="wrap problem-wrap">
     <div class="sec-head">
-      <div class="sec-kicker">The gap nobody is building for</div>
-      <h2 class="sec-title">The habits exist.<br/><em>The system doesn't.</em></h2>
-      <p class="sec-sub">Warm baths, dim lights, no screens, melatonin — these are all real tools. Some of them might work for you. But without a system to test them, you're just guessing every night.</p>
+      <div class="sec-kicker">The real gap</div>
+      <h2 class="sec-title">You set a bedtime.<br>Then you <em>miss it.</em> Every night.</h2>
+      <p class="sec-sub">It's not that you don't want to sleep. You meant to be down by 10:30. But your brain won't switch off &mdash; or the phone pulls you in for "just one more." Two hours later, you're still awake. The gap between the bedtime you planned and the one you got is the whole problem.</p>
     </div>
-    <div class="two-col">
-      <div class="gap-list">
-        <div class="gap-row"><div class="gap-idx">01</div><div class="gap-thing">No screen rule before bedtime</div><div class="gap-miss">Good habit. But done randomly, there's no way to know if it is actually helping.</div></div>
-        <div class="gap-row"><div class="gap-idx">02</div><div class="gap-thing">Melatonin</div><div class="gap-miss">Maybe effective. But the timing, the dose, and how your body responds? Pure guesswork.</div></div>
-        <div class="gap-row"><div class="gap-idx">03</div><div class="gap-thing">White noise</div><div class="gap-miss">Right for some brains. Wrong for others. No feedback loop to know which you are.</div></div>
-        <div class="gap-row"><div class="gap-idx">04</div><div class="gap-thing">Sleep trackers</div><div class="gap-miss">Tell you how you slept. Never tell you why — or what single thing to change tonight.</div></div>
-        <div class="gap-row"><div class="gap-idx">05</div><div class="gap-thing">Generic sleep hygiene advice</div><div class="gap-miss">Designed for everyone. Which means it's optimized for no one, including you.</div></div>
+
+    <div class="bedtime-chart">
+      <div class="bedtime-axis">
+        <span class="bedtime-tick" style="left:0%">10 PM</span>
+        <span class="bedtime-tick" style="left:25%">11 PM</span>
+        <span class="bedtime-tick" style="left:50%">12 AM</span>
+        <span class="bedtime-tick" style="left:75%">1 AM</span>
+        <span class="bedtime-tick" style="left:100%">2 AM</span>
       </div>
 
-      <div class="quote-card">
-        <div class="sec-kicker" style="margin-bottom:20px">Lull is the system around the habits.</div>
-        <p class="quote-text" style="font-style:normal;font-size:21px;line-height:1.5">It builds your bedtime routine, tests one variable at a time, and uses your real sleep data to figure out what actually works for your body. Not a prescription. A process you own.</p>
-        <a class="btn btn-primary" href="#waitlist" style="margin-top:28px;display:inline-flex">Pre-order for $3.99 <span class="arrow">→</span></a>
+      <div class="bedtime-target-line" style="left:12.5%"></div>
+      <div class="bedtime-target-flag" style="left:12.5%">TARGET BEDTIME &middot; 10:30</div>
+
+      <div class="bedtime-row">
+        <div class="bedtime-rowlabel" style="color:#c8623a">WITHOUT TENTHIRTY</div>
+        <div class="bedtime-track"></div>
+        <div class="bedtime-band before" style="left:12.5%;width:68.75%">
+          <div class="bedtime-reasons">
+            <span>can't switch off</span>
+            <span>just one more video</span>
+          </div>
+        </div>
+        <div class="bedtime-asleep before" style="left:81.25%">
+          <div class="dot"></div>
+          <div class="t">ASLEEP &middot; 1:15 AM</div>
+        </div>
+        <div class="bedtime-stat before">
+          <div class="big">2h 45m</div>
+          <div class="cap">PAST BEDTIME</div>
+        </div>
+      </div>
+
+      <div class="bedtime-row">
+        <div class="bedtime-rowlabel" style="color:var(--ember)">WITH TENTHIRTY</div>
+        <div class="bedtime-track"></div>
+        <div class="bedtime-band after" style="left:12.5%;width:8.3%"></div>
+        <div class="bedtime-afterlabel" style="left:16.5%">guided wind-down</div>
+        <div class="bedtime-asleep after" style="left:20.8%">
+          <div class="dot"></div>
+          <div class="t">ASLEEP &middot; 10:50</div>
+        </div>
+        <div class="bedtime-stat after">
+          <div class="big">~20m</div>
+          <div class="cap">PAST BEDTIME</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bedtime-foot">
+      <div class="before">
+        <h3>The gap is where the night goes.</h3>
+        <p>Lying awake with a racing mind, or scrolling "just one more" &mdash; the two reasons your real bedtime keeps drifting later.</p>
+      </div>
+      <div class="after">
+        <h3>TenThirty closes the gap.</h3>
+        <p>It locks the scroll away and walks your brain down with a guided wind-down &mdash; so the bedtime you planned is close to the one you get.</p>
       </div>
     </div>
   </div>
@@ -544,10 +683,10 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <div class="social-grid">
       <div class="tcard">
         <span class="tcard-glow" style="bottom:10%;right:10%"></span>
-        <p class="tcard-body">"I've tried every sleep app. They all want me to sit up and focus. Lull is the first one that actually meets me where I am at 2am — horizontal, exhausted, brain won't stop."</p>
+        <p class="tcard-body">"I did wake up early today around 3:30 but on my way to hit play on my iPad for yet another rerun of West Wing, I remembered TenThirty! I used it for breathing and fell back asleep for a little while."</p>
         <div class="tcard-foot">
-          <div class="tcard-name">Sarah K.</div>
-          <div class="tcard-meta">New parent · beta tester</div>
+          <div class="tcard-name">Beth M.</div>
+          <div class="tcard-meta">Professor · beta tester</div>
         </div>
       </div>
       <div class="tcard">
@@ -560,10 +699,10 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       </div>
       <div class="tcard">
         <span class="tcard-glow" style="top:30%;right:8%;width:70px;height:70px"></span>
-        <p class="tcard-body">"I was skeptical about the one-variable thing. But after five nights of testing dim lights earlier, my sleep quality got better and I actually believed it — because I saw it myself."</p>
+        <p class="tcard-body">"I like how it reminds me to do certain things before bedtime, and how it removes the usual distractions before bed."</p>
         <div class="tcard-foot">
-          <div class="tcard-name">Priya M.</div>
-          <div class="tcard-meta">On-call nurse · shift worker</div>
+          <div class="tcard-name">Maria</div>
+          <div class="tcard-meta">Student · beta tester</div>
         </div>
       </div>
     </div>
@@ -574,7 +713,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 <section class="how" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <div class="sec-kicker">How Lull works</div>
+      <div class="sec-kicker">How TenThirty works</div>
       <h2 class="sec-title">Four pieces. <em>One ritual.</em></h2>
       <!-- <p class="sec-sub">No content to browse at bedtime. No choices to make. Your routine runs forward — one tap per step — and each morning a ten-second check-in teaches it what actually helped.</p> -->
     </div>
@@ -585,32 +724,86 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
         <div class="step-glyph"><div class="glyph g1"></div></div>
         <div>
           <h3 class="step-title">Build your routine in 3 minutes</h3>
-          <p class="step-body">Six screens, max two taps each. No account creation blocking you. Outputs a starting routine + a default wind-down method chosen for your sleep problem.</p>
+          <p class="step-body">Four screens, max two taps each. No account creation blocking you. Outputs a starting routine + a default wind-down method chosen for your sleep problem.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step-num">02 · Nightly</div>
+        <div class="step-num">02 · Prep</div>
         <div class="step-glyph"><div class="glyph g2"><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span></div></div>
         <div>
-          <h3 class="step-title">Walk through, one step at a time</h3>
-          <p class="step-body">Each step fills the screen. No back button, no navigation, nothing auto-advances. Optional spoken prompts for eyes-closed use.</p>
+          <h3 class="step-title">Block distractions and enforce habits</h3>
+          <p class="step-body">TenThirty reminds you that it's your last coffee fix of the day, and if you like to doomscroll, those apps will be locked away once bedtime hits.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">03 · Wind-down</div>
         <div class="step-glyph"><div class="glyph g3"></div></div>
         <div>
-          <h3 class="step-title">Pick the variables worth testing</h3>
-          <p class="step-body">Lights, temperature, warm shower, last caffeine, screens, wind-down method. Add what's relevant, skip what isn't. Order them however works.</p>
+          <h3 class="step-title">Start your ritual</h3>
+          <p class="step-body">Each step fills the screen. No back button, no navigation, nothing auto-advances.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">04 · Improve</div>
         <div class="step-glyph"><div class="glyph g4"></div></div>
         <div>
-          <h3 class="step-title">One variable, five nights, repeat</h3>
-          <p class="step-body">Morning rating correlates with what you did. Each evening, one concrete suggestion — never two at once. If it works, it becomes default.</p>
+          <h3 class="step-title">Rate your sleep & customize</h3>
+          <p class="step-body">Lights, temperature, warm shower, last caffeine, screens, wind-down method. Add what's relevant, skip what isn't. Order them however works.</p>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INSIDE -->
+<section class="inside" id="inside">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">What you actually get</div>
+      <h2 class="sec-title">Everything in the box. <em>You get paired up with the right tools.</em></h2>
+    </div>
+
+    <div class="inside-grid">
+      <div class="inside-card">
+        <h3>Personalized routine engine</h3>
+        <p>A short questionnaire maps your sleep problem and pre-bed habits to a curated, research-backed remedy library — and builds a routine matched to you.</p>
+      </div>
+      <div class="inside-card">
+        <h3>The remedy library</h3>
+        <p>Brain dump, boring stories, calming sounds, progressive muscle relaxation, warm-shower timing, wind-down sequencing. Each one earns its place with evidence.</p>
+        <span class="inside-tag">Premium</span>
+      </div>
+      <div class="inside-card">
+        <h3>Boring stories, engineered</h3>
+        <p>Soothing, gently absorbing, zero payoff. Narrated journeys that go nowhere on purpose.</p>
+        <span class="inside-tag">Premium · offline downloads</span>
+      </div>
+      <div class="inside-card">
+        <h3>Brain dump</h3>
+        <p>Two minutes to get the open tabs out of your head and onto the page before lights-out. Research-backed. Private, on-device.</p>
+      </div>
+      <div class="inside-card">
+        <h3>Mid-Sleep Mode</h3>
+        <p>For the 3:14am club. One tap from your lock screen: dimmed sepia screen, a calm voice, no decisions, no feed. Built for half-asleep hands.</p>
+      </div>
+      <div class="inside-card">
+        <h3>Streaks that forgive</h3>
+        <p>Milestones at 3, 7, and 30 nights and beyond. Progress you build, not progress you lose to one bad Tuesday.</p>
+        <span class="inside-tag">Premium · streak protection</span>
+      </div>
+      <div class="inside-card">
+        <h3>App limits for the revenge hours</h3>
+        <p>If the scroll keeps winning, set gentle per-app limits for your wind-down window. You choose the apps and the hours. TenThirty never decides for you.</p>
+        <span class="inside-tag">Premium</span>
+      </div>
+      <div class="inside-card">
+        <h3>Calming sounds</h3>
+        <p>Brown noise, rain, and friends — because silence is the enemy of a loud brain. Lead with the textures that actually drown out the noise.</p>
+        <span class="inside-tag">Premium</span>
+      </div>
+      <div class="inside-card">
+        <h3>Lock-screen Live Activity</h3>
+        <p>Your routine's next step lives on your lock screen, so you never have to unlock the phone — and risk the feed — to follow it.</p>
       </div>
     </div>
   </div>
@@ -627,7 +820,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     <div class="sec-head">
       <div class="sec-kicker">The routine menu</div>
       <h2 class="sec-title">Add the variables <em>worth testing.</em><br/>Skip the ones that aren't.</h2>
-      <p class="sec-sub">Your routine is built from three groups of variables. Pick what fits your life, order them however makes sense, and Lull learns which ones actually move your sleep quality.</p>
+      <p class="sec-sub">Your routine is built from three groups of variables. Pick what fits your life, order them however makes sense, and TenThirty learns which ones actually move your sleep quality.</p>
     </div>
 
     <div class="vars-grid">
@@ -690,36 +883,40 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   <div class="wrap">
     <div class="sec-head">
       <div class="sec-kicker">Who it's for</div>
-      <h2 class="sec-title">Not a demographic. <em>An experience.</em></h2>
-      <p class="sec-sub">The gap between a body that's given up and a brain that won't. If that sentence describes your 2am, Lull was built for you — whatever put you there.</p>
+      <h2 class="sec-title">If any of this is <em>embarrassingly familiar,</em> you're home.</h2>
+      <!-- <p class="sec-sub">The gap between a body that's given up and a brain that won't. If that sentence describes your 2am, TenThirty was built for you — whatever put you there.</p> -->
     </div>
 
     <div class="aud-grid">
       <div class="aud-card">
         <div>
-          <div class="aud-tag">Fragmented sleepers</div>
-          <h3 class="aud-head">Sleep happens in <em>windows.</em></h3>
-          <p class="aud-body">New parents. Shift workers. On-call professionals. Caregivers. The challenge isn't falling asleep once — it's falling asleep fast, and falling back asleep after waking at 3:14am with a full bladder and a loud mind.</p>
+          <!-- <div class="aud-tag">The racing mind</div> -->
+          <h3 class="aud-head">The <em>racing</em> mind</h3>
+          <p class="aud-body">
+            You're exhausted. You lie down. And your brain — which couldn't focus all day — suddenly achieves perfect clarity about everything you've ever done wrong. Silence makes it louder.
+            </p>
         </div>
-        <div class="aud-foot"><strong>In Lull:</strong> mid-sleep mode, sepia widget, 15-min get-up prompt.</div>
+        <div class="aud-foot"><strong>In TenThirty:</strong> brain dump to close the tabs, then a boring story to drain the brain. One-directional. Nothing to focus on, nothing to finish.</div>
       </div>
 
       <div class="aud-card">
         <div>
-          <div class="aud-tag">Cognitive over-activators</div>
-          <h3 class="aud-head">The brain didn't get <em>the memo.</em></h3>
-          <p class="aud-body">Founders. Remote workers. ADHD brains. High performers who closed the laptop an hour ago and now lie in the dark with a running stack of ideas, anxieties, and half-finished sentences.</p>
+          <!-- <div class="aud-tag">Cognitive over-activators</div> -->
+          <h3 class="aud-head">The revenge bedtime <em>procrastinator</em></h3>
+          <p class="aud-body">You're not done with your day.
+            Work ended. The kids are down. The dishes are done. And now — finally — an hour that belongs to you. So you take it, and another, and it's 1:30am again. You know exactly what you're doing. You do it anyway.
+            </p>
         </div>
-        <div class="aud-foot"><strong>In Lull:</strong> brain dump, then boring story. One-directional.</div>
+        <div class="aud-foot"><strong>In TenThirty:</strong> a wind-down that feels like me-time instead of stealing from it — and gentle app limits for the nights the scroll wins anyway. No lectures. We know why you're up.</div>
       </div>
 
       <div class="aud-card">
         <div>
-          <div class="aud-tag">General poor sleepers</div>
+          <!-- <div class="aud-tag">General poor sleepers</div> -->
           <h3 class="aud-head">Tired, in bed, <em>wide awake.</em></h3>
-          <p class="aud-body">No specific life circumstance required. You've tried melatonin. You've tried meditation apps. You've concluded you're a bad sleeper. You're probably not — you just haven't found the variable that moves the needle for your body.</p>
+          <p class="aud-body">No specific life circumstance required. You've tried melatonin. You've tried meditation apps. You've concluded you're a bad sleeper. You're probably not — you just haven't found what works for <em>you</em>.</p>
         </div>
-        <div class="aud-foot"><strong>In Lull:</strong> the improvement loop, finding your variable.</div>
+        <div class="aud-foot"><strong>In TenThirty:</strong>Mid-Sleep Mode — one tap, dim screen, a calm voice, no decisions. Built for half-asleep hands and a brain you'd rather not fully boot up.</div>
       </div>
     </div>
   </div>
@@ -734,7 +931,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       <div class="founder-portrait"></div>
       <div class="founder-note">
         <div class="sec-kicker" style="margin-bottom:22px">A note from the person building this</div>
-        <p>I started Lull at 3am with a baby on my chest, scrolling through sleep apps that were clearly built by people who had never been this tired.</p>
+        <p>I started TenThirty at 3am with a baby on my chest, scrolling through sleep apps that were clearly built by people who had never been this tired.</p>
         <p>Every one of them wanted me to sit up, focus, breathe on cue, or pick from a content library. None of them wanted to meet me where I actually was — exhausted body, running brain, fifteen minutes before the next feed.</p>
         <p>So I'm building the app I wished existed. Quiet. One-tap. Grounded in the techniques that actually have evidence behind them. No mascot. No noise. Just the thing, when you need it.</p>
         <div class="founder-sig">
@@ -746,92 +943,110 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   </div>
 </section> -->
 
-<!-- LOOP FEATURE -->
-<section class="loop" id="loop">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="sec-kicker">The one-variable loop</div>
-      <h2 class="sec-title">Behavioural correlation.<br/><em>Yours, not a dataset.</em></h2>
-      <p class="sec-sub">Lull is not a sleep tracker. No REM stages. No HRV. No smart alarm. Just: what did you do, how did you rate it, what's the pattern. Simple enough to trust.</p>
-    </div>
-
-    <div class="loop-grid">
-      <div class="loop-visual">
-        <div class="orbit"></div>
-        <div class="orbit o2"></div>
-        <div class="orbit o3"></div>
-        <span class="orbit-label l1"><span class="ol-dot"></span>Log</span>
-        <span class="orbit-label l3"><span class="ol-dot"></span>Do</span>
-        <span class="orbit-label l4"><span class="ol-dot"></span>Rate</span>
-        <span class="orbit-label active l2"><span class="ol-dot"></span>Adjust</span>
-        <div class="orbit-center"></div>
-        <div class="orbit-dot" style="top:0;left:50%;transform:translate(-50%,-50%)"></div>
-        <div class="orbit-dot" style="bottom:0;left:50%;transform:translate(-50%,50%);background:var(--ember);box-shadow:0 0 0 3px var(--bg-0), 0 0 14px var(--ember-glow)"></div>
-        <div class="orbit-dot" style="top:50%;left:0;transform:translate(-50%,-50%)"></div>
-        <div class="orbit-dot" style="top:50%;right:0;transform:translate(50%,-50%)"></div>
-      </div>
-
-      <div class="loop-list">
-        <div class="loop-row"><div class="loop-idx">N≥5</div><div><h4 class="loop-h">Minimum five data points</h4><p class="loop-b">No premature conclusions. Lull waits until a real pattern exists before it opens its mouth.</p></div></div>
-        <div class="loop-row"><div class="loop-idx">x1</div><div><h4 class="loop-h">One suggestion per evening</h4><p class="loop-b">"Tonight, try dimming lights 60 minutes before bed." Never two at once. Never a checklist.</p></div></div>
-        <div class="loop-row"><div class="loop-idx">5n</div><div><h4 class="loop-h">Runs five nights before verdict</h4><p class="loop-b">If sleep quality rises, the variable becomes a default in your routine. If not, it moves on.</p></div></div>
-        <div class="loop-row"><div class="loop-idx">~</div><div><h4 class="loop-h">Never prescribes</h4><p class="loop-b">Every technique is a hypothesis — including CBT-I get-up prompts. Your body gets the final say.</p></div></div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- COMPARISON -->
-<section class="compare">
+<section class="compare" id="compare">
   <div class="wrap">
     <div class="sec-head">
       <div class="sec-kicker">vs. the category</div>
-      <h2 class="sec-title">What you won't find in Lull.</h2>
+      <h2 class="sec-title">What you won't find in TenThirty.</h2>
     </div>
 
-    <table class="cmp">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Meditation apps</th>
-          <th>Sleep trackers</th>
-          <th>Content libraries</th>
-          <th class="lull-h col-lull">Lull</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td class="row-label">Requires active focus</td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td class="col-lull lull-col"><span class="chip n">No</span></td></tr>
-        <tr><td class="row-label">Measures sleep stages</td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip n">No — on purpose</span></td></tr>
-        <tr><td class="row-label">Something to browse at bedtime</td><td><span class="chip y">Large library</span></td><td><span class="chip n">—</span></td><td><span class="chip y">Huge library</span></td><td class="col-lull lull-col"><span class="chip n">Nothing</span></td></tr>
-        <tr><td class="row-label">Credit card for free trial</td><td><span class="chip y">Usually</span></td><td><span class="chip y">Usually</span></td><td><span class="chip y">Always</span></td><td class="col-lull lull-col"><span class="chip n">Never</span></td></tr>
-        <tr><td class="row-label">Designed for mid-sleep waking</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip y">One-tap mode</span></td></tr>
-        <tr><td class="row-label">Learns <em>your</em> specific variable</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-lull lull-col"><span class="chip y">Core mechanic</span></td></tr>
-      </tbody>
-    </table>
+    <div class="cmp-scroll">
+      <table class="cmp">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Meditation apps</th>
+            <th>Sleep trackers</th>
+            <th>Content libraries</th>
+            <th class="tenthirty-h col-tenthirty">TenThirty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="row-label">Requires active focus</td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td class="col-tenthirty tenthirty-col"><span class="chip n">No</span></td></tr>
+          <tr><td class="row-label">Measures sleep stages</td><td><span class="chip n">No</span></td><td><span class="chip y">Yes</span></td><td><span class="chip n">No</span></td><td class="col-tenthirty tenthirty-col"><span class="chip n">No — on purpose</span></td></tr>
+          <tr><td class="row-label">Something to browse at bedtime</td><td><span class="chip y">Large library</span></td><td><span class="chip n">—</span></td><td><span class="chip y">Huge library</span></td><td class="col-tenthirty tenthirty-col"><span class="chip n">Nothing</span></td></tr>
+          <tr><td class="row-label">Credit card for free trial</td><td><span class="chip y">Usually</span></td><td><span class="chip y">Usually</span></td><td><span class="chip y">Always</span></td><td class="col-tenthirty tenthirty-col"><span class="chip n">Never</span></td></tr>
+          <tr><td class="row-label">Built for mid-sleep waking</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-tenthirty tenthirty-col"><span class="chip y">One-tap mode</span></td></tr>
+          <tr><td class="row-label">Personalized to your problem</td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td><span class="chip n">No</span></td><td class="col-tenthirty tenthirty-col"><span class="chip y">Core mechanic</span></td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
 <!-- PRICING -->
 <section class="pricing" id="pricing">
   <div class="wrap">
-    <div class="sec-head" style="text-align:center;margin-left:auto;margin-right:auto;justify-items:center">
-      <div class="sec-kicker" style="justify-content:center">One price. No tiers.</div>
-      <h2 class="sec-title" style="text-align:center">Seven free nights. <em>Then $6.99.</em></h2>
+    <div class="sec-head">
+      <div class="sec-kicker">Simple, honest pricing</div>
+      <h2 class="sec-title">Free is a real product. <em>Premium is the full toolkit.</em></h2>
+      <p class="sec-sub">When TenThirty opens, start with 7 nights of everything — no credit card, no tricks. After that, your personalized routine is yours to keep, free, forever.</p>
     </div>
 
-    <div class="price-card">
-      <div class="price-free">First week · fully free</div>
-      <div class="price-big">$6.99<span class="per">/ month</span></div>
-      <p class="price-sub">No credit card to start. No annual lock-in. No credits to spend. One flat price that stays flat. Cancel any time — we mean it.</p>
-      <ul class="price-list">
-        <li>Full feature access</li>
-        <li>Unlimited brain dumps</li>
-        <li>Unlimited stories</li>
-        <li>All wind-down methods</li>
-        <li>Mid-sleep mode</li>
-      </ul>
-      <a class="btn btn-primary" href="#waitlist">Join the waitlist <span class="arrow">→</span></a>
+    <div class="price-grid">
+      <div class="plan">
+        <div class="plan-title">Free, forever</div>
+        <div class="plan-amount">$0</div>
+        <div class="plan-note">No card. No expiry.</div>
+        <ul>
+          <li>Your personalized wind-down routine</li>
+          <li>Nightly walk-through + morning check-in</li>
+          <li>Streaks and milestones</li>
+          <li>Brain dump</li>
+        </ul>
+      </div>
+      <div class="plan prem">
+        <div class="plan-title">Premium monthly</div>
+        <div class="plan-amount">$9.99<small> /month</small></div>
+        <div class="plan-note">Full toolkit. Cancel anytime.</div>
+        <ul>
+          <li>Customize your routine, your way</li>
+          <li>Block the 1am scroll with app blocking</li>
+          <li>Full boring-story + sounds library, offline</li>
+          <li>Routine updates as your sleep changes (30-day re-check)</li>
+          <li>Gentle reminders to keep you on track</li>
+        </ul>
+      </div>
+      <div class="plan prem best">
+        <div class="plan-title">Premium annual</div>
+        <div class="plan-amount">$49.99<small> /year</small></div>
+        <div class="plan-note">Saves about 58% vs monthly.</div>
+        <ul>
+          <li>Customize your routine, your way</li>
+          <li>Block the 1am scroll with app blocking</li>
+          <li>Full boring-story + sounds library, offline</li>
+          <li>Routine updates as your sleep changes (30-day re-check)</li>
+          <li>Gentle reminders to keep you on track</li>
+        </ul>
+      </div>
     </div>
+    <p class="price-reassure">Before your trial ends, we'll tell you exactly what changes — no surprise downgrades, no hostage features. If you customized your routine, we save your version in case you ever come back. Cancel anytime. We mean it.</p>
+  </div>
+</section>
+
+
+<!-- FINAL CTA -->
+<section class="final" id="waitlist">
+  <span class="companion" style="top:22%;left:12%"></span>
+  <span class="companion c-trail" style="top:30%;right:14%"></span>
+  <span class="companion c-trail" style="bottom:28%;left:18%;animation-delay:-2s"></span>
+  <div class="wrap final-inner">
+    <h2>Ready to finally sleep<br/><em>when you need to?</em></h2>
+    <p>Download TenThirty on the App Store and start with 7 free nights. No credit card, no surprise renewal.</p>
+
+    <div class="download-stack" aria-label="Download TenThirty">
+      <a class="app-store-badge" href="https://apps.apple.com/us/app/tenthirty-sleep-routine/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598" style="display: inline-block;">
+        <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1781136000" alt="Download on the App Store" style="width: 245px; height: 82px; vertical-align: middle; object-fit: contain;" />
+      </a>
+      <div class="qr-lockup">
+        <img src="assets/tenthirty-app-store-qr.png" alt="QR code to download TenThirty on the App Store" loading="lazy" decoding="async">
+        <div class="qr-copy"><strong>Scan to download</strong> TenThirty for iPhone</div>
+      </div>
+    </div>
+
+    <!-- <div class="final-meta" style="margin-top:32px">iOS & Android</div> -->
   </div>
 </section>
 
@@ -848,11 +1063,11 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       <div class="faq-list">
         <div class="faq-item open">
           <button class="faq-q">Is this a meditation app?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">No. Meditation requires active focus — the opposite of what an over-activated brain needs at 2am. Lull's techniques are passive. Brain dump is one-directional. Boring stories go nowhere on purpose. 4-7-8 breathing has a single pulsing dot and a calm voice.</div></div>
+          <div class="faq-a"><div class="faq-a-inner">No. Meditation requires active focus — the opposite of what an over-activated brain needs at 2am. TenThirty's techniques are passive. Brain dump is one-directional. Boring stories go nowhere on purpose. 4-7-8 breathing has a single pulsing dot and a calm voice.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q">Does it track my sleep stages?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">No — deliberately. Lull correlates what you <em>did</em> (lights, temperature, wind-down method, get-up prompt) with how you rated sleep the next morning. Behavioural, not biometric. Upstream of sleep, not downstream of it.</div></div>
+          <div class="faq-a"><div class="faq-a-inner">No — deliberately. TenThirty correlates what you <em>did</em> (lights, temperature, wind-down method, get-up prompt) with how you rated sleep the next morning. Behavioural, not biometric. Upstream of sleep, not downstream of it.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q">Will it actually work for me?<span class="plus">+</span></button>
@@ -860,7 +1075,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
         </div>
         <div class="faq-item">
           <button class="faq-q">What happens after 7 nights?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">If you want to continue, $6.99/month. If not, nothing happens — no card on file, nothing to cancel, no retention email cascade. We'd rather you leave than feel tricked.</div></div>
+          <div class="faq-a"><div class="faq-a-inner">If you want to continue, Premium is $9.99/month or $49.99/year. If not, nothing happens — no card on file, nothing to cancel, no retention email cascade. We'd rather you leave than feel tricked.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q">Is the get-up prompt safe?<span class="plus">+</span></button>
@@ -875,52 +1090,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   </div>
 </section>
 
-<!-- FINAL CTA -->
-<section class="final" id="waitlist">
-  <span class="companion" style="top:22%;left:12%"></span>
-  <span class="companion c-trail" style="top:30%;right:14%"></span>
-  <span class="companion c-trail" style="bottom:28%;left:18%;animation-delay:-2s"></span>
-  <div class="wrap final-inner">
-    <h2>Ready to sleep<br/><em>like you used to?</em></h2>
-    <p>Pick your path below. Pre-order locks in the Founder price for the first year. The waitlist is free — no commitment, just a front-row spot.</p>
 
-    <!-- Intent toggle -->
-    <div class="intent-toggle">
-      <button class="intent-btn active" data-panel="preorder">Pre-order · 50% off</button>
-      <button class="intent-btn" data-panel="waitlist">Free waitlist</button>
-    </div>
-
-    <!-- Pre-order panel -->
-    <div class="intent-panel active" id="panel-preorder">
-      <div class="preorder-offer">
-        <div class="preorder-badge">Founder pricing · limited spots</div>
-        <div class="preorder-price">$3.99<span class="per">/ month</span> <span class="was">$6.99</span></div>
-        <div class="preorder-detail">Pay for first month, get 7 nights free + lock in 50% off for 1 year after launch. Cancel any time before then — no questions asked.</div>
-        <form class="wait-form" id="preorder-form" action="https://formspree.io/f/xeevkorq" method="POST" novalidate>
-          <input class="wf-input" aria-label="Email Address" name="email" required placeholder="your@email.com" type="email" autocomplete="email"/>
-          <input type="hidden" name="_subject" value="Lull pre-order — founder pricing"/>
-          <input type="hidden" name="_intent" value="preorder"/>
-          <button type="submit" class="wf-submit"><span class="btn-text">Pre-order →</span></button>
-        </form>
-        <div id="preorder-msg" class="wait-msg" aria-live="polite"></div>
-      </div>
-    </div>
-
-    <!-- Waitlist panel -->
-    <div class="intent-panel" id="panel-waitlist">
-      <p class="waitlist-desc">Get an early invite when Lull opens, plus a full 7-night free trial when you're ready. No card, no commitment — just first in line.</p>
-      <form class="wait-form" id="waitlist-form" action="https://formspree.io/f/xeevkorq" method="POST" novalidate>
-        <input class="wf-input" aria-label="Email Address" name="email" required placeholder="your@email.com" type="email" autocomplete="email"/>
-        <input type="hidden" name="_subject" value="Lull waitlist — free early invite"/>
-        <input type="hidden" name="_intent" value="waitlist"/>
-        <button type="submit" class="wf-submit"><span class="btn-text">Join waitlist →</span></button>
-      </form>
-      <div id="waitlist-msg" class="wait-msg" aria-live="polite"></div>
-    </div>
-
-    <div class="final-meta" style="margin-top:32px">iOS & Android · LAUNCHES WHEN IT'S READY · CANCEL BEFORE THEN, NO CHARGE</div>
-  </div>
-</section>
 
 <!-- CONTACT -->
 <section class="contact" id="contact">
@@ -958,7 +1128,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
 <!-- FOOTER -->
 <footer>
   <div class="wrap foot">
-    <div class="brand" style="font-size:18px"><span class="dot"></span>lull</div>
+    <div class="brand" style="font-size:18px"><span class="dot"></span>TenThirty</div>
     <div class="foot-links">
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
@@ -980,9 +1150,9 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   <div class="tw-row">
     <label>CTA copy</label>
     <div class="tw-opts" id="tw-cta">
+      <button class="tw-opt" data-v="Download now">Download now</button>
       <button class="tw-opt" data-v="Start 7 free nights">7 free nights</button>
-      <button class="tw-opt" data-v="Try Lull tonight">Try tonight</button>
-      <button class="tw-opt" data-v="Claim Founder Early Access">Claim Founder Early Access – 50% off first year</button>
+      <button class="tw-opt" data-v="Try TenThirty tonight">Try tonight</button>
     </div>
   </div>
 
@@ -1010,7 +1180,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
     document.documentElement.style.setProperty('--ember-soft', `oklch(68% 0.11 ${t.accentHue})`);
     document.documentElement.style.setProperty('--ember-deep', `oklch(52% 0.12 ${t.accentHue - 4})`);
     document.documentElement.style.setProperty('--ember-glow', `oklch(78% 0.16 ${t.accentHue} / 0.5)`);
-    document.getElementById('cta-copy').textContent = t.ctaCopy;
+    const ctaCopyEl = document.getElementById('cta-copy');
+    if (ctaCopyEl) ctaCopyEl.textContent = t.ctaCopy;
     document.body.classList.toggle('no-grain', !t.showGrain);
     document.getElementById('tw-hue').value = t.accentHue;
     document.getElementById('tw-grain').checked = t.showGrain;
@@ -1037,17 +1208,6 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       const v = btn.dataset.v;
       applyTweaks({...TWEAKS, ctaCopy: v});
       persist({ctaCopy: v});
-    });
-  });
-
-  // Intent toggle
-  document.querySelectorAll('.intent-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const panel = btn.dataset.panel;
-      document.querySelectorAll('.intent-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.intent-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('panel-' + panel).classList.add('active');
     });
   });
 
@@ -1088,32 +1248,6 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
       }
     });
   }
-
-  // Pre-order — save email then redirect to Stripe
-  (function(){
-    const form = document.getElementById('preorder-form');
-    const msg = document.getElementById('preorder-msg');
-    if (!form) return;
-    const btn = form.querySelector('.wf-submit');
-    const btnText = btn && btn.querySelector('.btn-text');
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const email = form.email.value.trim();
-      if (!email) return;
-      btnText.textContent = 'One sec…';
-      btn.disabled = true;
-      // Save email in background, don't block on result
-      fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' },
-      }).catch(() => {});
-      // Redirect to Stripe with email pre-filled
-      fbq('track', 'InitiateCheckout');
-      const stripeUrl = 'https://buy.stripe.com/28EcMZ5yebMo3bt47PaR200';
-      window.location.href = stripeUrl + '?prefilled_email=' + encodeURIComponent(email);
-    });
-  })();
 
   wireForm('waitlist-form', 'waitlist-msg', "You're on the list ✓  Early invite + 7-night trial, coming soon.", 'Join waitlist →');
   // Contact form handler

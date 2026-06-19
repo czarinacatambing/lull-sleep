@@ -6,6 +6,8 @@ enum RemedyID: String, Codable, CaseIterable {
     // Bedtime Prep
     case dimTheLights
     case noScreens
+    // Legacy decode support only. New generated routines use noScreens with
+    // RoutineStep.enforcementMode instead of a standalone appBlocking remedy.
     case appBlocking
     case finishWorkouts
     case noHeavySnacks
@@ -70,6 +72,61 @@ struct RemedyImpact {
 }
 
 extension RemedyID {
+    static var allCases: [RemedyID] {
+        [
+            .dimTheLights,
+            .noScreens,
+            .finishWorkouts,
+            .noHeavySnacks,
+            .noAlcohol,
+            .noCaffeine,
+            .coldRoomPrep,
+            .warmShower,
+            .magnesium,
+            .herbalTea,
+            .weightedBlanket,
+            .blackoutCurtains,
+            .brainDump,
+            .boringStory,
+            .sleepSounds,
+            .breathing478,
+            .gratitudeJournal,
+            .gentleStretching,
+            .progressiveMuscleRelaxation,
+            .bodyScan,
+            .readingBook,
+        ]
+    }
+
+    var routineCategory: RoutineCategory {
+        switch self {
+        case .dimTheLights,
+             .noScreens,
+             .appBlocking,
+             .finishWorkouts,
+             .noHeavySnacks,
+             .noAlcohol,
+             .noCaffeine,
+             .coldRoomPrep,
+             .warmShower,
+             .magnesium,
+             .herbalTea,
+             .weightedBlanket,
+             .blackoutCurtains:
+            return .bedtimePrep
+        case .brainDump,
+             .boringStory,
+             .sleepSounds,
+             .breathing478,
+             .gratitudeJournal,
+             .gentleStretching,
+             .progressiveMuscleRelaxation,
+             .bodyScan,
+             .readingBook:
+            return .windDown
+        }
+    }
+
     var impact: RemedyImpact {
         switch self {
         case .dimTheLights:
@@ -226,6 +283,55 @@ extension RemedyID {
                 suffix: " faster.",
                 science: "A guided body scan moves attention slowly through the body, interrupting pre-sleep rumination and cueing each muscle group to release. Shifting focus to physical sensation lowers cognitive and physiological arousal, two of the main drivers of delayed sleep onset."
             )
+        }
+    }
+
+    var routineRevealBenefit: String {
+        switch self {
+        case .dimTheLights:
+            return "Signals melatonin sooner by lowering bright light before bed."
+        case .noScreens:
+            return "Removes blue-light and scroll stimulation so your brain can power down."
+        case .appBlocking:
+            return "Locks the apps most likely to restart scrolling during wind-down."
+        case .finishWorkouts:
+            return "Gives your body time to cool down after exercise before sleep."
+        case .noHeavySnacks:
+            return "Keeps digestion quieter so your body can stay asleep."
+        case .noAlcohol:
+            return "Protects REM and reduces second-half-of-night wakeups."
+        case .noCaffeine:
+            return "Lets sleep pressure build without caffeine blocking the signal."
+        case .coldRoomPrep:
+            return "Helps trigger the core temperature drop that cues sleep onset."
+        case .warmShower:
+            return "Uses a post-shower temperature drop to make sleep onset easier."
+        case .magnesium:
+            return "Supports GABA and melatonin systems involved in winding down."
+        case .herbalTea:
+            return "Adds a calming ritual with gentle, sleep-supporting ingredients."
+        case .weightedBlanket:
+            return "Uses deep pressure to reduce arousal and make the bed feel safer."
+        case .blackoutCurtains:
+            return "Keeps stray light from nudging your brain back toward morning."
+        case .brainDump:
+            return "Gets tomorrow's loops out of working memory before lights-out."
+        case .boringStory:
+            return "Gives your mind a low-stakes track to follow instead of replaying the day."
+        case .sleepSounds:
+            return "Masks small room noises so fewer sounds pull you back online."
+        case .breathing478:
+            return "Lengthens the exhale to slow your heart rate and downshift arousal."
+        case .gratitudeJournal:
+            return "Steers bedtime attention away from threat-scanning and toward safety."
+        case .gentleStretching:
+            return "Releases muscle tension without raising your heart rate."
+        case .progressiveMuscleRelaxation:
+            return "Breaks the loop between tense muscles and a tense mind."
+        case .bodyScan:
+            return "Moves attention into body sensation so rumination has less room."
+        case .readingBook:
+            return "Gives your mind a quiet anchor without screen stimulation."
         }
     }
 }

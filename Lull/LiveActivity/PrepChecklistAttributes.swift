@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-// Shared between main app (Lull) and widget extension (LullActivities).
+// Shared between the main app and widget extension.
 // Both targets compile this file directly.
 struct PrepChecklistAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {

@@ -9,7 +9,7 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if showWelcome {
+            if showWelcome && !state.hasCompletedOnboarding {
                 welcomeScreen
             } else {
                 mainContent
@@ -17,7 +17,16 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            if state.hasCompletedOnboarding {
+                showWelcome = false
+                return
+            }
             if state.requestedTab != nil || state.showMidSleepMode {
+                showWelcome = false
+            }
+        }
+        .onChange(of: state.hasCompletedOnboarding) { _, completed in
+            if completed {
                 showWelcome = false
             }
         }
@@ -39,26 +48,53 @@ struct ContentView: View {
             AmberGlow(x: 0.5, y: 0.4, radius: 260, opacity: 0.4)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer()
-                BrandMark(large: true)
-                    .scaleEffect(3.2)
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    VStack(spacing: 0) {
+                        BrandMark()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.bottom, 44)
+
+                        Text("For the nights your brain won't switch off.")
+                            .font(.serif(28))
+                            .foregroundColor(.lullInk0)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .frame(maxWidth: min(280, geo.size.width - 52))
+                            .padding(.bottom, 18)
+
+                        Text("A one-minute setup, then a routine built around your night.")
+                            .font(.system(size: 14.5))
+                            .foregroundColor(.lullInk3)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(5)
+                            .frame(maxWidth: min(236, geo.size.width - 64))
+                    }
                     .opacity(logoOpacity)
-                Spacer()
-                Button {
-                    withAnimation(.easeInOut(duration: 0.4)) { showWelcome = false }
-                } label: {
-                    Text("Help me sleep")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color(hex: "#1a0d06"))
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 13)
-                        .background(Capsule().fill(Color.lullAmber))
-                        .shadow(color: .lullAmberGlow, radius: 10)
+
+                    Spacer()
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.4)) { showWelcome = false }
+                    } label: {
+                        Text("Help me sleep")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color(hex: "#1a0d06"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color.lullAmber)
+                            )
+                            .shadow(color: .lullAmberGlow, radius: 10)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 26)
+                    .padding(.bottom, 56)
+                    .opacity(buttonOpacity)
                 }
-                .buttonStyle(.plain)
-                .padding(.bottom, 56)
-                .opacity(buttonOpacity)
             }
         }
         .onAppear {

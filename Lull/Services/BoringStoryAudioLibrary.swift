@@ -10,7 +10,20 @@ enum BoringStoryId: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String { rawValue }
+    var title: String {
+        switch self {
+        case .boringStory01:
+            return "The Suburban Bus Route"
+        case .inCaptivity:
+            return "In Captivity"
+        case .naturalHistoryLetters1To6:
+            return "Natural History of Selborne - Letters 1-6"
+        case .naturalHistoryLetters7To13:
+            return "Natural History of Selborne - Letters 7-13"
+        case .rulesOfEastAndWest:
+            return "Rules of East and West"
+        }
+    }
 
     var fileExtension: String {
         switch self {
@@ -46,7 +59,7 @@ enum BoringStoryId: String, Codable, CaseIterable, Identifiable {
 struct BoringStoryStepConfig: Codable, Equatable {
     var storyId: BoringStoryId
 
-    static let fresh = BoringStoryStepConfig(storyId: .boringStory01)
+    static let fresh = BoringStoryStepConfig(storyId: .naturalHistoryLetters1To6)
 
     var title: String { storyId.title }
     var durationSummary: String { storyId.durationText }
@@ -246,11 +259,6 @@ struct BoringStoryStep: View {
                     .monospacedDigit()
             }
 
-            Text(config.title)
-                .font(.system(size: compact ? 12.5 : 13.5, weight: .medium))
-                .foregroundColor(BoringStoryPalette.text)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(compact ? 12 : 16)
         .background(

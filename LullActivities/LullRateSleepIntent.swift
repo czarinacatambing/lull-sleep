@@ -21,7 +21,7 @@ struct LullRateSleepIntent: LiveActivityIntent {
     // Must be false: if true, iOS launches the host app the moment perform()
     // returns and suspends the extension before the awaited activity.update /
     // activity.end calls actually flush, leaving the confirm card un-rendered.
-    // The user can tap the confirm card (.widgetURL("lull://reward")) to open
+    // The user can tap the confirm card (.widgetURL("tenthirty://reward")) to open
     // the app when they're ready.
     static var openAppWhenRun: Bool = false
 

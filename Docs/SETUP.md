@@ -6,7 +6,7 @@
 brew install xcodegen
 cd /Users/czarinacatambing/lull-sleep-app
 xcodegen generate
-open Lull.xcodeproj
+open TenThirty.xcodeproj
 ```
 
 ## 2. Add fonts (required for brand typography)

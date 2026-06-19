@@ -131,7 +131,7 @@ class LiveActivityService {
     func startSleepActivity(bedtime: Date, wakeTime: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             #if DEBUG
-            print("[LiveActivity] Sleep activity not started: Live Activities are disabled for Lull.")
+            print("[LiveActivity] Sleep activity not started: Live Activities are disabled for TenThirty.")
             #endif
             return
         }

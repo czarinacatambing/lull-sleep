@@ -442,7 +442,7 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
         guard let config = currentConfig, let soundId = config.soundId else { return }
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: soundId.name,
-            MPMediaItemPropertyArtist: "Lull Sleep Sounds",
+            MPMediaItemPropertyArtist: "TenThirty Sleep Sounds",
             MPNowPlayingInfoPropertyPlaybackRate: 1.0
         ]
         if let remainingSeconds {
@@ -1118,6 +1118,9 @@ struct SleepSoundsToolCard: View {
 struct NightlySleepSoundsView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var audioStore: SleepSoundsAudioStore
+    @Environment(\.dismiss) private var dismiss
+    var isMidSleep: Bool = false
+
     @State private var activeConfig = SleepSoundStepConfig.fresh
     @State private var activePanel: NightlySoundPanel?
     @State private var didStartPlayback = false
@@ -1159,12 +1162,25 @@ struct NightlySleepSoundsView: View {
 
                     VStack(spacing: 0) {
                         Spacer().frame(height: 16)
-                        NightlyStepHeader(
-                            step: state.nightlyStep + 1,
-                            total: state.nightlyStepTotal,
-                            label: "Sounds",
-                            time: state.scheduledTime(for: R.sleepSounds)
-                        )
+                        if isMidSleep {
+                            HStack {
+                                Text("MID-SLEEP SOUNDS")
+                                    .font(.mono(10.5))
+                                    .kerning(1.4)
+                                    .foregroundColor(SleepSoundPalette.textFaint)
+                                Spacer()
+                                MidSleepExitButton(action: { dismiss() })
+                            }
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, compact ? 18 : 26)
+                        } else {
+                            NightlyStepHeader(
+                                step: state.nightlyStep + 1,
+                                total: state.nightlyStepTotal,
+                                label: "Sounds",
+                                time: state.scheduledTime(for: R.sleepSounds)
+                            )
+                        }
 
                         VStack(spacing: 10) {
                             Group {
@@ -1217,11 +1233,11 @@ struct NightlySleepSoundsView: View {
                         Spacer()
 
                         VStack(spacing: 14) {
-                            PrimaryCTA(title: "Continue") {
+                            PrimaryCTA(title: isMidSleep ? "Keep playing" : "Continue") {
                                 advance(status: .completed)
                             }
 
-                            Button("Skip this step") {
+                            Button(isMidSleep ? "Stop sound" : "Skip this step") {
                                 audioStore.stop()
                                 advance(status: .skipped)
                             }
@@ -1313,6 +1329,10 @@ struct NightlySleepSoundsView: View {
             return max(0, configured - remaining)
         }()
         state.recordSleepSoundAttempt(status: status, config: activeConfig, listenedSeconds: listenedSeconds)
+        if isMidSleep {
+            dismiss()
+            return
+        }
         state.nightlyStep += 1
     }
 }

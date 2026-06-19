@@ -1,0 +1,999 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00AA47054E9EB1EE93E12A05 /* LullOpenMidSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */; };
+		01B02E1C8E167E589AFDC22F /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */; };
+		042C4AF1CA3D790A3AC763C9 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = EE0B8D64BEA5E3057A1923AB /* RevenueCatUI */; };
+		0EB4E8EDF0C74B9B806FFE4E /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0189BF0E9E9C7558C20A1468 /* PersistenceStore.swift */; };
+		109C5040A2EDE1A7BF714EB0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77258FA3646EA4ABD3AAF8ED /* AppState.swift */; };
+		110BDB49FDAD19785D92C215 /* LullTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BFA1F85B39656D31732381 /* LullTheme.swift */; };
+		113FA7D10848B59AC6679BFA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 16E004D9956182579C109650 /* Assets.xcassets */; };
+		12A27A4AA21A841F4AE9B884 /* LullSubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */; };
+		145E87A1DEBB99A38488F2EB /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */; };
+		163EBBEB1ED3F59F72999EE1 /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */; };
+		1BD47C6443F351AED487B09B /* solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 90504C0B0DCEF617FA4FC716 /* solf.m4a */; };
+		1F9D43C73E5C722B5F900AAC /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */; };
+		24278111E7955F4561A4222E /* birds.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CBF7175F6DA3A7BA38910681 /* birds.m4a */; };
+		2CF48DB758A4F4F492F353CE /* ResearchDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB18882B975D7347E1D65745 /* ResearchDataService.swift */; };
+		30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */; };
+		332D984A7A784F8AD67D9B8F /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C163F36C48766A614974E4C /* GetUpPromptView.swift */; };
+		345AA50FB33BEDDCC6BA1D84 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A2C65D9B9A0F933935914B /* PersistedState.swift */; };
+		3850298B9C3F8670CBAF5ED2 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B383598ABE5BE7D1191AD6 /* ExportService.swift */; };
+		388FEC5EEF7BEBE2AD6513ED /* NightlyGentleStretchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */; };
+		3B42A4841631D08BD9BB89ED /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D067205DC708FB6337C2659 /* WidgetKit.framework */; };
+		3ED7921CDB4D99E607539A6E /* LullActivitiesBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */; };
+		3FD73B619FA7AEB39402B416 /* in captivity.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A0032E2F445A4B5E35EA46FE /* in captivity.m4a */; };
+		41D12F4B9B795D31547C8E62 /* SleepCompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A98689BCA1F25DC944F269C /* SleepCompanionWidget.swift */; };
+		41F4964232EC966B7E8E6FCA /* ClaudeAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */; };
+		42D9CE908D6DDC0FBA6059F9 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 9168199F664E685FFEA2CA16 /* RevenueCat */; };
+		463530595ADA37560F0D7987 /* SleepLogDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689C88C380117A100D1610A0 /* SleepLogDetailView.swift */; };
+		470A36D1317733A12B22688C /* PaywallFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4899657867919D25621A8287 /* PaywallFlowView.swift */; };
+		47996245D051D4B7890CCFB6 /* RoutineGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */; };
+		48D08029BDA8A8DE893D5615 /* NightlyBodyScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */; };
+		4989127D3F0856E360D7D54D /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA98E7B07449D1F26DE06CF /* LullComponents.swift */; };
+		4A7647B4EBF6CD411C316D0E /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2385C445922205A436F4B026 /* TTSService.swift */; };
+		4DA13DCEE8863D4187741DA7 /* JetBrainsMono-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */; };
+		4E09A57D7261D99C31D09327 /* body-scan.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1C51123AF137B74CCBDA4417 /* body-scan.mp3 */; };
+		5012B8A4B4866DB9C0F6D4E0 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D654C67A1483730850BC0E54 /* HomeTabView.swift */; };
+		5115A9C0AA3C84514F222297 /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */; };
+		52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */; };
+		554451ECFE6123BC84D7C3D6 /* LullLA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC94C0B9CC0499BBABF4808 /* LullLA.swift */; };
+		5B0BB5A429CE45EF749E2260 /* heavy-rain.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */; };
+		5C4FFEA666092B623057CF70 /* MyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */; };
+		6044976E016E9F1AF4A07B3B /* SleepSounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */; };
+		6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */; };
+		61969AEEB6ADACC5F82A5E95 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */; };
+		656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3D586CE81D7451C6957C877 /* min-solf.m4a */; };
+		6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
+		7096381F77E43B8904EC47F2 /* PostHogReplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */; };
+		73787A120AA138EF0644B4E9 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */; };
+		75C7CBA4618563551BF6A40A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */; };
+		7904530FDFA6F96A4F084BAE /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F49348CC68DED7F31C3DFB /* RemedyID.swift */; };
+		7C89EEC6A4008BA04F46B13A /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */; };
+		80B63035BF11522615698AC4 /* StreakMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944F2D82E309E25515532D12 /* StreakMilestoneView.swift */; };
+		81DF6BEDE3C8EBA4DD082D1F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
+		84237963926BF9387DB4B82F /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */; };
+		8674DE3A33B6DC6C9CDC017C /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6C835AC588EAEA2DEEF43 /* LullApp.swift */; };
+		8A37E35A931BF2B03C743F3F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
+		8AA63DA4AE7D3C35D5EE7429 /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9313D73408C29C460D31C8C8 /* MorningRewardView.swift */; };
+		8B199E8CBD446DD5F6F405DC /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */; };
+		92220D0F5B9C1E5915B9F5A1 /* LullRateSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */; };
+		9368A83C2082734F08D71C7D /* BoringStoryAudioLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */; };
+		9646D060394A5EABF8FA4531 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */; };
+		981BDB3543079203B64425EE /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07E0E904215B16CDB9F304A /* TonightPreviewCard.swift */; };
+		9A2557E81FC029A50CF3C202 /* 4-7-3-breathing-v2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 75D74147D3D5E84776E2AC8B /* 4-7-3-breathing-v2.m4a */; };
+		9BC0606547D70FE1048FA38B /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		A1B46F23A027153BC0B73F81 /* PrepChecklistWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */; };
+		A368AE0F8EC5D02DD78805E9 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */; };
+		A51F34060A14A7EF3F681486 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */; };
+		A6905FD9466E534B0BE3BE3C /* BundledStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F93598B84E835FCF4E17F89 /* BundledStories.swift */; };
+		AA60BF7733940DE231CE47F0 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */; };
+		AB87F53D08D735CA8C3436BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */; };
+		ADF4E69B05C3B8AA71357913 /* TogglePrepItemIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */; };
+		AEC7841FC9176906B3B6DDEC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */; };
+		B40D3F1C7123258DB31F4B92 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E593F705AAD77F682F02D48 /* AppIntents.framework */; };
+		B963191E42C7FF2A1CCC744F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5C3E599230C7E37F4484E0C /* ActivityKit.framework */; };
+		BA2910867BB429F08E777E88 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = D95616AB69110C2AC95DD17E /* PostHog */; };
+		BD1DF8C89DDF4E32203B0FFB /* rules of east and west.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 2316827F53961A9543FE7144 /* rules of east and west.m4a */; };
+		BF6F6C79DC2880C582CE60CF /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */; };
+		C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */; };
+		C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873B7BBBAAB5C557836239AF /* AnalyticsService.swift */; };
+		C5FAB66EB8F0888EFFEE6FC9 /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */; };
+		C91CCD4D2846FDE2D33C77BE /* BrainDumpsBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */; };
+		CF52FD25ABC10323B6E0E3B1 /* lake.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 0313A840CBD937B5C481137E /* lake.m4a */; };
+		D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */; };
+		D9184A0EFB741ED93A5126F7 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */; };
+		DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C2234E45847B2DE54E8990CC /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E53A1FB2F48D4BBD02792A51 /* ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3DDE682D8A92F301E51A601 /* ambient.m4a */; };
+		EF1A784BD5448370F97D31DE /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7D6C4993FCB04901D5BBAF /* Confetti.swift */; };
+		F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */; };
+		F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176C4201AF8923866534227B /* AmbientLightService.swift */; };
+		F77D77A5A237886B69C0A47F /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950458402381490A51AB031A /* NightlyFlowView.swift */; };
+		FC5359BF6D2C5C428FCBA0B0 /* Natural History of Selborne - letters 7-13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */; };
+		FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		FF4B61596848A08BDB4875FA /* Natural History of Selborne - letters 1-6.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		64BE6D1AD8917117B0CAF3D3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 72FB3C74BE0EBA872A5AEA53;
+			remoteInfo = LullActivities;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8CF5D9029C312BBE1CC02B93 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0189BF0E9E9C7558C20A1468 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
+		0313A840CBD937B5C481137E /* lake.m4a */ = {isa = PBXFileReference; path = lake.m4a; sourceTree = "<group>"; };
+		0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringStoryAudioLibrary.swift; sourceTree = "<group>"; };
+		05BFA1F85B39656D31732381 /* LullTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullTheme.swift; sourceTree = "<group>"; };
+		06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */ = {isa = PBXFileReference; path = "heavy-rain.m4a"; sourceTree = "<group>"; };
+		0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
+		13421008A3E4FB1B007A5B4C /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
+		16E004D9956182579C109650 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		176C4201AF8923866534227B /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
+		1B7D6C4993FCB04901D5BBAF /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
+		1C51123AF137B74CCBDA4417 /* body-scan.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "body-scan.mp3"; sourceTree = "<group>"; };
+		1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglePrepItemIntent.swift; sourceTree = "<group>"; };
+		218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
+		2316827F53961A9543FE7144 /* rules of east and west.m4a */ = {isa = PBXFileReference; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
+		2385C445922205A436F4B026 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
+		25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 1-6.m4a"; sourceTree = "<group>"; };
+		2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2BA98E7B07449D1F26DE06CF /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
+		2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
+		3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		37F49348CC68DED7F31C3DFB /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
+		3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionViews.swift; sourceTree = "<group>"; };
+		4899657867919D25621A8287 /* PaywallFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallFlowView.swift; sourceTree = "<group>"; };
+		49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-02.mp3"; sourceTree = "<group>"; };
+		4E593F705AAD77F682F02D48 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppIntents.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
+		5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
+		57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
+		5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5C163F36C48766A614974E4C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
+		5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 7-13.m4a"; sourceTree = "<group>"; };
+		5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDumpsBrowser.swift; sourceTree = "<group>"; };
+		62D6C835AC588EAEA2DEEF43 /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
+		64B383598ABE5BE7D1191AD6 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		689C88C380117A100D1610A0 /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
+		6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
+		6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogReplayService.swift; sourceTree = "<group>"; };
+		75D74147D3D5E84776E2AC8B /* 4-7-3-breathing-v2.m4a */ = {isa = PBXFileReference; path = "4-7-3-breathing-v2.m4a"; sourceTree = "<group>"; };
+		76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		77258FA3646EA4ABD3AAF8ED /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		79A2C65D9B9A0F933935914B /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		7A98689BCA1F25DC944F269C /* SleepCompanionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionWidget.swift; sourceTree = "<group>"; };
+		7B0382914836413ACFE6E4A4 /* Lull.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lull.entitlements; sourceTree = "<group>"; };
+		7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */ = {isa = PBXFileReference; path = "green-noise.m4a"; sourceTree = "<group>"; };
+		7F93598B84E835FCF4E17F89 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
+		7FC94C0B9CC0499BBABF4808 /* LullLA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullLA.swift; sourceTree = "<group>"; };
+		7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		873B7BBBAAB5C557836239AF /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		8A23CDA9BBE30563F3F47D9F /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSubscriptionManager.swift; sourceTree = "<group>"; };
+		90504C0B0DCEF617FA4FC716 /* solf.m4a */ = {isa = PBXFileReference; path = solf.m4a; sourceTree = "<group>"; };
+		9313D73408C29C460D31C8C8 /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
+		941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MidSleepModeView.swift; sourceTree = "<group>"; };
+		944F2D82E309E25515532D12 /* StreakMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakMilestoneView.swift; sourceTree = "<group>"; };
+		950458402381490A51AB031A /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
+		9D067205DC708FB6337C2659 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WidgetKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0032E2F445A4B5E35EA46FE /* in captivity.m4a */ = {isa = PBXFileReference; path = "in captivity.m4a"; sourceTree = "<group>"; };
+		A3D586CE81D7451C6957C877 /* min-solf.m4a */ = {isa = PBXFileReference; path = "min-solf.m4a"; sourceTree = "<group>"; };
+		A3DDE682D8A92F301E51A601 /* ambient.m4a */ = {isa = PBXFileReference; path = ambient.m4a; sourceTree = "<group>"; };
+		AB18882B975D7347E1D65745 /* ResearchDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDataService.swift; sourceTree = "<group>"; };
+		AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
+		AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
+		B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullActivitiesBundle.swift; sourceTree = "<group>"; };
+		B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
+		B48E52E78433AFA800B1FE8E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullOpenMidSleepIntent.swift; sourceTree = "<group>"; };
+		B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
+		B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
+		BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
+		C2234E45847B2DE54E8990CC /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
+		C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
+		CBF7175F6DA3A7BA38910681 /* birds.m4a */ = {isa = PBXFileReference; path = birds.m4a; sourceTree = "<group>"; };
+		CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistAttributes.swift; sourceTree = "<group>"; };
+		CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepSounds.swift; sourceTree = "<group>"; };
+		D07E0E904215B16CDB9F304A /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
+		D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityService.swift; sourceTree = "<group>"; };
+		D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
+		D654C67A1483730850BC0E54 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
+		E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
+		E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-01.mp3"; sourceTree = "<group>"; };
+		F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSleepAttributes.swift; sourceTree = "<group>"; };
+		F5C3E599230C7E37F4484E0C /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ActivityKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistWidget.swift; sourceTree = "<group>"; };
+		FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		44CD4CCCFFE85D8ADBEF3893 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42D9CE908D6DDC0FBA6059F9 /* RevenueCat in Frameworks */,
+				042C4AF1CA3D790A3AC763C9 /* RevenueCatUI in Frameworks */,
+				BA2910867BB429F08E777E88 /* PostHog in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		75374163F459CF74D550CBF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B42A4841631D08BD9BB89ED /* WidgetKit.framework in Frameworks */,
+				B963191E42C7FF2A1CCC744F /* ActivityKit.framework in Frameworks */,
+				B40D3F1C7123258DB31F4B92 /* AppIntents.framework in Frameworks */,
+				145E87A1DEBB99A38488F2EB /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0889BE44A4F459812D68550C /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */,
+				7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */,
+				F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */,
+				76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		12E0EE610DC5A34007E56E58 /* SleepSounds */ = {
+			isa = PBXGroup;
+			children = (
+				CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */,
+			);
+			path = SleepSounds;
+			sourceTree = "<group>";
+		};
+		1FFDB8AB5D6FE8A1C447BEA5 /* LullActivities */ = {
+			isa = PBXGroup;
+			children = (
+				B48E52E78433AFA800B1FE8E /* Info.plist */,
+				13421008A3E4FB1B007A5B4C /* LullActivities.entitlements */,
+				B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */,
+				7FC94C0B9CC0499BBABF4808 /* LullLA.swift */,
+				B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */,
+				AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */,
+				F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */,
+				3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */,
+				7A98689BCA1F25DC944F269C /* SleepCompanionWidget.swift */,
+				1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */,
+			);
+			path = LullActivities;
+			sourceTree = "<group>";
+		};
+		20CF1F72D63556D81D065D21 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */,
+				CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */,
+			);
+			path = LiveActivity;
+			sourceTree = "<group>";
+		};
+		282E7CF784BB5C6EC3B78E52 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				176C4201AF8923866534227B /* AmbientLightService.swift */,
+				873B7BBBAAB5C557836239AF /* AnalyticsService.swift */,
+				B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */,
+				3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */,
+				0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */,
+				7F93598B84E835FCF4E17F89 /* BundledStories.swift */,
+				5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */,
+				64B383598ABE5BE7D1191AD6 /* ExportService.swift */,
+				D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */,
+				8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */,
+				707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */,
+				AB18882B975D7347E1D65745 /* ResearchDataService.swift */,
+				D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */,
+				2385C445922205A436F4B026 /* TTSService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		299C2384B0910975EC5966A2 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				1B7D6C4993FCB04901D5BBAF /* Confetti.swift */,
+				2BA98E7B07449D1F26DE06CF /* LullComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		2B6497FCFFA52097BEB092CB /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				05BFA1F85B39656D31732381 /* LullTheme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		4879D6956623D9EE545CDF0B /* Nightly */ = {
+			isa = PBXGroup;
+			children = (
+				C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */,
+				950458402381490A51AB031A /* NightlyFlowView.swift */,
+				CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */,
+				B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */,
+				B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */,
+			);
+			path = Nightly;
+			sourceTree = "<group>";
+		};
+		56A9D40049EA7ACC0FAC2ACC /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				79A2C65D9B9A0F933935914B /* PersistedState.swift */,
+				0189BF0E9E9C7558C20A1468 /* PersistenceStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		6E7702BCDF73979AE413EA0B /* Paywall */ = {
+			isa = PBXGroup;
+			children = (
+				4899657867919D25621A8287 /* PaywallFlowView.swift */,
+			);
+			path = Paywall;
+			sourceTree = "<group>";
+		};
+		725FC92B5062681F1008773D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				16E004D9956182579C109650 /* Assets.xcassets */,
+				2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */,
+				C5FC6273F34A2E39A7DC747F /* Audio */,
+				0889BE44A4F459812D68550C /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		74251A40E53AD5278A2BB6FD /* sleep */ = {
+			isa = PBXGroup;
+			children = (
+				A3DDE682D8A92F301E51A601 /* ambient.m4a */,
+				CBF7175F6DA3A7BA38910681 /* birds.m4a */,
+				7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */,
+				06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */,
+				0313A840CBD937B5C481137E /* lake.m4a */,
+				A3D586CE81D7451C6957C877 /* min-solf.m4a */,
+				90504C0B0DCEF617FA4FC716 /* solf.m4a */,
+			);
+			path = sleep;
+			sourceTree = "<group>";
+		};
+		795352AC8A7ECB22EBCF0B01 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8A23CDA9BBE30563F3F47D9F /* Lull.app */,
+				C2234E45847B2DE54E8990CC /* LullActivities.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7FC2C9BF692DA0DF9DF3D2D9 = {
+			isa = PBXGroup;
+			children = (
+				F693DF470CC0A1FB6C532B4D /* Lull */,
+				1FFDB8AB5D6FE8A1C447BEA5 /* LullActivities */,
+				A85C56F1CCE816587E734D3B /* Frameworks */,
+				795352AC8A7ECB22EBCF0B01 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A85C56F1CCE816587E734D3B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F5C3E599230C7E37F4484E0C /* ActivityKit.framework */,
+				4E593F705AAD77F682F02D48 /* AppIntents.framework */,
+				FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */,
+				9D067205DC708FB6337C2659 /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		ADE3DCCF9A2DC6ABA5ACD5DD /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		C5FC6273F34A2E39A7DC747F /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				75D74147D3D5E84776E2AC8B /* 4-7-3-breathing-v2.m4a */,
+				218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */,
+				1C51123AF137B74CCBDA4417 /* body-scan.mp3 */,
+				EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */,
+				49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */,
+				A0032E2F445A4B5E35EA46FE /* in captivity.m4a */,
+				25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */,
+				5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */,
+				2316827F53961A9543FE7144 /* rules of east and west.m4a */,
+				74251A40E53AD5278A2BB6FD /* sleep */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		C701EC277AE631C105165B2E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				77258FA3646EA4ABD3AAF8ED /* AppState.swift */,
+				BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */,
+				51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */,
+				37F49348CC68DED7F31C3DFB /* RemedyID.swift */,
+				0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C8661FF335613BAE16B072C3 /* Morning */ = {
+			isa = PBXGroup;
+			children = (
+				2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */,
+				9313D73408C29C460D31C8C8 /* MorningRewardView.swift */,
+				689C88C380117A100D1610A0 /* SleepLogDetailView.swift */,
+			);
+			path = Morning;
+			sourceTree = "<group>";
+		};
+		E33D8011393273E631A1FC91 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */,
+				F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */,
+				D654C67A1483730850BC0E54 /* HomeTabView.swift */,
+				AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */,
+				E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */,
+				57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */,
+				E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */,
+				944F2D82E309E25515532D12 /* StreakMilestoneView.swift */,
+				6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */,
+				D07E0E904215B16CDB9F304A /* TonightPreviewCard.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		F693DF470CC0A1FB6C532B4D /* Lull */ = {
+			isa = PBXGroup;
+			children = (
+				5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */,
+				7B0382914836413ACFE6E4A4 /* Lull.entitlements */,
+				62D6C835AC588EAEA2DEEF43 /* LullApp.swift */,
+				299C2384B0910975EC5966A2 /* Components */,
+				E33D8011393273E631A1FC91 /* Home */,
+				20CF1F72D63556D81D065D21 /* LiveActivity */,
+				FA2AFD8A73AB91755778A261 /* MidSleep */,
+				C701EC277AE631C105165B2E /* Models */,
+				C8661FF335613BAE16B072C3 /* Morning */,
+				4879D6956623D9EE545CDF0B /* Nightly */,
+				ADE3DCCF9A2DC6ABA5ACD5DD /* Onboarding */,
+				6E7702BCDF73979AE413EA0B /* Paywall */,
+				56A9D40049EA7ACC0FAC2ACC /* Persistence */,
+				725FC92B5062681F1008773D /* Resources */,
+				282E7CF784BB5C6EC3B78E52 /* Services */,
+				12E0EE610DC5A34007E56E58 /* SleepSounds */,
+				2B6497FCFFA52097BEB092CB /* Theme */,
+			);
+			path = Lull;
+			sourceTree = "<group>";
+		};
+		FA2AFD8A73AB91755778A261 /* MidSleep */ = {
+			isa = PBXGroup;
+			children = (
+				5C163F36C48766A614974E4C /* GetUpPromptView.swift */,
+				941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */,
+			);
+			path = MidSleep;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		72FB3C74BE0EBA872A5AEA53 /* LullActivities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3FB3889878AF34909EF7512D /* Build configuration list for PBXNativeTarget "LullActivities" */;
+			buildPhases = (
+				805A49FC54AB788E0A2DFF03 /* Sources */,
+				75374163F459CF74D550CBF6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LullActivities;
+			packageProductDependencies = (
+			);
+			productName = LullActivities;
+			productReference = C2234E45847B2DE54E8990CC /* LullActivities.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		92BAF8B887787563B36A27C5 /* Lull */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26DE8DAFA4B567855718B7D6 /* Build configuration list for PBXNativeTarget "Lull" */;
+			buildPhases = (
+				B10B9B4A1DEEDC8C31854CC1 /* Sources */,
+				F78D68E224074C6A52373F6C /* Resources */,
+				44CD4CCCFFE85D8ADBEF3893 /* Frameworks */,
+				8CF5D9029C312BBE1CC02B93 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2FFD1A33265399839D3EAFFB /* PBXTargetDependency */,
+			);
+			name = Lull;
+			packageProductDependencies = (
+				9168199F664E685FFEA2CA16 /* RevenueCat */,
+				EE0B8D64BEA5E3057A1923AB /* RevenueCatUI */,
+				D95616AB69110C2AC95DD17E /* PostHog */,
+			);
+			productName = Lull;
+			productReference = 8A23CDA9BBE30563F3F47D9F /* Lull.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EB6D1691C7A8EF191AE112B7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					72FB3C74BE0EBA872A5AEA53 = {
+						DevelopmentTeam = 2WLHFD257A;
+						ProvisioningStyle = Automatic;
+					};
+					92BAF8B887787563B36A27C5 = {
+						DevelopmentTeam = 2WLHFD257A;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C369E4D45497C616CB1A6977 /* Build configuration list for PBXProject "TenThirty" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7FC2C9BF692DA0DF9DF3D2D9;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4A040BCED23F999C738A55BF /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 795352AC8A7ECB22EBCF0B01 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				92BAF8B887787563B36A27C5 /* Lull */,
+				72FB3C74BE0EBA872A5AEA53 /* LullActivities */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F78D68E224074C6A52373F6C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A2557E81FC029A50CF3C202 /* 4-7-3-breathing-v2.m4a in Resources */,
+				C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */,
+				113FA7D10848B59AC6679BFA /* Assets.xcassets in Resources */,
+				9BC0606547D70FE1048FA38B /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
+				FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
+				6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */,
+				4DA13DCEE8863D4187741DA7 /* JetBrainsMono-VariableFont_wght.ttf in Resources */,
+				FF4B61596848A08BDB4875FA /* Natural History of Selborne - letters 1-6.m4a in Resources */,
+				FC5359BF6D2C5C428FCBA0B0 /* Natural History of Selborne - letters 7-13.m4a in Resources */,
+				9646D060394A5EABF8FA4531 /* PrivacyInfo.xcprivacy in Resources */,
+				E53A1FB2F48D4BBD02792A51 /* ambient.m4a in Resources */,
+				24278111E7955F4561A4222E /* birds.m4a in Resources */,
+				4E09A57D7261D99C31D09327 /* body-scan.mp3 in Resources */,
+				6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */,
+				D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */,
+				30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */,
+				5B0BB5A429CE45EF749E2260 /* heavy-rain.m4a in Resources */,
+				3FD73B619FA7AEB39402B416 /* in captivity.m4a in Resources */,
+				CF52FD25ABC10323B6E0E3B1 /* lake.m4a in Resources */,
+				656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */,
+				BD1DF8C89DDF4E32203B0FFB /* rules of east and west.m4a in Resources */,
+				1BD47C6443F351AED487B09B /* solf.m4a in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		805A49FC54AB788E0A2DFF03 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3ED7921CDB4D99E607539A6E /* LullActivitiesBundle.swift in Sources */,
+				554451ECFE6123BC84D7C3D6 /* LullLA.swift in Sources */,
+				00AA47054E9EB1EE93E12A05 /* LullOpenMidSleepIntent.swift in Sources */,
+				92220D0F5B9C1E5915B9F5A1 /* LullRateSleepIntent.swift in Sources */,
+				163EBBEB1ED3F59F72999EE1 /* LullSleepAttributes.swift in Sources */,
+				81DF6BEDE3C8EBA4DD082D1F /* PrepChecklistAttributes.swift in Sources */,
+				A1B46F23A027153BC0B73F81 /* PrepChecklistWidget.swift in Sources */,
+				F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */,
+				41D12F4B9B795D31547C8E62 /* SleepCompanionWidget.swift in Sources */,
+				ADF4E69B05C3B8AA71357913 /* TogglePrepItemIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10B9B4A1DEEDC8C31854CC1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */,
+				C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */,
+				109C5040A2EDE1A7BF714EB0 /* AppState.swift in Sources */,
+				7C89EEC6A4008BA04F46B13A /* AudioPlaybackService.swift in Sources */,
+				A51F34060A14A7EF3F681486 /* AudioRecordingService.swift in Sources */,
+				9368A83C2082734F08D71C7D /* BoringStoryAudioLibrary.swift in Sources */,
+				C91CCD4D2846FDE2D33C77BE /* BrainDumpsBrowser.swift in Sources */,
+				A6905FD9466E534B0BE3BE3C /* BundledStories.swift in Sources */,
+				41F4964232EC966B7E8E6FCA /* ClaudeAPIService.swift in Sources */,
+				EF1A784BD5448370F97D31DE /* Confetti.swift in Sources */,
+				AB87F53D08D735CA8C3436BE /* ContentView.swift in Sources */,
+				75C7CBA4618563551BF6A40A /* DashboardView.swift in Sources */,
+				01B02E1C8E167E589AFDC22F /* ExperimentEngine.swift in Sources */,
+				3850298B9C3F8670CBAF5ED2 /* ExportService.swift in Sources */,
+				332D984A7A784F8AD67D9B8F /* GetUpPromptView.swift in Sources */,
+				5012B8A4B4866DB9C0F6D4E0 /* HomeTabView.swift in Sources */,
+				1F9D43C73E5C722B5F900AAC /* LiveActivityService.swift in Sources */,
+				8674DE3A33B6DC6C9CDC017C /* LullApp.swift in Sources */,
+				4989127D3F0856E360D7D54D /* LullComponents.swift in Sources */,
+				5115A9C0AA3C84514F222297 /* LullSleepAttributes.swift in Sources */,
+				12A27A4AA21A841F4AE9B884 /* LullSubscriptionManager.swift in Sources */,
+				110BDB49FDAD19785D92C215 /* LullTheme.swift in Sources */,
+				C5FAB66EB8F0888EFFEE6FC9 /* MidSleepModeView.swift in Sources */,
+				84237963926BF9387DB4B82F /* MorningCheckInView.swift in Sources */,
+				AEC7841FC9176906B3B6DDEC /* MorningRateHero.swift in Sources */,
+				8AA63DA4AE7D3C35D5EE7429 /* MorningRewardView.swift in Sources */,
+				5C4FFEA666092B623057CF70 /* MyRoutineView.swift in Sources */,
+				48D08029BDA8A8DE893D5615 /* NightlyBodyScanView.swift in Sources */,
+				F77D77A5A237886B69C0A47F /* NightlyFlowView.swift in Sources */,
+				388FEC5EEF7BEBE2AD6513ED /* NightlyGentleStretchingView.swift in Sources */,
+				A368AE0F8EC5D02DD78805E9 /* NightlyGratitudeJournalView.swift in Sources */,
+				D9184A0EFB741ED93A5126F7 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */,
+				73787A120AA138EF0644B4E9 /* OnboardingView.swift in Sources */,
+				470A36D1317733A12B22688C /* PaywallFlowView.swift in Sources */,
+				AA60BF7733940DE231CE47F0 /* PendingPromotion.swift in Sources */,
+				345AA50FB33BEDDCC6BA1D84 /* PersistedState.swift in Sources */,
+				0EB4E8EDF0C74B9B806FFE4E /* PersistenceStore.swift in Sources */,
+				7096381F77E43B8904EC47F2 /* PostHogReplayService.swift in Sources */,
+				8A37E35A931BF2B03C743F3F /* PrepChecklistAttributes.swift in Sources */,
+				7904530FDFA6F96A4F084BAE /* RemedyID.swift in Sources */,
+				2CF48DB758A4F4F492F353CE /* ResearchDataService.swift in Sources */,
+				47996245D051D4B7890CCFB6 /* RoutineGenerator.swift in Sources */,
+				61969AEEB6ADACC5F82A5E95 /* RoutinePromotedView.swift in Sources */,
+				BF6F6C79DC2880C582CE60CF /* ShakeDetector.swift in Sources */,
+				8B199E8CBD446DD5F6F405DC /* SleepHistoryLegendView.swift in Sources */,
+				463530595ADA37560F0D7987 /* SleepLogDetailView.swift in Sources */,
+				6044976E016E9F1AF4A07B3B /* SleepSounds.swift in Sources */,
+				80B63035BF11522615698AC4 /* StreakMilestoneView.swift in Sources */,
+				4A7647B4EBF6CD411C316D0E /* TTSService.swift in Sources */,
+				52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */,
+				981BDB3543079203B64425EE /* TonightPreviewCard.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2FFD1A33265399839D3EAFFB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 72FB3C74BE0EBA872A5AEA53 /* LullActivities */;
+			targetProxy = 64BE6D1AD8917117B0CAF3D3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1931CD4AC4A18D1446C50221 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = Lull/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
+				PRODUCT_NAME = TenThirty;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		1DBFFBDF437B7C5316D01B92 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = Lull/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
+				PRODUCT_NAME = TenThirty;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		4EB98F5027B1105B7BC21AC7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LULL_ANALYTICS_COHORT = "";
+				LULL_ANALYTICS_ENABLED = NO;
+				LULL_POSTHOG_API_KEY = "";
+				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
+				LULL_RESEARCH_DATA_ENABLED = NO;
+				LULL_RESEARCH_DATA_ENDPOINT = "";
+				LULL_RESEARCH_DATA_TOKEN = "";
+				MARKETING_VERSION = 2.0.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		64C1C3FA77D11E7D0F5DFBD2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		71D7A430EE2E0D8237768D71 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LULL_ANALYTICS_COHORT = "";
+				LULL_ANALYTICS_ENABLED = NO;
+				LULL_POSTHOG_API_KEY = "";
+				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
+				LULL_RESEARCH_DATA_ENABLED = NO;
+				LULL_RESEARCH_DATA_ENDPOINT = "";
+				LULL_RESEARCH_DATA_TOKEN = "";
+				MARKETING_VERSION = 2.0.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		795737361B6734AB0A6E1E90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullActivities/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		26DE8DAFA4B567855718B7D6 /* Build configuration list for PBXNativeTarget "Lull" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DBFFBDF437B7C5316D01B92 /* Debug */,
+				1931CD4AC4A18D1446C50221 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3FB3889878AF34909EF7512D /* Build configuration list for PBXNativeTarget "LullActivities" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				795737361B6734AB0A6E1E90 /* Debug */,
+				64C1C3FA77D11E7D0F5DFBD2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C369E4D45497C616CB1A6977 /* Build configuration list for PBXProject "TenThirty" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71D7A430EE2E0D8237768D71 /* Debug */,
+				4EB98F5027B1105B7BC21AC7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4A040BCED23F999C738A55BF /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.59.3;
+			};
+		};
+		EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9168199F664E685FFEA2CA16 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+		D95616AB69110C2AC95DD17E /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4A040BCED23F999C738A55BF /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
+		};
+		EE0B8D64BEA5E3057A1923AB /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCatUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = EB6D1691C7A8EF191AE112B7 /* Project object */;
+}

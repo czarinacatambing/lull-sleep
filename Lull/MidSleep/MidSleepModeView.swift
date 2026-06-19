@@ -7,7 +7,7 @@ struct MidSleepModeView: View {
 
     @State private var showBreathing    = false
     @State private var showBoringStory  = false
-    @State private var showBodyScan     = false
+    @State private var showSleepSounds  = false
     @State private var showGetUpPrompt  = false
     @State private var showGetUpScience = false
     @State private var sessionStart: Date? = nil
@@ -80,9 +80,22 @@ struct MidSleepModeView: View {
                     VStack(spacing: 10) {
                         ForEach(toolkitItems, id: \.primary) { opt in
                             Button(action: {
-                                if opt.primary == "4·7·8 breath"  { showBreathing = true }
-                                else if opt.primary == "Boring story" { showBoringStory = true }
-                                else if opt.primary == "Body scan"    { showBodyScan = true }
+                                switch opt.kind {
+                                case .breathing:
+                                    showBreathing = true
+                                case .boringStory:
+                                    if state.canUseContentLibrary {
+                                        showBoringStory = true
+                                    } else {
+                                        state.presentUpgradePaywall()
+                                    }
+                                case .sleepSounds:
+                                    if state.canUseSleepSounds {
+                                        showSleepSounds = true
+                                    } else {
+                                        state.presentUpgradePaywall()
+                                    }
+                                }
                             }) {
                                 HStack(spacing: 14) {
                                     ZStack {
@@ -105,9 +118,14 @@ struct MidSleepModeView: View {
                                     }
 
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(opt.primary)
-                                            .font(.serif(17))
-                                            .foregroundColor(opt.featured ? .lullInk0 : .lullInk1)
+                                        HStack(alignment: .firstTextBaseline, spacing: 7) {
+                                            Text(opt.primary)
+                                                .font(.system(size: 17, weight: .regular))
+                                                .foregroundColor(opt.featured ? .lullInk0 : .lullInk1)
+                                                .lineLimit(1)
+                                                .layoutPriority(1)
+                                            MidSleepAccessChip(isPremium: opt.isPremium)
+                                        }
                                         Text(opt.sub + (!isInSleepWindow ? " · PREVIEW" : ""))
                                             .font(.mono(10))
                                             .kerning(1)
@@ -163,7 +181,9 @@ struct MidSleepModeView: View {
             NightlyBreathingView(isMidSleep: true).environmentObject(state)
         }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
-        .fullScreenCover(isPresented: $showBodyScan)    { NightlyBodyScanView(isMidSleep: true).environmentObject(state) }
+        .fullScreenCover(isPresented: $showSleepSounds) {
+            NightlySleepSoundsView(isMidSleep: true).environmentObject(state)
+        }
         .fullScreenCover(isPresented: $showGetUpPrompt) {
             GetUpPromptView().environmentObject(state)
         }
@@ -190,12 +210,49 @@ struct MidSleepModeView: View {
         }
     }
 
-    private var toolkitItems: [(primary: String, sub: String, featured: Bool)] {
+    private var toolkitItems: [MidSleepToolkitItem] {
         [
-            ("4·7·8 breath", "In · hold · out", isInSleepWindow),
-            ("Boring story",  "random · audio",  false),
-            ("Body scan",     "~5 min · guided",  false),
+            .init(kind: .breathing, primary: "4·7·8 breath", sub: "In · hold · out", featured: isInSleepWindow, isPremium: false),
+            .init(kind: .boringStory, primary: "Boring story", sub: "random · audio", featured: false, isPremium: true),
+            .init(kind: .sleepSounds, primary: R.sleepSounds, sub: "rain · noise · water", featured: false, isPremium: true),
         ]
+    }
+}
+
+private struct MidSleepToolkitItem {
+    enum Kind {
+        case breathing
+        case boringStory
+        case sleepSounds
+    }
+
+    var kind: Kind
+    var primary: String
+    var sub: String
+    var featured: Bool
+    var isPremium: Bool
+}
+
+private struct MidSleepAccessChip: View {
+    var isPremium: Bool
+
+    var body: some View {
+        Text(isPremium ? "PREMIUM" : "FREE")
+            .font(.mono(8))
+            .kerning(1.0)
+            .foregroundColor(isPremium ? .lullAmber : .lullInk4)
+            .padding(.horizontal, 6)
+            .frame(height: 18)
+            .background(
+                Capsule()
+                    .fill(isPremium ? Color.lullAmber.opacity(0.09) : Color.white.opacity(0.035))
+                    .overlay(
+                        Capsule().strokeBorder(
+                            isPremium ? Color.lullAmber.opacity(0.28) : Color.white.opacity(0.08),
+                            lineWidth: 1
+                        )
+                    )
+            )
     }
 }
 
@@ -279,7 +336,7 @@ struct MidSleepEduCard: View {
                         .foregroundColor(coolTitle)
                     + Text(" Don't fight it.")
                         .foregroundColor(.lullInk1))
-                    .font(.serif(20))
+                    .font(.system(size: 20, weight: .regular))
                     .lineSpacing(2)
                     .padding(.bottom, 8)
 
@@ -347,7 +404,7 @@ struct MidSleepGetUpFooter: View {
                 .font(.mono(9.5))
                 .kerning(1.4)
                 .foregroundColor(.lullInk3)
-            Text("Lull will surface a ")
+            Text("TenThirty will surface a ")
                 .font(.system(size: 12.5))
                 .foregroundColor(.lullInk1)
             + Text("get-up protocol")
@@ -396,7 +453,7 @@ struct MidSleepGetUpFooter: View {
             .padding(.bottom, 10)
 
             Text("Get out of bed.")
-                .font(.serif(22))
+                .font(.system(size: 22, weight: .regular))
                 .foregroundColor(.lullInk0)
                 .padding(.bottom, 6)
 
@@ -461,7 +518,7 @@ struct TwentyMinuteScienceSheet: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.lullAmber)
                 Text("Why 20 minutes?")
-                    .font(.serif(22))
+                    .font(.system(size: 22, weight: .regular))
                     .foregroundColor(.lullInk0)
             }
             .padding(.bottom, 8)
@@ -544,9 +601,9 @@ struct MidSleepBoringStoryView: View {
 
                 VStack(spacing: 14) {
                     Text("Eyes closed.")
-                        .font(.serif(26)).foregroundColor(.lullInk2)
+                        .font(.system(size: 26, weight: .regular)).foregroundColor(.lullInk2)
                     Text("Just listen.")
-                        .font(.serifItalic(26)).foregroundColor(.lullAmber)
+                        .font(.system(size: 26, weight: .regular).italic()).foregroundColor(.lullAmber)
                     if let activeStory {
                         Text(activeStory.title)
                             .font(.mono(9.5))
@@ -675,6 +732,5 @@ struct MidSleepBoringStoryView: View {
     }
 }
 
-// MARK: - Body Scan
-// The Mid-Sleep body scan now uses the shared guided-audio NightlyBodyScanView
-// (presented with isMidSleep: true), so the standalone text/timer view was removed.
+// The Mid-Sleep toolkit uses shared guided-audio screens instead of standalone
+// text/timer variants.

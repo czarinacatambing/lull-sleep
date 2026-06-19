@@ -147,7 +147,7 @@ enum PaywallEntryPoint {
     case verdict
     case settings
 
-    var kicker: String { self == .settings ? "LULL PREMIUM" : "UNLOCK YOUR VERDICT" }
+    var kicker: String { self == .settings ? "TENTHIRTY PREMIUM" : "UNLOCK YOUR VERDICT" }
 }
 
 let PREMIUM_INCLUDES = [
@@ -155,8 +155,8 @@ let PREMIUM_INCLUDES = [
     "Sleep sounds (7 ambient tracks)",
     "Add or customize routine steps",
     "Today's full verdict + sleep pattern reveal",
-    "A new experiment every 5 nights with recommended variable",
-    "Guided meditation (coming soon)",
+    "Deeper habit progress after your free week",
+    "More ways to keep your routine consistent",
 ]
 
 struct NightFivePaywallFlow: View {
@@ -533,8 +533,8 @@ struct RevenueCatPaywallSheet: View {
 
     private var legalLinks: some View {
         HStack(spacing: 18) {
-            legalButton("Terms", url: "https://trylull.com/terms")
-            legalButton("Privacy", url: "https://trylull.com/privacy")
+            legalButton("Terms", url: "https://tenthirty.app/terms")
+            legalButton("Privacy", url: "https://tenthirty.app/privacy")
         }
         .font(.mono(10))
         .foregroundColor(.lullInk2)
@@ -557,11 +557,11 @@ struct RevenueCatPaywallSheet: View {
     private var unavailableView: some View {
         LullScreen(glow: true, glowX: 0.5, glowY: 0.05, glowRadius: 330, glowOpacity: 0.85) {
             VStack(alignment: .leading, spacing: 18) {
-                Kicker(text: context == .trialExpired ? "TRIAL ENDED" : "LULL PREMIUM", color: .lullAmberSoft)
-                Text("Lull Premium isn't available right now.")
+                Kicker(text: context == .trialExpired ? "TRIAL ENDED" : "TENTHIRTY PREMIUM", color: .lullAmberSoft)
+                Text("TenThirty Premium isn't available right now.")
                     .font(.serif(30))
                     .foregroundColor(.lullInk0)
-                Text("RevenueCat did not return an active paywall offering for this build. You can keep using Lull and try again from Settings later.")
+                Text("RevenueCat did not return an active paywall offering for this build. You can keep using TenThirty and try again from Settings later.")
                     .font(.system(size: 14))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(4)
@@ -578,13 +578,14 @@ struct RevenueCatPaywallSheet: View {
 }
 
 struct ShareToUnlockSheet: View {
+    @EnvironmentObject private var state: AppState
     let verdict: PaywallVerdict
     let onUnlocked: (ShareUnlockSource) -> Void
     let onNoThanks: () -> Void
     @State private var composer: MessageComposerPayload?
     @State private var activity: ActivityPayload?
 
-    private let bodyText = "I'm using Lull to help improve my sleep. Try it tonight. https://apps.apple.com/app/lull"
+    private let bodyText = "I'm using TenThirty to help improve my sleep. Try it tonight. https://apps.apple.com/app/tenthirty"
 
     var body: some View {
         LullScreen(glow: true, glowX: 0.5, glowY: 0.12, glowRadius: 320, glowOpacity: 0.8) {
@@ -599,10 +600,12 @@ struct ShareToUnlockSheet: View {
                         .foregroundColor(.lullInk2)
                     option(title: "Invite a friend",
                            detail: "Send a quick message via iMessage or SMS. We'll confirm with iOS when it sends.") {
+                        state.recordVerdictShareAttempt(source: .sms)
                         composer = MessageComposerPayload(image: ShareCardRenderer.image(for: verdict), body: bodyText)
                     }
                     option(title: "Post publicly",
                            detail: "Share your card to X, Instagram, Threads, or Reddit. We unlock once the share opens.") {
+                        state.recordVerdictShareAttempt(source: .public)
                         activity = ActivityPayload(items: [ShareCardRenderer.image(for: verdict), bodyText])
                     }
                     HStack {
@@ -736,7 +739,7 @@ struct VerdictUnlockedView: View {
                 VStack {
                     Spacer()
                     VStack(alignment: .leading, spacing: 10) {
-                        Kicker(text: "Keep going with Lull", color: .lullAmberSoft)
+                        Kicker(text: "Keep going with TenThirty", color: .lullAmberSoft)
                         Text("Tonight's verdict is yours. New experiments and Premium features need a subscription.")
                             .font(.system(size: 13))
                             .foregroundColor(.lullInk2)

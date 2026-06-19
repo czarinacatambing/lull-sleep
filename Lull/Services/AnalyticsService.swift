@@ -9,10 +9,11 @@ enum AnalyticsService {
 
         static var current: Config? {
             let info = Bundle.main.infoDictionary ?? [:]
-            let enabled = info["LullAnalyticsEnabled"] as? Bool ?? true
+            let enabled = AnalyticsService.infoBool(info["LullAnalyticsEnabled"], defaultValue: true)
             guard enabled else { return nil }
             guard let key = info["LullPostHogAPIKey"] as? String,
                   !key.isEmpty,
+                  !key.contains("$("),
                   !key.contains("YOUR_") else {
                 return nil
             }
@@ -20,6 +21,19 @@ enum AnalyticsService {
             let host = URL(string: hostString?.isEmpty == false ? hostString! : "https://us.i.posthog.com")
                 ?? URL(string: "https://us.i.posthog.com")!
             return Config(apiKey: key, host: host)
+        }
+    }
+
+    static func infoBool(_ value: Any?, defaultValue: Bool) -> Bool {
+        if let bool = value as? Bool { return bool }
+        guard let string = value as? String else { return defaultValue }
+        let normalized = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.contains("$(") { return false }
+        switch normalized {
+        case "1", "true", "yes": return true
+        case "0", "false", "no", "": return false
+        default:
+            return defaultValue
         }
     }
 

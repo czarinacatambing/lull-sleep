@@ -124,11 +124,7 @@ struct MyRoutineView: View {
                                 state.removeRoutineStep(step)
                             },
                             onAdd: {
-                                if state.canCustomizeRoutine {
-                                    libraryTarget = .prep
-                                } else {
-                                    state.presentUpgradePaywall()
-                                }
+                                libraryTarget = .prep
                             }
                         )
                         .padding(.horizontal, 22)
@@ -153,11 +149,7 @@ struct MyRoutineView: View {
                                 state.removeRoutineStep(step)
                             },
                             onAdd: {
-                                if state.canCustomizeRoutine {
-                                    libraryTarget = .ritual
-                                } else {
-                                    state.presentUpgradePaywall()
-                                }
+                                libraryTarget = .ritual
                             }
                         )
                         .padding(.horizontal, 22)
@@ -302,11 +294,23 @@ struct MyRoutineView: View {
         .sheet(isPresented: $showTonightInProgress) {
             TonightInProgressView()
         }
+        .onAppear {
+            consumeRequestedRoutineStep()
+        }
+        .onChange(of: state.requestedRoutineStepIDToEdit) { _, _ in
+            consumeRequestedRoutineStep()
+        }
     }
 
     private var selectedStep: RoutineStep? {
         guard let selectedStepID else { return nil }
         return state.coreRoutine.first { $0.id == selectedStepID }
+    }
+
+    private func consumeRequestedRoutineStep() {
+        guard let id = state.requestedRoutineStepIDToEdit else { return }
+        selectedStepID = id
+        state.requestedRoutineStepIDToEdit = nil
     }
 }
 
@@ -402,7 +406,7 @@ struct ExperimentStrip: View {
                     }
 
                     Text(title)
-                        .font(.serif(17))
+                        .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.lullInk0)
                         .lineLimit(1)
                 }
@@ -490,7 +494,7 @@ struct RoutineStepSection: View {
                     .kerning(1.7)
                     .foregroundColor(.lullAmberSoft)
                 Text(title)
-                    .font(.serif(20))
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundColor(.lullInk0)
                 Text(suffix)
                     .font(.mono(10))
@@ -608,7 +612,7 @@ struct StepRow: View {
 
                     HStack(alignment: .firstTextBaseline, spacing: 7) {
                         Text(step.label)
-                            .font(.serif(15.5))
+                            .font(.system(size: 15.5, weight: .regular))
                             .foregroundColor(.lullInk0)
                             .lineLimit(1)
                         if isExperiment {
@@ -775,7 +779,7 @@ struct RoutineProgressSection: View {
                     .kerning(1.7)
                     .foregroundColor(.lullAmberSoft)
                 Text("Progress")
-                    .font(.serif(20))
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundColor(.lullInk0)
                 Text("· last 14 nights")
                     .font(.mono(10))
@@ -893,12 +897,12 @@ struct EditStepSheet: View {
                                 .kerning(2)
                                 .foregroundColor(.lullInk3)
                             Text("Your lock window")
-                                .font(.serif(28))
+                                .font(.system(size: 28, weight: .regular))
                                 .foregroundColor(.lullInk0)
                         }
                     } else {
                         TextField("", text: $label)
-                            .font(.serif(28))
+                            .font(.system(size: 28, weight: .regular))
                             .foregroundColor(.lullInk0)
                             .tint(.lullAmber)
                             .padding(.bottom, 8)
@@ -1196,7 +1200,7 @@ final class AppBlockingAccessProbe: ObservableObject {
     static let shared = AppBlockingAccessProbe()
 
     @Published private(set) var statusText = "Not checked"
-    @Published private(set) var detailText = "Allow Screen Time access so Lull can help reduce distracting apps during your bedtime window."
+    @Published private(set) var detailText = "Allow Screen Time access so TenThirty can help reduce distracting apps during your bedtime window."
     @Published private(set) var isChecking = false
     @Published private(set) var isApproved = false
 
@@ -1209,11 +1213,11 @@ final class AppBlockingAccessProbe: ObservableObject {
         case .approved, .approvedWithDataAccess:
             isApproved = true
             statusText = "Access approved"
-            detailText = "Screen Time access is enabled. Lull can apply your selected app limits during bedtime."
+            detailText = "Screen Time access is enabled. TenThirty can apply your selected app limits during bedtime."
         case .denied:
             isApproved = false
             statusText = "Access denied"
-            detailText = "Screen Time access is off for Lull. You can enable it from iOS Settings when you want app blocking."
+            detailText = "Screen Time access is off for TenThirty. You can enable it from iOS Settings when you want app blocking."
         case .notDetermined:
             isApproved = false
             statusText = "Not requested"
@@ -1221,7 +1225,7 @@ final class AppBlockingAccessProbe: ObservableObject {
         @unknown default:
             isApproved = false
             statusText = "Unknown status"
-            detailText = "Lull could not read the current Screen Time permission. Check Settings and try again."
+            detailText = "TenThirty could not read the current Screen Time permission. Check Settings and try again."
         }
         #if DEBUG
         print("[AppBlocking] authorizationStatus=\(statusText)")
@@ -1433,7 +1437,7 @@ struct InlineAppBlockingSection: View {
                     .buttonStyle(.plain)
                 }
 
-                Text("Always allowed: Lull, Messages, Phone, Clock.")
+                Text("Always allowed: TenThirty, Messages, Phone, Clock.")
                     .font(.mono(9.5))
                     .foregroundColor(.lullInk4)
             } else {
@@ -1577,7 +1581,7 @@ struct AppBlockingLeadTimeCard: View {
                         .kerning(1.4)
                         .foregroundColor(.lullInk3)
                     Text(leadSummary)
-                        .font(.serif(24))
+                        .font(.system(size: 24, weight: .regular))
                         .foregroundColor(.lullInk0)
                 }
                 Spacer()
@@ -1694,7 +1698,7 @@ struct AppBlockingTimeTile: View {
                 .kerning(1.5)
                 .foregroundColor(.lullInk3)
             Text(value)
-                .font(.serif(20))
+                .font(.system(size: 20, weight: .regular))
                 .foregroundColor(.lullInk0)
             Text(detail)
                 .font(.system(size: 11.5))
@@ -1781,12 +1785,35 @@ struct RoutineLibraryStep: Identifiable {
     let category: String
     let defaultWhen: Int?
     let defaultDur: String?
+    let isPremium: Bool
+
+    init(id: String,
+         label: String,
+         icon: String,
+         blurb: String,
+         effect: String,
+         defaultSection: RoutineSectionKind,
+         category: String,
+         defaultWhen: Int?,
+         defaultDur: String?,
+         isPremium: Bool = false) {
+        self.id = id
+        self.label = label
+        self.icon = icon
+        self.blurb = blurb
+        self.effect = effect
+        self.defaultSection = defaultSection
+        self.category = category
+        self.defaultWhen = defaultWhen
+        self.defaultDur = defaultDur
+        self.isPremium = isPremium
+    }
 }
 
 let STEP_LIBRARY: [RoutineLibraryStep] = [
     .init(id: "lights", label: "Dim the lights", icon: "lightbulb", blurb: "Drop ambient lighting", effect: "-6 min", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
     .init(id: "screens", label: "No screens", icon: "iphone.slash", blurb: "Phone & laptop off", effect: "-9 min", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
-    .init(id: "app-blocking", label: R.appBlocking, icon: "lock.shield", blurb: "Block time-sink apps", effect: "locks", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil),
+    .init(id: "app-blocking", label: R.appBlocking, icon: "lock.shield", blurb: "Block time-sink apps", effect: "locks", defaultSection: .prep, category: "Wind down", defaultWhen: 75, defaultDur: nil, isPremium: true),
     .init(id: "shower", label: "Warm shower", icon: "shower", blurb: "Drops core temp on exit", effect: "-7 min", defaultSection: .prep, category: "Wind down", defaultWhen: 90, defaultDur: nil),
     .init(id: "mag", label: "Magnesium glycinate", icon: "pills", blurb: "200-400 mg, 30m before bed", effect: "-4 min", defaultSection: .prep, category: "Wind down", defaultWhen: 45, defaultDur: nil),
     .init(id: "caffeine", label: "Caffeine cutoff", icon: "drop", blurb: "No coffee after 2 PM", effect: "+0.6/5", defaultSection: .prep, category: "Wind down", defaultWhen: 120, defaultDur: nil),
@@ -1796,11 +1823,11 @@ let STEP_LIBRARY: [RoutineLibraryStep] = [
     .init(id: "bright", label: "Brightness check", icon: "sun.max", blurb: "Phone to lowest brightness", effect: "-2 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
     .init(id: "temp", label: "Temperature check", icon: "thermometer", blurb: "Log the room temp", effect: "logs", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "10s"),
     .init(id: "dump", label: "Brain dump", icon: "mic", blurb: "Voice memo, 2 min", effect: "-4 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "2m · voice"),
-    .init(id: "story", label: "Boring story", icon: "book.closed", blurb: "Slow audio story", effect: "-12 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: BoringStoryStepConfig.fresh.durationSummary),
+    .init(id: "story", label: "Boring story", icon: "book.closed", blurb: "Slow audio story", effect: "-12 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: BoringStoryStepConfig.fresh.durationSummary, isPremium: true),
     .init(id: "guided-meditation", label: "Guided meditation", icon: "figure.mind.and.body", blurb: "Coming soon", effect: "", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: nil),
-    .init(id: "sleep-sounds", label: R.sleepSounds, icon: "water.waves", blurb: "Ambient audio loop", effect: "masks", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "1 hr"),
+    .init(id: "sleep-sounds", label: R.sleepSounds, icon: "water.waves", blurb: "Ambient audio loop", effect: "masks", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "1 hr", isPremium: true),
     .init(id: "breath", label: "4·7·8 breathing", icon: "wind", blurb: "Slow exhale protocol", effect: "-5 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m"),
-    .init(id: "scan", label: "Body scan", icon: "sparkles", blurb: "Guided, 5 min", effect: "-3 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m"),
+    .init(id: "scan", label: "Body scan", icon: "sparkles", blurb: "Guided, 5 min", effect: "-3 min", defaultSection: .ritual, category: "In bed", defaultWhen: nil, defaultDur: "5m", isPremium: true),
     .init(id: "sunlight", label: "Sunlight, 10 min", icon: "sun.max", blurb: "Outside within 30m of waking", effect: "+0.7/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
     .init(id: "cold", label: "Cold water", icon: "drop", blurb: "Cold rinse, 30 sec", effect: "+0.5/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
     .init(id: "no-phone", label: "No phone, 30 min", icon: "iphone.slash", blurb: "Delay first screen", effect: "+0.4/5", defaultSection: .morning, category: "Mornings", defaultWhen: nil, defaultDur: nil),
@@ -1860,7 +1887,8 @@ struct StepLibraryOverlay: View {
                 defaultSection: .ritual,
                 category: "In bed",
                 defaultWhen: nil,
-                defaultDur: "night"
+                defaultDur: "night",
+                isPremium: appBlocking.isPremium
             )
             return [ritualScopedAppBlocking] + baseItems
         case .morning:
@@ -1884,6 +1912,10 @@ struct StepLibraryOverlay: View {
 
     private func groupName(for item: RoutineLibraryStep) -> String {
         item.defaultSection == .ritual ? "In Bed" : "Before Bed"
+    }
+
+    private var isLibraryLocked: Bool {
+        !state.canCustomizeRoutine
     }
 
     var body: some View {
@@ -1915,94 +1947,242 @@ struct StepLibraryOverlay: View {
                 .padding(.bottom, 18)
 
                 Text("Add a step")
-                    .font(.serif(28))
+                    .font(.system(size: 28, weight: .regular))
                     .foregroundColor(.lullInk0)
                     .padding(.horizontal, 22)
                     .padding(.bottom, 16)
 
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 14))
-                        .foregroundColor(.lullInk3)
-                    TextField("Search \(availableLibraryItems.count) sleep tactics...", text: $query)
-                        .font(.system(size: 14))
-                        .foregroundColor(.lullInk0)
-                        .tint(.lullAmber)
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 46)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.black.opacity(0.24))
-                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
-                )
-                .padding(.horizontal, 22)
-                .padding(.bottom, 12)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(categories, id: \.self) { category in
-                            Button(action: { selectedCategory = category }) {
-                                Text(category)
-                                    .font(.mono(10))
-                                    .foregroundColor(selectedCategory == category ? .lullAmber : .lullInk3)
-                                    .padding(.horizontal, 12)
-                                    .frame(height: 32)
-                                    .background(
-                                        Capsule()
-                                            .fill(selectedCategory == category ? Color.lullAmber.opacity(0.10) : Color.clear)
-                                            .overlay(Capsule().strokeBorder(selectedCategory == category ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1))
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 22)
-                }
-                .padding(.bottom, 18)
-
-                ScrollView(showsIndicators: false) {
-                    if filteredGroups.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("NO MATCHES")
-                                .font(.mono(10))
-                                .kerning(1.6)
+                ZStack {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 14))
                                 .foregroundColor(.lullInk3)
-                                Text("Try a different word - you can also describe what you want to do.")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullInk3)
+                            TextField("Search \(availableLibraryItems.count) sleep tactics...", text: $query)
+                                .font(.system(size: 14))
+                                .foregroundColor(.lullInk0)
+                                .tint(.lullAmber)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .frame(height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.black.opacity(0.24))
+                                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
+                        )
                         .padding(.horizontal, 22)
-                        .padding(.top, 16)
-                    } else {
-                        VStack(alignment: .leading, spacing: 18) {
-                            ForEach(filteredGroups, id: \.0) { group, rows in
+                        .padding(.bottom, 12)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(categories, id: \.self) { category in
+                                    Button(action: { selectedCategory = category }) {
+                                        Text(category)
+                                            .font(.mono(10))
+                                            .foregroundColor(selectedCategory == category ? .lullAmber : .lullInk3)
+                                            .padding(.horizontal, 12)
+                                            .frame(height: 32)
+                                            .background(
+                                                Capsule()
+                                                    .fill(selectedCategory == category ? Color.lullAmber.opacity(0.10) : Color.clear)
+                                                    .overlay(Capsule().strokeBorder(selectedCategory == category ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 22)
+                        }
+                        .padding(.bottom, 18)
+
+                        ScrollView(showsIndicators: false) {
+                            if filteredGroups.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(group.uppercased())
-                                        .font(.mono(9.5))
+                                    Text("NO MATCHES")
+                                        .font(.mono(10))
                                         .kerning(1.6)
                                         .foregroundColor(.lullInk3)
-                                    VStack(spacing: 6) {
-                                        ForEach(rows) { item in
-                                            LibraryRow(
-                                                item: item,
-                                                isActive: state.hasRoutineStep(label: item.label),
-                                                isExperiment: state.tonightVariable == item.label,
-                                                isAdding: addedLibraryID == item.id,
-                                                onAdd: { onAdd(item) }
-                                            )
+                                    Text("Try a different word - you can also describe what you want to do.")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.lullInk3)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 22)
+                                .padding(.top, 16)
+                            } else {
+                                VStack(alignment: .leading, spacing: 18) {
+                                    ForEach(filteredGroups, id: \.0) { group, rows in
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(group.uppercased())
+                                                .font(.mono(9.5))
+                                                .kerning(1.6)
+                                                .foregroundColor(.lullInk3)
+                                            VStack(spacing: 6) {
+                                                ForEach(rows) { item in
+                                                    LibraryRow(
+                                                        item: item,
+                                                        isActive: state.hasRoutineStep(label: item.label),
+                                                        isExperiment: state.tonightVariable == item.label,
+                                                        isAdding: addedLibraryID == item.id,
+                                                        onAdd: { onAdd(item) }
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                .padding(.horizontal, 22)
+                                .padding(.bottom, 34)
                             }
                         }
+                    }
+                    .blur(radius: isLibraryLocked ? 7 : 0)
+                    .opacity(isLibraryLocked ? 0.56 : 1)
+                    .allowsHitTesting(!isLibraryLocked)
+
+                    if isLibraryLocked {
+                        StepLibraryUpgradeCard(
+                            onUpgrade: {
+                                state.presentUpgradePaywall()
+                            },
+                            onDismiss: onClose
+                        )
                         .padding(.horizontal, 22)
-                        .padding(.bottom, 34)
+                        .transition(.opacity)
                     }
                 }
             }
         }
+    }
+}
+
+private struct StepLibraryUpgradeCard: View {
+    var onUpgrade: () -> Void
+    var onDismiss: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(Color.lullAmber.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+            }
+
+            VStack(spacing: 8) {
+                Text("Upgrade to Premium to Access These Features")
+                    .font(.system(size: 21, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Customize your routine after the free trial ends, including premium tools for late-night wakeups.")
+                    .font(.system(size: 13.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(4)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+            }
+
+            VStack(spacing: 11) {
+                StepLibraryUpgradeBenefit(
+                    title: "A routine built for your brain",
+                    detail: "Personalized to what actually keeps you up"
+                )
+                StepLibraryUpgradeBenefit(
+                    title: "Block the 1am scroll",
+                    detail: "Lock distracting apps through your sleep window"
+                )
+                StepLibraryUpgradeBenefit(
+                    title: "Quiet the overthinking",
+                    detail: "Brain dump + guided breathing, step by step"
+                )
+                StepLibraryUpgradeBenefit(
+                    title: "A nudge when it's time",
+                    detail: "Gentle reminders that keep you on track"
+                )
+                StepLibraryUpgradeBenefit(
+                    title: "Drift off, then silence",
+                    detail: "Sleep sounds that fade out on their own"
+                )
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.035))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+            )
+
+            Button(action: onUpgrade) {
+                Text("Subscribe")
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(Color(hex: "#1a0d06"))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Capsule().fill(Color.lullAmber))
+                    .shadow(color: .lullAmberGlow, radius: 12, y: 4)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onDismiss) {
+                Text("No thanks, not now")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(.lullInk3)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(Color.lullBg.opacity(0.78))
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22)
+                .strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.45), radius: 24, y: 18)
+    }
+}
+
+private struct StepLibraryUpgradeBenefit: View {
+    var title: String
+    var detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.lullAmber.opacity(0.12))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.lullAmber)
+            }
+            .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(.system(size: 12))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -2031,15 +2211,17 @@ struct LibraryRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(item.label)
-                        .font(.serif(15))
+                        .font(.system(size: 15.5, weight: .medium))
                         .foregroundColor(isComingSoon ? .lullInk2 : .lullInk0)
                         .lineLimit(1)
+                        .layoutPriority(1)
                     if isExperiment {
                         Text("TESTING")
                             .font(.mono(8.5))
                             .kerning(1.2)
                             .foregroundColor(.lullAmber)
                     }
+                    LibraryAccessChip(isPremium: item.isPremium)
                 }
                 Text(item.blurb)
                     .font(.system(size: 11.5))
@@ -2091,6 +2273,29 @@ struct LibraryRow: View {
                 )
         )
         .animation(.easeOut(duration: 0.18), value: isAdding)
+    }
+}
+
+private struct LibraryAccessChip: View {
+    var isPremium: Bool
+
+    var body: some View {
+        Text(isPremium ? "PREMIUM" : "FREE")
+            .font(.mono(8))
+            .kerning(1.0)
+            .foregroundColor(isPremium ? .lullAmber : .lullInk4)
+            .padding(.horizontal, 6)
+            .frame(height: 18)
+            .background(
+                Capsule()
+                    .fill(isPremium ? Color.lullAmber.opacity(0.09) : Color.white.opacity(0.035))
+                    .overlay(
+                        Capsule().strokeBorder(
+                            isPremium ? Color.lullAmber.opacity(0.28) : Color.white.opacity(0.08),
+                            lineWidth: 1
+                        )
+                    )
+            )
     }
 }
 
@@ -2202,7 +2407,7 @@ struct ExperimentHeroCard: View {
                 // Variable name
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(state.tonightVariable)
-                        .font(.serif(26))
+                        .font(.system(size: 26, weight: .regular))
                         .foregroundColor(.lullInk0)
                     if state.variableIsOverridden {
                         Text("EDITED")
@@ -2263,7 +2468,7 @@ struct ExperimentHeroCard: View {
                 // Override note
                 if state.variableIsOverridden {
                     HStack {
-                        Text("You overrode Lull's suggestion.")
+                        Text("You overrode TenThirty's suggestion.")
                             .font(.system(size: 11.5))
                             .foregroundColor(.lullInk2)
                         Spacer()
@@ -2448,7 +2653,7 @@ struct ScienceSheet: View {
                     .font(.system(size: 15))
                     .foregroundColor(.lullAmber)
                 Text("Why this might work")
-                    .font(.serif(20))
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundColor(.lullInk0)
             }
             .padding(.bottom, 6)
@@ -2509,7 +2714,7 @@ struct RoutineSectionHead: View {
             HStack(alignment: .firstTextBaseline) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(title)
-                        .font(.serif(18))
+                        .font(.system(size: 18, weight: .regular))
                         .fontWeight(.regular)
                         .foregroundColor(.lullInk0)
                     if let eyebrow {
@@ -2727,6 +2932,7 @@ struct ProgressDotsCard: View {
     var onTap: (Int) -> Void
     var onTodayEmptyTap: () -> Void = {}
     var showsFrame: Bool = true
+    var compact: Bool = false
 
     private var completedCount: Int {
         slots.filter { slot in
@@ -2765,7 +2971,7 @@ struct ProgressDotsCard: View {
                     let realIdx = slot.entry.flatMap { e in sleepLogs.firstIndex(where: { $0.id == e.id }) }
                     let showsAmberGlow = state == .inProgress || (slot.isToday && state != .todayEmpty)
 
-                    VStack(spacing: 5) {
+                    VStack(spacing: compact ? 3 : 5) {
                         dotVisual(for: slot)
                             .shadow(color: showsAmberGlow ? .lullAmberGlow : .clear, radius: 6)
                         dotLabel(for: slot)
@@ -2780,13 +2986,13 @@ struct ProgressDotsCard: View {
                     .allowsHitTesting(state != .skipped && state != .future)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 20)
-            .padding(.bottom, 14)
+            .padding(.horizontal, compact ? 0 : 18)
+            .padding(.top, compact ? 8 : 20)
+            .padding(.bottom, compact ? 8 : 14)
 
             Divider()
                 .background(Color.lullLine)
-                .padding(.horizontal, 18)
+                .padding(.horizontal, compact ? 0 : 18)
 
             HStack {
                 if let label = activeDotLabel {
@@ -2809,8 +3015,8 @@ struct ProgressDotsCard: View {
                     .kerning(0.8)
                     .foregroundColor(.lullInk3)
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
+            .padding(.horizontal, compact ? 0 : 18)
+            .padding(.vertical, compact ? 8 : 14)
         }
         .background {
             if showsFrame {
@@ -2911,7 +3117,7 @@ struct RoutineSectionHeader: View {
                 .foregroundColor(.lullInk1)
             if let subtitle {
                 Text("· \(subtitle)")
-                    .font(.serifItalic(13))
+                    .font(.system(size: 13, weight: .regular).italic())
                     .foregroundColor(.lullInk3)
             }
             Spacer()
@@ -2956,7 +3162,7 @@ struct CandidatePickerSheet: View {
                 }
                 .padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 20)
 
-                Text("Choose what to test next. Lull will track it for 5 nights and tell you if it moves the needle.")
+                Text("Choose what to test next. TenThirty will track it for 5 nights and tell you if it moves the needle.")
                     .font(.system(size: 13.5))
                     .foregroundColor(.lullInk3)
                     .lineSpacing(3)
@@ -2966,7 +3172,7 @@ struct CandidatePickerSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         if let suggestion = surfacedSuggestion {
-                            Text("LULL'S PICK")
+                            Text("TENTHIRTY'S PICK")
                                 .font(.mono(9)).kerning(1.4)
                                 .foregroundColor(.lullAmberSoft)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -3035,89 +3241,5 @@ struct CandidatePickerSheet: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Export Data Footer
-
-struct ExportDataFooter: View {
-    @EnvironmentObject var state: AppState
-    @State private var showResult = false
-    @State private var resultMessage = ""
-
-    private static let relativeFmt: RelativeDateTimeFormatter = {
-        let f = RelativeDateTimeFormatter()
-        f.unitsStyle = .short
-        return f
-    }()
-
-    private var statusLine: String {
-        if state.isExporting { return "Sending…" }
-        if let err = state.lastExportError { return "Last attempt failed · \(err)" }
-        if let last = state.lastExportDate {
-            return "Last sent \(ExportDataFooter.relativeFmt.localizedString(for: last, relativeTo: Date()))"
-        }
-        return "Never sent · helps us improve the app"
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "paperplane")
-                    .font(.system(size: 13))
-                    .foregroundColor(.lullAmberSoft)
-                    .frame(width: 18, height: 18)
-                    .padding(.top, 1)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Help us improve Lull")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.lullInk1)
-                    Text("Send your anonymous sleep data to the Lull team. No name, no email — just a random ID.")
-                        .font(.system(size: 12))
-                        .foregroundColor(.lullInk3)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            HStack {
-                Text(statusLine)
-                    .font(.mono(10))
-                    .kerning(0.8)
-                    .foregroundColor(state.lastExportError == nil ? .lullInk4 : .lullAmberSoft)
-                Spacer()
-                Button {
-                    state.exportData()
-                } label: {
-                    HStack(spacing: 6) {
-                        if state.isExporting {
-                            ProgressView()
-                                .scaleEffect(0.6)
-                                .tint(.lullAmber)
-                        }
-                        Text(state.isExporting ? "Sending" : "Send now")
-                            .font(.mono(11))
-                            .kerning(1)
-                            .foregroundColor(.lullAmber)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(Color.lullAmber.opacity(0.10))
-                            .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.3), lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(state.isExporting)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.025))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.lullLine, lineWidth: 1))
-        )
     }
 }

@@ -70,7 +70,7 @@ struct SleepLogDetailView: View {
 
                             if isTonightInProgress {
                                 Text(isFirstNight
-                                    ? "This is your first night with Lull! 🌙"
+                                    ? "This is your first night with TenThirty! 🌙"
                                     : "Tonight's routine is in progress 🌙")
                                     .font(.serif(28))
                                     .foregroundColor(.lullInk0)

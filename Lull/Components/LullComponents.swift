@@ -56,19 +56,25 @@ struct AmberGlow: View {
 
 struct BrandMark: View {
     var large: Bool = false
+    var maxWidth: CGFloat? = nil
 
     var body: some View {
-        HStack(spacing: large ? 10 : 7) {
+        HStack(alignment: .center, spacing: large ? 9 : 6) {
+            Text("TenThirty")
+                .font(.system(size: large ? 27 : 17, weight: .regular, design: .default))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(maxWidth == nil ? 0.85 : 0.5)
+                .layoutPriority(1)
+
             Circle()
                 .fill(Color.lullAmber)
-                .frame(width: large ? 12 : 8, height: large ? 12 : 8)
-                .shadow(color: .lullAmberGlow, radius: 7)
-
-            Text("lull")
-                .font(.serif(large ? 24 : 16, italic: true))
-                .foregroundColor(.lullInk0)
-                .kerning(-0.5)
+                .frame(width: large ? 8 : 5.5, height: large ? 8 : 5.5)
+                .shadow(color: .lullAmberGlow, radius: large ? 8 : 5)
         }
+        .fixedSize(horizontal: maxWidth == nil, vertical: true)
+        .frame(width: maxWidth, alignment: .center)
+        .accessibilityLabel("TenThirty")
     }
 }
 

@@ -70,6 +70,13 @@ struct NightlyBrightnessView: View {
         ("Mostly dark",  "nearly lights-out",          "moon.fill"),
     ]
 
+    private var brightnessSuggestion: String? {
+        guard let selectedLevel, selectedLevel <= 1 else { return nil }
+        return selectedLevel == 0
+            ? "Turn off overhead lights or dim lamps now. Lower light helps your brain shift toward sleep."
+            : "Dim the remaining lamps if you can. A darker room gives your body a clearer sleep signal."
+    }
+
     var body: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: 0.3, radius: 210, opacity: 0.45)
@@ -162,6 +169,17 @@ struct NightlyBrightnessView: View {
                     }
                     .padding(.horizontal, 22)
                     .transition(.opacity)
+
+                    if let brightnessSuggestion {
+                        NightlySuggestionCard(
+                            icon: "lightbulb.min",
+                            title: "Lower the light",
+                            message: brightnessSuggestion
+                        )
+                        .padding(.horizontal, 22)
+                        .padding(.top, 12)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
 
                 Spacer()
@@ -214,6 +232,23 @@ struct NightlyTemperatureView: View {
         ("Warm — slightly stuffy",      "#d99a4a"),
         ("Hot — kicking covers off",    "#c66f4a"),
     ]
+
+    private var temperatureSuggestion: (title: String, message: String)? {
+        switch state.selectedTemp {
+        case 0:
+            return (
+                "Add a little warmth",
+                "Use thicker blankets, add another layer of clothing, or slightly turn up the heat."
+            )
+        case 3:
+            return (
+                "Cool the room down",
+                "Try a fan or AC, or switch to lighter clothing so you are not kicking covers off."
+            )
+        default:
+            return nil
+        }
+    }
 
     var body: some View {
         LullScreen(glow: false) {
@@ -284,6 +319,17 @@ struct NightlyTemperatureView: View {
                 }
                 .padding(.horizontal, 22)
 
+                if let temperatureSuggestion {
+                    NightlySuggestionCard(
+                        icon: state.selectedTemp == 0 ? "thermometer.low" : "fan",
+                        title: temperatureSuggestion.title,
+                        message: temperatureSuggestion.message
+                    )
+                    .padding(.horizontal, 22)
+                    .padding(.top, 12)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 Spacer()
 
                 PrimaryCTA(title: "Continue") {
@@ -295,6 +341,46 @@ struct NightlyTemperatureView: View {
                 .padding(.bottom, 36)
             }
         }
+    }
+}
+
+private struct NightlySuggestionCard: View {
+    var icon: String
+    var title: String
+    var message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.lullAmber.opacity(0.12))
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                Text(message)
+                    .font(.system(size: 12.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -336,7 +422,7 @@ struct NightlyBrainDumpView: View {
 
                         Text(showDoneMessage
                              ? "It's saved. You can come back to it."
-                             : "Talk through anything still on your mind. Lull saves it so you don't have to hold onto it.")
+                             : "Talk through anything still on your mind. TenThirty saves it so you don't have to hold onto it.")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk2)
                             .multilineTextAlignment(.center)
@@ -490,7 +576,7 @@ private struct MicPermissionDeniedView: View {
                 .foregroundColor(.lullInk0)
                 .multilineTextAlignment(.center)
 
-            Text("Go to Settings → Lull → Microphone to enable it.")
+            Text("Go to Settings → TenThirty → Microphone to enable it.")
                 .font(.system(size: 14))
                 .foregroundColor(.lullInk2)
                 .multilineTextAlignment(.center)
@@ -1296,6 +1382,19 @@ struct NightlyGenericStepView: View {
     @EnvironmentObject var state: AppState
     var label: String
 
+    private var isWeightedBlanket: Bool {
+        label == R.weightedBlanket
+    }
+
+    private var displayTitle: String {
+        isWeightedBlanket ? "Don't forget your weighted blanket" : label
+    }
+
+    private var displayExplanation: String? {
+        guard isWeightedBlanket else { return nil }
+        return "Deep pressure can calm your nervous system and lower bedtime arousal."
+    }
+
     var body: some View {
         LullScreen(glow: false) {
             AmberGlow(x: 0.5, y: 0.3, radius: 220, opacity: 0.4)
@@ -1306,10 +1405,21 @@ struct NightlyGenericStepView: View {
 
                 VStack(spacing: 14) {
                     Kicker(text: "Your habit")
-                    Text(label)
+                    Text(displayTitle)
                         .font(.serif(32))
                         .foregroundColor(.lullAmber)
                         .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+
+                    if let displayExplanation {
+                        Text(displayExplanation)
+                            .font(.system(size: 14))
+                            .foregroundColor(.lullInk2)
+                            .lineSpacing(4)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 300)
+                            .padding(.top, 2)
+                    }
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 36)

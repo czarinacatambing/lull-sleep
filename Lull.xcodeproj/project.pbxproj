@@ -60,6 +60,8 @@
 		9B7F44E0E934CDBD5118EABE /* LullOpenMidSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3235DFDF444A604EE24349 /* LullOpenMidSleepIntent.swift */; };
 		9C0ADEB3244712E2707AA703 /* NightlyBodyScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D99D336272FBA1B2B4855F7 /* NightlyBodyScanView.swift */; };
 		9E029E5B69BCCD755344B012 /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4412D817F2D0337DA1C1F994 /* PersistenceStore.swift */; };
+		A1B2C3D4E5F60718293A4B5D /* PostHogReplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* PostHogReplayService.swift */; };
+		A1B2C3D4E5F60718293A4B5E /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60718293A4B60 /* PostHog */; };
 		A36C4EE43206BC88FE832426 /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */; };
 		A383F378753EA2DC32962DB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD947544D9101E2AC407DBAB /* Assets.xcassets */; };
 		A63A37D9D24FCC8040B5DC04 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = C8F68E7EECC90EA444A8356F /* RevenueCat */; };
@@ -128,6 +130,7 @@
 		099C95FFE9E54D37F2C8DC6C /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
 		0AF6A811B5639D1FDEE756E8 /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
 		0D92AE10983629698DB935D9 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* PostHogReplayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogReplayService.swift; sourceTree = "<group>"; };
 		0DBD42F7C9064584A41BF3FB /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
 		0F25C9BCB50C0CE274384EA7 /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
 		103DEBD8E0D92A2520CF355A /* boring-story-01.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-01.mp3"; sourceTree = "<group>"; };
@@ -163,7 +166,7 @@
 		69EC5108E1FAA5C9BC07089B /* lake.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = lake.m4a; sourceTree = "<group>"; };
 		6A37F3D94D9C1A95B3E30D21 /* in captivity.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "in captivity.m4a"; sourceTree = "<group>"; };
 		6D99D336272FBA1B2B4855F7 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
-		6F40249E393C00D6191A73D1 /* Lull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F40249E393C00D6191A73D1 /* TenThirty.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TenThirty.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7193297D4150A1EE482E185C /* SleepSounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepSounds.swift; sourceTree = "<group>"; };
 		77C7E5306ECAA7AADB30A611 /* min-solf.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "min-solf.m4a"; sourceTree = "<group>"; };
 		84F0EC340E643E534877184C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -232,6 +235,7 @@
 			files = (
 				A63A37D9D24FCC8040B5DC04 /* RevenueCat in Frameworks */,
 				D2E329F1C668A6E1FE23C7ED /* RevenueCatUI in Frameworks */,
+				A1B2C3D4E5F60718293A4B5E /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,6 +337,7 @@
 				2553583629DF9CBE3DFA6A25 /* ExportService.swift */,
 				DB80FF006ACC51F5E83E2C89 /* LiveActivityService.swift */,
 				8758B18C20D01C3FD4034F51 /* LullSubscriptionManager.swift */,
+				A1B2C3D4E5F60718293A4B5C /* PostHogReplayService.swift */,
 				3A6A4DAF1FD7C9EADC79FE1A /* ResearchDataService.swift */,
 				0DBD42F7C9064584A41BF3FB /* ShakeDetector.swift */,
 				5D820BF460AB3C918823A264 /* TTSService.swift */,
@@ -487,7 +492,7 @@
 		F4700DAD589C69A0363C6B7B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6F40249E393C00D6191A73D1 /* Lull.app */,
+				6F40249E393C00D6191A73D1 /* TenThirty.app */,
 				D70CC2675B14641EE134DD1D /* LullActivities.appex */,
 			);
 			name = Products;
@@ -540,9 +545,10 @@
 			packageProductDependencies = (
 				C8F68E7EECC90EA444A8356F /* RevenueCat */,
 				8758EF8768BF14B3DB8630DD /* RevenueCatUI */,
+				A1B2C3D4E5F60718293A4B60 /* PostHog */,
 			);
 			productName = Lull;
-			productReference = 6F40249E393C00D6191A73D1 /* Lull.app */;
+			productReference = 6F40249E393C00D6191A73D1 /* TenThirty.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -575,6 +581,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				35AE347A35C06CBF55A070F0 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+				A1B2C3D4E5F60718293A4B5F /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F4700DAD589C69A0363C6B7B /* Products */;
@@ -661,6 +668,7 @@
 				D4FCC2FB096E9828F15905BD /* PendingPromotion.swift in Sources */,
 				E48CFA2EC5402130519FA91B /* PersistedState.swift in Sources */,
 				9E029E5B69BCCD755344B012 /* PersistenceStore.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5D /* PostHogReplayService.swift in Sources */,
 				A36C4EE43206BC88FE832426 /* PrepChecklistAttributes.swift in Sources */,
 				D29B21E1293E07711A6E45A1 /* RemedyID.swift in Sources */,
 				747AE8FCEF1CCD40051C5692 /* ResearchDataService.swift in Sources */,
@@ -712,15 +720,29 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LULL_ANALYTICS_COHORT = influencer;
+				"LULL_ANALYTICS_COHORT[arch=*]" = influencer;
+				LULL_ANALYTICS_ENABLED = YES;
+				"LULL_ANALYTICS_ENABLED[arch=*]" = YES;
+				LULL_POSTHOG_API_KEY = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
+				"LULL_POSTHOG_API_KEY[arch=*]" = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
+				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
+				LULL_RESEARCH_DATA_ENABLED = NO;
+				LULL_RESEARCH_DATA_ENDPOINT = "";
+				LULL_RESEARCH_DATA_TOKEN = "";
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
+				PRODUCT_NAME = TenThirty;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -760,7 +782,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -773,7 +795,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -818,7 +840,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -837,7 +859,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -854,15 +876,17 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = LullActivities/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -878,15 +902,27 @@
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LULL_ANALYTICS_COHORT = "";
+				LULL_ANALYTICS_ENABLED = YES;
+				LULL_POSTHOG_API_KEY = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
+				"LULL_POSTHOG_API_KEY[arch=*]" = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
+				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
+				LULL_RESEARCH_DATA_ENABLED = NO;
+				LULL_RESEARCH_DATA_ENDPOINT = "";
+				LULL_RESEARCH_DATA_TOKEN = "";
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
+				PRODUCT_NAME = TenThirty;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -898,15 +934,17 @@
 				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				INFOPLIST_FILE = LullActivities/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -955,6 +993,14 @@
 				minimumVersion = 5.0.0;
 			};
 		};
+		A1B2C3D4E5F60718293A4B5F /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.59.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -967,6 +1013,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 35AE347A35C06CBF55A070F0 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
 			productName = RevenueCat;
+		};
+		A1B2C3D4E5F60718293A4B60 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F60718293A4B5F /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

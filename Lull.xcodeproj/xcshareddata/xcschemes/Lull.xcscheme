@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "913FDFB167D77578D6628079"
-               BuildableName = "Lull.app"
+               BuildableName = "TenThirty.app"
                BlueprintName = "Lull"
                ReferencedContainer = "container:Lull.xcodeproj">
             </BuildableReference>
@@ -33,7 +33,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "913FDFB167D77578D6628079"
-            BuildableName = "Lull.app"
+            BuildableName = "TenThirty.app"
             BlueprintName = "Lull"
             ReferencedContainer = "container:Lull.xcodeproj">
          </BuildableReference>
@@ -58,7 +58,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "913FDFB167D77578D6628079"
-            BuildableName = "Lull.app"
+            BuildableName = "TenThirty.app"
             BlueprintName = "Lull"
             ReferencedContainer = "container:Lull.xcodeproj">
          </BuildableReference>
@@ -77,7 +77,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "913FDFB167D77578D6628079"
-            BuildableName = "Lull.app"
+            BuildableName = "TenThirty.app"
             BlueprintName = "Lull"
             ReferencedContainer = "container:Lull.xcodeproj">
          </BuildableReference>

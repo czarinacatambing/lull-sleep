@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Colors
 
@@ -37,17 +38,31 @@ extension Color {
 }
 
 // MARK: - Typography
-// Fonts: Fraunces (serif display), JetBrains Mono (data labels).
-// Add font files to Resources/Fonts/ and register in Info.plist under UIAppFonts.
-// Download from: https://fonts.google.com/specimen/Fraunces and https://fonts.google.com/specimen/JetBrains+Mono
+// Serif display follows the mockup fallback order:
+// 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif.
 
 extension Font {
-    static func serif(_ size: CGFloat, weight: Font.Weight = .light, italic: Bool = false) -> Font {
-        let name = italic ? "Fraunces-LightItalic" : "Fraunces-Light"
-        return .custom(name, size: size)
+    private static func lullSerifName(weight: Font.Weight, italic: Bool) -> String {
+        let bold = [.semibold, .bold, .heavy, .black].contains(weight)
+        let candidates: [String]
+        switch (bold, italic) {
+        case (true, true):
+            candidates = ["IowanOldStyle-BoldItalic", "Palatino-BoldItalic", "Georgia-BoldItalic"]
+        case (true, false):
+            candidates = ["IowanOldStyle-Bold", "Palatino-Bold", "Georgia-Bold"]
+        case (false, true):
+            candidates = ["IowanOldStyle-Italic", "Palatino-Italic", "Georgia-Italic"]
+        case (false, false):
+            candidates = ["IowanOldStyle-Roman", "Palatino-Roman", "Georgia"]
+        }
+        return candidates.first { UIFont(name: $0, size: 12) != nil } ?? (italic ? "Georgia-Italic" : "Georgia")
+    }
+
+    static func serif(_ size: CGFloat, weight: Font.Weight = .regular, italic: Bool = false) -> Font {
+        .custom(lullSerifName(weight: weight, italic: italic), size: size)
     }
     static func serifItalic(_ size: CGFloat) -> Font {
-        .custom("Fraunces-LightItalic", size: size)
+        .serif(size, italic: true)
     }
     static func mono(_ size: CGFloat) -> Font {
         .custom("JetBrainsMono-Regular", size: size)

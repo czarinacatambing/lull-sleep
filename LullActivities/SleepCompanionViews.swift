@@ -11,8 +11,8 @@ import WidgetKit
 // we render the wake UI anyway. Whenever iOS redraws the Lock Screen (glance,
 // notification, system schedule) the user sees the flip without us pushing.
 extension LullSleepAttributes.ContentState {
-    func effectivePhase(isStale: Bool = false) -> Phase {
-        if phase == .sleeping && (isStale || Date() >= wakeTime) {
+    func effectivePhase(at date: Date = Date(), isStale: Bool = false) -> Phase {
+        if phase == .sleeping && (isStale || date >= wakeTime) {
             return .awaitingRating
         }
         return phase
@@ -44,14 +44,16 @@ struct SleepCompanionLockScreenView: View {
     private var state: LullSleepAttributes.ContentState { context.state }
 
     var body: some View {
-        Group {
-            switch state.effectivePhase(isStale: context.isStale) {
-            case .sleeping:
-                SleepingLockCard(state: state)
-            case .awaitingRating:
-                WakeLockCard(state: state)
-            case .rated:
-                ConfirmLockCard(state: state)
+        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+            Group {
+                switch state.effectivePhase(at: timeline.date, isStale: context.isStale) {
+                case .sleeping:
+                    SleepingLockCard(state: state)
+                case .awaitingRating:
+                    WakeLockCard(state: state)
+                case .rated:
+                    ConfirmLockCard(state: state)
+                }
             }
         }
     }
@@ -70,7 +72,7 @@ private struct SleepingLockCard: View {
                     .fill(LullLA.amberSoft)
                     .frame(width: 7, height: 7)
                     .shadow(color: LullLA.amberGlow, radius: 4)
-                Text("lull")
+                Text("TenThirty")
                     .font(LullLAFont.fraunces(size: 13, weight: .light))
                     .foregroundColor(LullLA.ink2)
                 Spacer()
@@ -122,7 +124,7 @@ private struct SleepingLockCard: View {
                     .font(.system(size: 12.5))
                     .foregroundColor(LullLA.ink3)
                 Spacer()
-                Link(destination: URL(string: "lull://midsleep")!) {
+                Link(destination: URL(string: "tenthirty://midsleep")!) {
                     Text("Mid-Sleep mode")
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundColor(LullLA.ink1)
@@ -152,11 +154,11 @@ private struct SleepingLockCard: View {
                 )
             }
         )
-        // Backup tap target: if Link("lull://midsleep") fails for any reason
+        // Backup tap target: if Link("tenthirty://midsleep") fails for any reason
         // (Live Activity Link quirks), tapping anywhere else on the card still
         // navigates to Mid-Sleep mode. widgetURL is iOS's first-class
         // tap-to-open mechanism for widget surfaces.
-        .widgetURL(URL(string: "lull://midsleep"))
+        .widgetURL(URL(string: "tenthirty://midsleep"))
     }
 }
 
@@ -172,7 +174,7 @@ private struct WakeLockCard: View {
                 Image(systemName: "sun.horizon.fill")
                     .font(.system(size: 13))
                     .foregroundColor(LullLA.amber)
-                Text("lull")
+                Text("TenThirty")
                     .font(LullLAFont.fraunces(size: 13, weight: .light))
                     .foregroundColor(LullLA.ink2)
                 Spacer()
@@ -212,7 +214,7 @@ private struct ConfirmLockCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("lull")
+                Text("TenThirty")
                     .font(LullLAFont.fraunces(size: 13, weight: .light))
                     .foregroundColor(LullLA.ink2)
                 Spacer()
@@ -248,7 +250,7 @@ private struct ConfirmLockCard: View {
         }
         .padding(16)
         .background(LullLA.cardConfirm)
-        .widgetURL(URL(string: "lull://reward"))
+        .widgetURL(URL(string: "tenthirty://reward"))
     }
 }
 
@@ -352,7 +354,7 @@ struct DISleepLeading: View {
                     .font(LullLAFont.mono(size: 8.5))
                     .tracking(1.6)
                     .foregroundColor(LullLA.ink3)
-                Text("lull")
+                Text("TenThirty")
                     .font(LullLAFont.fraunces(size: 13, weight: .light))
                     .foregroundColor(LullLA.ink2)
             }
@@ -384,7 +386,7 @@ struct DISleepBottom: View {
                 .font(.system(size: 12))
                 .foregroundColor(LullLA.ink3)
             Spacer()
-            Link(destination: URL(string: "lull://midsleep")!) {
+            Link(destination: URL(string: "tenthirty://midsleep")!) {
                 Text("Mid-Sleep mode")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(LullLA.ink1)

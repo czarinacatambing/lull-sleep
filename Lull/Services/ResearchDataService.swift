@@ -64,10 +64,11 @@ actor ResearchDataService {
 
         static var current: Config? {
             let info = Bundle.main.infoDictionary ?? [:]
-            let enabled = info["LullResearchDataEnabled"] as? Bool ?? true
+            let enabled = ResearchDataService.infoBool(info["LullResearchDataEnabled"], defaultValue: true)
             guard enabled else { return nil }
             guard let endpointString = info["LullResearchDataEndpoint"] as? String,
                   !endpointString.isEmpty,
+                  !endpointString.contains("$("),
                   !endpointString.contains("YOUR_"),
                   let endpoint = URL(string: endpointString) else {
                 return nil
@@ -92,6 +93,19 @@ actor ResearchDataService {
 
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+    }
+
+    private static func infoBool(_ value: Any?, defaultValue: Bool) -> Bool {
+        if let bool = value as? Bool { return bool }
+        guard let string = value as? String else { return defaultValue }
+        let normalized = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.contains("$(") { return false }
+        switch normalized {
+        case "1", "true", "yes": return true
+        case "0", "false", "no", "": return false
+        default:
+            return defaultValue
+        }
     }
 
     func submit(eventName: String,

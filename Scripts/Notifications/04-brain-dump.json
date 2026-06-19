@@ -1,9 +1,9 @@
 {
-    "Simulator Target Bundle": "com.lull.app",
+    "Simulator Target Bundle": "com.trylull.app",
     "aps": {
         "alert": {
             "title": "Brain dump",
-            "body": "Talk through anything on your mind. Lull saves it — nothing replays."
+            "body": "Talk through anything on your mind. TenThirty saves it — nothing replays."
         },
         "sound": "default",
         "category": "BEDTIME_REMINDER"
