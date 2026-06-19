@@ -8,7 +8,7 @@ struct TogglePrepItemIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Mark prep item done"
     static var description = IntentDescription("Toggles a bedtime prep item from the lock screen.")
     static var isDiscoverable: Bool = false
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = true
 
     @Parameter(title: "Item ID")
     var itemId: String
@@ -41,6 +41,7 @@ struct TogglePrepItemIntent: LiveActivityIntent {
             pending.append(itemId)
         }
         defaults?.set(pending, forKey: pendingTogglesKey)
+        defaults?.synchronize()
 
         return .result()
     }

@@ -22,6 +22,10 @@ private func timeString(_ date: Date) -> String {
     return f.string(from: date)
 }
 
+private func prepDoneURL(for itemId: String) -> URL {
+    URL(string: "tenthirty://prep-done?id=\(itemId)")!
+}
+
 // MARK: - Lock Screen / Notification Banner view
 
 struct PrepChecklistLiveActivityView: View {
@@ -83,7 +87,7 @@ struct PrepChecklistLiveActivityView: View {
         VStack(spacing: 6) {
             ForEach(items) { item in
                 let done = doneIds.contains(item.id)
-                Button(intent: TogglePrepItemIntent(itemId: item.id)) {
+                Link(destination: prepDoneURL(for: item.id)) {
                     HStack(spacing: 10) {
                         Image(systemName: done ? "checkmark.circle.fill" : "circle")
                             .font(.system(size: 15))
@@ -106,7 +110,6 @@ struct PrepChecklistLiveActivityView: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.borderless)
                 .accessibilityLabel("Mark \(item.label) done")
             }
         }
@@ -137,7 +140,7 @@ private struct ExpandedView: View {
             VStack(spacing: 4) {
                 ForEach(items.prefix(3)) { item in
                     let done = doneIds.contains(item.id)
-                    Button(intent: TogglePrepItemIntent(itemId: item.id)) {
+                    Link(destination: prepDoneURL(for: item.id)) {
                         HStack(spacing: 8) {
                             Image(systemName: done ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 13))
@@ -155,7 +158,6 @@ private struct ExpandedView: View {
                         }
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.borderless)
                     .accessibilityLabel("Mark \(item.label) done")
                 }
                 if items.count > 3 {

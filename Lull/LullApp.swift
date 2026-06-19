@@ -100,6 +100,10 @@ struct LullApp: App {
                 // Apply any prep-item toggles made from the Lock Screen while the app was closed.
                 let pendingIds = LiveActivityService.shared.consumePendingToggles()
                 for id in pendingIds { state.togglePrepDone(id) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    let pendingIds = LiveActivityService.shared.consumePendingToggles()
+                    for id in pendingIds { state.togglePrepDone(id) }
+                }
                 // The Sleep Companion "Mid-Sleep mode" button writes a flag
                 // to the App Group before openAppWhenRun foregrounds us.
                 // Delay slightly so the extension process has time to flush.
