@@ -42,7 +42,7 @@ private struct DIPhaseLeadingView: View {
     let isStale: Bool
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             switch state.effectivePhase(at: timeline.date, isStale: isStale) {
             case .sleeping:       DISleepLeading(state: state)
             case .awaitingRating: DIWakeLeading(state: state)
@@ -57,7 +57,7 @@ private struct DIPhaseTrailingView: View {
     let isStale: Bool
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             switch state.effectivePhase(at: timeline.date, isStale: isStale) {
             case .sleeping:       DISleepTrailing(state: state)
             case .awaitingRating: DIWakeTrailing(state: state)
@@ -72,7 +72,7 @@ private struct DIPhaseBottomView: View {
     let isStale: Bool
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             switch state.effectivePhase(at: timeline.date, isStale: isStale) {
             case .sleeping:       DISleepBottom()
             case .awaitingRating: DIWakeBottom(state: state)
@@ -88,7 +88,7 @@ private struct DIPhaseCompactGlyphView: View {
     let size: CGFloat
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             let phase = state.effectivePhase(at: timeline.date, isStale: isStale)
             Image(systemName: compactGlyph(for: phase))
                 .font(.system(size: size))
@@ -102,7 +102,7 @@ private struct DIPhaseCompactTrailingView: View {
     let isStale: Bool
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             CompactTrailingView(
                 state: state,
                 phase: state.effectivePhase(at: timeline.date, isStale: isStale)

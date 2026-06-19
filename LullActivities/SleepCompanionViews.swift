@@ -3,13 +3,15 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+let sleepCompanionPhaseRefreshInterval: TimeInterval = 15
+
 // MARK: - Effective phase (the data-vs-visual flip)
 
 // The activity's stored phase doesn't auto-advance at wake time because no app
-// code runs while the user sleeps. Every view computes effectivePhase from the
-// clock: if Date.now is past wakeTime and we're still nominally "sleeping",
-// we render the wake UI anyway. Whenever iOS redraws the Lock Screen (glance,
-// notification, system schedule) the user sees the flip without us pushing.
+// code runs while the user sleeps. The surrounding card also needs a timeline
+// tick; otherwise only Text(timerInterval:) may animate to 0:00 while the
+// sleeping layout stays on screen. Every view computes effectivePhase from the
+// clock on a lightweight refresh cadence.
 extension LullSleepAttributes.ContentState {
     func effectivePhase(at date: Date = Date(), isStale: Bool = false) -> Phase {
         if phase == .sleeping && (isStale || date >= wakeTime) {
@@ -44,7 +46,7 @@ struct SleepCompanionLockScreenView: View {
     private var state: LullSleepAttributes.ContentState { context.state }
 
     var body: some View {
-        TimelineView(.periodic(from: state.wakeTime, by: 60)) { timeline in
+        TimelineView(.periodic(from: Date(), by: sleepCompanionPhaseRefreshInterval)) { timeline in
             Group {
                 switch state.effectivePhase(at: timeline.date, isStale: context.isStale) {
                 case .sleeping:

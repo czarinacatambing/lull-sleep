@@ -1,5 +1,6 @@
 import SwiftUI
 import FamilyControls
+import PostHog
 
 // Onboarding coordinator — a quick profile, then a generated routine.
 struct OnboardingView: View {
@@ -30,6 +31,7 @@ struct OnboardingView: View {
         }
         .animation(step == 6 ? .easeInOut(duration: 0.7) : .easeInOut(duration: 0.28), value: step)
         .transition(.opacity)
+        .postHogNoMask()
         .onAppear {
             if !didTrackStart {
                 didTrackStart = true
@@ -1300,7 +1302,7 @@ struct OnbMethodologyView: View {
                             + Text(flaggedText)
                                 .foregroundColor(.lullAmber)
                         )
-                        .font(.system(size: bodySize, weight: .semibold))
+                        .font(.system(size: bodySize, weight: .regular))
                         .lineSpacing(4)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 306)
