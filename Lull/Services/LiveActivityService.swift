@@ -158,9 +158,11 @@ class LiveActivityService {
                 wakeTime: effectiveWakeTime
             )
             Task {
+                // Do not stale at wake time: iOS may overlay a loading spinner
+                // instead of showing the morning rating state.
                 await existing.update(ActivityContent(
                     state: state,
-                    staleDate: effectiveWakeTime,
+                    staleDate: self.ratingWindowEnd(for: effectiveWakeTime),
                     relevanceScore: 0.8
                 ))
                 for extra in sleepActivities.dropFirst() {
@@ -178,11 +180,13 @@ class LiveActivityService {
         )
 
         do {
+            // Keep the activity fresh through the morning rating window. If the
+            // stale date is the wake time, iOS can show a stuck loader at 0:00.
             let activity = try Activity.request(
                 attributes: attrs,
                 content: ActivityContent(
                     state: state,
-                    staleDate: effectiveWakeTime,
+                    staleDate: ratingWindowEnd(for: effectiveWakeTime),
                     relevanceScore: 0.8
                 ),
                 pushType: nil

@@ -4,6 +4,7 @@ import UserNotifications
 import ActivityKit
 import FamilyControls
 import ManagedSettings
+import PostHog
 
 enum Chronotype: String, Codable {
     case earlySleeper
@@ -210,6 +211,17 @@ class AppState: ObservableObject {
 
     // MARK: - Launch routing
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    @AppStorage("onboarding_firefly_companion") var onboardingFireflyCompanionEnabled = false
+    @AppStorage("hasSeenFirstFireflyPrompt") var hasSeenFirstFireflyPrompt = false
+    @Published var pendingOnboardingFireflyHandoff = false
+
+    var isOnboardingFireflyCompanionActive: Bool {
+        #if DEBUG
+        true
+        #else
+        onboardingFireflyCompanionEnabled
+        #endif
+    }
 
     // MARK: - Onboarding answers
     @Published var testerName: String = ""
@@ -833,24 +845,50 @@ class AppState: ObservableObject {
     @Published var justTriggeredNightFivePaywall: Bool = false
 
     #if DEBUG
-    // Debug-only time-of-day override for testing the morning/evening branches
-    // on the Today tab without changing the simulator clock or wake time.
-    // Mutually exclusive (set one, other clears).
+    // Debug-only time-of-day override for testing the Today tab without changing
+    // the simulator clock or sleep window. Mutually exclusive.
     @Published var debugForceMorningState: Bool = false
     @Published var debugForceEveningState: Bool = false
 
-    // Debug: zeros the score on last night's entry (or today's, if last night
-    // has nothing) so the user can re-test the unrated morning hero.
     func debugClearTodaysRating() {
         let cal = Calendar.current
-        if let idx = sleepLogs.firstIndex(where: {
-            cal.isDateInYesterday($0.date) || cal.isDateInToday($0.date)
-        }) {
+        let bedtimeDay = bedtimeDate(for: Date(), calendar: cal)
+        var changed = false
+
+        for idx in sleepLogs.indices where (
+            cal.isDateInYesterday(sleepLogs[idx].date)
+            || cal.isDateInToday(sleepLogs[idx].date)
+            || cal.isDate(sleepLogs[idx].date, inSameDayAs: bedtimeDay)
+        ) {
             sleepLogs[idx].score = 0
             sleepLogs[idx].actualWakeTime = nil
             sleepLogs[idx].hoursSlept = nil
+            changed = true
+        }
+
+        morningScore = 0
+        if changed {
             persist()
         }
+    }
+
+    func debugResetTodayDeckProgress(now: Date = Date()) {
+        let cal = Calendar.current
+        let bedtimeDay = bedtimeDate(for: now, calendar: cal)
+
+        prepDoneIds.removeAll()
+        ritualDoneIds.removeAll()
+        nightlyStep = 0
+        showNightlyFlow = false
+
+        for idx in sleepLogs.indices where cal.isDate(sleepLogs[idx].date, inSameDayAs: bedtimeDay) {
+            sleepLogs[idx].completedNightlyFlow = false
+            sleepLogs[idx].actualRitualStart = nil
+            sleepLogs[idx].actualBedtime = nil
+            sleepLogs[idx].stepAttempts.removeAll()
+        }
+
+        persist()
     }
 
     func debugSeedCompletedNightsAndExpireTrial(
@@ -1293,6 +1331,31 @@ class AppState: ObservableObject {
         trackAnalytics("onboarding_screen_\(screenName)")
     }
 
+    func trackOnboardingFireflyCompanionShown() {
+        guard isOnboardingFireflyCompanionActive else { return }
+        trackAnalytics("onboarding_firefly_companion_shown")
+    }
+
+    func trackTodayFirstFireflyPromptShown() {
+        guard isOnboardingFireflyCompanionActive else { return }
+        trackAnalytics("today_first_firefly_prompt_shown")
+    }
+
+    func trackTodayFirstFireflyPromptDismissed(method: String) {
+        guard isOnboardingFireflyCompanionActive else { return }
+        trackAnalytics("today_first_firefly_prompt_dismissed", [
+            "method": method
+        ])
+    }
+
+    func refreshOnboardingFireflyCompanionFlag() {
+        PostHogSDK.shared.reloadFeatureFlags { [weak self] in
+            DispatchQueue.main.async {
+                self?.onboardingFireflyCompanionEnabled = PostHogSDK.shared.isFeatureEnabled("onboarding_firefly_companion")
+            }
+        }
+    }
+
     func flushResearchData() {
         Task {
             await ResearchDataService.shared.flushQueued()
@@ -1413,6 +1476,19 @@ class AppState: ObservableObject {
         )
     }
 
+    func recordBoringStoryMediaSession(contentId: String?,
+                                       listenedSeconds: Int,
+                                       totalDurationSeconds: Int,
+                                       completed: Bool) {
+        recordMediaSession(
+            mediaType: "boring_story",
+            contentId: contentId,
+            configuredDurationSeconds: totalDurationSeconds,
+            listenedDurationSeconds: listenedSeconds,
+            completed: completed
+        )
+    }
+
     func recordBrainDumpSession(durationSeconds: Int,
                                 hasRecording: Bool) {
         recordMediaSession(
@@ -1432,6 +1508,57 @@ class AppState: ObservableObject {
         var merged = baseAnalyticsProperties()
         properties.forEach { merged[$0.key] = $0.value }
         AnalyticsService.track(event, installId: installId, properties: merged)
+    }
+
+    func trackTodayDeckStarted(stepCount: Int) {
+        trackAnalytics("ritual_started", [
+            "step_count": "\(stepCount)"
+        ])
+    }
+
+    func trackTodayDeckStep(step: RoutineStep,
+                            status: StepStatus,
+                            stepType: String,
+                            index: Int) {
+        updateTodayLog {
+            $0.stepAttempts.append(
+                StepAttempt(
+                    remedyId: step.remedyId ?? RemedyID.fromLabel(step.label),
+                    labelSnapshot: step.label,
+                    status: status,
+                    durationSeconds: nil
+                )
+            )
+        }
+
+        trackAnalytics(status == .completed ? "step_completed" : "step_skipped", [
+            "step_type": stepType,
+            "step_title": step.label,
+            "index": "\(index)"
+        ])
+
+        if step.remedyId == .noScreens || step.remedyId == .appBlocking || step.label == R.noScreens || step.label == R.appBlocking {
+            trackAnalytics("phone_step_completed", [
+                "completed": status == .completed ? "true" : "false",
+                "step_title": step.label
+            ])
+        }
+    }
+
+    func trackTodayDeckCompleted(completedCount: Int, skippedCount: Int) {
+        trackAnalytics("ritual_completed", [
+            "completed_count": "\(completedCount)",
+            "skipped_count": "\(skippedCount)",
+            "reached_end": "true"
+        ])
+        recordGuidedWindDownCompleted()
+        trackAnalytics("firefly_earned", [
+            "night_number": "\(completedWindDownNightCount)"
+        ])
+    }
+
+    func trackTodayDeckInsightsOpened() {
+        trackAnalytics("insights_opened")
     }
 
     private func submitResearch(_ eventName: String,
@@ -1500,6 +1627,9 @@ class AppState: ObservableObject {
             "has_note": entry.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "false" : "true",
             "has_voice_note": entry.brainDumpFilePath == nil ? "false" : "true"
         ])
+        trackAnalytics("morning_checkin", [
+            "value": subjectiveMorningValue(for: entry.score)
+        ])
 
         let payload = baseResearchPayload().merging([
             "night_id": .string(entry.id.uuidString),
@@ -1518,6 +1648,14 @@ class AppState: ObservableObject {
         submitResearch("morning_checkin_recorded", payload: payload)
     }
 
+    private func subjectiveMorningValue(for score: Int) -> String {
+        switch score {
+        case 1...2: return "rough"
+        case 3: return "okay"
+        default: return "rested"
+        }
+    }
+
     private func baseAnalyticsProperties() -> AnalyticsService.Properties {
         [
             "chronotype": chronotype.rawValue,
@@ -1529,7 +1667,8 @@ class AppState: ObservableObject {
             "habit_completed_nights": "\(streakSummary.completedNights)",
             "trial_day": "\(trialDayNumber)",
             "routine_step_count": "\(coreRoutine.count)",
-            "test_cohort": analyticsCohort
+            "test_cohort": analyticsCohort,
+            "onboarding_firefly_companion": onboardingFireflyCompanionBucket
         ]
     }
 
@@ -1553,6 +1692,10 @@ class AppState: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if value.contains("$(") { return "" }
         return value
+    }
+
+    var onboardingFireflyCompanionBucket: String {
+        isOnboardingFireflyCompanionActive ? "on" : "off"
     }
 
     private var trialDayNumber: Int {
@@ -1986,12 +2129,15 @@ class AppState: ObservableObject {
         return nowMins >= startMins || nowMins < endMins
     }
 
-    // Upserts today's SleepLogEntry and persists.
-    func updateTodayLog(_ mutation: (inout SleepLogEntry) -> Void) {
-        if let idx = sleepLogs.firstIndex(where: { $0.isToday }) {
+    // Upserts the current sleep-window log and persists.
+    func updateTodayLog(at date: Date = Date(), _ mutation: (inout SleepLogEntry) -> Void) {
+        let bedtimeDay = bedtimeDate(for: date)
+        let calendar = Calendar.current
+
+        if let idx = sleepLogs.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: bedtimeDay) }) {
             mutation(&sleepLogs[idx])
         } else {
-            var entry = SleepLogEntry(date: Date(), variable: tonightVariable, score: 0)
+            var entry = SleepLogEntry(date: bedtimeDay, variable: tonightVariable, score: 0)
             entry.variableRemedyId = tonightRemedyId
             mutation(&entry)
             sleepLogs.append(entry)
@@ -2001,7 +2147,7 @@ class AppState: ObservableObject {
 
     func recordGuidedWindDownCompleted(at completedAt: Date = Date()) {
         let bedtimeDay = bedtimeDate(for: completedAt)
-        updateTodayLog {
+        updateTodayLog(at: completedAt) {
             $0.date = bedtimeDay
             $0.completedNightlyFlow = true
             $0.actualBedtime = completedAt
@@ -2059,6 +2205,7 @@ class AppState: ObservableObject {
     func completeOnboarding() {
         initialTab = 0
         startTrialIfNeeded()
+        pendingOnboardingFireflyHandoff = isOnboardingFireflyCompanionActive && !hasSeenFirstFireflyPrompt
         hasCompletedOnboarding = true
         persist()
         scheduleNotificationsAfterCommitmentIfNeeded()
@@ -2066,8 +2213,9 @@ class AppState: ObservableObject {
     }
 
     func completeOnboardingToRoutine() {
-        initialTab = 1
+        initialTab = 2
         startTrialIfNeeded()
+        pendingOnboardingFireflyHandoff = isOnboardingFireflyCompanionActive && !hasSeenFirstFireflyPrompt
         hasCompletedOnboarding = true
         persist()
         scheduleNotificationsAfterCommitmentIfNeeded()
@@ -2078,8 +2226,9 @@ class AppState: ObservableObject {
         initialTab = 0
         requestedTab = 0
         startTrialIfNeeded()
+        pendingOnboardingFireflyHandoff = isOnboardingFireflyCompanionActive && !hasSeenFirstFireflyPrompt
         hasCompletedOnboarding = true
-        showNightlyFlow = true
+        showNightlyFlow = false
         persist()
         scheduleNotificationsAfterCommitmentIfNeeded()
         recordOnboardingTelemetry(route: "start_ritual")
@@ -2365,6 +2514,30 @@ class AppState: ObservableObject {
         persist()
     }
 
+    func moveRoutineStep(_ moving: RoutineStep, toIndex targetIndex: Int, in sectionKind: RoutineSectionKind) {
+        var section = sectionKind == .prep ? routinePrepSteps : routineRitualSteps
+        guard let from = section.firstIndex(where: { $0.id == moving.id }) else { return }
+
+        let clampedTarget = min(max(targetIndex, 0), section.count - 1)
+        guard from != clampedTarget else { return }
+
+        section.move(fromOffsets: IndexSet(integer: from), toOffset: clampedTarget > from ? clampedTarget + 1 : clampedTarget)
+
+        switch sectionKind {
+        case .prep:
+            coreRoutine = section + routineRitualSteps
+        case .ritual:
+            coreRoutine = routinePrepSteps + section
+        case .morning:
+            return
+        }
+
+        normalizeRoutineOrder()
+        captureTrialRoutineEdit()
+        logRoutineUpdated(kind: "reorder", stepID: moving.id)
+        persist()
+    }
+
     @discardableResult
     func addRoutineStep(from item: RoutineLibraryStep) -> RoutineStep {
         guard canCustomizeRoutine else {
@@ -2615,7 +2788,7 @@ class AppState: ObservableObject {
         recentlyPromotedAt = Date()
         routinePulseRemedyId = pending.remedyId
         pendingPromotion = nil
-        requestedTab = 1
+        requestedTab = 2
         persist()
         // Clear the pulse after a short delay so the animation only fires once.
         let pulseTarget = pending.remedyId
@@ -2683,7 +2856,7 @@ class AppState: ObservableObject {
         }
 
         requestedRoutineStepIDToEdit = targetStep.id
-        requestedTab = 1
+        requestedTab = 2
     }
 
     func scheduleMidSleepNotification() {

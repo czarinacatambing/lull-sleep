@@ -9,9 +9,11 @@ class AudioRecordingService: NSObject, ObservableObject {
     @Published var permission: Permission = .unknown
     @Published var recordingState: RecordingState = .idle
     @Published var duration: TimeInterval = 0
+    @Published var averagePower: Float = -60
 
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
+    private var meterTimer: Timer?
 
     private var fileURL: URL {
         FileManager.default.temporaryDirectory
@@ -44,12 +46,17 @@ class AudioRecordingService: NSObject, ObservableObject {
 
     // MARK: - Recording
 
-    func start() {
-        guard permission == .granted else { return }
+    @discardableResult
+    func start() -> Bool {
+        guard permission == .granted else { return false }
 
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.record, mode: .default, options: [])
-        try? session.setActive(true)
+        do {
+            try session.setCategory(.record, mode: .default, options: [])
+            try session.setActive(true)
+        } catch {
+            return false
+        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -58,25 +65,45 @@ class AudioRecordingService: NSObject, ObservableObject {
             AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
         ]
 
-        guard let rec = try? AVAudioRecorder(url: fileURL, settings: settings) else { return }
+        guard let rec = try? AVAudioRecorder(url: fileURL, settings: settings) else {
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            return false
+        }
         rec.delegate = self
-        rec.record()
+        rec.isMeteringEnabled = true
+        guard rec.record() else {
+            try? FileManager.default.removeItem(at: rec.url)
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            return false
+        }
         recorder = rec
         recordingState = .recording
         duration = 0
+        averagePower = -60
 
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.duration += 1 }
         }
+        meterTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let recorder = self?.recorder else { return }
+                recorder.updateMeters()
+                self?.averagePower = recorder.averagePower(forChannel: 0)
+            }
+        }
+        return true
     }
 
     func stopAndDiscard() {
         let url = recorder?.url
         recorder?.stop()
         timer?.invalidate()
+        meterTimer?.invalidate()
         timer = nil
+        meterTimer = nil
         recorder = nil
         recordingState = .done
+        averagePower = -60
 
         if let url { try? FileManager.default.removeItem(at: url) }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -89,9 +116,12 @@ class AudioRecordingService: NSObject, ObservableObject {
         }
         recorder?.stop()
         timer?.invalidate()
+        meterTimer?.invalidate()
         timer = nil
+        meterTimer = nil
         recorder = nil
         recordingState = .done
+        averagePower = -60
 
         let dest = AudioRecordingService.braindumpURL(for: date)
         try? FileManager.default.removeItem(at: dest)

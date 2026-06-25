@@ -118,10 +118,9 @@ private struct CompactTrailingView: View {
     var body: some View {
         switch phase {
         case .sleeping:
-            Text(timerInterval: Date()...max(state.wakeTime, Date().addingTimeInterval(1)), countsDown: true)
-                .font(LullLAFont.fraunces(size: 14, weight: .regular))
-                .foregroundColor(LullLA.ink0)
-                .monospacedDigit()
+            Text("Sleep")
+                .font(LullLAFont.fraunces(size: 13, weight: .regular))
+                .foregroundColor(LullLA.ink1)
                 .lineLimit(1)
                 .frame(maxWidth: 64)
         case .awaitingRating:

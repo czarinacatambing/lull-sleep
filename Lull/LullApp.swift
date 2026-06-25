@@ -40,6 +40,7 @@ struct LullApp: App {
                 .onAppear {
                     appDelegate.state = state
                     PostHogReplayService.configureIfNeeded(installId: state.installId)
+                    state.refreshOnboardingFireflyCompanionFlag()
                     subscriptions.start()
                     state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
                     state.evaluateTrialStatus()
@@ -52,13 +53,15 @@ struct LullApp: App {
                     guard url.scheme == "tenthirty" else { return }
                     if url.host == "midsleep" {
                         state.showMidSleepMode = true
+                    } else if url.host == "awake" {
+                        state.requestedTab = 0
+                        LiveActivityService.shared.endCurrentSleepActivity(dismissalPolicy: .immediate)
                     } else if url.host == "reward" {
                         state.ingestPendingLiveActivityRating()
                     } else if url.host == "liveactivity" {
                         if state.shouldRouteLiveActivityTapToMorning() {
                             state.requestedTab = 0
-                            state.syncSleepActivityWakeStateIfNeeded()
-                            state.ingestPendingLiveActivityRating()
+                            LiveActivityService.shared.endCurrentSleepActivity(dismissalPolicy: .immediate)
                         } else {
                             state.showMidSleepMode = true
                         }
@@ -155,7 +158,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 self.state?.requestedTab = 0
             case "WIND_DOWN_START":
                 self.state?.cancelWindDownStartNotifications()
-                self.state?.showNightlyFlow = true
+                self.state?.requestedTab = 0
             case "MID_SLEEP_CHECK":
                 self.state?.showMidSleepMode = true
             default:

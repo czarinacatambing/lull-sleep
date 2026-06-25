@@ -65,7 +65,7 @@ extension Font {
         .serif(size, italic: true)
     }
     static func mono(_ size: CGFloat) -> Font {
-        .custom("JetBrainsMono-Regular", size: size)
+        .system(size: size, weight: .medium, design: .default)
     }
 }
 

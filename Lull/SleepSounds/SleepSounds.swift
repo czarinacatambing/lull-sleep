@@ -1420,7 +1420,7 @@ private struct NightlySoundControl: View {
     }
 }
 
-private struct NightlySoundSwitchSheet: View {
+struct NightlySoundSwitchSheet: View {
     var current: SoundId
     var onPick: (SoundId) -> Void
     @State private var pickedSound: SoundId?
@@ -1488,7 +1488,7 @@ private struct NightlySoundSwitchSheet: View {
     }
 }
 
-private struct NightlySoundTimerSheet: View {
+struct NightlySoundTimerSheet: View {
     @State private var draft: SleepSoundStepConfig
     var onUpdate: (SleepSoundStepConfig) -> Void
 

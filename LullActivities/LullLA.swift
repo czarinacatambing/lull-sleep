@@ -38,7 +38,7 @@ extension Color {
     }
 }
 
-// Typography helpers — Fraunces variable italic + JetBrains Mono.
+// Typography helpers — Fraunces variable italic + compact system labels.
 enum LullLAFont {
     static func fraunces(size: CGFloat, weight: Font.Weight = .light, italic: Bool = true) -> Font {
         // Variable font is registered at runtime; we approximate weight via SwiftUI's .weight()
@@ -50,6 +50,6 @@ enum LullLAFont {
     }
 
     static func mono(size: CGFloat, weight: Font.Weight = .medium) -> Font {
-        Font.custom("JetBrainsMono-Regular", size: size).weight(weight)
+        Font.system(size: size, weight: weight, design: .default)
     }
 }

@@ -1,8 +1,8 @@
 import SwiftUI
 
 // Primary morning action: tap a dot to rate last night. Two visual states:
-//   .unrated → "How did last night go?" headline + the 5-dot row + supporting copy
-//   .rated   → "Logged — *nice.*" headline + result chip below the dots
+//   .unrated → "How did last night go?" headline + the 5-dot row + supporting copy when comparison exists
+//   .rated   → "Logged — *nice.*" headline + result chip below the dots when comparison exists
 //
 // Tapping a dot immediately persists the rating (optimistic). 1..n are filled.
 struct MorningRateHero: View {
@@ -19,6 +19,7 @@ struct MorningRateHero: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isRated: Bool { (rating ?? 0) > 0 }
+    private var hasHistoricalComparison: Bool { yesterday != nil }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -43,10 +44,14 @@ struct MorningRateHero: View {
             VStack(alignment: .leading, spacing: 0) {
                 headerRow.padding(.bottom, 14)
                 headline.padding(.bottom, 10)
-                if !isRated { supportingCopy.padding(.bottom, 18) } else { Spacer().frame(height: 14) }
+                if !isRated && hasHistoricalComparison {
+                    supportingCopy.padding(.bottom, 18)
+                } else if isRated && hasHistoricalComparison {
+                    Spacer().frame(height: 14)
+                }
                 dotRow.padding(.bottom, 10)
                 scaleLabels
-                if isRated { resultChip.padding(.top, 18) }
+                if isRated && hasHistoricalComparison { resultChip.padding(.top, 18) }
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -110,15 +115,13 @@ struct MorningRateHero: View {
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "#1a0d06"))
                 }
-                Text("GOOD MORNING")
-                    .font(.mono(10))
-                    .kerning(1.6)
+                Text("Good morning")
+                    .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmberSoft)
             }
             Spacer()
-            Text(wakeTime.uppercased())
-                .font(.mono(10.5))
-                .kerning(1.4)
+            Text(wakeTime)
+                .font(.system(size: 11.5, weight: .medium, design: .default))
                 .foregroundColor(.lullInk3)
         }
     }
@@ -172,9 +175,9 @@ struct MorningRateHero: View {
 
     private var scaleLabels: some View {
         HStack {
-            Text("WRECKED").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk3)
+            Text("Wrecked").font(.system(size: 10.5, weight: .medium, design: .default)).foregroundColor(.lullInk3)
             Spacer()
-            Text("GREAT").font(.mono(9.5)).kerning(1.4).foregroundColor(.lullInk3)
+            Text("Great").font(.system(size: 10.5, weight: .medium, design: .default)).foregroundColor(.lullInk3)
         }
         .padding(.horizontal, 4)
     }

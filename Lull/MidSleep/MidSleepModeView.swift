@@ -4,6 +4,7 @@ struct MidSleepModeView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
     @AppStorage("hasSeenMidSleepMode") private var hasSeenMidSleepMode = false
+    var onExit: (() -> Void)?
 
     @State private var showBreathing    = false
     @State private var showBoringStory  = false
@@ -36,7 +37,18 @@ struct MidSleepModeView: View {
     private var pastThreshold: Bool { awakeMinutes >= 20 }
 
     var body: some View {
-        LullScreen(glow: false) {
+        ZStack(alignment: .top) {
+            LinearGradient(
+                colors: [
+                    Color.lullBgDeep,
+                    Color(hex: "#1c120d"),
+                    Color.lullBgDeep
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
             // Background wash — cool moonlit in awake window, subtle amber in sleep window
             Group {
                 if isInSleepWindow {
@@ -57,9 +69,8 @@ struct MidSleepModeView: View {
 
                     // Status bar row
                     HStack {
-                        Text("MID-SLEEP MODE")
-                            .font(.mono(10.5))
-                            .kerning(1.4)
+                        Text("Mid-sleep mode")
+                            .font(.system(size: 12, weight: .semibold, design: .default))
                             .foregroundColor(isInSleepWindow ? .lullInk4 : Color(hex: "#7a6f9a"))
                         Spacer()
                         Ember(size: 5)
@@ -67,9 +78,11 @@ struct MidSleepModeView: View {
                             .font(.mono(10.5))
                             .kerning(1)
                             .foregroundColor(.lullInk4)
+                        MidSleepExitButton(action: exit)
+                            .padding(.leading, 6)
                     }
                     .padding(.horizontal, 22)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 14)
 
                     // Education card
                     MidSleepEduCard(isInSleepWindow: isInSleepWindow)
@@ -77,7 +90,7 @@ struct MidSleepModeView: View {
                         .padding(.bottom, 22)
 
                     // Toolkit
-                    VStack(spacing: 10) {
+                    VStack(spacing: 12) {
                         ForEach(toolkitItems, id: \.primary) { opt in
                             Button(action: {
                                 switch opt.kind {
@@ -97,66 +110,66 @@ struct MidSleepModeView: View {
                                     }
                                 }
                             }) {
-                                HStack(spacing: 14) {
+                                HStack(spacing: 12) {
                                     ZStack {
                                         Circle()
-                                            .fill(opt.featured
-                                                ? AnyShapeStyle(RadialGradient(
-                                                    colors: [.lullAmber, .lullAmberDeep],
-                                                    center: .center, startRadius: 0, endRadius: 26))
-                                                : AnyShapeStyle(Color.white.opacity(0.04)))
-                                            .overlay(Circle().strokeBorder(
-                                                opt.featured ? Color.clear : Color.lullLine, lineWidth: 1))
-                                            .frame(width: 44, height: 44)
-                                            .shadow(color: opt.featured ? .lullAmberGlow : .clear, radius: 8)
+                                            .fill(Color.white.opacity(0.035))
+                                            .overlay(Circle().strokeBorder(opt.featured ? Color.lullAmber.opacity(0.42) : Color.lullLineStrong, lineWidth: 1))
+                                            .frame(width: 52, height: 52)
 
-                                        if opt.featured {
-                                            Circle().fill(Color(hex: "#1a0d06")).frame(width: 10, height: 10)
-                                        } else {
-                                            Ember(size: 6)
-                                        }
+                                        Circle()
+                                            .fill(Color.lullAmber)
+                                            .frame(width: opt.featured ? 10 : 8, height: opt.featured ? 10 : 8)
+                                            .shadow(color: .lullAmberGlow, radius: opt.featured ? 12 : 8)
                                     }
 
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: 6) {
                                         HStack(alignment: .firstTextBaseline, spacing: 7) {
                                             Text(opt.primary)
-                                                .font(.system(size: 17, weight: .regular))
-                                                .foregroundColor(opt.featured ? .lullInk0 : .lullInk1)
-                                                .lineLimit(1)
+                                                .font(.system(size: 20, weight: .semibold))
+                                                .foregroundColor(.lullInk0)
+                                                .lineLimit(2)
+                                                .fixedSize(horizontal: false, vertical: true)
                                                 .layoutPriority(1)
                                             MidSleepAccessChip(isPremium: opt.isPremium)
                                         }
                                         Text(opt.sub + (!isInSleepWindow ? " · PREVIEW" : ""))
-                                            .font(.mono(10))
-                                            .kerning(1)
-                                            .foregroundColor(.lullInk3)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.lullInk2)
+                                            .lineLimit(2)
+                                            .fixedSize(horizontal: false, vertical: true)
                                     }
+                                    .layoutPriority(1)
 
-                                    Spacer()
+                                    Spacer(minLength: 4)
 
-                                    Text("›")
-                                        .font(.system(size: 20, weight: .light))
-                                        .foregroundColor(opt.featured ? .lullAmber : .lullInk3)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.lullInk3)
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 18)
                                 .padding(.vertical, 18)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(opt.featured
-                                            ? LinearGradient(
-                                                colors: [Color.lullAmber.opacity(0.10), Color.lullAmber.opacity(0.02)],
-                                                startPoint: .top, endPoint: .bottom)
-                                            : LinearGradient(
-                                                colors: [Color.white.opacity(0.025), Color.white.opacity(0.025)],
-                                                startPoint: .top, endPoint: .bottom))
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [
+                                                    Color(hex: "#251710").opacity(0.88),
+                                                    Color(hex: "#130c09").opacity(0.80)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                                         .strokeBorder(
-                                            opt.featured ? Color.lullAmber.opacity(0.4) : Color.lullLine,
+                                            opt.featured ? Color.lullAmber.opacity(0.42) : Color.lullLineStrong,
                                             lineWidth: 1)
                                 )
-                                .shadow(color: opt.featured ? .lullAmberGlow.opacity(0.4) : .clear, radius: 14)
+                                .shadow(color: .black.opacity(0.24), radius: 18, x: 0, y: 12)
+                                .shadow(color: opt.featured ? .lullAmberGlow.opacity(0.16) : .clear, radius: 14)
                             }
                             .buttonStyle(.plain)
                         }
@@ -177,6 +190,10 @@ struct MidSleepModeView: View {
                 }
             }
         }
+        .foregroundColor(.lullInk1)
+        .preferredColorScheme(.dark)
+        .contentShape(Rectangle())
+        .highPriorityGesture(exitSwipeGesture)
         .fullScreenCover(isPresented: $showBreathing) {
             NightlyBreathingView(isMidSleep: true).environmentObject(state)
         }
@@ -210,6 +227,25 @@ struct MidSleepModeView: View {
         }
     }
 
+    private var exitSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 18)
+            .onEnded { value in
+                let dx = value.translation.width
+                let dy = value.translation.height
+                guard dy > 90, dy > abs(dx) else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                exit()
+            }
+    }
+
+    private func exit() {
+        if let onExit {
+            onExit()
+        } else {
+            dismiss()
+        }
+    }
+
     private var toolkitItems: [MidSleepToolkitItem] {
         [
             .init(kind: .breathing, primary: "4·7·8 breath", sub: "In · hold · out", featured: isInSleepWindow, isPremium: false),
@@ -237,9 +273,8 @@ private struct MidSleepAccessChip: View {
     var isPremium: Bool
 
     var body: some View {
-        Text(isPremium ? "PREMIUM" : "FREE")
-            .font(.mono(8))
-            .kerning(1.0)
+        Text(isPremium ? "Premium" : "Free")
+            .font(.system(size: 9, weight: .semibold))
             .foregroundColor(isPremium ? .lullAmber : .lullInk4)
             .padding(.horizontal, 6)
             .frame(height: 18)
@@ -523,9 +558,8 @@ struct TwentyMinuteScienceSheet: View {
             }
             .padding(.bottom, 8)
 
-            Text("THE GET-UP PROTOCOL")
-                .font(.mono(11))
-                .kerning(1.2)
+            Text("The get-up protocol")
+                .font(.system(size: 12.5, weight: .semibold, design: .default))
                 .foregroundColor(.lullAmberSoft)
                 .padding(.bottom, 22)
 
@@ -592,8 +626,9 @@ struct MidSleepBoringStoryView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Text("BORING STORY")
-                        .font(.mono(10.5)).kerning(1.4).foregroundColor(.lullInk4)
+                    Text("Boring story")
+                        .font(.system(size: 12, weight: .semibold, design: .default))
+                        .foregroundColor(.lullInk4)
                     Spacer()
                     MidSleepExitButton(action: finish)
                 }
@@ -606,8 +641,7 @@ struct MidSleepBoringStoryView: View {
                         .font(.system(size: 26, weight: .regular).italic()).foregroundColor(.lullAmber)
                     if let activeStory {
                         Text(activeStory.title)
-                            .font(.mono(9.5))
-                            .kerning(1.2)
+                            .font(.system(size: 11, weight: .medium, design: .default))
                             .foregroundColor(.lullInk4)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)

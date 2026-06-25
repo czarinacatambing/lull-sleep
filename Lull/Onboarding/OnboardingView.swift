@@ -5,8 +5,22 @@ import PostHog
 // Onboarding coordinator — a quick profile, then a generated routine.
 struct OnboardingView: View {
     @EnvironmentObject var state: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var step = 0
     @State private var didTrackStart = false
+    @State private var didTrackCompanion = false
+    @State private var ctaFrame: CGRect?
+    @State private var ctaFramesByStep: [Int: CGRect] = [:]
+    @State private var ctaStatesByStep: [Int: FireflyCTAState] = [:]
+    @State private var brandDotFrame: CGRect?
+
+    private var showsFireflyCompanion: Bool {
+        state.isOnboardingFireflyCompanionActive
+    }
+
+    private var usesMeadowBackground: Bool {
+        showsFireflyCompanion
+    }
 
     var body: some View {
         ZStack {
@@ -28,7 +42,23 @@ struct OnboardingView: View {
             case 9: OnbTrialPaywallView()
             default: EmptyView()
             }
+
+            if showsFireflyCompanion {
+                OnboardingFireflyCompanion(
+                    step: step,
+                    ctaFrame: ctaFrame,
+                    ctaFramesByStep: ctaFramesByStep,
+                    ctaStatesByStep: ctaStatesByStep,
+                    brandDotFrame: brandDotFrame,
+                    reduceMotion: reduceMotion
+                )
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                    .zIndex(4)
+            }
         }
+        .environment(\.lullUsesMeadowBackground, usesMeadowBackground)
+        .environment(\.lullHidesBrandDot, showsFireflyCompanion)
         .animation(step == 6 ? .easeInOut(duration: 0.7) : .easeInOut(duration: 0.28), value: step)
         .transition(.opacity)
         .postHogNoMask()
@@ -37,10 +67,37 @@ struct OnboardingView: View {
                 didTrackStart = true
                 state.trackOnboardingStarted()
             }
+            if showsFireflyCompanion, !didTrackCompanion {
+                didTrackCompanion = true
+                state.trackOnboardingFireflyCompanionShown()
+            }
             state.trackOnboardingScreen(screenName(for: step))
         }
         .onChange(of: step) { _, newStep in
             state.trackOnboardingScreen(screenName(for: newStep))
+        }
+        .onChange(of: showsFireflyCompanion) { _, enabled in
+            if enabled, !didTrackCompanion {
+                didTrackCompanion = true
+                state.trackOnboardingFireflyCompanionShown()
+            }
+        }
+        .onPreferenceChange(FireflyCTAFramePreferenceKey.self) { frame in
+            ctaFrame = frame
+            if let frame {
+                ctaFramesByStep[step] = frame
+            }
+        }
+        .onPreferenceChange(FireflyCTAStatePreferenceKey.self) { ctaState in
+            guard let ctaState else { return }
+            ctaFrame = ctaState.frame
+            withAnimation(.easeInOut(duration: 0.55)) {
+                ctaFramesByStep[step] = ctaState.frame
+                ctaStatesByStep[step] = ctaState
+            }
+        }
+        .onPreferenceChange(BrandDotFramePreferenceKey.self) { frame in
+            brandDotFrame = frame
         }
     }
 
@@ -58,6 +115,152 @@ struct OnboardingView: View {
         case 9: return "trial_paywall"
         default: return "unknown"
         }
+    }
+}
+
+private struct OnboardingFireflyCompanion: View {
+    let step: Int
+    let ctaFrame: CGRect?
+    let ctaFramesByStep: [Int: CGRect]
+    let ctaStatesByStep: [Int: FireflyCTAState]
+    let brandDotFrame: CGRect?
+    let reduceMotion: Bool
+    @State private var displayedStep = 0
+    @State private var pendingStep: Int?
+    @State private var visible = false
+    @State private var horizontalTravel: CGFloat = -360
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
+                let time = timeline.date.timeIntervalSinceReferenceDate
+                let point = companionPosition(for: displayedStep, in: geo, time: time)
+                let ctaReady = isCTAReady(for: displayedStep)
+                let bobX = reduceMotion ? 0 : sin(time * (ctaReady ? 0.72 : 0.48)) * (ctaReady ? 4 : 14)
+                let bobY = reduceMotion ? 0 : cos(time * (ctaReady ? 0.64 : 0.42)) * (ctaReady ? 5 : 12)
+                let flicker = reduceMotion ? 1.0 : 0.90 + (sin(time * 1.7) + 1) * 0.045
+
+                FireflyDot(index: 0, reduceMotion: true, drifts: false)
+                    .scaleEffect(ctaReady ? 0.84 : 0.92)
+                    .opacity((visible ? 1 : 0) * flicker)
+                    .position(x: point.x + horizontalTravel + bobX, y: point.y + bobY)
+                    .animation(.easeInOut(duration: reduceMotion ? 0.18 : 3.0), value: isCTAReady(for: displayedStep))
+            }
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            displayedStep = step
+            horizontalTravel = reduceMotion ? 0 : -280
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.18 : 3.0)) {
+                visible = true
+                horizontalTravel = 0
+            }
+        }
+        .onChange(of: step) { _, newStep in
+            if reduceMotion {
+                withAnimation(.easeOut(duration: 0.12)) {
+                    visible = false
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                    displayedStep = newStep
+                    withAnimation(.easeIn(duration: 0.18)) {
+                        visible = true
+                    }
+                }
+            } else if canResolvePosition(for: newStep) {
+                pendingStep = nil
+                flyToStep(newStep)
+            } else {
+                pendingStep = newStep
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    horizontalTravel = 160
+                    visible = false
+                }
+            }
+        }
+        .onChange(of: ctaFramesByStep) { _, _ in
+            guard !reduceMotion,
+                  let pendingStep,
+                  canResolvePosition(for: pendingStep)
+            else { return }
+            self.pendingStep = nil
+            flyToStep(pendingStep)
+        }
+    }
+
+    private func flyToStep(_ newStep: Int) {
+        withAnimation(.easeInOut(duration: 0.45)) {
+            horizontalTravel = 170
+            visible = false
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.48) {
+            displayedStep = newStep
+            horizontalTravel = -280
+            visible = true
+            withAnimation(.easeInOut(duration: 3.0)) {
+                horizontalTravel = 0
+            }
+        }
+    }
+
+    private func canResolvePosition(for step: Int) -> Bool {
+        step == 0 || ctaFramesByStep[step] != nil
+    }
+
+    private func isCTAReady(for step: Int) -> Bool {
+        ctaStatesByStep[step]?.enabled ?? false
+    }
+
+    private func companionPosition(for step: Int, in geo: GeometryProxy, time: TimeInterval) -> CGPoint {
+        let size = geo.size
+        let safeBottom = geo.safeAreaInsets.bottom
+        let safeTop = geo.safeAreaInsets.top
+
+        if step == 0 {
+            if isCTAReady(for: step), let ctaFrame = ctaStatesByStep[step]?.frame ?? ctaFramesByStep[step] {
+                return ctaRestPosition(ctaFrame: ctaFrame, size: size, safeTop: safeTop, time: time)
+            }
+            if let brandDotFrame, ctaStatesByStep[step] == nil {
+                return CGPoint(x: brandDotFrame.midX, y: brandDotFrame.midY)
+            }
+            return roamingPosition(step: step, size: size, safeTop: safeTop, safeBottom: safeBottom, time: time)
+        }
+
+        if isCTAReady(for: step), let ctaFrame = ctaStatesByStep[step]?.frame ?? ctaFramesByStep[step] ?? ctaFrame {
+            return ctaRestPosition(ctaFrame: ctaFrame, size: size, safeTop: safeTop, time: time)
+        }
+
+        return roamingPosition(step: step, size: size, safeTop: safeTop, safeBottom: safeBottom, time: time)
+    }
+
+    private func ctaRestPosition(ctaFrame: CGRect, size: CGSize, safeTop: CGFloat, time: TimeInterval) -> CGPoint {
+        let horizontalRadius = min(max(ctaFrame.width * 0.36, 92), 156)
+        let verticalRadius = min(max(ctaFrame.height * 0.68, 40), 58)
+        let base = CGPoint(
+            x: ctaFrame.midX,
+            y: ctaFrame.minY - 18
+        )
+        return CGPoint(
+            x: min(size.width - 38, max(38, base.x + CGFloat(sin(time * 0.36)) * horizontalRadius)),
+            y: min(size.height - 110, max(safeTop + 72, base.y + CGFloat(cos(time * 0.31)) * verticalRadius))
+        )
+    }
+
+    private func roamingPosition(
+        step: Int,
+        size: CGSize,
+        safeTop: CGFloat,
+        safeBottom: CGFloat,
+        time: TimeInterval
+    ) -> CGPoint {
+        let phase = Double(step) * 0.91
+        let centerX = size.width * (0.42 + 0.12 * sin(time * 0.16 + phase))
+        let centerY = size.height * (0.36 + 0.14 * cos(time * 0.14 + phase * 0.7))
+        return CGPoint(
+            x: min(max(centerX, 42), size.width - 42),
+            y: min(max(centerY, safeTop + 88), size.height - safeBottom - 164)
+        )
     }
 }
 
@@ -136,9 +339,29 @@ struct OnbPromiseView: View {
                     Spacer().frame(height: compact ? 22 : 30)
 
                     HStack {
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            step = 1
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.lullInk2)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.04))
+                                        .overlay(Circle().strokeBorder(Color.lullLine, lineWidth: 1))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Go back")
+
                         Spacer()
                         BrandMark()
                         Spacer()
+
+                        Color.clear
+                            .frame(width: 36, height: 36)
                     }
                     .padding(.horizontal, Lull.horizontalPad)
                     .padding(.bottom, compact ? 22 : 30)
@@ -154,7 +377,7 @@ struct OnbPromiseView: View {
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 330)
 
-                        Text("A guided routine quiets the overthinking, locks away the doomscroll, and walks you to sleep - night after night.")
+                        Text("A guided routine helps quiet the overthinking, removes the distractions, and walks you to sleep - night after night.")
                             .font(.system(size: compact ? 13.5 : 14.5))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(4)
@@ -543,6 +766,13 @@ struct OnbSleepProblemView: View {
                     Spacer().frame(height: 16)
                     OnbTopBar(step: 1, total: 4, showBack: false)
                     StepProgress(step: 1, total: 4)
+
+                    HStack {
+                        Spacer()
+                        BrandMark()
+                        Spacer()
+                    }
+                    .padding(.top, 18)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step one · what's keeping you up")
@@ -1395,12 +1625,12 @@ struct OnbRoutineReadyView: View {
                             text: state.routineShouldStartNow ? "Your routine is ready for tonight!" : "Your routine is ready",
                             color: .lullAmberSoft
                         )
-                        VStack(spacing: 0) {
+                        VStack(spacing: -4) {
                             Text("Tonight's plan,")
                                 .font(.serif(32))
                                 .foregroundColor(.lullInk0)
                             Text("built for your brain.")
-                                .font(.serifItalic(32))
+                                .font(.serifItalic(36))
                                 .foregroundColor(.lullAmber)
                         }
                         Text(headlineSub)
@@ -1419,8 +1649,7 @@ struct OnbRoutineReadyView: View {
                     }
                     VStack(spacing: 0) {
                         ForEach(Array(displayRoutine.enumerated()), id: \.offset) { i, row in
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack(spacing: 14) {
+                            HStack(spacing: 14) {
                                 Text(row.timeString)
                                     .font(.mono(11))
                                     .kerning(0.6)
@@ -1436,11 +1665,6 @@ struct OnbRoutineReadyView: View {
                                     .kerning(0.4)
                                     .foregroundColor(.lullInk4)
                                     .lineLimit(1)
-                                }
-                                Text(whyLine(for: row.step.label))
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.lullInk3)
-                                    .lineLimit(2)
                             }
                             .padding(.vertical, 12)
                             Divider().background(Color.lullLine)
@@ -1477,17 +1701,6 @@ struct OnbRoutineReadyView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 32)
 
-                    // Gentle Reset explanation
-                    if !state.routineExplanation.isEmpty {
-                        Text(state.routineExplanation)
-                            .font(.system(size: 13))
-                            .foregroundColor(.lullInk3)
-                            .lineSpacing(4)
-                            .multilineTextAlignment(.leading)
-                            .padding(.horizontal, 28)
-                            .padding(.top, 18)
-                    }
-
                     VStack(spacing: 0) {
                         PrimaryCTA(
                             title: state.shouldOfferImmediateOnboardingRitual ? "Continue" : "Set tonight's reminder"
@@ -1505,11 +1718,6 @@ struct OnbRoutineReadyView: View {
                 }
             }
         }
-    }
-
-    private func whyLine(for label: String) -> String {
-        RemedyID.fromLabel(label)?.routineRevealBenefit
-            ?? "Supports the sleep pattern we found in your answers."
     }
 
     private func playRevealHaptic() {
@@ -1556,12 +1764,12 @@ struct OnbCommitmentView: View {
                             VStack(spacing: 12) {
                                 Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
 
-                                VStack(spacing: 0) {
+                                VStack(spacing: compact ? -11 : -13) {
                                     Text("We'll send you")
                                         .font(.serif(compact ? 32 : 36, weight: .semibold))
                                         .foregroundColor(.lullInk0)
                                     Text("a reminder")
-                                        .font(.serifItalic(compact ? 34 : 38))
+                                        .font(.serifItalic(compact ? 38 : 42))
                                         .foregroundColor(.lullAmber)
                                 }
                                 .multilineTextAlignment(.center)
@@ -2107,14 +2315,14 @@ struct OnbTrialPaywallView: View {
         VStack(spacing: 10) {
             Kicker(text: "Your first week", color: .lullAmberSoft)
 
-            VStack(spacing: -2) {
+            VStack(spacing: compact ? -11 : -13) {
                 Text("Try 7 nights")
                     .font(.serif(compact ? 38 : 44, weight: .semibold))
                     .foregroundColor(.lullInk0)
                     .minimumScaleFactor(0.86)
                     .lineLimit(1)
                 Text("free")
-                    .font(.serifItalic(compact ? 40 : 46))
+                    .font(.serifItalic(compact ? 44 : 50))
                     .foregroundColor(.lullAmber)
             }
             .multilineTextAlignment(.center)
@@ -2350,6 +2558,17 @@ private struct TrialCTA: View {
             .shadow(color: Color.black.opacity(0.4), radius: 12, y: 8)
         }
         .buttonStyle(.plain)
+        .overlay {
+            GeometryReader { proxy in
+                let frame = proxy.frame(in: .global)
+                Color.clear
+                    .preference(key: FireflyCTAFramePreferenceKey.self, value: frame)
+                    .preference(
+                        key: FireflyCTAStatePreferenceKey.self,
+                        value: FireflyCTAState(frame: frame, enabled: true)
+                    )
+            }
+        }
     }
 }
 

@@ -90,6 +90,8 @@ private struct BodyScanCue {
 
 struct NightlyBodyScanView: View {
     var isMidSleep: Bool = false
+    var onComplete: (() -> Void)? = nil
+    var onExit: (() -> Void)? = nil
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
 
@@ -178,7 +180,7 @@ struct NightlyBodyScanView: View {
                             .kerning(1.2)
                             .foregroundColor(.lullInk3)
                         Spacer()
-                        MidSleepExitButton { complete() }
+                        MidSleepExitButton { close() }
                     }
                     .padding(.horizontal, 28)
                     .padding(.bottom, 14)
@@ -287,11 +289,22 @@ struct NightlyBodyScanView: View {
 
     private func complete() {
         stopSession()
-        if isMidSleep {
+        if let onComplete {
+            onComplete()
+        } else if isMidSleep {
             dismiss()
         } else {
             state.recordCurrentStepAttempt(status: .completed)
             state.nightlyStep += 1
+        }
+    }
+
+    private func close() {
+        stopSession()
+        if let onExit {
+            onExit()
+        } else {
+            dismiss()
         }
     }
 

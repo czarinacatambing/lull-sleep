@@ -1,9 +1,60 @@
 import SwiftUI
 
+private struct LullUsesMeadowBackgroundKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private struct LullHidesBrandDotKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var lullUsesMeadowBackground: Bool {
+        get { self[LullUsesMeadowBackgroundKey.self] }
+        set { self[LullUsesMeadowBackgroundKey.self] = newValue }
+    }
+
+    var lullHidesBrandDot: Bool {
+        get { self[LullHidesBrandDotKey.self] }
+        set { self[LullHidesBrandDotKey.self] = newValue }
+    }
+}
+
+struct FireflyCTAState: Equatable {
+    let frame: CGRect
+    let enabled: Bool
+}
+
+struct FireflyCTAFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect? = nil
+
+    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
+        value = nextValue() ?? value
+    }
+}
+
+struct FireflyCTAStatePreferenceKey: PreferenceKey {
+    static var defaultValue: FireflyCTAState? = nil
+
+    static func reduce(value: inout FireflyCTAState?, nextValue: () -> FireflyCTAState?) {
+        value = nextValue() ?? value
+    }
+}
+
+struct BrandDotFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect? = nil
+
+    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
+        value = nextValue() ?? value
+    }
+}
+
 // MARK: - LullScreen
 // Warm dark gradient background with optional amber glow. Wraps all in-app screens.
 
 struct LullScreen<Content: View>: View {
+    @Environment(\.lullUsesMeadowBackground) private var usesMeadowBackground
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var glow: Bool = true
     var glowX: CGFloat = 0.5
     var glowY: CGFloat = 0.2
@@ -13,8 +64,13 @@ struct LullScreen<Content: View>: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            LinearGradient(colors: [.lullBg, .lullBg1], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            if usesMeadowBackground {
+                TodayMeadowBackdrop()
+                    .ignoresSafeArea()
+            } else {
+                LinearGradient(colors: [.lullBg, .lullBg1], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+            }
 
             if glow {
                 AmberGlow(x: glowX, y: glowY, radius: glowRadius, opacity: glowOpacity)
@@ -28,25 +84,68 @@ struct LullScreen<Content: View>: View {
     }
 }
 
+private struct OnboardingAmbientFireflyField: View {
+    let reduceMotion: Bool
+
+    private let positions: [CGPoint] = [
+        CGPoint(x: 0.16, y: 0.20),
+        CGPoint(x: 0.78, y: 0.18),
+        CGPoint(x: 0.34, y: 0.38),
+        CGPoint(x: 0.88, y: 0.43),
+        CGPoint(x: 0.18, y: 0.62),
+        CGPoint(x: 0.70, y: 0.70),
+        CGPoint(x: 0.42, y: 0.82)
+    ]
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
+                let time = timeline.date.timeIntervalSinceReferenceDate
+
+                ForEach(Array(positions.enumerated()), id: \.offset) { index, point in
+                    let phase = Double(index) * 0.74
+                    let driftX = reduceMotion ? 0 : sin(time * (0.42 + Double(index % 3) * 0.06) + phase) * CGFloat(10 + index % 3 * 4)
+                    let driftY = reduceMotion ? 0 : cos(time * (0.34 + Double(index % 4) * 0.04) + phase) * CGFloat(8 + index % 4 * 3)
+
+                    FireflyDot(index: index, reduceMotion: reduceMotion, drifts: !reduceMotion)
+                        .scaleEffect(index % 3 == 0 ? 0.72 : 0.58)
+                        .opacity(index < 3 ? 0.82 : 0.55)
+                        .position(
+                            x: geo.size.width * point.x + driftX,
+                            y: geo.size.height * point.y + driftY
+                        )
+                }
+            }
+        }
+    }
+}
+
 // MARK: - AmberGlow
 
 struct AmberGlow: View {
+    @Environment(\.lullUsesMeadowBackground) private var usesMeadowBackground
     var x: CGFloat = 0.5
     var y: CGFloat = 0.2
     var radius: CGFloat = 240
     var opacity: CGFloat = 0.55
 
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            RadialGradient(
-                colors: [Color.lullAmber.opacity(opacity * 0.35), .clear],
-                center: UnitPoint(x: x, y: y),
-                startRadius: 0,
-                endRadius: radius
-            )
-            .frame(width: w, height: h)
+        Group {
+            if usesMeadowBackground {
+                Color.clear
+            } else {
+                GeometryReader { geo in
+                    let w = geo.size.width
+                    let h = geo.size.height
+                    RadialGradient(
+                        colors: [Color.lullAmber.opacity(opacity * 0.35), .clear],
+                        center: UnitPoint(x: x, y: y),
+                        startRadius: 0,
+                        endRadius: radius
+                    )
+                    .frame(width: w, height: h)
+                }
+            }
         }
         .allowsHitTesting(false)
     }
@@ -55,6 +154,7 @@ struct AmberGlow: View {
 // MARK: - BrandMark
 
 struct BrandMark: View {
+    @Environment(\.lullHidesBrandDot) private var hidesBrandDot
     var large: Bool = false
     var maxWidth: CGFloat? = nil
 
@@ -71,6 +171,15 @@ struct BrandMark: View {
                 .fill(Color.lullAmber)
                 .frame(width: large ? 8 : 5.5, height: large ? 8 : 5.5)
                 .shadow(color: .lullAmberGlow, radius: large ? 8 : 5)
+                .opacity(hidesBrandDot ? 0 : 1)
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: BrandDotFramePreferenceKey.self,
+                            value: proxy.frame(in: .global)
+                        )
+                    }
+                )
         }
         .fixedSize(horizontal: maxWidth == nil, vertical: true)
         .frame(width: maxWidth, alignment: .center)
@@ -98,9 +207,8 @@ struct Kicker: View {
     var color: Color = .lullInk3
 
     var body: some View {
-        Text(text.uppercased())
-            .font(.mono(10))
-            .kerning(1.8)
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
             .foregroundColor(color)
     }
 }
@@ -403,6 +511,17 @@ struct PrimaryCTA: View {
         }
         .buttonStyle(.plain)
         .disabled(disabled)
+        .overlay {
+            GeometryReader { proxy in
+                let frame = proxy.frame(in: .global)
+                Color.clear
+                    .preference(key: FireflyCTAFramePreferenceKey.self, value: frame)
+                    .preference(
+                        key: FireflyCTAStatePreferenceKey.self,
+                        value: FireflyCTAState(frame: frame, enabled: !disabled)
+                    )
+            }
+        }
     }
 }
 
@@ -459,9 +578,8 @@ struct NightlyStepHeader: View {
             HStack {
                 BrandMark()
                 Spacer()
-                Text("\(step)/\(total) · \(label.uppercased())")
-                    .font(.mono(10.5))
-                    .kerning(1.2)
+                Text("\(step)/\(total) · \(label)")
+                    .font(.system(size: 11.5, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk3)
             }
 
@@ -476,9 +594,8 @@ struct NightlyStepHeader: View {
             .padding(.top, 18)
 
             if let time {
-                Text("NOW · \(time)")
-                    .font(.mono(10))
-                    .kerning(0.8)
+                Text("Now · \(time)")
+                    .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk4)
                     .padding(.top, 8)
             }

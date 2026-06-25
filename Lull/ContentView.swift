@@ -3,9 +3,17 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showWelcome = true
     @State private var logoOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
+    @State private var welcomeBrandDotFrame: CGRect?
+    @State private var welcomeCTAFrame: CGRect?
+    @State private var welcomeFireflyExiting = false
+
+    private var usesOnboardingFireflyCompanion: Bool {
+        !state.hasCompletedOnboarding && state.isOnboardingFireflyCompanionActive
+    }
 
     var body: some View {
         Group {
@@ -44,7 +52,12 @@ struct ContentView: View {
 
     private var welcomeScreen: some View {
         ZStack {
-            Color(hex: "#0c0807").ignoresSafeArea()
+            if usesOnboardingFireflyCompanion {
+                TodayMeadowBackdrop()
+                    .ignoresSafeArea()
+            } else {
+                Color(hex: "#0c0807").ignoresSafeArea()
+            }
             AmberGlow(x: 0.5, y: 0.4, radius: 260, opacity: 0.4)
                 .ignoresSafeArea()
 
@@ -77,7 +90,14 @@ struct ContentView: View {
                     Spacer()
 
                     Button {
-                        withAnimation(.easeInOut(duration: 0.4)) { showWelcome = false }
+                        if usesOnboardingFireflyCompanion {
+                            withAnimation(.easeInOut(duration: reduceMotion ? 0.12 : 0.7)) {
+                                welcomeFireflyExiting = true
+                            }
+                            withAnimation(.easeInOut(duration: 0.28)) { showWelcome = false }
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.4)) { showWelcome = false }
+                        }
                     } label: {
                         Text("Help me sleep")
                             .font(.system(size: 15, weight: .medium))
@@ -91,15 +111,128 @@ struct ContentView: View {
                             .shadow(color: .lullAmberGlow, radius: 10)
                     }
                     .buttonStyle(.plain)
+                    .overlay {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: FireflyCTAFramePreferenceKey.self,
+                                value: proxy.frame(in: .global)
+                            )
+                        }
+                    }
                     .padding(.horizontal, 26)
                     .padding(.bottom, 56)
                     .opacity(buttonOpacity)
                 }
             }
+
+            if usesOnboardingFireflyCompanion {
+                WelcomeFireflyIntro(
+                    brandDotFrame: welcomeBrandDotFrame,
+                    ctaFrame: welcomeCTAFrame,
+                    exiting: welcomeFireflyExiting,
+                    reduceMotion: reduceMotion
+                )
+                .allowsHitTesting(false)
+            }
         }
+        .environment(\.lullUsesMeadowBackground, usesOnboardingFireflyCompanion)
+        .environment(\.lullHidesBrandDot, usesOnboardingFireflyCompanion)
         .onAppear {
+            welcomeFireflyExiting = false
             withAnimation(.easeIn(duration: 0.6)) { logoOpacity = 1 }
             withAnimation(.easeIn(duration: 0.5).delay(0.5)) { buttonOpacity = 1 }
+        }
+        .onPreferenceChange(BrandDotFramePreferenceKey.self) { frame in
+            welcomeBrandDotFrame = frame
+        }
+        .onPreferenceChange(FireflyCTAFramePreferenceKey.self) { frame in
+            welcomeCTAFrame = frame
+        }
+    }
+
+    private struct WelcomeFireflyIntro: View {
+        let brandDotFrame: CGRect?
+        let ctaFrame: CGRect?
+        let exiting: Bool
+        let reduceMotion: Bool
+        @State private var phase = 0
+        @State private var visible = false
+
+        var body: some View {
+            GeometryReader { geo in
+                TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
+                    let point = position(in: geo, time: timeline.date.timeIntervalSinceReferenceDate)
+                    FireflyDot(index: 0, reduceMotion: true, drifts: false)
+                        .scaleEffect(scale)
+                        .opacity(visible ? opacity : 0)
+                        .position(point)
+                        .animation(reduceMotion ? .easeOut(duration: 0.16) : .easeInOut(duration: phase == 2 ? 2.4 : 1.15), value: phase)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.7), value: exiting)
+                        .animation(.easeInOut(duration: 0.28), value: visible)
+                }
+            }
+            .ignoresSafeArea()
+            .onAppear {
+                guard !visible else { return }
+                if reduceMotion {
+                    phase = 2
+                    visible = true
+                    return
+                }
+                phase = 0
+                visible = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                    phase = 1
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
+                    phase = 2
+                }
+            }
+        }
+
+        private var scale: CGFloat {
+            if exiting { return 0.8 }
+            switch phase {
+            case 0: return 0.72
+            case 1: return 2.45
+            default: return 0.9
+            }
+        }
+
+        private var opacity: Double {
+            exiting ? 0.0 : (phase == 1 ? 0.92 : 1.0)
+        }
+
+        private func position(in geo: GeometryProxy, time: TimeInterval) -> CGPoint {
+            if exiting, let ctaFrame {
+                return CGPoint(x: ctaFrame.maxX + 86, y: ctaFrame.midY - 8)
+            }
+
+            switch phase {
+            case 0:
+                if let brandDotFrame {
+                    return CGPoint(x: brandDotFrame.midX, y: brandDotFrame.midY)
+                }
+                return CGPoint(x: geo.size.width * 0.62, y: geo.safeAreaInsets.top + 172)
+            case 1:
+                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.46)
+            default:
+                if let ctaFrame {
+                    return ctaHoverPosition(ctaFrame: ctaFrame, geo: geo, time: time)
+                }
+                return CGPoint(x: geo.size.width - 58, y: geo.size.height - geo.safeAreaInsets.bottom - 132)
+            }
+        }
+
+        private func ctaHoverPosition(ctaFrame: CGRect, geo: GeometryProxy, time: TimeInterval) -> CGPoint {
+            let horizontalRadius = min(max(ctaFrame.width * 0.36, 92), 156)
+            let verticalRadius = min(max(ctaFrame.height * 0.68, 40), 58)
+            let baseX = ctaFrame.midX
+            let baseY = ctaFrame.minY - 18
+            return CGPoint(
+                x: min(geo.size.width - 42, max(42, baseX + CGFloat(sin(time * 0.36)) * horizontalRadius)),
+                y: min(geo.size.height - geo.safeAreaInsets.bottom - 92, max(geo.safeAreaInsets.top + 72, baseY + CGFloat(cos(time * 0.31)) * verticalRadius))
+            )
         }
     }
 

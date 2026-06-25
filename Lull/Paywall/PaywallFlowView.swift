@@ -210,7 +210,7 @@ struct NightFivePaywallFlow: View {
                 }
             case .unlockedSubscriber:
                 VerdictUnlockedView(verdict: verdict, mode: .subscriber) {
-                    state.requestedTab = 1
+                    state.requestedTab = 2
                     dismiss()
                 } onHome: {
                     dismiss()
@@ -220,7 +220,7 @@ struct NightFivePaywallFlow: View {
                 }
             case .unlockedShare:
                 VerdictUnlockedView(verdict: verdict, mode: .shareOnly) {
-                    state.requestedTab = 1
+                    state.requestedTab = 2
                     dismiss()
                 } onHome: {
                     dismiss()

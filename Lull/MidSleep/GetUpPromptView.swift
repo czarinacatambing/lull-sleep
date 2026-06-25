@@ -23,14 +23,12 @@ struct GetUpPromptView: View {
                         Spacer().frame(height: 16)
 
                         HStack {
-                            Text("GET-UP PROTOCOL")
-                                .font(.mono(10.5))
-                                .kerning(1.4)
+                            Text("Get-up protocol")
+                                .font(.system(size: 12, weight: .semibold, design: .default))
                                 .foregroundColor(.lullInk4)
                             Spacer()
-                            Text("\(GetUpPromptView.timeFmt.string(from: Date())) · 20 MIN AWAKE")
-                                .font(.mono(10.5))
-                                .kerning(1)
+                            Text("\(GetUpPromptView.timeFmt.string(from: Date())) · 20 min awake")
+                                .font(.system(size: 11.5, weight: .medium, design: .default))
                                 .foregroundColor(.lullInk4)
                         }
                         .padding(.horizontal, 28)

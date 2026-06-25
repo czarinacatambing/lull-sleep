@@ -8,10 +8,10 @@ let sleepCompanionPhaseRefreshInterval: TimeInterval = 15
 // MARK: - Effective phase (the data-vs-visual flip)
 
 // The activity's stored phase doesn't auto-advance at wake time because no app
-// code runs while the user sleeps. The surrounding card also needs a timeline
-// tick; otherwise only Text(timerInterval:) may animate to 0:00 while the
-// sleeping layout stays on screen. Every view computes effectivePhase from the
-// clock on a lightweight refresh cadence.
+// code runs while the user sleeps. Every view computes effectivePhase from the
+// clock on a lightweight refresh cadence, while the visible countdown uses
+// SwiftUI's native timer text so the digits continue to tick inside Live
+// Activities.
 extension LullSleepAttributes.ContentState {
     func effectivePhase(at date: Date = Date(), isStale: Bool = false) -> Phase {
         if phase == .sleeping && (isStale || date >= wakeTime) {
@@ -37,6 +37,37 @@ private let _timeAmPmFormatter: DateFormatter = {
 
 private func shortTime(_ date: Date) -> String { _timeFormatter.string(from: date) }
 private func longTime(_ date: Date) -> String  { _timeAmPmFormatter.string(from: date) }
+
+func countdownText(until end: Date, from now: Date) -> String {
+    let seconds = max(0, Int(end.timeIntervalSince(now).rounded(.up)))
+    let hours = seconds / 3600
+    let minutes = (seconds % 3600) / 60
+    if hours > 0 {
+        return "\(hours):\(String(format: "%02d", minutes))"
+    }
+    return "\(minutes):\(String(format: "%02d", seconds % 60))"
+}
+
+func rateSleepURL(for rating: Int) -> URL {
+    URL(string: "tenthirty://rate?score=\(rating)")!
+}
+
+func awakeURL() -> URL {
+    URL(string: "tenthirty://awake")!
+}
+
+struct CountdownTimerText: View {
+    let end: Date
+
+    var body: some View {
+        let now = Date()
+        if end > now {
+            Text(timerInterval: now...end, countsDown: true)
+        } else {
+            Text("0:00")
+        }
+    }
+}
 
 // MARK: - Lock Screen view
 
@@ -101,7 +132,7 @@ private struct SleepingLockCard: View {
                         .font(LullLAFont.mono(size: 9.5))
                         .tracking(1.7)
                         .foregroundColor(LullLA.ink3)
-                    Text(timerInterval: Date()...max(state.wakeTime, Date().addingTimeInterval(1)), countsDown: true)
+                    CountdownTimerText(end: state.wakeTime)
                         .font(LullLAFont.fraunces(size: 30, weight: .light))
                         .foregroundColor(LullLA.ink0)
                         .lineLimit(1)
@@ -272,7 +303,7 @@ struct RatingDotRow: View {
         HStack(spacing: 4) {
             ForEach(1...5, id: \.self) { n in
                 let filled = (currentRating ?? 0) >= n
-                Button(intent: LullRateSleepIntent(rating: n)) {
+                Link(destination: rateSleepURL(for: n)) {
                     VStack(spacing: showLabels ? 3 : 0) {
                         ZStack {
                             Circle()
@@ -311,7 +342,6 @@ struct RatingDotRow: View {
                     )
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.borderless)
                 .accessibilityLabel("Rate \(n) of 5: \(labels[n - 1])")
                 if n < 5 { Spacer(minLength: 0) }
             }
@@ -368,14 +398,13 @@ struct DISleepTrailing: View {
     let state: LullSleepAttributes.ContentState
     var body: some View {
         VStack(alignment: .trailing, spacing: 1) {
-            Text("WAKES IN")
+            Text("WAKE")
                 .font(LullLAFont.mono(size: 8.5))
                 .tracking(1.6)
                 .foregroundColor(LullLA.ink3)
-            Text(timerInterval: Date()...max(state.wakeTime, Date().addingTimeInterval(1)), countsDown: true)
-                .font(LullLAFont.fraunces(size: 22, weight: .light))
+            Text(shortTime(state.wakeTime))
+                .font(LullLAFont.fraunces(size: 16, weight: .light))
                 .foregroundColor(LullLA.ink0)
-                .monospacedDigit()
                 .lineLimit(1)
         }
     }
@@ -383,27 +412,40 @@ struct DISleepTrailing: View {
 
 struct DISleepBottom: View {
     var body: some View {
-        HStack {
-            Text("Awake at 3am?")
+        HStack(spacing: 8) {
+            Text("Need help?")
                 .font(.system(size: 12))
                 .foregroundColor(LullLA.ink3)
             Spacer()
             Link(destination: URL(string: "tenthirty://midsleep")!) {
-                Text("Mid-Sleep mode")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(LullLA.ink1)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(LullLA.amber.opacity(0.10))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .strokeBorder(LullLA.amber.opacity(0.22), lineWidth: 1)
-                            )
-                    )
+                DIPillButton(title: "Mid-Sleep mode")
+            }
+            Link(destination: awakeURL()) {
+                DIPillButton(title: "I'm awake now", filled: true)
             }
         }
+    }
+}
+
+private struct DIPillButton: View {
+    let title: String
+    var filled = false
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundColor(filled ? LullLA.onAmber : LullLA.ink1)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(filled ? LullLA.amber : LullLA.amber.opacity(0.10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(LullLA.amber.opacity(filled ? 0.0 : 0.22), lineWidth: 1)
+                    )
+            )
     }
 }
 
@@ -460,15 +502,15 @@ struct DIWakeTrailing: View {
 struct DIWakeBottom: View {
     let state: LullSleepAttributes.ContentState
     var body: some View {
-        RatingDotRow(
-            currentRating: state.rating,
-            numbered: true,
-            showLabels: true,
-            dotSize: 22,
-            hitSize: 44,
-            labelSize: 6.5
-        )
-            .padding(.horizontal, 6)
+        HStack {
+            Text("Ready to start the day?")
+                .font(.system(size: 12))
+                .foregroundColor(LullLA.ink3)
+            Spacer()
+            Link(destination: awakeURL()) {
+                DIPillButton(title: "Rate my sleep", filled: true)
+            }
+        }
     }
 }
 

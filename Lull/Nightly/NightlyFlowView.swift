@@ -922,6 +922,8 @@ struct NightlyBreathingView: View {
     var isMidSleep: Bool = false
     var onboardingCopy: String? = nil
     var onOnboardingNext: (() -> Void)? = nil
+    var onComplete: (() -> Void)? = nil
+    var onExit: (() -> Void)? = nil
     @EnvironmentObject var state: AppState
     @Environment(\.dismiss) var dismiss
     @State private var player: AVAudioPlayer?
@@ -993,7 +995,7 @@ struct NightlyBreathingView: View {
                                 .foregroundColor(.lullInk3)
                             Spacer()
                             MidSleepExitButton {
-                                complete()
+                                close()
                             }
                         } else {
                             BrandMark()
@@ -1148,11 +1150,22 @@ struct NightlyBreathingView: View {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             return
         }
-        if isMidSleep {
+        if let onComplete {
+            onComplete()
+        } else if isMidSleep {
             dismiss()
         } else {
             state.recordCurrentStepAttempt(status: .completed)
             state.nightlyStep += 1
+        }
+    }
+
+    private func close() {
+        stopSession()
+        if let onExit {
+            onExit()
+        } else {
+            dismiss()
         }
     }
 
@@ -1467,7 +1480,7 @@ struct NightlyGoodNightView: View {
     @State private var tipFade: Double = 1
     @State private var emberScale: CGFloat = 1.0
     @State private var canDismiss = false
-    @State private var didStartSleepCompanion = false
+    @State private var didFinishLiveActivities = false
     @State private var didRecordCompletion = false
 
     var body: some View {
@@ -1537,11 +1550,11 @@ struct NightlyGoodNightView: View {
                     .overlay(Capsule().strokeBorder(Color(hex: "#b4a0dc").opacity(0.20), lineWidth: 1))
                     .clipShape(Capsule())
 
-                    (Text("Swipe to the ")
-                     + Text("Mid-sleep tab")
+                    (Text("Swipe up on ")
+                     + Text("Today")
                         .italic()
                         .foregroundColor(Color.lullAmber)
-                     + Text(" to fall back asleep."))
+                     + Text(" during your sleep window to open Mid-sleep mode."))
                         .font(.serif(16))
                         .foregroundColor(Color.lullInk1)
                         .multilineTextAlignment(.center)
@@ -1566,7 +1579,7 @@ struct NightlyGoodNightView: View {
                 didRecordCompletion = true
                 state.recordGuidedWindDownCompleted()
             }
-            startSleepCompanionIfNeeded()
+            finishLiveActivitiesIfNeeded()
 
             if reduceMotion {
                 heroOpacity = 1
@@ -1589,18 +1602,15 @@ struct NightlyGoodNightView: View {
         }
     }
 
-    private func startSleepCompanionIfNeeded() {
-        guard !didStartSleepCompanion else { return }
-        didStartSleepCompanion = true
+    private func finishLiveActivitiesIfNeeded() {
+        guard !didFinishLiveActivities else { return }
+        didFinishLiveActivities = true
 
-        // End the prep-checklist Live Activity, then start the sleep companion
-        // as soon as the ritual reaches the final screen. The user may lock
-        // the phone here instead of tapping to dismiss.
+        // End Live Activities when the ritual reaches the final screen. The
+        // Sleep Companion island is intentionally not started here; it proved
+        // unreliable around wake time and could get stuck buffering.
         LiveActivityService.shared.end(dismissalPolicy: .immediate)
-        LiveActivityService.shared.startSleepActivity(
-            bedtime: Date(),
-            wakeTime: state.nextWakeTime()
-        )
+        LiveActivityService.shared.endCurrentSleepActivity(dismissalPolicy: .immediate)
     }
 
     private func runAnimation() {

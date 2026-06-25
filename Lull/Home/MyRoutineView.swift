@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 import FamilyControls
 
 struct MyRoutineView: View {
@@ -16,6 +15,87 @@ struct MyRoutineView: View {
 
     private var prepSteps: [RoutineStep] { state.routinePrepSteps }
     private var ritualSteps: [RoutineStep] { state.routineRitualSteps }
+    private static let routineTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm"
+        return formatter
+    }()
+
+    private var routineStepTimes: [UUID: String] {
+        let calendar = Calendar.current
+        let bedtime = state.typicalBedtime
+        var times: [UUID: String] = [:]
+
+        for step in prepSteps {
+            let time = calendar.date(byAdding: .minute, value: -step.resolvedLeadTimeMins, to: bedtime) ?? bedtime
+            times[step.id] = Self.routineTimeFormatter.string(from: time)
+        }
+
+        var ritualSchedule: [(step: RoutineStep, time: Date)] = []
+        var sequenceOffset = 0
+        for step in ritualSteps.reversed() {
+            sequenceOffset += routineDisplayDurationMinutes(for: step)
+            let time = calendar.date(byAdding: .minute, value: -sequenceOffset, to: bedtime) ?? bedtime
+            ritualSchedule.append((step, time))
+        }
+
+        if let firstTime = ritualSchedule.map(\.time).min() {
+            let windowStart = calendar.date(byAdding: .minute, value: -state.sleepWindowMinutes, to: bedtime) ?? bedtime
+            if firstTime > windowStart {
+                let shift = Int(firstTime.timeIntervalSince(windowStart) / 60)
+                ritualSchedule = ritualSchedule.map { row in
+                    (row.step, calendar.date(byAdding: .minute, value: -shift, to: row.time) ?? row.time)
+                }
+            }
+        }
+
+        for row in ritualSchedule {
+            times[row.step.id] = Self.routineTimeFormatter.string(from: row.time)
+        }
+
+        return times
+    }
+
+    private func routineDisplayDurationMinutes(for step: RoutineStep) -> Int {
+        if step.label == R.boringStory {
+            let seconds = (step.boringStoryConfig ?? .fresh).storyId.durationSeconds
+            return max(1, Int(ceil(Double(seconds) / 60.0)))
+        }
+
+        if step.label == R.sleepSounds {
+            let config = step.sleepSoundConfig ?? .fresh
+            return config.infinite ? 5 : max(1, config.durationMinutes ?? 60)
+        }
+
+        if let kind = NightlyStepKind.forLabel(step.label) {
+            return max(1, kind.estimatedMinutes)
+        }
+
+        return minutesFromDurationLabel(step.durationLabel) ?? 5
+    }
+
+    private func minutesFromDurationLabel(_ label: String?) -> Int? {
+        guard let label else { return nil }
+        let pattern = #"(?:(\d+)\s*hr)?(?:\s*(\d+)\s*m)?(?:\s*(\d+)\s*s)?"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: label, range: NSRange(label.startIndex..., in: label)),
+              match.range.location != NSNotFound
+        else { return nil }
+
+        func value(at index: Int) -> Int {
+            guard match.range(at: index).location != NSNotFound,
+                  let range = Range(match.range(at: index), in: label)
+            else { return 0 }
+            return Int(label[range]) ?? 0
+        }
+
+        let hours = value(at: 1)
+        let minutes = value(at: 2)
+        let seconds = value(at: 3)
+        let totalSeconds = (hours * 60 + minutes) * 60 + seconds
+        return totalSeconds > 0 ? max(1, Int(ceil(Double(totalSeconds) / 60.0))) : nil
+    }
+
     private var candidates: [String] {
         let inRoutine = Set(state.coreRoutine.map(\.label))
         var seen: Set<String> = []
@@ -79,29 +159,24 @@ struct MyRoutineView: View {
     }
 
     var body: some View {
-        LullScreen(glow: false) {
-            AmberGlow(x: 0.8, y: -0.08, radius: 260, opacity: 0.55)
-                .ignoresSafeArea()
-
+        ZStack {
             ZStack(alignment: .bottom) {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 22) {
-                        Spacer().frame(height: 16)
+                        Spacer().frame(height: 28)
 
-                        RoutineTopHeader(bedtime: state.typicalBedtime)
-                            .padding(.horizontal, 22)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Edit Routine")
+                                .font(.serif(30))
+                                .foregroundColor(.lullInk0)
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
-                        StreakStatusCard(
-                            summary: state.streakSummary,
-                            selectedTab: .constant(1),
-                            prominent: false,
-                            progressAvgScoreText: avgScoreText,
-                            progressSlots: displaySlots,
-                            progressSleepLogs: state.sleepLogs,
-                            progressOnInfo: { showHistoryLegend = true },
-                            progressOnTap: { idx in state.selectedDotIndex = idx },
-                            progressOnTodayEmptyTap: { showTonightInProgress = true }
-                        )
+                            Text("Add, remove, or swap sleep tactics. Or tap to configure.")
+                                .font(.system(size: 13.5, weight: .regular, design: .default))
+                                .foregroundColor(.lullInk3)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         .padding(.horizontal, 22)
 
                         RoutineStepSection(
@@ -110,6 +185,7 @@ struct MyRoutineView: View {
                             suffix: "· before bed",
                             steps: prepSteps,
                             section: .prep,
+                            scheduledTimes: routineStepTimes,
                             onSelect: { step in
                                 if state.canCustomizeRoutine || step.isScreenBlockingConfigurationStep {
                                     selectedStepID = step.id
@@ -119,6 +195,9 @@ struct MyRoutineView: View {
                             },
                             onMove: { moving, target in
                                 state.moveRoutineStep(moving, before: target, in: .prep)
+                            },
+                            onMoveToIndex: { moving, targetIndex in
+                                state.moveRoutineStep(moving, toIndex: targetIndex, in: .prep)
                             },
                             onDelete: { step in
                                 state.removeRoutineStep(step)
@@ -135,6 +214,7 @@ struct MyRoutineView: View {
                             suffix: "· in bed",
                             steps: ritualSteps,
                             section: .ritual,
+                            scheduledTimes: routineStepTimes,
                             onSelect: { step in
                                 if state.canCustomizeRoutine || step.isScreenBlockingConfigurationStep {
                                     selectedStepID = step.id
@@ -144,6 +224,9 @@ struct MyRoutineView: View {
                             },
                             onMove: { moving, target in
                                 state.moveRoutineStep(moving, before: target, in: .ritual)
+                            },
+                            onMoveToIndex: { moving, targetIndex in
+                                state.moveRoutineStep(moving, toIndex: targetIndex, in: .ritual)
                             },
                             onDelete: { step in
                                 state.removeRoutineStep(step)
@@ -156,7 +239,9 @@ struct MyRoutineView: View {
 
                         Spacer().frame(height: 40)
                     }
+                    .padding(.bottom, 118)
                 }
+                .zIndex(1)
 
                 if let target = libraryTarget {
                     StepLibraryOverlay(
@@ -256,6 +341,9 @@ struct MyRoutineView: View {
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.28), value: libraryTarget != nil)
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.28), value: selectedStepID)
         }
+        .foregroundColor(.lullInk1)
+        .preferredColorScheme(.dark)
+        .requestsSolidTabBar(libraryTarget != nil || selectedStepID != nil)
         .alert("Change experiment?", isPresented: $showChangeConfirm) {
             Button("Keep testing") { }
             Button("Yes, change it", role: .destructive) { showCandidatePicker = true }
@@ -342,9 +430,8 @@ struct RoutineTopHeader: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("MY ROUTINE")
-                    .font(.mono(10))
-                    .kerning(1.8)
+                Text("My routine")
+                    .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmberSoft)
                 Text("Tonight")
                     .font(.serif(30))
@@ -480,30 +567,31 @@ struct RoutineStepSection: View {
     var suffix: String
     var steps: [RoutineStep]
     var section: RoutineSectionKind
+    var scheduledTimes: [UUID: String]
     var onSelect: (RoutineStep) -> Void
     var onMove: (RoutineStep, RoutineStep) -> Void
+    var onMoveToIndex: (RoutineStep, Int) -> Void
     var onDelete: (RoutineStep) -> Void
     var onAdd: () -> Void
-    @State private var draggingStep: RoutineStep? = nil
+    @State private var draggingStepID: UUID? = nil
+    @State private var dragTranslation: CGSize = .zero
+    @State private var rowFrames: [UUID: CGRect] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(number)
-                    .font(.mono(10))
-                    .kerning(1.7)
+                    .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmberSoft)
                 Text(title)
                     .font(.system(size: 20, weight: .regular))
                     .foregroundColor(.lullInk0)
                 Text(suffix)
-                    .font(.mono(10))
-                    .kerning(1.1)
+                    .font(.system(size: 11, weight: .medium, design: .default))
                     .foregroundColor(.lullInk4)
                 Spacer()
-                Text("\(steps.count) STEPS")
-                    .font(.mono(9.5))
-                    .kerning(1.1)
+                Text("\(steps.count) steps")
+                    .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk4)
             }
 
@@ -512,63 +600,86 @@ struct RoutineStepSection: View {
                     StepRow(
                         step: step,
                         section: section,
+                        scheduledTime: scheduledTimes[step.id] ?? "",
                         canDelete: step.mode != .experiment,
+                        isReordering: draggingStepID == step.id,
+                        reorderOffset: draggingStepID == step.id ? dragTranslation : .zero,
+                        onReorderChanged: { translation in
+                            draggingStepID = step.id
+                            dragTranslation = translation
+                        },
+                        onReorderEnded: { translation in
+                            move(step, by: translation)
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                                draggingStepID = nil
+                                dragTranslation = .zero
+                            }
+                        },
                         onDelete: { onDelete(step) }
                     ) {
                         onSelect(step)
                     }
-                    .opacity(draggingStep?.id == step.id ? 0.55 : 1)
-                    .onDrag {
-                        draggingStep = step
-                        return NSItemProvider(object: step.id.uuidString as NSString)
-                    }
-                    .onDrop(
-                        of: [UTType.text],
-                        delegate: RoutineStepDropDelegate(
-                            target: step,
-                            draggingStep: $draggingStep,
-                            steps: steps,
-                            onMove: onMove
-                        )
+                    .opacity(draggingStepID == step.id ? 0.92 : 1)
+                    .zIndex(draggingStepID == step.id ? 2 : 0)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: RoutineStepFramePreferenceKey.self,
+                                value: [step.id: proxy.frame(in: .global)]
+                            )
+                        }
                     )
                 }
                 AddStepRow(action: onAdd)
             }
         }
+        .onPreferenceChange(RoutineStepFramePreferenceKey.self) { frames in
+            rowFrames.merge(frames) { _, new in new }
+        }
+    }
+
+    private func move(_ step: RoutineStep, by translation: CGSize) {
+        guard steps.count > 1,
+              let startFrame = rowFrames[step.id],
+              let currentIndex = steps.firstIndex(where: { $0.id == step.id })
+        else { return }
+
+        let draggedMidY = startFrame.midY + translation.height
+        let orderedFrames = steps.compactMap { rowStep -> (step: RoutineStep, frame: CGRect)? in
+            guard let frame = rowFrames[rowStep.id] else { return nil }
+            return (rowStep, frame)
+        }
+
+        guard orderedFrames.count == steps.count else { return }
+
+        let rawIndex = orderedFrames.filter { row in
+            row.step.id != step.id && draggedMidY > row.frame.midY
+        }.count
+        let targetIndex = min(max(rawIndex, 0), steps.count - 1)
+        guard targetIndex != currentIndex else { return }
+
+        onMoveToIndex(step, targetIndex)
     }
 }
 
-struct RoutineStepDropDelegate: DropDelegate {
-    let target: RoutineStep
-    @Binding var draggingStep: RoutineStep?
-    let steps: [RoutineStep]
-    var onMove: (RoutineStep, RoutineStep) -> Void
+private struct RoutineStepFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
 
-    func dropEntered(info: DropInfo) {
-        guard let draggingStep,
-              draggingStep.id != target.id,
-              steps.contains(where: { $0.id == draggingStep.id }),
-              steps.contains(where: { $0.id == target.id }) else { return }
-        onMove(draggingStep, target)
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue()) { _, new in new }
     }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingStep = nil
-        return true
-    }
-
-    func dropExited(info: DropInfo) { }
 }
 
 struct StepRow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var step: RoutineStep
     var section: RoutineSectionKind
+    var scheduledTime: String
     var canDelete: Bool
+    var isReordering: Bool = false
+    var reorderOffset: CGSize = .zero
+    var onReorderChanged: (CGSize) -> Void = { _ in }
+    var onReorderEnded: (CGSize) -> Void = { _ in }
     var onDelete: () -> Void
     var action: () -> Void
     @State private var rowOffset: CGFloat = 0
@@ -599,50 +710,55 @@ struct StepRow: View {
                 .buttonStyle(.plain)
             }
 
-            Button(action: {
+            HStack(spacing: 10) {
+                DragHandle()
+                    .frame(width: 16)
+                    .highPriorityGesture(reorderGesture)
+
+                HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    Text(step.label)
+                        .font(.system(size: 15.5, weight: .regular))
+                        .foregroundColor(.lullInk0)
+                        .lineLimit(1)
+                    if isExperiment {
+                        Text("Test")
+                            .font(.system(size: 9.5, weight: .semibold, design: .default))
+                            .foregroundColor(.lullAmber)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(metadata)
+                    .font(.system(size: 11, weight: .medium, design: .default))
+                    .foregroundColor(isExperiment ? .lullAmberSoft : .lullInk3)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isExperiment ? Color.lullAmber.opacity(0.06) : Color.white.opacity(0.025))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1)
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 14))
+            .onTapGesture {
                 if rowOffset < 0 {
                     closeSwipe()
                 } else {
                     action()
                 }
-            }) {
-                HStack(spacing: 10) {
-                    DragHandle()
-                        .frame(width: 16)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 7) {
-                        Text(step.label)
-                            .font(.system(size: 15.5, weight: .regular))
-                            .foregroundColor(.lullInk0)
-                            .lineLimit(1)
-                        if isExperiment {
-                            Text("TEST")
-                                .font(.mono(8.5))
-                                .kerning(1.2)
-                                .foregroundColor(.lullAmber)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Text(metadata)
-                        .font(.mono(10))
-                        .foregroundColor(isExperiment ? .lullAmberSoft : .lullInk3)
-                        .lineLimit(1)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isExperiment ? Color.lullAmber.opacity(0.06) : Color.white.opacity(0.025))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(isExperiment ? Color.lullAmber.opacity(0.35) : Color.lullLine, lineWidth: 1)
-                        )
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 14))
             }
-            .buttonStyle(RoutineRowButtonStyle(reduceMotion: reduceMotion))
-            .offset(x: canDelete ? rowOffset : 0)
+            .accessibilityAddTraits(.isButton)
+            .offset(
+                x: (canDelete ? rowOffset : 0) + (isReordering ? reorderOffset.width : 0),
+                y: isReordering ? reorderOffset.height : 0
+            )
+            .scaleEffect(isReordering ? 1.015 : 1)
+            .shadow(color: Color.black.opacity(isReordering ? 0.26 : 0), radius: isReordering ? 18 : 0, x: 0, y: 10)
+            .animation(reduceMotion ? .easeInOut(duration: 0.18) : .spring(response: 0.24, dampingFraction: 0.86), value: isReordering)
             .simultaneousGesture(
                 DragGesture(minimumDistance: 18)
                     .onChanged { value in
@@ -667,6 +783,22 @@ struct StepRow: View {
         }
     }
 
+    private var reorderGesture: some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                guard abs(value.translation.height) > abs(value.translation.width) else { return }
+                closeSwipe()
+                onReorderChanged(value.translation)
+            }
+            .onEnded { value in
+                guard abs(value.translation.height) > abs(value.translation.width) else {
+                    onReorderEnded(.zero)
+                    return
+                }
+                onReorderEnded(value.translation)
+            }
+    }
+
     private func closeSwipe() {
         withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.16)) {
             rowOffset = 0
@@ -681,28 +813,7 @@ struct StepRow: View {
     }
 
     private var metadata: String {
-        switch section {
-        case .prep:
-            return "\(step.resolvedLeadTimeMins)m"
-        case .ritual:
-            if step.label == R.boringStory {
-                return (step.boringStoryConfig ?? .fresh).durationSummary
-            }
-            return step.durationLabel ?? defaultDuration(for: step.label)
-        case .morning:
-            return "Soon"
-        }
-    }
-
-    private func defaultDuration(for label: String) -> String {
-        switch label {
-        case "Brightness check", "Temperature check": return "10s"
-        case R.brainDump: return "2m · voice"
-        case R.boringStory: return BoringStoryStepConfig.fresh.durationSummary
-        case "4·7·8 breathing", R.breathing478: return "5m"
-        case "Body scan": return "5m"
-        default: return "\(NightlyStepKind.forLabel(label)?.estimatedMinutes ?? 5)m"
-        }
+        scheduledTime
     }
 }
 
@@ -855,7 +966,10 @@ struct EditStepSheet: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.opacity(backdropOpacity)
+            ZStack {
+                LinearGradient(colors: [.lullBg, .lullBg1], startPoint: .top, endPoint: .bottom)
+                Color.black.opacity(backdropOpacity)
+            }
                 .ignoresSafeArea()
                 .onTapGesture { onClose() }
 
@@ -869,9 +983,8 @@ struct EditStepSheet: View {
                         .padding(.bottom, 2)
 
                     HStack {
-                        Text("EDIT STEP · \(section.title.uppercased())")
-                            .font(.mono(10))
-                            .kerning(1.55)
+                        Text("Edit step · \(section.title.capitalized)")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.lullAmberSoft)
                         Spacer()
                         Button(action: onClose) {
@@ -892,9 +1005,8 @@ struct EditStepSheet: View {
 
                     if isAppBlockingStep {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("STEP · \(step.label.uppercased())")
-                                .font(.mono(10))
-                                .kerning(2)
+                            Text("Step · \(step.label)")
+                                .font(.system(size: 12, weight: .semibold, design: .default))
                                 .foregroundColor(.lullInk3)
                             Text("Your lock window")
                                 .font(.system(size: 28, weight: .regular))
@@ -917,9 +1029,8 @@ struct EditStepSheet: View {
                         WhenSlider(value: $leadTime)
                     } else if isAppBlockingStep && !state.canUseHardAppBlocking {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("GENTLE BLOCKING")
-                                .font(.mono(10))
-                                .kerning(1.5)
+                            Text("Gentle blocking")
+                                .font(.system(size: 12, weight: .semibold, design: .default))
                                 .foregroundColor(.lullInk3)
                             Text("Free blocking only runs during your sleep window and can be bypassed for the night.")
                                 .font(.system(size: 12.5))
@@ -1130,13 +1241,12 @@ struct WhenSlider: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("WHEN")
-                    .font(.mono(10))
-                    .kerning(1.5)
+                Text("When")
+                    .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk3)
                 Spacer()
                 Text("\(Int(value)) min before bed")
-                    .font(.mono(10))
+                    .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmber)
             }
 
@@ -1169,13 +1279,12 @@ struct StepScienceInline: View {
         if let impact {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text("SCIENCE")
-                        .font(.mono(10))
-                        .kerning(1.5)
+                    Text("Science")
+                        .font(.system(size: 12, weight: .semibold, design: .default))
                         .foregroundColor(.lullInk3)
                     Spacer()
                     Text(impact.highlight)
-                        .font(.mono(10))
+                        .font(.system(size: 11, weight: .semibold, design: .default))
                         .foregroundColor(.lullAmber)
                 }
 
@@ -1276,14 +1385,12 @@ struct InlineAppBlockingSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 8) {
-                Text("APP BLOCKING")
-                    .font(.mono(10))
-                    .kerning(1.5)
+                Text("App blocking")
+                    .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk3)
                 Spacer()
-                Text(probe.statusText.uppercased())
-                    .font(.mono(9.5))
-                    .kerning(1.1)
+                Text(probe.statusText)
+                    .font(.system(size: 10.5, weight: .semibold, design: .default))
                     .foregroundColor(statusColor)
             }
 
@@ -1919,7 +2026,14 @@ struct StepLibraryOverlay: View {
     }
 
     var body: some View {
-        LullScreen(glow: true, glowX: 0.5, glowY: -0.04, glowRadius: 260, glowOpacity: 0.60) {
+        ZStack(alignment: .top) {
+            LinearGradient(colors: [.lullBg, .lullBg1], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+
+            AmberGlow(x: 0.5, y: -0.04, radius: 260, opacity: 0.60)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Button(action: onClose) {
@@ -1935,9 +2049,8 @@ struct StepLibraryOverlay: View {
                     }
                     .buttonStyle(.plain)
                     Spacer()
-                    Text("STEP LIBRARY")
-                        .font(.mono(10))
-                        .kerning(1.7)
+                    Text("Step library")
+                        .font(.system(size: 12, weight: .semibold, design: .default))
                         .foregroundColor(.lullInk3)
                     Spacer()
                     Color.clear.frame(width: 36, height: 36)
@@ -1978,7 +2091,7 @@ struct StepLibraryOverlay: View {
                                 ForEach(categories, id: \.self) { category in
                                     Button(action: { selectedCategory = category }) {
                                         Text(category)
-                                            .font(.mono(10))
+                                            .font(.system(size: 11, weight: .semibold, design: .default))
                                             .foregroundColor(selectedCategory == category ? .lullAmber : .lullInk3)
                                             .padding(.horizontal, 12)
                                             .frame(height: 32)
@@ -1998,9 +2111,8 @@ struct StepLibraryOverlay: View {
                         ScrollView(showsIndicators: false) {
                             if filteredGroups.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("NO MATCHES")
-                                        .font(.mono(10))
-                                        .kerning(1.6)
+                                    Text("No matches")
+                                        .font(.system(size: 12, weight: .semibold, design: .default))
                                         .foregroundColor(.lullInk3)
                                     Text("Try a different word - you can also describe what you want to do.")
                                         .font(.system(size: 13))
@@ -2013,9 +2125,8 @@ struct StepLibraryOverlay: View {
                                 VStack(alignment: .leading, spacing: 18) {
                                     ForEach(filteredGroups, id: \.0) { group, rows in
                                         VStack(alignment: .leading, spacing: 8) {
-                                            Text(group.uppercased())
-                                                .font(.mono(9.5))
-                                                .kerning(1.6)
+                                            Text(group)
+                                                .font(.system(size: 11, weight: .semibold, design: .default))
                                                 .foregroundColor(.lullInk3)
                                             VStack(spacing: 6) {
                                                 ForEach(rows) { item in
@@ -2053,6 +2164,8 @@ struct StepLibraryOverlay: View {
                 }
             }
         }
+        .foregroundColor(.lullInk1)
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -2280,9 +2393,8 @@ private struct LibraryAccessChip: View {
     var isPremium: Bool
 
     var body: some View {
-        Text(isPremium ? "PREMIUM" : "FREE")
-            .font(.mono(8))
-            .kerning(1.0)
+        Text(isPremium ? "Premium" : "Free")
+            .font(.system(size: 9, weight: .semibold, design: .default))
             .foregroundColor(isPremium ? .lullAmber : .lullInk4)
             .padding(.horizontal, 6)
             .frame(height: 18)

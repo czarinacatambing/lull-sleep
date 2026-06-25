@@ -24,9 +24,8 @@ struct TonightPreviewCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Kicker(text: "Tonight is already set up")
                 Spacer()
-                Text("STARTS \(startsAt.uppercased())")
-                    .font(.mono(10))
-                    .kerning(1.2)
+                Text("Starts \(startsAt)")
+                    .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk3)
             }
 
@@ -49,17 +48,15 @@ struct TonightPreviewCard: View {
 
             HStack {
                 Text("We'll remind you at \(schedule.first?.time ?? startsAt) PM")
-                    .font(.mono(10))
-                    .kerning(0.8)
+                    .font(.system(size: 11, weight: .medium, design: .default))
                     .foregroundColor(.lullInk3)
                 Spacer()
                 Button(action: onEditRoutine) {
                     HStack(spacing: 4) {
-                        Text("EDIT IN ROUTINE")
-                            .font(.mono(10))
-                            .kerning(1.2)
+                        Text("Edit in Routine")
+                            .font(.system(size: 11, weight: .semibold, design: .default))
                         Text("→")
-                            .font(.mono(10))
+                            .font(.system(size: 11, weight: .semibold, design: .default))
                     }
                     .foregroundColor(.lullAmberSoft)
                 }
