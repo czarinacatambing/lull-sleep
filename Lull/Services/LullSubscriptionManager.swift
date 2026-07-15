@@ -47,6 +47,14 @@ enum LullSubscriptionError: LocalizedError {
     }
 }
 
+struct LullSubscriptionDetails {
+    let planName: String
+    let statusText: String
+    let billingTitle: String
+    let billingText: String
+    let productIdentifier: String
+}
+
 @MainActor
 final class LullSubscriptionManager: NSObject, ObservableObject {
     @Published private(set) var customerInfo: CustomerInfo?
@@ -56,6 +64,53 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
     @Published var lastErrorMessage: String?
 
     private var hasStarted = false
+
+    var currentSubscriptionDetails: LullSubscriptionDetails? {
+        guard let entitlement = customerInfo?.entitlements.all[LullRevenueCatConfig.proEntitlementID] else {
+            return nil
+        }
+
+        let productIdentifier = entitlement.productIdentifier
+        let planName = Self.planName(for: productIdentifier)
+        let statusText: String
+        switch entitlement.periodType {
+        case .trial:
+            statusText = entitlement.isActive ? "Free trial active" : "Trial ended"
+        case .intro:
+            statusText = entitlement.isActive ? "Intro offer active" : "Intro offer ended"
+        case .normal, .prepaid:
+            statusText = entitlement.isActive ? "Active subscription" : "Subscription inactive"
+        @unknown default:
+            statusText = entitlement.isActive ? "Active subscription" : "Subscription inactive"
+        }
+
+        let billingTitle: String
+        let billingText: String
+        if let expirationDate = entitlement.expirationDate {
+            let formattedDate = Self.billingDateFormatter.string(from: expirationDate)
+            if entitlement.periodType == .trial && entitlement.willRenew {
+                billingTitle = "First billing starts"
+                billingText = formattedDate
+            } else if entitlement.willRenew {
+                billingTitle = "Next billing period starts"
+                billingText = formattedDate
+            } else {
+                billingTitle = "Access ends"
+                billingText = formattedDate
+            }
+        } else {
+            billingTitle = "Billing"
+            billingText = entitlement.isActive ? "No renewal date" : "No billing date available"
+        }
+
+        return LullSubscriptionDetails(
+            planName: planName,
+            statusText: statusText,
+            billingTitle: billingTitle,
+            billingText: billingText,
+            productIdentifier: productIdentifier
+        )
+    }
 
     func start() {
         guard !hasStarted else { return }
@@ -127,6 +182,26 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
         currentOffering?.availablePackages.first { package in
             package.storeProduct.productIdentifier == product.productID ||
             package.identifier == product.rawValue
+        }
+    }
+
+    private static let billingDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
+    private static func planName(for productIdentifier: String) -> String {
+        switch productIdentifier {
+        case LullStoreProduct.yearly.productID:
+            return "Yearly plan"
+        case LullStoreProduct.monthly.productID:
+            return "Monthly plan"
+        case LullStoreProduct.lifetime.productID:
+            return "Lifetime plan"
+        default:
+            return "TenThirty Premium"
         }
     }
 

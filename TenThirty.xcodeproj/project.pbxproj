@@ -23,6 +23,7 @@
 		2CF48DB758A4F4F492F353CE /* ResearchDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB18882B975D7347E1D65745 /* ResearchDataService.swift */; };
 		30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */; };
 		332D984A7A784F8AD67D9B8F /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C163F36C48766A614974E4C /* GetUpPromptView.swift */; };
+		341F0FCC2C410B751C3708AF /* NavigationSmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */; };
 		345AA50FB33BEDDCC6BA1D84 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A2C65D9B9A0F933935914B /* PersistedState.swift */; };
 		3850298B9C3F8670CBAF5ED2 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B383598ABE5BE7D1191AD6 /* ExportService.swift */; };
 		388FEC5EEF7BEBE2AD6513ED /* NightlyGentleStretchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */; };
@@ -50,16 +51,19 @@
 		6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */; };
 		61969AEEB6ADACC5F82A5E95 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */; };
 		656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3D586CE81D7451C6957C877 /* min-solf.m4a */; };
+		65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */; };
 		6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
 		7096381F77E43B8904EC47F2 /* PostHogReplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */; };
 		73787A120AA138EF0644B4E9 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */; };
 		75C7CBA4618563551BF6A40A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */; };
 		7904530FDFA6F96A4F084BAE /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F49348CC68DED7F31C3DFB /* RemedyID.swift */; };
+		799BA67A397EA6AB2DD2B04A /* LullShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7C89EEC6A4008BA04F46B13A /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */; };
 		80B63035BF11522615698AC4 /* StreakMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944F2D82E309E25515532D12 /* StreakMilestoneView.swift */; };
 		81DF6BEDE3C8EBA4DD082D1F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
 		84237963926BF9387DB4B82F /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */; };
 		8674DE3A33B6DC6C9CDC017C /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6C835AC588EAEA2DEEF43 /* LullApp.swift */; };
+		87036F3376907D49536EAE52 /* AppStateRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */; };
 		8A37E35A931BF2B03C743F3F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
 		8AA63DA4AE7D3C35D5EE7429 /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9313D73408C29C460D31C8C8 /* MorningRewardView.swift */; };
 		8B199E8CBD446DD5F6F405DC /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */; };
@@ -77,6 +81,7 @@
 		AB87F53D08D735CA8C3436BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */; };
 		ADF4E69B05C3B8AA71357913 /* TogglePrepItemIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */; };
 		AEC7841FC9176906B3B6DDEC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */; };
+		B26D1054343CBE0D245DECE6 /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */; };
 		B40D3F1C7123258DB31F4B92 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E593F705AAD77F682F02D48 /* AppIntents.framework */; };
 		B963191E42C7FF2A1CCC744F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5C3E599230C7E37F4484E0C /* ActivityKit.framework */; };
 		BA2910867BB429F08E777E88 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = D95616AB69110C2AC95DD17E /* PostHog */; };
@@ -86,10 +91,12 @@
 		C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873B7BBBAAB5C557836239AF /* AnalyticsService.swift */; };
 		C5FAB66EB8F0888EFFEE6FC9 /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */; };
 		C91CCD4D2846FDE2D33C77BE /* BrainDumpsBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */; };
+		CDF607DF39D2A90DFEFD43C0 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6523881C2EC7B58DFCA165D /* UIKit.framework */; };
 		CF52FD25ABC10323B6E0E3B1 /* lake.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 0313A840CBD937B5C481137E /* lake.m4a */; };
 		D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */; };
 		D9184A0EFB741ED93A5126F7 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */; };
 		DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C2234E45847B2DE54E8990CC /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DF2D27730B6251AEB5488051 /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */; };
 		E53A1FB2F48D4BBD02792A51 /* ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3DDE682D8A92F301E51A601 /* ambient.m4a */; };
 		EF1A784BD5448370F97D31DE /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7D6C4993FCB04901D5BBAF /* Confetti.swift */; };
 		F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */; };
@@ -101,12 +108,33 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		201D7688B531FDF1F28D482E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 92BAF8B887787563B36A27C5;
+			remoteInfo = Lull;
+		};
+		5B366B007FF241B5A966F7E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 92BAF8B887787563B36A27C5;
+			remoteInfo = Lull;
+		};
 		64BE6D1AD8917117B0CAF3D3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 72FB3C74BE0EBA872A5AEA53;
 			remoteInfo = LullActivities;
+		};
+		BD480A53FF9A7AFC6FF2D941 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C26CF48E9B6C019FD86F2B1F;
+			remoteInfo = LullShieldConfiguration;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -118,6 +146,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */,
+				799BA67A397EA6AB2DD2B04A /* LullShieldConfiguration.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -141,6 +170,7 @@
 		2316827F53961A9543FE7144 /* rules of east and west.m4a */ = {isa = PBXFileReference; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
 		2385C445922205A436F4B026 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 1-6.m4a"; sourceTree = "<group>"; };
+		29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
 		2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2BA98E7B07449D1F26DE06CF /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
 		2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
@@ -149,6 +179,7 @@
 		3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionViews.swift; sourceTree = "<group>"; };
 		4899657867919D25621A8287 /* PaywallFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallFlowView.swift; sourceTree = "<group>"; };
 		49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-02.mp3"; sourceTree = "<group>"; };
+		4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ManagedSettingsUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E593F705AAD77F682F02D48 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppIntents.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
 		5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
@@ -159,6 +190,7 @@
 		5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDumpsBrowser.swift; sourceTree = "<group>"; };
 		62D6C835AC588EAEA2DEEF43 /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
 		64B383598ABE5BE7D1191AD6 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ManagedSettings.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		689C88C380117A100D1610A0 /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
 		6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
 		6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
@@ -173,6 +205,7 @@
 		7F93598B84E835FCF4E17F89 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
 		7FC94C0B9CC0499BBABF4808 /* LullLA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullLA.swift; sourceTree = "<group>"; };
 		7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		820FCDADF72AB76B94600AA0 /* LullUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LullUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		873B7BBBAAB5C557836239AF /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		8A23CDA9BBE30563F3F47D9F /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSubscriptionManager.swift; sourceTree = "<group>"; };
@@ -185,7 +218,9 @@
 		A0032E2F445A4B5E35EA46FE /* in captivity.m4a */ = {isa = PBXFileReference; path = "in captivity.m4a"; sourceTree = "<group>"; };
 		A3D586CE81D7451C6957C877 /* min-solf.m4a */ = {isa = PBXFileReference; path = "min-solf.m4a"; sourceTree = "<group>"; };
 		A3DDE682D8A92F301E51A601 /* ambient.m4a */ = {isa = PBXFileReference; path = ambient.m4a; sourceTree = "<group>"; };
+		A4C034E5DA6A11A12D3C2E1B /* LullShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullShieldConfiguration.entitlements; sourceTree = "<group>"; };
 		AB18882B975D7347E1D65745 /* ResearchDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDataService.swift; sourceTree = "<group>"; };
+		ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRegressionTests.swift; sourceTree = "<group>"; };
 		AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
 		AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
 		B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullActivitiesBundle.swift; sourceTree = "<group>"; };
@@ -194,6 +229,7 @@
 		B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullOpenMidSleepIntent.swift; sourceTree = "<group>"; };
 		B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
 		B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
+		B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationSmokeUITests.swift; sourceTree = "<group>"; };
 		BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
 		C2234E45847B2DE54E8990CC /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
@@ -206,6 +242,8 @@
 		D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityService.swift; sourceTree = "<group>"; };
 		D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
 		D654C67A1483730850BC0E54 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
+		E2705A407B8C280E7EDF870E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
 		EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-01.mp3"; sourceTree = "<group>"; };
@@ -213,7 +251,9 @@
 		F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSleepAttributes.swift; sourceTree = "<group>"; };
 		F5C3E599230C7E37F4484E0C /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ActivityKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
+		F6523881C2EC7B58DFCA165D /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = UIKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistWidget.swift; sourceTree = "<group>"; };
+		FAFF27B8728ACFEDFF0618E5 /* LullTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LullTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -239,9 +279,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8224FCDB9C358B0785FD8C86 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF2D27730B6251AEB5488051 /* ManagedSettings.framework in Frameworks */,
+				65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */,
+				CDF607DF39D2A90DFEFD43C0 /* UIKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0329F9F493652810F9F6D3AC /* LullShieldConfiguration */ = {
+			isa = PBXGroup;
+			children = (
+				E2705A407B8C280E7EDF870E /* Info.plist */,
+				A4C034E5DA6A11A12D3C2E1B /* LullShieldConfiguration.entitlements */,
+				29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */,
+			);
+			path = LullShieldConfiguration;
+			sourceTree = "<group>";
+		};
 		0889BE44A4F459812D68550C /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
@@ -346,6 +406,14 @@
 			path = Persistence;
 			sourceTree = "<group>";
 		};
+		59D249DFB593ABC6BFD84709 /* LullUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */,
+			);
+			path = LullUITests;
+			sourceTree = "<group>";
+		};
 		6E7702BCDF73979AE413EA0B /* Paywall */ = {
 			isa = PBXGroup;
 			children = (
@@ -384,8 +452,19 @@
 			children = (
 				8A23CDA9BBE30563F3F47D9F /* Lull.app */,
 				C2234E45847B2DE54E8990CC /* LullActivities.appex */,
+				E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */,
+				FAFF27B8728ACFEDFF0618E5 /* LullTests.xctest */,
+				820FCDADF72AB76B94600AA0 /* LullUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7F8A770B9C40D43FFDDF9B12 /* LullTests */ = {
+			isa = PBXGroup;
+			children = (
+				ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */,
+			);
+			path = LullTests;
 			sourceTree = "<group>";
 		};
 		7FC2C9BF692DA0DF9DF3D2D9 = {
@@ -393,6 +472,9 @@
 			children = (
 				F693DF470CC0A1FB6C532B4D /* Lull */,
 				1FFDB8AB5D6FE8A1C447BEA5 /* LullActivities */,
+				0329F9F493652810F9F6D3AC /* LullShieldConfiguration */,
+				7F8A770B9C40D43FFDDF9B12 /* LullTests */,
+				59D249DFB593ABC6BFD84709 /* LullUITests */,
 				A85C56F1CCE816587E734D3B /* Frameworks */,
 				795352AC8A7ECB22EBCF0B01 /* Products */,
 			);
@@ -403,7 +485,10 @@
 			children = (
 				F5C3E599230C7E37F4484E0C /* ActivityKit.framework */,
 				4E593F705AAD77F682F02D48 /* AppIntents.framework */,
+				65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */,
+				4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */,
 				FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */,
+				F6523881C2EC7B58DFCA165D /* UIKit.framework */,
 				9D067205DC708FB6337C2659 /* WidgetKit.framework */,
 			);
 			name = Frameworks;
@@ -509,6 +594,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		6E0477808D478A19734E305B /* LullUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6CB8A6AC84921D3D131FF7C /* Build configuration list for PBXNativeTarget "LullUITests" */;
+			buildPhases = (
+				359276B528C03AB3434695ED /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0E463CB5493BF4B56DCD6A7 /* PBXTargetDependency */,
+			);
+			name = LullUITests;
+			packageProductDependencies = (
+			);
+			productName = LullUITests;
+			productReference = 820FCDADF72AB76B94600AA0 /* LullUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		72FB3C74BE0EBA872A5AEA53 /* LullActivities */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3FB3889878AF34909EF7512D /* Build configuration list for PBXNativeTarget "LullActivities" */;
@@ -540,6 +643,7 @@
 			);
 			dependencies = (
 				2FFD1A33265399839D3EAFFB /* PBXTargetDependency */,
+				01DE765A01E04EBF9DC8090D /* PBXTargetDependency */,
 			);
 			name = Lull;
 			packageProductDependencies = (
@@ -551,6 +655,42 @@
 			productReference = 8A23CDA9BBE30563F3F47D9F /* Lull.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B8678974615C635AE5DEFE0D /* LullTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A665A58BD591E56EF72C106 /* Build configuration list for PBXNativeTarget "LullTests" */;
+			buildPhases = (
+				83ED31A20EB6C9B52A3323B1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C4855214755DEF2835BCEBBF /* PBXTargetDependency */,
+			);
+			name = LullTests;
+			packageProductDependencies = (
+			);
+			productName = LullTests;
+			productReference = FAFF27B8728ACFEDFF0618E5 /* LullTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C26CF48E9B6C019FD86F2B1F /* LullShieldConfiguration */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2813DBF6FBA2141063B52437 /* Build configuration list for PBXNativeTarget "LullShieldConfiguration" */;
+			buildPhases = (
+				5ACDDC6CDD69679C277E513A /* Sources */,
+				8224FCDB9C358B0785FD8C86 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LullShieldConfiguration;
+			packageProductDependencies = (
+			);
+			productName = LullShieldConfiguration;
+			productReference = E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -560,11 +700,18 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					6E0477808D478A19734E305B = {
+						TestTargetID = 92BAF8B887787563B36A27C5;
+					};
 					72FB3C74BE0EBA872A5AEA53 = {
 						DevelopmentTeam = 2WLHFD257A;
 						ProvisioningStyle = Automatic;
 					};
 					92BAF8B887787563B36A27C5 = {
+						DevelopmentTeam = 2WLHFD257A;
+						ProvisioningStyle = Automatic;
+					};
+					C26CF48E9B6C019FD86F2B1F = {
 						DevelopmentTeam = 2WLHFD257A;
 						ProvisioningStyle = Automatic;
 					};
@@ -590,6 +737,9 @@
 			targets = (
 				92BAF8B887787563B36A27C5 /* Lull */,
 				72FB3C74BE0EBA872A5AEA53 /* LullActivities */,
+				C26CF48E9B6C019FD86F2B1F /* LullShieldConfiguration */,
+				B8678974615C635AE5DEFE0D /* LullTests */,
+				6E0477808D478A19734E305B /* LullUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -627,6 +777,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		359276B528C03AB3434695ED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				341F0FCC2C410B751C3708AF /* NavigationSmokeUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5ACDDC6CDD69679C277E513A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B26D1054343CBE0D245DECE6 /* ShieldConfigurationExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		805A49FC54AB788E0A2DFF03 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -641,6 +807,14 @@
 				F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */,
 				41D12F4B9B795D31547C8E62 /* SleepCompanionWidget.swift in Sources */,
 				ADF4E69B05C3B8AA71357913 /* TogglePrepItemIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		83ED31A20EB6C9B52A3323B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87036F3376907D49536EAE52 /* AppStateRegressionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -705,10 +879,25 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		01DE765A01E04EBF9DC8090D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C26CF48E9B6C019FD86F2B1F /* LullShieldConfiguration */;
+			targetProxy = BD480A53FF9A7AFC6FF2D941 /* PBXContainerItemProxy */;
+		};
 		2FFD1A33265399839D3EAFFB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 72FB3C74BE0EBA872A5AEA53 /* LullActivities */;
 			targetProxy = 64BE6D1AD8917117B0CAF3D3 /* PBXContainerItemProxy */;
+		};
+		A0E463CB5493BF4B56DCD6A7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 92BAF8B887787563B36A27C5 /* Lull */;
+			targetProxy = 5B366B007FF241B5A966F7E5 /* PBXContainerItemProxy */;
+		};
+		C4855214755DEF2835BCEBBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 92BAF8B887787563B36A27C5 /* Lull */;
+			targetProxy = 201D7688B531FDF1F28D482E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -757,6 +946,42 @@
 			};
 			name = Debug;
 		};
+		3595068FF2B737D557DD260D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TenThirty.app/TenThirty";
+			};
+			name = Debug;
+		};
+		41B6855657A250B590AB2FD4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lull;
+			};
+			name = Release;
+		};
 		4EB98F5027B1105B7BC21AC7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -791,7 +1016,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -811,7 +1036,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.3;
+				MARKETING_VERSION = 2.0.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -832,6 +1057,22 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		67F4AD3EDB9FB71D721EEE0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullShieldConfiguration/LullShieldConfiguration.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullShieldConfiguration/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.trylull.app.shield-configuration";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -872,7 +1113,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -898,7 +1139,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.3;
+				MARKETING_VERSION = 2.0.6;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -926,6 +1167,58 @@
 			};
 			name = Debug;
 		};
+		96E97794F68441D56ED384C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lull;
+			};
+			name = Debug;
+		};
+		9E3D522A645D442DD3FB6BAD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullShieldConfiguration/LullShieldConfiguration.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullShieldConfiguration/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.trylull.app.shield-configuration";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BE623D62B9ED90F2D74A4ED8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TenThirty.app/TenThirty";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -934,6 +1227,24 @@
 			buildConfigurations = (
 				1DBFFBDF437B7C5316D01B92 /* Debug */,
 				1931CD4AC4A18D1446C50221 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2813DBF6FBA2141063B52437 /* Build configuration list for PBXNativeTarget "LullShieldConfiguration" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9E3D522A645D442DD3FB6BAD /* Debug */,
+				67F4AD3EDB9FB71D721EEE0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2A665A58BD591E56EF72C106 /* Build configuration list for PBXNativeTarget "LullTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3595068FF2B737D557DD260D /* Debug */,
+				BE623D62B9ED90F2D74A4ED8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -952,6 +1263,15 @@
 			buildConfigurations = (
 				71D7A430EE2E0D8237768D71 /* Debug */,
 				4EB98F5027B1105B7BC21AC7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E6CB8A6AC84921D3D131FF7C /* Build configuration list for PBXNativeTarget "LullUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96E97794F68441D56ED384C4 /* Debug */,
+				41B6855657A250B590AB2FD4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

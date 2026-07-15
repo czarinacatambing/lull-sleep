@@ -256,6 +256,7 @@ struct OnbTopBar: View {
     var total: Int
     var showBack: Bool = true
     var onBack: (() -> Void)? = nil
+    var onSkip: (() -> Void)? = nil
 
     var body: some View {
         HStack {
@@ -283,11 +284,22 @@ struct OnbTopBar: View {
 
             Spacer()
 
-            Text("SKIP")
-                .font(.mono(11))
-                .kerning(1.2)
-                .foregroundColor(.lullInk3)
-                .frame(width: 36, alignment: .trailing)
+            if let onSkip {
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onSkip()
+                } label: {
+                    Text("SKIP")
+                        .font(.mono(11))
+                        .kerning(1.2)
+                        .foregroundColor(.lullInk3)
+                        .frame(width: 36, alignment: .trailing)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Skip question")
+            } else {
+                Spacer().frame(width: 36)
+            }
         }
         .padding(.horizontal, 22)
         .padding(.bottom, 18)
@@ -301,10 +313,14 @@ struct ChoiceRow: View {
     var hint: String? = nil
     var selected: Bool = false
     var big: Bool = false
+    var disabled: Bool = false
     var onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+            guard !disabled else { return }
+            onTap()
+        }) {
             HStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 7)
@@ -355,6 +371,8 @@ struct ChoiceRow: View {
             .shadow(color: selected ? Color.black.opacity(0.35) : .clear, radius: 11, y: 8)
         }
         .buttonStyle(.plain)
+        .disabled(disabled)
+        .opacity(disabled ? 0.42 : 1)
     }
 }
 

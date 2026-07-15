@@ -39,6 +39,28 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B8678974615C635AE5DEFE0D"
+               BuildableName = "LullTests.xctest"
+               BlueprintName = "LullTests"
+               ReferencedContainer = "container:TenThirty.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6E0477808D478A19734E305B"
+               BuildableName = "LullUITests.xctest"
+               BlueprintName = "LullUITests"
+               ReferencedContainer = "container:TenThirty.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

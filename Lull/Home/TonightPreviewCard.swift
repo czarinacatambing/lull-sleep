@@ -53,7 +53,7 @@ struct TonightPreviewCard: View {
                 Spacer()
                 Button(action: onEditRoutine) {
                     HStack(spacing: 4) {
-                        Text("Edit in Routine")
+                        Text("Edit in Rules")
                             .font(.system(size: 11, weight: .semibold, design: .default))
                         Text("→")
                             .font(.system(size: 11, weight: .semibold, design: .default))

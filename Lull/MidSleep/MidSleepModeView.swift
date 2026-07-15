@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MidSleepModeView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.dismiss) var dismiss
     @AppStorage("hasSeenMidSleepMode") private var hasSeenMidSleepMode = false
     var onExit: (() -> Void)?
@@ -199,7 +200,9 @@ struct MidSleepModeView: View {
         }
         .fullScreenCover(isPresented: $showBoringStory) { MidSleepBoringStoryView() }
         .fullScreenCover(isPresented: $showSleepSounds) {
-            NightlySleepSoundsView(isMidSleep: true).environmentObject(state)
+            NightlySleepSoundsView(isMidSleep: true)
+                .environmentObject(state)
+                .environmentObject(sleepSoundsAudio)
         }
         .fullScreenCover(isPresented: $showGetUpPrompt) {
             GetUpPromptView().environmentObject(state)

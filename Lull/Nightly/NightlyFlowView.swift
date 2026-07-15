@@ -5,6 +5,7 @@ import AVFoundation
 // Nightly walkthrough coordinator — forward-only, no back button.
 struct NightlyFlowView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.dismiss) var dismiss
     @State private var didRecordSessionStart = false
     @State private var recordedStartedStepIndexes: Set<Int> = []
@@ -18,7 +19,7 @@ struct NightlyFlowView: View {
                 case .temperatureLog:                NightlyTemperatureView()
                 case .brainDump:                     NightlyBrainDumpView()
                 case .boringStory:                   NightlyBoringStoryView()
-                case .sleepSounds:                   NightlySleepSoundsView()
+                case .sleepSounds:                   NightlySleepSoundsView().environmentObject(sleepSoundsAudio)
                 case .fourSevenEightBreathing:       NightlyBreathingView()
                 case .gratitudeJournal:              NightlyGratitudeJournalView()
                 case .gentleStretching:              NightlyGentleStretchingView()

@@ -1,19 +1,18 @@
 import ActivityKit
+import FamilyControls
+import ManagedSettings
 import RevenueCatUI
 import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject var state: AppState
+    @Environment(\.scenePhase) private var scenePhase
     @Binding var selectedTab: Int
     var suppressDeckForFirstFireflyPrompt: Bool = false
     var suppressMorningRateForFirstFireflyPrompt: Bool = false
     var onFirstDeckInteraction: () -> Void = {}
     var onRoutineCompleted: () -> Void = {}
-    @State private var showMenu = false
     @State private var showSettings = false
-    #if DEBUG
-    @State private var showBrainDumps = false
-    #endif
     @State private var currentDate = Date()
     @State private var glowPulse = false
     @AppStorage("hasDismissedAppBlockingOffer") private var hasDismissedAppBlockingOffer = false
@@ -47,7 +46,7 @@ struct DashboardView: View {
         guard let wake = todaysWakeTime else { return false }
         return todaysRating == nil
             && currentDate >= wake
-            && currentDate < firstPrepStartForCurrentSleepWindow
+            && currentDate < nextPrepStartAfterMorningWake
     }
 
     private var shouldShowTodayDeck: Bool {
@@ -57,7 +56,7 @@ struct DashboardView: View {
         #endif
         return !shouldShowMorningRateCard
             && !hasFinishedTodayRoutine
-            && currentDate >= firstPrepStartForCurrentSleepWindow
+            && currentDate >= firstPrepStartForNextVisibleDeck
     }
 
     private var firstPrepStartForCurrentSleepWindow: Date {
@@ -79,17 +78,45 @@ struct DashboardView: View {
         return cal.date(byAdding: .minute, value: -firstLeadMinutes, to: bedtime) ?? bedtime
     }
 
+    private var nextPrepStartAfterMorningWake: Date {
+        let cal = Calendar.current
+        guard let wake = todaysWakeTime else { return firstPrepStartForCurrentSleepWindow }
+        var nextStart = firstPrepStartForCurrentSleepWindow
+        while nextStart <= wake {
+            nextStart = cal.date(byAdding: .day, value: 1, to: nextStart) ?? nextStart.addingTimeInterval(24 * 60 * 60)
+        }
+        return nextStart
+    }
+
+    private var firstPrepStartForNextVisibleDeck: Date {
+        guard let wake = todaysWakeTime, currentDate >= wake else {
+            return firstPrepStartForCurrentSleepWindow
+        }
+        return nextPrepStartAfterMorningWake
+    }
+
+    private var nextPrepReminderText: String {
+        DashboardView.timeFmt.string(from: firstPrepStartForNextVisibleDeck)
+    }
+
+    private var shouldShowNextPrepReminderMessage: Bool {
+        guard let wake = todaysWakeTime else { return false }
+        return currentDate >= wake
+            && !shouldShowMorningRateCard
+            && !shouldShowTodayDeck
+            && currentDate < firstPrepStartForNextVisibleDeck
+    }
+
     private var todayFireflyGreeting: String {
         #if DEBUG
         if state.debugForceMorningState { return "Good Morning" }
         #endif
-        if isInSleepWindow || hasFinishedTodayRoutine { return "Good Night" }
-
         let hour = Calendar.current.component(.hour, from: currentDate)
         switch hour {
         case 5..<12: return "Good Morning"
         case 12..<17: return "Good Afternoon"
-        default: return "Good Evening"
+        case 17..<22: return "Good Evening"
+        default: return "Good Night"
         }
     }
 
@@ -114,6 +141,23 @@ struct DashboardView: View {
         return cal.date(from: combined)
     }
 
+    private var displayedRoutineBedtimeDay: Date {
+        let cal = Calendar.current
+        if let wake = todaysWakeTime,
+           currentDate >= wake,
+           currentDate < nextPrepStartAfterMorningWake,
+           let morningBedtimeDay {
+            return morningBedtimeDay
+        }
+        return state.bedtimeDate(for: currentDate, calendar: cal)
+    }
+
+    private var morningBedtimeDay: Date? {
+        let cal = Calendar.current
+        guard let wake = todaysWakeTime else { return nil }
+        return state.bedtimeDate(forWakeTime: wake, calendar: cal)
+    }
+
     // Most recent entry with a score (any date). nil if user has never rated.
     private var mostRecentRated: SleepLogEntry? {
         state.sleepLogs
@@ -122,16 +166,41 @@ struct DashboardView: View {
             .first
     }
 
-    // Today's rating = the most recent rated entry within the today/yesterday
-    // window. We have to use that window (not strictly yesterday) because the
-    // rating can land on a today-dated entry when the user did wind-down after
-    // midnight OR when a today-dated ghost entry already exists.
+    // Today's rating belongs to the sleep window currently being reviewed.
+    // Same-day test windows (for example 4:20-4:30 PM) and overnight windows
+    // both need this date-specific lookup; a broad today/yesterday search can
+    // accidentally reuse yesterday's score for the next window.
     private var todaysRatedEntry: SleepLogEntry? {
-        let cal = Calendar.current
-        return state.sleepLogs
-            .filter { $0.score > 0 && (cal.isDateInToday($0.date) || cal.isDateInYesterday($0.date)) }
+        if let primary = primarySleepWindowEntry, hasNightlyData(primary) {
+            return primary.score > 0 ? primary : nil
+        }
+        return sleepWindowEntries
+            .filter { $0.score > 0 }
             .sorted { $0.date > $1.date }
             .first
+    }
+
+    private var sleepWindowEntries: [SleepLogEntry] {
+        let cal = Calendar.current
+        let bedtimeDay = displayedRoutineBedtimeDay
+        return state.sleepLogs.filter { cal.isDate($0.date, inSameDayAs: bedtimeDay) }
+    }
+
+    private var primarySleepWindowEntry: SleepLogEntry? {
+        sleepWindowEntries.sorted { lhs, rhs in
+            let lhsHasNightlyData = hasNightlyData(lhs)
+            let rhsHasNightlyData = hasNightlyData(rhs)
+            if lhsHasNightlyData != rhsHasNightlyData {
+                return lhsHasNightlyData && !rhsHasNightlyData
+            }
+            return lhs.date > rhs.date
+        }.first
+    }
+
+    private func hasNightlyData(_ entry: SleepLogEntry) -> Bool {
+        entry.completedNightlyFlow
+            || entry.actualBedtime != nil
+            || !entry.stepAttempts.isEmpty
     }
 
     private var todaysRating: Int? {
@@ -161,7 +230,7 @@ struct DashboardView: View {
     }
     private var completedWindDownTonight: Bool {
         let cal = Calendar.current
-        let bedtimeDay = state.bedtimeDate(for: currentDate, calendar: cal)
+        let bedtimeDay = displayedRoutineBedtimeDay
         return state.sleepLogs.contains {
             $0.completedNightlyFlow && cal.isDate($0.date, inSameDayAs: bedtimeDay)
         }
@@ -216,6 +285,8 @@ struct DashboardView: View {
                     yesterdaysRating: yesterdaysRating,
                     todaysRating: todaysRating,
                     hasFinishedRoutine: hasFinishedTodayRoutine,
+                    showsNextPrepReminderMessage: shouldShowNextPrepReminderMessage,
+                    nextPrepReminderText: nextPrepReminderText,
                     forceDeckPreview: debugForceDeckPreview,
                     scheduledTime: scheduledTime(for:),
                     leadLabel: leadLabel(for:),
@@ -240,172 +311,22 @@ struct DashboardView: View {
                 state.resetPrepIfNeeded()
                 state.refreshPrepLiveActivityIfEligible()
             }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                currentDate = Date()
+                state.resetPrepIfNeeded()
+                state.refreshPrepLiveActivityIfEligible()
+            }
             .animation(.spring(response: 0.55, dampingFraction: 0.86), value: shouldShowMorningRateCard)
 
             // Menu overlay
-            if showMenu {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .ignoresSafeArea()
-                    .onTapGesture { withAnimation(.easeOut(duration: 0.18)) { showMenu = false } }
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Button(action: {
-                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            state.presentUpgradePaywall()
-                        }
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "crown.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullAmber)
-                                .frame(width: 18)
-                            Text("Upgrade to premium")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.lullInk0)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.plain)
-
-                    Divider().background(Color.lullLine).padding(.horizontal, 12)
-
-                    Button(action: {
-                        withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            showSettings = true
-                        }
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "slider.horizontal.3")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullInk2)
-                                .frame(width: 18)
-                            Text("Settings")
-                                .font(.system(size: 14))
-                                .foregroundColor(.lullInk1)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.plain)
-
-                    #if DEBUG
-                    debugMenuDivider
-                    debugMenuContent
-                    #endif
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(hex: "#1a1310"))
-                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.lullLine, lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.5), radius: 16, y: 8)
-                )
-                .frame(width: 220)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 68)
-                .padding(.trailing, 22)
-                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
-                .zIndex(10)
-            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        #if DEBUG
-        .sheet(isPresented: $showBrainDumps) {
-            BrainDumpsBrowser()
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-        }
-        #endif
     }
-
-    #if DEBUG
-    private var debugMenuDivider: some View {
-        Divider().background(Color.lullLine).padding(.horizontal, 12)
-    }
-
-    private var debugMenuContent: some View {
-        Group {
-            Button(action: {
-                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    showBrainDumps = true
-                }
-            }) {
-                HStack(spacing: 12) {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.lullInk2)
-                        .frame(width: 18)
-                    Text("Brain Dumps")
-                        .font(.system(size: 14))
-                        .foregroundColor(.lullInk1)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
-
-            Divider().background(Color.lullLine).padding(.horizontal, 12)
-
-            debugMenuItem(
-                label: "Force morning state",
-                active: state.debugForceMorningState
-            ) {
-                state.debugForceMorningState.toggle()
-                if state.debugForceMorningState {
-                    state.debugForceEveningState = false
-                }
-                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-            }
-            debugMenuItem(
-                label: "Force prep/deck state",
-                active: state.debugForceEveningState
-            ) {
-                state.debugForceEveningState.toggle()
-                if state.debugForceEveningState {
-                    state.debugForceMorningState = false
-                    state.debugResetTodayDeckProgress()
-                }
-                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-            }
-            debugMenuItem(
-                label: "Clear today's rating",
-                active: false
-            ) {
-                state.debugClearTodaysRating()
-                withAnimation(.easeOut(duration: 0.18)) { showMenu = false }
-            }
-        }
-    }
-
-    private func debugMenuItem(label: String, active: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: active ? "checkmark.circle.fill" : "wrench.adjustable")
-                    .font(.system(size: 12))
-                    .foregroundColor(active ? .lullAmber : .lullInk3)
-                    .frame(width: 10)
-                Text(label)
-                    .font(.system(size: 13))
-                    .foregroundColor(active ? .lullAmber : .lullInk2)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-        .buttonStyle(.plain)
-    }
-    #endif
 
     // MARK: - Top bar (shared)
 
@@ -413,16 +334,18 @@ struct DashboardView: View {
         HStack {
             BrandMark()
             Spacer()
-            Button(action: { withAnimation(.easeOut(duration: 0.18)) { showMenu.toggle() } }) {
+            Button(action: { showSettings = true }) {
                 ZStack {
                     Circle()
                         .strokeBorder(Color.lullLine, lineWidth: 1)
                         .frame(width: 36, height: 36)
-                    Image(systemName: "line.3.horizontal")
+                    Image(systemName: "gearshape")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(.lullInk2)
                 }
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Settings")
         }
     }
 
@@ -523,7 +446,7 @@ struct DashboardView: View {
             totalTestNights: 0,
             schedule: tonightScheduleRows,
             startsAt: tonightStartTime,
-            onEditRoutine: { selectedTab = 2 }
+            onEditRoutine: { selectedTab = 1 }
         )
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
@@ -532,7 +455,6 @@ struct DashboardView: View {
             AppBlockingOfferCard(
                 timeRange: appBlockingOfferTimeRange,
                 onAdd: {
-                    hasDismissedAppBlockingOffer = true
                     state.startAppBlockingOfferSetup()
                 },
                 onDismiss: {
@@ -605,7 +527,7 @@ struct DashboardView: View {
                     .accessibilityLabel("Dismiss app blocking offer")
                 }
 
-                Text("You've completed a wind-down.")
+                Text("Set it up before tonight.")
                     .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmber)
 
@@ -619,7 +541,7 @@ struct DashboardView: View {
                 }
                 .lineSpacing(2)
 
-                Text("During your sleep window, TenThirty blocks the apps that pull you back in. Runs only at night — bypass any night you need to.")
+                Text("TenThirty blocks your selected apps through the sleep window and after missed rule grace windows. Complete late rules in the app to start the 10-minute cooldown.")
                     .font(.system(size: 14.5))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(4)
@@ -706,7 +628,7 @@ struct DashboardView: View {
     }
 
     private var shouldShowAppBlockingOffer: Bool {
-        state.shouldOfferAppBlockingAfterFirstNight && !hasDismissedAppBlockingOffer
+        state.shouldOfferAppBlockingSetup && !hasDismissedAppBlockingOffer
     }
 
     private var appBlockingOfferTimeRange: String {
@@ -910,7 +832,7 @@ struct DashboardView: View {
                 Text("\(ritualDisplayDoneCount)/\(ritualDisplayTotal) done")
                     .font(.system(size: 11.5, weight: .semibold, design: .default))
                     .foregroundColor(allRitualDone ? .lullAmber : .lullInk3)
-                Button(action: { selectedTab = 2 }) {
+                Button(action: { selectedTab = 1 }) {
                     Text("Edit")
                         .font(.system(size: 11.5, weight: .semibold, design: .default))
                         .foregroundColor(.lullInk3)
@@ -1088,6 +1010,7 @@ private struct TodayCardPreviewView: View {
     @EnvironmentObject private var audioStore: SleepSoundsAudioStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedTab: Int
+    @AppStorage("hasDismissedAppBlockingOffer") private var hasDismissedAppBlockingOffer = false
     let currentDate: Date
     let prepSteps: [RoutineStep]
     let ritualSteps: [RoutineStep]
@@ -1098,6 +1021,8 @@ private struct TodayCardPreviewView: View {
     let yesterdaysRating: Int?
     let todaysRating: Int?
     let hasFinishedRoutine: Bool
+    let showsNextPrepReminderMessage: Bool
+    let nextPrepReminderText: String
     let forceDeckPreview: Bool
     let scheduledTime: (RoutineStep) -> String
     let leadLabel: (RoutineStep) -> String
@@ -1114,6 +1039,8 @@ private struct TodayCardPreviewView: View {
     @State private var activeMidSleepTactic: TodayMidSleepTactic?
     @State private var activeBodyScanTask: TodayPreviewTask?
     @State private var activeBreathingTask: TodayPreviewTask?
+    @State private var pendingMorningRating: Int?
+    @State private var isDismissingMorningRateCard = false
 
     private static let timeFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
@@ -1198,12 +1125,14 @@ private struct TodayCardPreviewView: View {
                             reduceMotion: reduceMotion,
                             size: proxy.size,
                             isDone: isDone,
+                            externalDonePrepId: state.prepCompletionAnimationRequest,
                             scheduledTime: scheduledTime,
                             leadLabel: leadLabel,
                             onDone: complete,
                             onSkip: skip,
                             onBack: goBack,
                             onInteract: onFirstDeckInteraction,
+                            onExternalDonePrepHandled: state.clearPrepCompletionAnimationRequest,
                             onOpenSleepSounds: { state.showSleepSounds = true },
                             onOpenBreathing: { activeBreathingTask = $0 },
                             onOpenBodyScan: { activeBodyScanTask = $0 }
@@ -1251,7 +1180,7 @@ private struct TodayCardPreviewView: View {
         .animation(.spring(response: 0.50, dampingFraction: 0.80), value: currentIndex)
         .animation(.easeInOut(duration: 0.24), value: deckCompleted)
         .animation(.easeInOut(duration: 0.35), value: showsDeck)
-        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: showsMorningRateCard)
+        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: shouldShowMorningRateCardVisual)
         .animation(.spring(response: 0.48, dampingFraction: 0.84), value: showMidSleepToolkit)
         .contentShape(Rectangle())
         .highPriorityGesture(midSleepSwipeGesture)
@@ -1297,13 +1226,27 @@ private struct TodayCardPreviewView: View {
     }
 
     private var shouldShowMeadowForeground: Bool {
-        deckCompleted || !showsDeck || showsMorningRateCard
+        deckCompleted || !showsDeck || shouldShowMorningRateCardVisual
+    }
+
+    private var shouldShowMorningRateCardVisual: Bool {
+        showsMorningRateCard || isDismissingMorningRateCard
     }
 
     private var allowsMidSleepSwipe: Bool {
         shouldShowMeadowForeground
             && !showsMorningRateCard
-            && (isInSleepWindow || fireflyGreeting == "Good Night")
+            && (isInSleepWindow || hasFinishedRoutine)
+    }
+
+    private var nextPrepReminderMessage: some View {
+        Text("First reminder should show up at \(nextPrepReminderText)")
+            .font(.system(size: 13.5, weight: .medium, design: .default))
+            .foregroundColor(.lullInk2.opacity(0.78))
+            .lineSpacing(3)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 280)
+            .padding(.horizontal, 24)
     }
 
     private var midSleepSwipeGesture: some Gesture {
@@ -1350,13 +1293,35 @@ private struct TodayCardPreviewView: View {
     }
 
     private func meadowForeground(maxToolkitHeight: CGFloat) -> some View {
-        VStack(spacing: showsMorningRateCard ? 12 : 22) {
-            FireflyGreetingText(text: fireflyGreeting)
-                .frame(maxWidth: .infinity, alignment: .center)
+        VStack(spacing: shouldShowMorningRateCardVisual ? 12 : 22) {
+            TodayContractStatusPanel(
+                title: contractStatusTitle,
+                detail: contractStatusDetail,
+                icon: contractStatusIcon,
+                accent: contractStatusAccent,
+                progressText: contractProgressText
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
 
-            if showsMorningRateCard {
+            if shouldShowMorningRateCardVisual {
                 morningRateCard
+                    .offset(y: isDismissingMorningRateCard ? 58 : 0)
+                    .opacity(isDismissingMorningRateCard ? 0 : 1)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            if shouldShowAppBlockingOffer {
+                TodayAppBlockingOfferCard(
+                    timeRange: appBlockingOfferTimeRange,
+                    onAdd: {
+                        state.startAppBlockingOfferSetup()
+                    },
+                    onDismiss: {
+                        hasDismissedAppBlockingOffer = true
+                    }
+                )
+                .frame(maxWidth: .infinity)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             if showMidSleepToolkit && allowsMidSleepSwipe {
@@ -1370,7 +1335,14 @@ private struct TodayCardPreviewView: View {
                 .zIndex(2)
             }
 
-            Spacer(minLength: 0)
+            if showsNextPrepReminderMessage {
+                Spacer(minLength: 0)
+                nextPrepReminderMessage
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: 0)
+            }
 
             if allowsMidSleepSwipe && !showMidSleepToolkit {
                 Text("Swipe up for tools to help you fall back asleep")
@@ -1393,6 +1365,51 @@ private struct TodayCardPreviewView: View {
         }
     }
 
+    private var contractStatusTitle: String {
+        if isInSleepWindow {
+            return "Sleep window active"
+        }
+        if hasFinishedRoutine || deckCompleted {
+            return "Scroll-lock is ready"
+        }
+        if let item = state.currentSleepRulePromptItem {
+            return item.rule.title
+        }
+        return "Tonight's contract"
+    }
+
+    private var contractStatusDetail: String {
+        if isInSleepWindow {
+            return "Scroll apps locked until \(Self.timeFmt.string(from: state.appBlockingEndTime)) - no 1 AM scroll tonight."
+        }
+        if hasFinishedRoutine || deckCompleted {
+            return "Your rules are cleared. Scroll-lock starts at \(Self.timeFmt.string(from: state.typicalBedtime))."
+        }
+        if let item = state.currentSleepRulePromptItem {
+            return "Due \(Self.timeFmt.string(from: item.dueAt)) - grace until \(Self.timeFmt.string(from: item.graceEndsAt))."
+        }
+        return "Clear your next rule to keep distracting apps unlocked."
+    }
+
+    private var contractStatusIcon: String {
+        if isInSleepWindow { return "moon.fill" }
+        if hasFinishedRoutine || deckCompleted { return "checkmark.shield.fill" }
+        return "lock.shield"
+    }
+
+    private var contractStatusAccent: Color {
+        if isInSleepWindow { return Color(red: 0.78, green: 0.68, blue: 0.95) }
+        if hasFinishedRoutine || deckCompleted { return .lullAmber }
+        return .lullAmberSoft
+    }
+
+    private var contractProgressText: String {
+        let total = max(tasks.count, 1)
+        let cleared = min(total, deckDoneCount + deckSkippedCount)
+        let remaining = max(total - cleared, 0)
+        return "\(cleared) cleared earlier today · \(remaining) to go"
+    }
+
     private var morningRateCard: some View {
         VStack(alignment: .leading, spacing: 18) {
             if !hasFinishedRoutine {
@@ -1408,17 +1425,43 @@ private struct TodayCardPreviewView: View {
             MorningRateHero(
                 wakeTime: Self.timeFmt.string(from: currentDate),
                 yesterday: yesterdaysRating,
-                rating: todaysRating,
+                rating: pendingMorningRating ?? todaysRating,
                 variable: nil,
                 testNight: 0,
                 totalTestNights: 0,
-                onRate: { n in
-                    let scoreToLog = AppState.clampedSleepScore(n)
-                    state.morningScore = scoreToLog
-                    state.logMorningScore()
-                    state.presentPendingStreakMilestoneIfEligible()
-                }
+                onRate: handleMorningRating
             )
+        }
+    }
+
+    private var shouldShowAppBlockingOffer: Bool {
+        state.shouldOfferAppBlockingSetup && !hasDismissedAppBlockingOffer
+    }
+
+    private var appBlockingOfferTimeRange: String {
+        let start = AppState.defaultAppBlockingStart(from: state.typicalBedtime)
+        let end = AppState.defaultAppBlockingEnd(from: state.typicalWakeTime)
+        return "\(Self.timeFmt.string(from: start)) - \(Self.timeFmt.string(from: end))"
+    }
+
+    private func handleMorningRating(_ n: Int) {
+        guard !isDismissingMorningRateCard else { return }
+        let scoreToLog = AppState.clampedSleepScore(n)
+        pendingMorningRating = scoreToLog
+
+        let dismissDuration = reduceMotion ? 0.18 : 0.72
+        withAnimation(reduceMotion ? .easeOut(duration: dismissDuration) : .easeInOut(duration: dismissDuration)) {
+            isDismissingMorningRateCard = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDuration * 0.74) {
+            state.morningScore = scoreToLog
+            state.logMorningScore()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDuration + 0.14) {
+            pendingMorningRating = nil
+            isDismissingMorningRateCard = false
+            state.presentPendingStreakMilestoneIfEligible()
         }
     }
 
@@ -1458,7 +1501,7 @@ private struct TodayCardPreviewView: View {
             Spacer()
             Button {
                 onFirstDeckInteraction()
-                selectedTab = 2
+                selectedTab = 1
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .bold))
@@ -1598,6 +1641,128 @@ private struct TodayCardPreviewView: View {
     }
 }
 
+private struct TodayContractStatusPanel: View {
+    let title: String
+    let detail: String
+    let icon: String
+    let accent: Color
+    let progressText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(title.uppercased())
+                        .font(.mono(12))
+                        .kerning(1.5)
+                }
+                .foregroundColor(accent)
+
+                Text(detail)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.lullInk1)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.lullBg2.opacity(0.40))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(accent.opacity(0.42), lineWidth: 1)
+                    )
+            )
+
+            Text(progressText)
+                .font(.system(size: 19, weight: .bold, design: .default))
+                .foregroundColor(.lullInk2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct TodayAppBlockingOfferCard: View {
+    let timeRange: String
+    let onAdd: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Lock the scroll away tonight?")
+                        .font(.system(size: 14.5, weight: .semibold))
+                        .foregroundColor(.lullInk0)
+                    Text(timeRange)
+                        .font(.system(size: 12))
+                        .foregroundColor(.lullInk3)
+                }
+
+                Spacer(minLength: 0)
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.lullInk3)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss app blocking offer")
+            }
+
+            Text("TenThirty can block selected apps during your sleep window once you choose what to block.")
+                .font(.system(size: 12.5))
+                .foregroundColor(.lullInk2)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button(action: onAdd) {
+                    HStack(spacing: 7) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Add app blocking")
+                            .font(.system(size: 13.5, weight: .semibold))
+                    }
+                    .foregroundColor(.lullBgDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(Capsule().fill(Color.lullAmber))
+                }
+                .buttonStyle(.plain)
+
+                Button("Not now", action: onDismiss)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .frame(width: 84, height: 40)
+                    .buttonStyle(.plain)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1)
+                )
+        )
+    }
+}
+
 struct TodayInsightsTabView: View {
     @EnvironmentObject private var state: AppState
     let currentDate: Date
@@ -1681,7 +1846,7 @@ struct TodayInsightsTabView: View {
             state.trackTodayDeckInsightsOpened()
         }
         .onPreferenceChange(TodayInsightsPanelHeightKey.self) { height in
-            sharedCalendarTopInset = height + 42
+            sharedCalendarTopInset = height + 58
         }
     }
 }
@@ -1692,6 +1857,80 @@ private struct TodayInsightsPanelHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
     }
+}
+
+private struct RoutineChipWrapLayout: Layout {
+    var horizontalSpacing: CGFloat = 8
+    var verticalSpacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? subviews.reduce(CGFloat.zero) {
+            $0 + $1.sizeThatFits(.unspecified).width + horizontalSpacing
+        }
+        let rows = arrangedRows(maxWidth: maxWidth, subviews: subviews)
+        let height = rows.reduce(CGFloat.zero) { total, row in
+            total + row.height + (row.index == rows.last?.index ? 0 : verticalSpacing)
+        }
+        return CGSize(width: maxWidth, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = arrangedRows(maxWidth: bounds.width, subviews: subviews)
+        var y = bounds.minY
+        for row in rows {
+            var x = bounds.minX
+            for item in row.items {
+                subviews[item.index].place(
+                    at: CGPoint(x: x, y: y),
+                    anchor: .topLeading,
+                    proposal: ProposedViewSize(width: item.size.width, height: item.size.height)
+                )
+                x += item.size.width + horizontalSpacing
+            }
+            y += row.height + verticalSpacing
+        }
+    }
+
+    private func arrangedRows(maxWidth: CGFloat, subviews: Subviews) -> [RoutineChipRow] {
+        let availableWidth = max(maxWidth, 1)
+        var rows: [RoutineChipRow] = []
+        var currentItems: [RoutineChipRow.Item] = []
+        var currentWidth: CGFloat = 0
+        var currentHeight: CGFloat = 0
+
+        for index in subviews.indices {
+            let measured = subviews[index].sizeThatFits(ProposedViewSize(width: availableWidth, height: nil))
+            let size = CGSize(width: min(measured.width, availableWidth), height: measured.height)
+            let proposedWidth = currentItems.isEmpty ? size.width : currentWidth + horizontalSpacing + size.width
+
+            if !currentItems.isEmpty && proposedWidth > availableWidth {
+                rows.append(RoutineChipRow(index: rows.count, items: currentItems, height: currentHeight))
+                currentItems = []
+                currentWidth = 0
+                currentHeight = 0
+            }
+
+            currentItems.append(.init(index: index, size: size))
+            currentWidth = currentItems.count == 1 ? size.width : currentWidth + horizontalSpacing + size.width
+            currentHeight = max(currentHeight, size.height)
+        }
+
+        if !currentItems.isEmpty {
+            rows.append(RoutineChipRow(index: rows.count, items: currentItems, height: currentHeight))
+        }
+        return rows
+    }
+}
+
+private struct RoutineChipRow {
+    struct Item {
+        let index: Int
+        let size: CGSize
+    }
+
+    let index: Int
+    let items: [Item]
+    let height: CGFloat
 }
 
 private struct TodayCurrentRoutineInsightsOverlay: View {
@@ -1718,24 +1957,22 @@ private struct TodayCurrentRoutineInsightsOverlay: View {
                 Spacer()
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(routineSteps) { step in
-                        Text(step.label)
-                            .font(.system(size: 12.5, weight: .semibold))
-                            .foregroundColor(.lullInk1)
-                            .lineLimit(1)
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 7)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(0.055))
-                                    .overlay(Capsule().strokeBorder(Color.lullLineStrong, lineWidth: 1))
-                            )
-                    }
+            RoutineChipWrapLayout(horizontalSpacing: 8, verticalSpacing: 8) {
+                ForEach(routineSteps) { step in
+                    Text(step.label)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundColor(.lullInk1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.055))
+                                .overlay(Capsule().strokeBorder(Color.lullLineStrong, lineWidth: 1))
+                        )
                 }
             }
-            .scrollClipDisabled()
 
             HStack(spacing: 10) {
                 insightStat(
@@ -1968,8 +2205,8 @@ private struct TodayMidSleepToolkitCard: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(hex: "#2a1a14").opacity(0.99),
-                            Color(hex: "#120c09").opacity(0.995)
+                            Color(hex: "#2a1a14").opacity(0.40),
+                            Color(hex: "#120c09").opacity(0.40)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -2065,7 +2302,7 @@ private struct TodayMidSleepToolkitRow: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color(hex: "#17100c").opacity(0.94))
+                .fill(Color(hex: "#17100c").opacity(0.40))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -2078,6 +2315,11 @@ private struct TodayMidSleepToolkitRow: View {
 enum TodayFireflyMode: Equatable {
     case cluster
     case calendar
+}
+
+enum TodayFireflyCalendarRange: Equatable {
+    case week
+    case month
 }
 
 struct TodayMeadowBackdrop: View {
@@ -2395,6 +2637,7 @@ struct TodayFireflyScene: View {
     let currentDate: Date
     let loggedShadeDates: Set<Date>
     let calendarTopInset: CGFloat
+    let calendarRange: TodayFireflyCalendarRange
     let entranceToken: Int
     let reduceMotion: Bool
     @State private var entrancePhase = 2
@@ -2480,7 +2723,7 @@ struct TodayFireflyScene: View {
                 ? TodayDeckConstants.homePositions[index % TodayDeckConstants.homePositions.count]
                 : wanderingUnitPosition(index: index, time: time)
         case .calendar:
-            unit = calendarUnitPosition(for: date, size: size) ?? offMonthUnitPosition(index: index, size: size)
+            unit = calendarUnitPosition(for: date, size: size) ?? offCalendarUnitPosition(index: index, size: size)
         }
         return CGPoint(x: unit.x * size.width, y: unit.y * size.height)
     }
@@ -2514,11 +2757,12 @@ struct TodayFireflyScene: View {
         }
     }
 
-    private func offMonthUnitPosition(index: Int, size: CGSize) -> CGPoint {
+    private func offCalendarUnitPosition(index: Int, size: CGSize) -> CGPoint {
         let metrics = calendarMetrics(size: size)
         let railX: CGFloat = index.isMultiple(of: 2) ? 0.045 : 0.955
-        let slot = CGFloat((index / 2) % max(calendarRows, 1))
-        let rowStep = calendarRows > 1 ? (metrics.y1 - metrics.y0) / CGFloat(calendarRows - 1) : 0
+        let rows = calendarRange == .week ? 1 : calendarRows
+        let slot = CGFloat((index / 2) % max(rows, 1))
+        let rowStep = rows > 1 ? (metrics.y1 - metrics.y0) / CGFloat(rows - 1) : 0
         return CGPoint(x: railX, y: metrics.y0 + slot * rowStep)
     }
 
@@ -2542,13 +2786,19 @@ struct TodayFireflyScene: View {
     }
 
     private func calendarGrid(size: CGSize) -> some View {
-        ZStack {
-            ForEach(0..<monthSymbols.count, id: \.self) { index in
-                Text(monthSymbols[index])
-                    .font(.mono(9.5))
-                    .foregroundColor(.lullInk3)
-                    .position(weekdayPosition(index: index, size: size))
+        Group {
+            switch calendarRange {
+            case .week:
+                weekCalendarGrid(size: size)
+            case .month:
+                monthCalendarGrid(size: size)
             }
+        }
+    }
+
+    private func monthCalendarGrid(size: CGSize) -> some View {
+        ZStack {
+            weekdayHeader(size: size)
 
             ForEach(0..<calendarRows, id: \.self) { row in
                 Text("W\(row + 1)")
@@ -2558,21 +2808,105 @@ struct TodayFireflyScene: View {
             }
 
             ForEach(1...daysInMonth, id: \.self) { day in
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(calendarCellFill(day: day))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(calendarCellStroke(day: day), lineWidth: calendarCellLineWidth(day: day))
-                    )
-                    .frame(width: 26, height: 26)
-                    .position(dayCellPosition(day: day, size: size))
+                calendarCell(
+                    fill: monthCellFill(day: day),
+                    stroke: monthCellStroke(day: day),
+                    lineWidth: monthCellLineWidth(day: day),
+                    size: 26
+                )
+                .position(dayCellPosition(day: day, size: size))
             }
 
-            Text(currentDate.formatted(.dateTime.month(.wide).year()))
-                .font(.serif(19))
-                .foregroundColor(.lullInk1)
-                .position(x: size.width * 0.5, y: size.height * calendarMetrics(size: size).monthY)
+            calendarCaption(currentDate.formatted(.dateTime.month(.wide).year()), size: size)
         }
+    }
+
+    private func weekCalendarGrid(size: CGSize) -> some View {
+        ZStack {
+            weekdayHeader(size: size)
+
+            ForEach(Array(weekDates.enumerated()), id: \.offset) { index, date in
+                calendarCell(
+                    fill: weekCellFill(date: date),
+                    stroke: weekCellStroke(date: date),
+                    lineWidth: weekCellLineWidth(date: date),
+                    size: 32
+                )
+                .position(weekDayCellPosition(index: index, size: size))
+
+                Text("\(Calendar.current.component(.day, from: date))")
+                    .font(.mono(9))
+                    .foregroundColor(.lullInk3)
+                    .position(weekDayNumberPosition(index: index, size: size))
+            }
+
+            calendarCaption(weekCaption, size: size)
+        }
+    }
+
+    private func weekdayHeader(size: CGSize) -> some View {
+        ForEach(0..<monthSymbols.count, id: \.self) { index in
+            Text(monthSymbols[index])
+                .font(.mono(9.5))
+                .foregroundColor(.lullInk3)
+                .position(weekdayPosition(index: index, size: size))
+        }
+    }
+
+    private func calendarCell(fill: Color, stroke: Color, lineWidth: CGFloat, size: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(fill)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(stroke, lineWidth: lineWidth)
+            )
+            .frame(width: size, height: size)
+    }
+
+    private func calendarCaption(_ text: String, size: CGSize) -> some View {
+        Text(text)
+            .font(.serif(19))
+            .foregroundColor(.lullInk1)
+            .position(x: size.width * 0.5, y: size.height * calendarMetrics(size: size).monthY)
+    }
+
+    private var weekDates: [Date] {
+        let calendar = Calendar.current
+        let start = calendar.dateInterval(of: .weekOfYear, for: currentDate)?.start ?? currentDate
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    private var weekCaption: String {
+        guard let start = weekDates.first else { return "This week" }
+        return "Week of \(start.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
+    private func isShadedDate(_ date: Date) -> Bool {
+        loggedShadeDates.contains(Calendar.current.startOfDay(for: date))
+    }
+
+    private func weekCellFill(date: Date) -> Color {
+        if Calendar.current.isDate(date, inSameDayAs: currentDate) {
+            return Color.lullAmber.opacity(0.10)
+        }
+        if isShadedDate(date) {
+            return Color.lullAmber.opacity(0.18)
+        }
+        return Color.white.opacity(0.015)
+    }
+
+    private func weekCellStroke(date: Date) -> Color {
+        if Calendar.current.isDate(date, inSameDayAs: currentDate) {
+            return Color.lullAmber.opacity(0.72)
+        }
+        if isShadedDate(date) {
+            return Color.lullAmber.opacity(0.25)
+        }
+        return Color.white.opacity(0.13)
+    }
+
+    private func weekCellLineWidth(date: Date) -> CGFloat {
+        Calendar.current.isDate(date, inSameDayAs: currentDate) ? 1.8 : 1
     }
 
     private var monthStart: Date {
@@ -2607,7 +2941,7 @@ struct TodayFireflyScene: View {
         return Calendar.current.isDate(date, inSameDayAs: currentDate)
     }
 
-    private func calendarCellFill(day: Int) -> Color {
+    private func monthCellFill(day: Int) -> Color {
         if isTodayDay(day) {
             return Color.lullAmber.opacity(0.10)
         }
@@ -2617,7 +2951,7 @@ struct TodayFireflyScene: View {
         return Color.white.opacity(0.015)
     }
 
-    private func calendarCellStroke(day: Int) -> Color {
+    private func monthCellStroke(day: Int) -> Color {
         if isTodayDay(day) {
             return Color.lullAmber.opacity(0.72)
         }
@@ -2627,22 +2961,40 @@ struct TodayFireflyScene: View {
         return Color.white.opacity(0.13)
     }
 
-    private func calendarCellLineWidth(day: Int) -> CGFloat {
+    private func monthCellLineWidth(day: Int) -> CGFloat {
         isTodayDay(day) ? 1.8 : 1
     }
 
     private func calendarUnitPosition(for date: Date, size: CGSize) -> CGPoint? {
         let calendar = Calendar.current
-        guard calendar.isDate(date, equalTo: currentDate, toGranularity: .month),
-              let day = calendar.dateComponents([.day], from: date).day else {
-            return nil
+        switch calendarRange {
+        case .week:
+            guard let index = weekDates.firstIndex(where: { calendar.isDate($0, inSameDayAs: date) }) else {
+                return nil
+            }
+            return weekDayCellUnitPosition(index: index, size: size)
+        case .month:
+            guard calendar.isDate(date, equalTo: currentDate, toGranularity: .month),
+                  let day = calendar.dateComponents([.day], from: date).day else {
+                return nil
+            }
+            return dayCellUnitPosition(day: day, size: size)
         }
-        return dayCellUnitPosition(day: day, size: size)
     }
 
     private func dayCellPosition(day: Int, size: CGSize) -> CGPoint {
         let unit = dayCellUnitPosition(day: day, size: size)
         return CGPoint(x: unit.x * size.width, y: unit.y * size.height)
+    }
+
+    private func weekDayCellPosition(index: Int, size: CGSize) -> CGPoint {
+        let unit = weekDayCellUnitPosition(index: index, size: size)
+        return CGPoint(x: unit.x * size.width, y: unit.y * size.height)
+    }
+
+    private func weekDayNumberPosition(index: Int, size: CGSize) -> CGPoint {
+        let unit = weekDayCellUnitPosition(index: index, size: size)
+        return CGPoint(x: unit.x * size.width, y: min(size.height * 0.86, unit.y * size.height + 28))
     }
 
     private func dayCellUnitPosition(day: Int, size: CGSize) -> CGPoint {
@@ -2655,6 +3007,14 @@ struct TodayFireflyScene: View {
         let colStep = (x1 - x0) / 6
         let rowStep = calendarRows > 1 ? (metrics.y1 - metrics.y0) / CGFloat(calendarRows - 1) : 0
         return CGPoint(x: x0 + CGFloat(col) * colStep, y: metrics.y0 + CGFloat(row) * rowStep)
+    }
+
+    private func weekDayCellUnitPosition(index: Int, size: CGSize) -> CGPoint {
+        let metrics = calendarMetrics(size: size)
+        let x0: CGFloat = 0.14
+        let x1: CGFloat = 0.86
+        let colStep = (x1 - x0) / 6
+        return CGPoint(x: x0 + CGFloat(index) * colStep, y: metrics.y0 + 0.06)
     }
 
     private func weekdayPosition(index: Int, size: CGSize) -> CGPoint {
@@ -2674,12 +3034,13 @@ struct TodayFireflyScene: View {
 
     private func calendarMetrics(size: CGSize) -> (weekdayY: CGFloat, y0: CGFloat, y1: CGFloat, monthY: CGFloat) {
         let height = max(size.height, 1)
-        let reservedTop = (calendarTopInset + 20) / height
-        let weekdayY = min(0.56, max(0.39, reservedTop))
-        let y0 = min(0.64, weekdayY + 0.06)
-        let availableSpan = max(0.18, min(0.30, 0.82 - y0))
-        let y1 = y0 + availableSpan
-        let monthY = min(0.91, y1 + 0.09)
+        let reservedTop = (calendarTopInset + 18) / height
+        let weekdayY = min(0.68, max(0.39, reservedTop))
+        let y0 = min(0.74, weekdayY + 0.055)
+        let monthY: CGFloat = 0.90
+        let rowBottomLimit = monthY - 0.12
+        let availableSpan = max(0.14, min(0.30, rowBottomLimit - y0))
+        let y1 = min(rowBottomLimit, y0 + availableSpan)
         return (weekdayY, y0, y1, monthY)
     }
 }
@@ -2708,6 +3069,7 @@ struct FireflyDot: View {
                     endRadius: 18
                 ))
                 .frame(width: glowSize, height: glowSize)
+
             Circle()
                 .fill(Color.lullAmber)
                 .frame(width: coreSize, height: coreSize)
@@ -2730,7 +3092,7 @@ private struct EarnedFireflyEntranceDot: View {
     @State private var wingFlutter = false
 
     private var wingOpacity: Double {
-        phase == 1 ? 0.52 : 0.34
+        phase == 1 ? 0.26 : 0.16
     }
 
     private var glowScale: CGFloat {
@@ -2756,51 +3118,38 @@ private struct EarnedFireflyEntranceDot: View {
                 .scaleEffect(glowScale)
                 .blur(radius: 1.2)
 
-            HStack(spacing: -3) {
-                wing
-                    .rotationEffect(.degrees(wingFlutter ? -18 : -10), anchor: .trailing)
-                wing
-                    .scaleEffect(x: -1, y: 1)
-                    .rotationEffect(.degrees(wingFlutter ? 18 : 10), anchor: .leading)
-            }
-            .offset(y: -5)
-
-            Capsule()
-                .fill(Color.black.opacity(0.82))
-                .frame(width: 6, height: 24)
-                .offset(y: -8)
-
-            Circle()
-                .fill(Color.black.opacity(0.86))
-                .frame(width: 8, height: 8)
-                .offset(y: -22)
-
-            antenna
-                .stroke(Color.black.opacity(0.74), lineWidth: 1)
-                .frame(width: 22, height: 14)
-                .offset(y: -31)
-
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.white.opacity(0.92),
-                            Color.lullAmber.opacity(0.95),
-                            Color.lullAmber.opacity(0.10)
+                            Color.white.opacity(0.86),
+                            Color.lullAmber.opacity(0.96),
+                            Color.lullAmber.opacity(0.24),
+                            .clear
                         ],
                         center: .center,
                         startRadius: 0,
-                        endRadius: 16
+                        endRadius: 19
                     )
                 )
-                .frame(width: 31, height: 31)
-                .offset(y: 9)
+                .frame(width: 34, height: 34)
                 .shadow(color: .lullAmberGlow, radius: 18)
 
-            Circle()
-                .fill(Color.white.opacity(0.78))
-                .frame(width: 5, height: 5)
-                .offset(x: -4, y: 1)
+            ZStack {
+                wing
+                    .rotationEffect(.degrees(wingFlutter ? -24 : -17), anchor: .leading)
+                    .offset(x: 0, y: -9)
+                wing
+                    .scaleEffect(x: 1, y: -1)
+                    .rotationEffect(.degrees(wingFlutter ? 24 : 17), anchor: .leading)
+                    .offset(x: 0, y: 9)
+            }
+            .offset(x: -1, y: -2)
+            .opacity(0.38)
+
+            insectBody
+                .scaleEffect(0.58)
+                .opacity(0.24)
         }
         .onAppear {
             guard !reduceMotion else { return }
@@ -2813,25 +3162,83 @@ private struct EarnedFireflyEntranceDot: View {
     private var wing: some View {
         Ellipse()
             .fill(
-                LinearGradient(
+                RadialGradient(
                     colors: [
                         Color.lullInk0.opacity(wingOpacity),
-                        Color.lullAmber.opacity(0.12)
+                            Color.lullAmber.opacity(0.08),
+                        .clear
                     ],
-                    startPoint: .top,
-                    endPoint: .bottom
+                    center: .leading,
+                    startRadius: 1,
+                    endRadius: 22
                 )
             )
-            .frame(width: 17, height: 27)
-            .blur(radius: 0.15)
+            .frame(width: 32, height: 17)
+            .overlay(
+                Ellipse()
+                    .stroke(Color.lullInk0.opacity(wingOpacity * 0.45), lineWidth: 0.6)
+            )
+            .blur(radius: 0.12)
+    }
+
+    private var insectBody: some View {
+        ZStack {
+            antenna
+                .stroke(Color.black.opacity(0.70), lineWidth: 0.9)
+                .frame(width: 18, height: 10)
+                .offset(x: -21, y: -8)
+
+            Capsule()
+                .fill(Color.black.opacity(0.84))
+                .frame(width: 32, height: 8.5)
+                .offset(x: -1, y: -1)
+
+            Ellipse()
+                .fill(Color.black.opacity(0.88))
+                .frame(width: 13, height: 11)
+                .offset(x: -15, y: -2)
+
+            Ellipse()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.92),
+                            Color.lullAmber.opacity(0.95),
+                            Color.lullAmber.opacity(0.12)
+                        ],
+                        center: .leading,
+                        startRadius: 0,
+                        endRadius: 17
+                    )
+                )
+                .frame(width: 27, height: 17)
+                .offset(x: 15, y: 1)
+                .shadow(color: .lullAmberGlow, radius: 18)
+
+            VStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { _ in
+                    Capsule()
+                        .fill(Color.black.opacity(0.18))
+                        .frame(width: 1.2, height: 12)
+                }
+            }
+            .rotationEffect(.degrees(90))
+            .offset(x: 14, y: 1)
+
+            Circle()
+                .fill(Color.white.opacity(0.72))
+                .frame(width: 4.5, height: 4.5)
+                .offset(x: 6, y: -3)
+        }
+        .rotationEffect(.degrees(-4))
     }
 
     private var antenna: Path {
         var path = Path()
-        path.move(to: CGPoint(x: 11, y: 13))
-        path.addCurve(to: CGPoint(x: 3, y: 1), control1: CGPoint(x: 10, y: 8), control2: CGPoint(x: 6, y: 4))
-        path.move(to: CGPoint(x: 11, y: 13))
-        path.addCurve(to: CGPoint(x: 19, y: 1), control1: CGPoint(x: 12, y: 8), control2: CGPoint(x: 16, y: 4))
+        path.move(to: CGPoint(x: 16, y: 8))
+        path.addCurve(to: CGPoint(x: 3, y: 2), control1: CGPoint(x: 12, y: 4), control2: CGPoint(x: 8, y: 2))
+        path.move(to: CGPoint(x: 16, y: 8))
+        path.addCurve(to: CGPoint(x: 5, y: 9), control1: CGPoint(x: 12, y: 9), control2: CGPoint(x: 8, y: 10))
         return path
     }
 }
@@ -2870,17 +3277,20 @@ private struct TodayCardStack: View {
     let reduceMotion: Bool
     let size: CGSize
     let isDone: (TodayPreviewTask) -> Bool
+    let externalDonePrepId: UUID?
     let scheduledTime: (RoutineStep) -> String
     let leadLabel: (RoutineStep) -> String
     let onDone: (TodayPreviewTask) -> Void
     let onSkip: (TodayPreviewTask) -> Void
     let onBack: () -> Void
     let onInteract: () -> Void
+    let onExternalDonePrepHandled: (UUID) -> Void
     let onOpenSleepSounds: () -> Void
     let onOpenBreathing: (TodayPreviewTask) -> Void
     let onOpenBodyScan: (TodayPreviewTask) -> Void
     @State private var dragOffset: CGSize = .zero
     @State private var exitRotation: Double = 0
+    @State private var handlingExternalDonePrepId: UUID? = nil
 
     var body: some View {
         ZStack {
@@ -2924,6 +3334,12 @@ private struct TodayCardStack: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .onAppear {
+            handleExternalDonePrepIfNeeded(externalDonePrepId)
+        }
+        .onChange(of: externalDonePrepId) { _, newValue in
+            handleExternalDonePrepIfNeeded(newValue)
+        }
     }
 
     private var activeDragRotation: Double {
@@ -2981,6 +3397,44 @@ private struct TodayCardStack: View {
                     }
                 }
             }
+    }
+
+    private func handleExternalDonePrepIfNeeded(_ id: UUID?) {
+        guard let id else { return }
+        guard handlingExternalDonePrepId != id else { return }
+
+        guard let index = tasks.firstIndex(where: { task in
+            if case .prep(let step) = task {
+                return step.id == id
+            }
+            return false
+        }) else {
+            onExternalDonePrepHandled(id)
+            return
+        }
+
+        let task = tasks[index]
+        handlingExternalDonePrepId = id
+        if currentIndex != index {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
+                currentIndex = index
+            }
+        }
+
+        let focusDelay = currentIndex == index ? 0.05 : 0.28
+        DispatchQueue.main.asyncAfter(deadline: .now() + focusDelay) {
+            withAnimation(.easeOut(duration: 0.22)) {
+                dragOffset = CGSize(width: size.width * 1.65, height: 18)
+                exitRotation = 10
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                dragOffset = .zero
+                exitRotation = 0
+                onDone(task)
+                onExternalDonePrepHandled(id)
+                handlingExternalDonePrepId = nil
+            }
+        }
     }
 
     private func placement(for index: Int) -> TodayCardPlacement {
@@ -3069,7 +3523,7 @@ private struct TodayTaskContentCard: View {
             }
 
             HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: titleSubtitleSpacing) {
                     Text(title)
                         .font(.serif(27))
                         .foregroundColor(done ? .lullInk3 : .lullInk0)
@@ -3092,12 +3546,12 @@ private struct TodayTaskContentCard: View {
                     .background(Circle().fill(done ? Color.lullAmber : Color.lullAmber.opacity(0.12)))
                     .overlay(Circle().strokeBorder(Color.lullAmber.opacity(done ? 0.0 : 0.28), lineWidth: 1))
             }
-            .padding(.top, 18)
+            .padding(.top, headerTopPadding)
 
             content
-                .padding(.top, 20)
+                .padding(.top, contentTopPadding)
 
-            Spacer(minLength: 16)
+            Spacer(minLength: footerMinSpacing)
 
             swipeCue
         }
@@ -3165,8 +3619,8 @@ private struct TodayTaskContentCard: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        Color(hex: "#2a2118").opacity(0.95),
-                        Color(hex: "#15100c").opacity(0.98)
+                        Color(hex: "#2a2118").opacity(0.40),
+                        Color(hex: "#15100c").opacity(0.40)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -3193,6 +3647,20 @@ private struct TodayTaskContentCard: View {
     }
 
     private var title: String { task.label }
+
+    private var usesCompactContentSpacing: Bool {
+        switch task {
+        case .ritual(let step):
+            return step.isScreenBlockingConfigurationStep || step.label == R.appBlocking
+        default:
+            return false
+        }
+    }
+
+    private var titleSubtitleSpacing: CGFloat { usesCompactContentSpacing ? 4 : 8 }
+    private var headerTopPadding: CGFloat { usesCompactContentSpacing ? 12 : 18 }
+    private var contentTopPadding: CGFloat { usesCompactContentSpacing ? 12 : 20 }
+    private var footerMinSpacing: CGFloat { usesCompactContentSpacing ? 8 : 16 }
 
     private var subtitle: String {
         switch task {
@@ -3223,10 +3691,16 @@ private struct TodayTaskContentCard: View {
                 .environmentObject(audioStore)
         case .ritual(let step) where step.label == R.boringStory:
             BoringStoryCardContent(step: step, isActive: isActive, onInteract: onInteract, onFinish: onDone)
-        case .ritual(let step) where step.label == R.breathing478:
+        case .ritual(let step) where isBreathing478Label(step.label):
             Breathing478CardContent(onInteract: onInteract, onOpen: onOpenBreathing)
         case .ritual(let step) where step.label == R.bodyScan:
             BodyScanCardContent(onInteract: onInteract, onOpen: onOpenBodyScan)
+        case .ritual(let step) where step.isScreenBlockingConfigurationStep || step.label == R.appBlocking:
+            AppBlockingCardContent()
+        case .ritual(let step) where step.label == "Brightness check":
+            BrightnessCheckCardContent(isActive: isActive, onInteract: onInteract)
+        case .ritual(let step) where step.label == "Temperature check":
+            TemperatureCheckCardContent(onInteract: onInteract)
         case .ritual(let step):
             RitualCardContent(step: step)
         }
@@ -3237,11 +3711,13 @@ private struct TodayTaskContentCard: View {
         case R.sleepSounds: return "water.waves"
         case R.brainDump: return "mic.fill"
         case R.boringStory: return "book.closed.fill"
-        case R.breathing478: return "wind"
+        case let label where isBreathing478Label(label): return "wind"
         case R.gratitudeJournal: return "text.book.closed.fill"
         case R.gentleStretching: return "figure.flexibility"
         case R.pmr: return "figure.mind.and.body"
         case R.bodyScan: return "sparkles"
+        case "Brightness check": return "sun.max.fill"
+        case "Temperature check": return "thermometer.medium"
         case R.noScreens: return "iphone.slash"
         case R.dimTheLights: return "lightbulb.fill"
         case R.warmShower: return "shower.fill"
@@ -3252,6 +3728,15 @@ private struct TodayTaskContentCard: View {
         case R.blackoutCurtains: return "curtains.closed"
         default: return "checklist"
         }
+    }
+
+    private func isBreathing478Label(_ label: String) -> Bool {
+        let normalized = label
+            .lowercased()
+            .replacingOccurrences(of: "·", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        return normalized.contains("478breathing")
     }
 }
 
@@ -3334,10 +3819,7 @@ private struct BrainDumpCardContent: View {
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(Color.lullAmber))
                             .shadow(color: isRecording ? .lullAmberGlow : .clear, radius: 10)
-                        Text(isRecording ? durationText : (saved ? "saved" : "record"))
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundColor(.lullInk3)
-                            .monospacedDigit()
+                        recordLabel
                     }
                 }
 
@@ -3367,6 +3849,20 @@ private struct BrainDumpCardContent: View {
             guard isRecording else { return }
             saveRecording()
         }
+    }
+
+    private var recordLabel: some View {
+        ViewThatFits(in: .horizontal) {
+            Text(isRecording ? durationText : (saved ? "Saved" : "Record"))
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundColor(.lullInk3)
+                .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+
+            EmptyView()
+        }
+        .frame(width: 46, alignment: .center)
     }
 
     private var borderColor: Color {
@@ -3492,6 +3988,625 @@ private struct BrainDumpWaveform: View {
     }
 }
 
+private struct BrightnessCheckCardContent: View {
+    @EnvironmentObject private var state: AppState
+    @StateObject private var lightService = AmbientLightService()
+    @State private var selectedLevel: Int? = nil
+    @State private var autoDetectedLevel: Int? = nil
+    @State private var detectedSource: LightsLevelSource = .selfReported
+    @State private var didReadLight = false
+    let isActive: Bool
+    let onInteract: () -> Void
+
+    private let levels: [(label: String, hint: String, icon: String)] = [
+        ("Bright", "full overhead lights", "sun.max"),
+        ("Half-dim", "some lamps off", "sun.min"),
+        ("Warm dim", "just warm bulbs", "moon"),
+        ("Mostly dark", "nearly lights-out", "moon.fill")
+    ]
+
+    private var brightnessSuggestion: String? {
+        guard let selectedLevel, selectedLevel <= 1 else { return nil }
+        return selectedLevel == 0
+            ? "Turn off overhead lights or dim lamps now."
+            : "Dim the remaining lamps if you can."
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Kicker(text: lightService.isReading ? "Detecting..." : (lightService.confidence == .high ? "Auto-detected" : "Quick check"))
+                    Text(prompt)
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullInk2)
+                        .lineSpacing(2)
+                }
+                Spacer(minLength: 0)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(Array(levels.enumerated()), id: \.offset) { i, level in
+                    brightnessOption(index: i, level: level)
+                }
+            }
+
+            if let brightnessSuggestion {
+                TodayDeckSuggestionCard(
+                    icon: "lightbulb.min",
+                    title: "Lower the light",
+                    message: brightnessSuggestion
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
+        .task(id: isActive) {
+            guard isActive, !didReadLight else { return }
+            didReadLight = true
+            let result = await lightService.read()
+            if result.confidence == .high {
+                selectedLevel = result.lightsLevel
+                autoDetectedLevel = result.lightsLevel
+                detectedSource = .sensor
+                save(level: result.lightsLevel, source: .sensor)
+            }
+        }
+    }
+
+    private var prompt: String {
+        if lightService.isReading { return "Reading the room..." }
+        if lightService.confidence == .high, let selectedLevel {
+            return "We detected: \(levels[selectedLevel].label)"
+        }
+        return "How bright is it in here?"
+    }
+
+    private func brightnessOption(index: Int, level: (label: String, hint: String, icon: String)) -> some View {
+        Button {
+            onInteract()
+            let source: LightsLevelSource = (lightService.confidence == .high && autoDetectedLevel == index) ? .sensor : .selfReported
+            selectedLevel = index
+            detectedSource = source
+            save(level: index, source: source)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: level.icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(selectedLevel == index ? .lullAmber : .lullInk3)
+                    .frame(width: 18)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(level.label)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundColor(selectedLevel == index ? .lullInk0 : .lullInk1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                    Text(level.hint)
+                        .font(.system(size: 10.5))
+                        .foregroundColor(.lullInk3)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+                Spacer(minLength: 0)
+                if selectedLevel == index { Ember(size: 5) }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(selectedLevel == index ? Color.lullAmber.opacity(0.10) : Color.white.opacity(0.025))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .strokeBorder(selectedLevel == index ? Color.lullAmber.opacity(0.5) : Color.lullLine, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func save(level: Int, source: LightsLevelSource) {
+        state.updateTodayLog {
+            $0.lightsLevel = level
+            $0.lightsLevelSource = source
+        }
+    }
+}
+
+private struct TemperatureCheckCardContent: View {
+    @EnvironmentObject private var state: AppState
+    let onInteract: () -> Void
+
+    private let options: [(label: String, colorHex: String)] = [
+        ("Cool", "#7ba2c7"),
+        ("Just right", "#f0b96b"),
+        ("Warm", "#d99a4a"),
+        ("Hot", "#c66f4a")
+    ]
+
+    private var temperatureSuggestion: (icon: String, title: String, message: String)? {
+        switch state.selectedTemp {
+        case 0:
+            return ("thermometer.low", "Add a little warmth", "Use thicker blankets, another layer, or slightly turn up the heat.")
+        case 3:
+            return ("fan", "Cool the room down", "Try a fan or AC, or switch to lighter clothing.")
+        default:
+            return nil
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Kicker(text: "Quick log")
+                Text("How does the room feel?")
+                    .font(.system(size: 13))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(2)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(Array(options.enumerated()), id: \.offset) { i, option in
+                    temperatureOption(index: i, option: option)
+                }
+            }
+
+            if let suggestion = temperatureSuggestion {
+                TodayDeckSuggestionCard(
+                    icon: suggestion.icon,
+                    title: suggestion.title,
+                    message: suggestion.message
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
+        .onAppear {
+            state.updateTodayLog { $0.perceivedTemp = state.selectedTemp }
+        }
+    }
+
+    private func temperatureOption(index: Int, option: (label: String, colorHex: String)) -> some View {
+        Button {
+            onInteract()
+            state.selectedTemp = index
+            state.updateTodayLog { $0.perceivedTemp = index }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(RadialGradient(
+                        colors: [Color(hex: option.colorHex), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 14
+                    ))
+                    .frame(width: 24, height: 24)
+                    .opacity(0.9)
+                Text(option.label)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundColor(state.selectedTemp == index ? .lullInk0 : .lullInk1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Spacer(minLength: 0)
+                if state.selectedTemp == index { Ember(size: 5) }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(state.selectedTemp == index ? Color.lullAmber.opacity(0.10) : Color.white.opacity(0.025))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .strokeBorder(state.selectedTemp == index ? Color.lullAmber.opacity(0.5) : Color.lullLine, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct TodayDeckSuggestionCard: View {
+    let icon: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundColor(.lullAmber)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                Text(message)
+                    .font(.system(size: 11.5))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(11)
+        .background(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Color.white.opacity(0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .strokeBorder(Color.lullAmber.opacity(0.20), lineWidth: 1)
+                )
+        )
+    }
+}
+
+private struct AppBlockingCardContent: View {
+    @EnvironmentObject private var state: AppState
+    @ObservedObject private var appBlockingAccess = AppBlockingAccessProbe.shared
+    @State private var selection = FamilyActivitySelection()
+    @State private var enabled = true
+    @State private var startTime = Date()
+    @State private var endTime = Date()
+    @State private var graceMinutes = 5
+    @State private var showPicker = false
+    @State private var didHydrate = false
+
+    private var appCount: Int { selection.applicationTokens.count }
+    private var categoryCount: Int { selection.categoryTokens.count }
+    private var totalCount: Int { appCount + categoryCount }
+    private var hasConfiguration: Bool { enabled && totalCount > 0 }
+
+    private var wakeText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: endTime)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: hasConfiguration ? 10 : 8) {
+            if hasConfiguration {
+                configuredContent
+            } else {
+                setupContent
+            }
+        }
+        .padding(hasConfiguration ? 14 : 12)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
+        .familyActivityPicker(isPresented: $showPicker, selection: $selection)
+        .onAppear(perform: hydrate)
+        .onChange(of: showPicker) { _, isPresented in
+            guard !isPresented else { return }
+            save()
+        }
+        .onChange(of: enabled) { _, _ in save() }
+    }
+
+    private var configuredContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Scroll-lock is ready")
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .foregroundColor(.lullInk1)
+                    Text(contractStatusText)
+                        .font(.system(size: 12))
+                        .foregroundColor(.lullInk3)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            if let item = state.currentSleepRulePromptItem {
+                sleepRuleConfirmRow(item)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(Array(selection.applicationTokens), id: \.self) { token in
+                        AppBlockingTokenBadge(token: token)
+                    }
+
+                    if selection.applicationTokens.isEmpty {
+                        ForEach(Array(selection.categoryTokens), id: \.self) { token in
+                            AppBlockingCategoryBadge(token: token)
+                        }
+                    }
+
+                    Button {
+                        openBlockedAppsPicker()
+                    } label: {
+                        AppBlockingEditBadge()
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isEditingLocked)
+                }
+                .padding(.vertical, 1)
+            }
+        }
+    }
+
+    private func sleepRuleConfirmRow(_ item: SleepContractItem) -> some View {
+        let canComplete = state.canCompleteSleepRule(item)
+        return HStack(spacing: 10) {
+            Image(systemName: canComplete ? "hand.tap.fill" : "clock")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.lullAmber)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.rule.completionPrompt)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundColor(.lullInk1)
+                Text(canComplete ? "Hold to confirm. Late rules cool down for 10 minutes." : "Available at the rule time.")
+                    .font(.system(size: 11.5))
+                    .foregroundColor(.lullInk3)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(11)
+        .background(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Color.lullAmber.opacity(canComplete ? 0.07 : 0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .strokeBorder(Color.lullAmber.opacity(canComplete ? 0.24 : 0.12), lineWidth: 1)
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .onLongPressGesture(minimumDuration: 0.7) {
+            guard canComplete else { return }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            state.completeSleepRule(item)
+        }
+        .opacity(canComplete ? 1 : 0.72)
+    }
+
+    private var setupContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "lock.open.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Choose apps to lock tonight")
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .foregroundColor(.lullInk1)
+                    Text("TenThirty will protect your sleep window and your rule timing.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.lullInk3)
+                        .lineLimit(2)
+                }
+            }
+
+            Button {
+                openBlockedAppsPicker()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                    Text(totalCount == 0 ? "Select apps" : "Edit blocked apps")
+                        .font(.system(size: 13.5, weight: .semibold))
+                    Spacer(minLength: 0)
+                    if totalCount > 0 {
+                        Text("\(totalCount)")
+                            .font(.mono(10))
+                    }
+                }
+                .foregroundColor(.lullBgDeep)
+                .frame(maxWidth: .infinity)
+                .frame(height: 38)
+                .padding(.horizontal, 14)
+                .background(Capsule().fill(Color.lullAmber))
+            }
+            .buttonStyle(.plain)
+            .disabled(isEditingLocked)
+            .opacity(isEditingLocked ? 0.55 : 1)
+
+            HStack(spacing: 10) {
+                AppBlockingMiniTile(title: "LOCK", value: timeText(state.canUseHardAppBlocking ? startTime : state.typicalBedtime))
+                AppBlockingMiniTile(title: "UNLOCK", value: wakeText)
+            }
+
+            HStack {
+                Text("ENABLE")
+                    .font(.mono(10))
+                    .kerning(1.5)
+                    .foregroundColor(.lullInk3)
+                Spacer()
+                Toggle("", isOn: $enabled)
+                    .labelsHidden()
+                    .tint(.lullAmber)
+            }
+        }
+    }
+
+    private func hydrate() {
+        selection = state.appBlockingSelection
+        appBlockingAccess.refresh()
+        enabled = state.appBlockingEnabled || (!state.appBlockingSelection.applicationTokens.isEmpty || !state.appBlockingSelection.categoryTokens.isEmpty)
+        startTime = state.appBlockingStartTime
+        endTime = state.appBlockingEndTime
+        graceMinutes = state.appBlockingGraceMinutes
+        if !didHydrate, endTime.timeIntervalSinceReferenceDate == 0 {
+            endTime = state.typicalWakeTime
+        }
+        didHydrate = true
+    }
+
+    private var contractStatusText: String {
+        guard let next = state.nextSleepContractItem else {
+            return "Sleep-window lock runs until your \(wakeText) wake time."
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return "Next rule: \(next.rule.title) by \(formatter.string(from: next.dueAt))."
+    }
+
+    private func openBlockedAppsPicker() {
+        guard !isEditingLocked else { return }
+        selection = state.appBlockingSelection
+        Task { @MainActor in
+            appBlockingAccess.refresh()
+            if !appBlockingAccess.isApproved {
+                state.trackHardAppBlockingPermissionRequested()
+                await appBlockingAccess.requestAccess()
+            }
+            if appBlockingAccess.isApproved {
+                showPicker = true
+            }
+        }
+    }
+
+    private var isEditingLocked: Bool {
+        state.isContractEditingLocked()
+    }
+
+    private func save() {
+        guard didHydrate else { return }
+        state.configureAppBlocking(
+            selection: selection,
+            enabled: enabled,
+            startTime: state.canUseHardAppBlocking ? startTime : state.typicalBedtime,
+            endTime: endTime,
+            graceMinutes: graceMinutes
+        )
+    }
+
+    private func timeText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+}
+
+private struct AppBlockingTokenBadge: View {
+    let token: ApplicationToken
+
+    var body: some View {
+        VStack(spacing: 5) {
+            Label(token)
+                .labelStyle(.iconOnly)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.lullAmber.opacity(0.10))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1))
+                )
+                .overlay(alignment: .topTrailing) {
+                    Image(systemName: "lock.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullAmber)
+                        .offset(x: 5, y: -5)
+                }
+
+            Label(token)
+                .labelStyle(.titleOnly)
+                .font(.system(size: 10.5))
+                .foregroundColor(.lullInk3)
+                .lineLimit(1)
+                .frame(width: 54)
+        }
+    }
+}
+
+private struct AppBlockingCategoryBadge: View {
+    let token: ActivityCategoryToken
+
+    var body: some View {
+        VStack(spacing: 5) {
+            Image(systemName: "square.grid.2x2.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.lullAmber)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.lullAmber.opacity(0.10))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.lullAmber.opacity(0.22), lineWidth: 1))
+                )
+                .overlay(alignment: .topTrailing) {
+                    Image(systemName: "lock.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.lullAmber)
+                        .offset(x: 5, y: -5)
+                }
+
+            Text("Category")
+                .font(.system(size: 10.5))
+                .foregroundColor(.lullInk3)
+                .lineLimit(1)
+                .frame(width: 54)
+        }
+    }
+}
+
+private struct AppBlockingEditBadge: View {
+    var body: some View {
+        VStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .foregroundColor(Color.lullAmber.opacity(0.45))
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.lullAmber)
+                )
+            Text("Edit")
+                .font(.system(size: 10.5))
+                .foregroundColor(.lullAmberSoft)
+                .frame(width: 54)
+        }
+    }
+}
+
+private struct AppBlockingMiniTile: View {
+    var title: String
+    var value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.mono(9))
+                .kerning(1.2)
+                .foregroundColor(.lullInk4)
+            Text(value)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.lullInk1)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.035))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
+        )
+    }
+}
+
 private struct RitualCardContent: View {
     let step: RoutineStep
 
@@ -3550,6 +4665,10 @@ private struct RitualCardContent: View {
 
     private var ritualCopy: String {
         switch step.label {
+        case "Brightness check":
+            return "Check the room and phone brightness, then lower anything still sending a daytime signal."
+        case "Temperature check":
+            return "Log whether the room feels cool, just right, warm, or hot before you settle in."
         case R.weightedBlanket:
             return "Get under it and let the pressure do some of the settling for you."
         case R.bodyScan:
@@ -3590,7 +4709,7 @@ private struct Breathing478CardContent: View {
                         Text("Guided breathing")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.lullInk1)
-                        Text("Audio · 5 min · opens player")
+                        Text("Audio · 5 min · pause/play + speed")
                             .font(.system(size: 12))
                             .foregroundColor(.lullInk3)
                             .lineLimit(2)
@@ -3997,9 +5116,12 @@ private struct SleepSoundCardContent: View {
             switch panel {
             case .switchSound:
                 NightlySoundSwitchSheet(current: sound) { newSound in
-                    applyConfigUpdate { config in
-                        config.soundId = newSound
-                    }
+                    startPlaybackTask?.cancel()
+                    startPlaybackTask = nil
+                    var updated = config
+                    updated.soundId = newSound
+                    overrideConfig = audioStore.switchSound(to: newSound, fallbackConfig: updated)
+                    activePanel = nil
                 }
             case .timer:
                 NightlySoundTimerSheet(config: config) { updated in
@@ -4053,14 +5175,7 @@ private struct SleepSoundCardContent: View {
         guard isActive, !didScheduleAutoplay else { return }
         didScheduleAutoplay = true
         startPlaybackTask?.cancel()
-        startPlaybackTask = Task {
-            try? await Task.sleep(nanoseconds: 1_100_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                guard isActive else { return }
-                audioStore.play(config: config)
-            }
-        }
+        audioStore.play(config: config)
     }
 
     private func applyConfigUpdate(_ update: (inout SleepSoundStepConfig) -> Void) {
@@ -4170,7 +5285,7 @@ private struct TodayInsightsPreview: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.lullInk1)
                         Spacer()
-                        Button { selectedTab = 2 } label: {
+                        Button { selectedTab = 1 } label: {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.lullBgDeep)
@@ -4291,7 +5406,7 @@ struct StreakStatusCard: View {
             if showsProgress {
                 cardContent
             } else {
-                Button { selectedTab = 2 } label: {
+                Button { selectedTab = 1 } label: {
                     cardContent
                 }
                 .buttonStyle(.plain)
@@ -4331,7 +5446,7 @@ struct StreakStatusCard: View {
                     .lineSpacing(3)
                     .lineLimit(2)
                 Spacer()
-                Text("Routine")
+                Text("Rules")
                     .font(.system(size: 11, weight: .semibold, design: .default))
                     .foregroundColor(.lullInk4)
             }
@@ -4402,7 +5517,7 @@ private struct StreakMoonStrip: View {
     }
 
     var body: some View {
-        Button { selectedTab = 2 } label: {
+        Button { selectedTab = 1 } label: {
             HStack(spacing: 12) {
                 StreakMoonRow(nights: summary.last13, large: false)
                 Text(caption)
@@ -4518,7 +5633,7 @@ struct StreakStrip: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
         } else {
-            Button { selectedTab = 2 } label: {
+            Button { selectedTab = 1 } label: {
                 HStack(spacing: 14) {
                     HStack(spacing: 5) {
                         ForEach(Array(last7Slots.enumerated()), id: \.offset) { _, slot in
@@ -4581,6 +5696,7 @@ struct SettingsSheet: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomerCenter = false
     #if DEBUG
@@ -4618,131 +5734,23 @@ struct SettingsSheet: View {
                 AmberGlow(x: 0.5, y: -0.05, radius: 220, opacity: 0.5)
                     .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Sleep window section
-                        VStack(alignment: .leading, spacing: 6) {
-                            Kicker(text: "Sleep window")
-                            Text("When do you usually sleep?")
-                                .font(.serif(22))
-                                .foregroundColor(.lullInk0)
-                        }
-                        .padding(.horizontal, 26)
-                        .padding(.top, 8)
-                        .padding(.bottom, 20)
-
-                        // Duration readout
-                        VStack(spacing: 3) {
-                            Text(sleepDurationText)
-                                .font(.serif(34))
-                                .foregroundColor(.lullInk0)
-                            Text("Typical window")
-                                .font(.mono(10))
-                                .kerning(1.6)
-                                .foregroundColor(.lullInk3)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, 16)
-
-                        // Arc clock
-                        SleepArcClock(bedtime: $state.typicalBedtime, wakeTime: $state.typicalWakeTime)
-                            .frame(width: 260, height: 260)
-                            .frame(maxWidth: .infinity)
-
-                        // Bedtime / Wake labels
-                        HStack {
-                            VStack(spacing: 4) {
-                                Image(systemName: "moon.fill")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.lullAmber)
-                                Text(formatted(state.typicalBedtime))
-                                    .font(.serif(18))
-                                    .foregroundColor(.lullInk0)
-                                Text("Usually asleep")
-                                    .font(.mono(10))
-                                    .kerning(1.2)
-                                    .foregroundColor(.lullInk3)
-                            }
-                            Spacer()
-                            VStack(spacing: 4) {
-                                Image(systemName: "sun.horizon.fill")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.lullAmber)
-                                Text(formatted(state.typicalWakeTime))
-                                    .font(.serif(18))
-                                    .foregroundColor(.lullInk0)
-                                Text("Usually up")
-                                    .font(.mono(10))
-                                    .kerning(1.2)
-                                    .foregroundColor(.lullInk3)
-                            }
-                        }
-                        .padding(.horizontal, 52)
-                        .padding(.top, 12)
-                        .padding(.bottom, 36)
-
-                        Divider()
-                            .background(Color.lullLine)
-                            .padding(.horizontal, 26)
-                            .padding(.bottom, 28)
-
-                        LiveActivitiesSettingsCard(isEnabled: liveActivitiesEnabled) {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 24)
-
-                        #if DEBUG
-                        VStack(alignment: .leading, spacing: 12) {
-                            Kicker(text: "Debug")
-                            debugSeedButton(count: 3, kind: .milestone)
-                            debugSeedButton(count: 6, kind: .activeTrial)
-                            debugSeedButton(count: 7, kind: .paywall)
-                        }
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 22)
-                        #endif
-
-                        // Help improve app card
-                        Button {
-                            if state.isPaidPremium {
-                                showCustomerCenter = true
-                            } else {
-                                state.presentUpgradePaywall()
-                            }
-                        } label: {
-                            HStack {
-                                Text(state.isPaidPremium ? "Manage TenThirty Premium" : "Upgrade to TenThirty Premium")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.lullInk0)
-                                Spacer()
-                                Text(state.isPaidPremium ? "ACTIVE →" : (state.trialDaysRemainingText ?? "PREMIUM →"))
-                                    .font(.mono(10.5))
-                                    .kerning(1.1)
-                                    .foregroundColor(.lullAmber)
-                            }
-                            .padding(16)
-                            .lullCard(radius: 16, accent: true)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 18)
-
-                        Spacer().frame(height: 40)
-                    }
-                }
+                settingsHome
             }
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.lullInk1)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(Color.white.opacity(0.07)))
                     }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.lullAmber)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close settings")
                 }
             }
             .toolbarBackground(Color.lullBg, for: .navigationBar)
@@ -4760,6 +5768,10 @@ struct SettingsSheet: View {
             initialSleepScheduleSignature = sleepScheduleSignature
             refreshLiveActivitiesStatus()
         }
+        .task {
+            await subscriptions.refreshCustomerInfo()
+            state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 refreshLiveActivitiesStatus()
@@ -4775,6 +5787,295 @@ struct SettingsSheet: View {
                 }
         }
     }
+
+    private var settingsHome: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 26) {
+                premiumCard
+
+                settingsSection(title: nil) {
+                    NavigationLink {
+                        sleepWindowEditor
+                            .navigationTitle("Adjust Sleep Window")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        SettingsRowContent(
+                            icon: "moon.zzz.fill",
+                            title: "Adjust Sleep Window",
+                            subtitle: sleepDurationText,
+                            accessory: .chevron
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                settingsSection(title: "About") {
+                    ShareLink(
+                        item: Self.appStoreURL,
+                        subject: Text("TenThirty"),
+                        message: Text("I'm using TenThirty to help improve my sleep. Try it tonight.")
+                    ) {
+                        SettingsRowContent(icon: "square.and.arrow.up", title: "Share TenThirty")
+                    }
+                    .buttonStyle(.plain)
+
+                    settingsDivider
+
+                    settingsButton(icon: "star", title: "Leave a Review") {
+                        open(Self.reviewURL)
+                    }
+
+                    settingsDivider
+
+                    settingsButton(icon: "envelope", title: "Send Feedback") {
+                        open(Self.feedbackURL)
+                    }
+
+                    settingsDivider
+
+                    settingsButton(icon: "link", title: "Visit TryTenThirty.com", accessory: .external) {
+                        open(Self.websiteURL)
+                    }
+                }
+
+                settingsSection(title: "Legal") {
+                    settingsButton(icon: "hand.raised", title: "Privacy Policy", accessory: .external) {
+                        open(Self.privacyURL)
+                    }
+
+                    settingsDivider
+
+                    settingsButton(icon: "doc.text", title: "Terms of Use", accessory: .external) {
+                        open(Self.termsURL)
+                    }
+                }
+
+                #if DEBUG
+                VStack(alignment: .leading, spacing: 12) {
+                    SettingsSectionTitle("Debug")
+                    debugSeedButton(count: 3, kind: .milestone)
+                    debugSeedButton(count: 6, kind: .activeTrial)
+                    debugSeedButton(count: 7, kind: .paywall)
+                }
+                #endif
+
+                Spacer().frame(height: 28)
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 12)
+        }
+    }
+
+    private var premiumCard: some View {
+        NavigationLink {
+            subscriptionDetails
+                .navigationTitle("Manage my subscription")
+                .navigationBarTitleDisplayMode(.inline)
+        } label: {
+            SettingsRowContent(
+                icon: "creditcard.fill",
+                title: "Manage my subscription",
+                subtitle: subscriptions.currentSubscriptionDetails?.planName ?? "View your current plan",
+                accessory: .chevron
+            )
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .background(settingsCardBackground)
+    }
+
+    private var subscriptionDetails: some View {
+        ZStack {
+            Color.lullBg.ignoresSafeArea()
+            AmberGlow(x: 0.5, y: -0.05, radius: 220, opacity: 0.5)
+                .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Kicker(text: "Subscription")
+                        Text("Manage my subscription")
+                            .font(.serif(24))
+                            .foregroundColor(.lullInk0)
+                    }
+                    .padding(.horizontal, 4)
+
+                    settingsSection(title: nil) {
+                        SettingsRowContent(
+                            icon: "sparkles",
+                            title: subscriptions.currentSubscriptionDetails?.planName ?? "TenThirty Premium",
+                            subtitle: subscriptions.currentSubscriptionDetails?.statusText ?? "Loading subscription details...",
+                            accessory: .none
+                        )
+
+                        settingsDivider
+
+                        SettingsRowContent(
+                            icon: "calendar",
+                            title: subscriptions.currentSubscriptionDetails?.billingTitle ?? "Next billing period starts",
+                            subtitle: subscriptions.currentSubscriptionDetails?.billingText ?? "Loading billing date...",
+                            accessory: .none
+                        )
+                    }
+
+                    Button {
+                        showCustomerCenter = true
+                    } label: {
+                        Text("Open Apple subscription settings")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(hex: "#1A0D06"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .background(
+                                Capsule()
+                                    .fill(Color.lullAmber)
+                                    .shadow(color: .lullAmberGlow, radius: 14, y: 6)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+
+                    if let message = subscriptions.lastErrorMessage {
+                        Text(message)
+                            .font(.system(size: 12.5))
+                            .foregroundColor(.lullInk3)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer().frame(height: 30)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+            }
+        }
+        .task {
+            await subscriptions.refreshCustomerInfo()
+            state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
+        }
+    }
+
+    private var sleepWindowEditor: some View {
+        ZStack {
+            Color.lullBg.ignoresSafeArea()
+            AmberGlow(x: 0.5, y: -0.05, radius: 220, opacity: 0.5)
+                .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Kicker(text: "Sleep window")
+                        Text("When do you usually sleep?")
+                            .font(.serif(22))
+                            .foregroundColor(.lullInk0)
+                    }
+                    .padding(.horizontal, 26)
+                    .padding(.top, 8)
+                    .padding(.bottom, 20)
+
+                    VStack(spacing: 3) {
+                        Text(sleepDurationText)
+                            .font(.serif(34))
+                            .foregroundColor(.lullInk0)
+                        Text("Typical window")
+                            .font(.mono(10))
+                            .kerning(1.6)
+                            .foregroundColor(.lullInk3)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 16)
+
+                    SleepArcClock(bedtime: $state.typicalBedtime, wakeTime: $state.typicalWakeTime)
+                        .frame(width: 260, height: 260)
+                        .frame(maxWidth: .infinity)
+
+                    HStack {
+                        VStack(spacing: 4) {
+                            Image(systemName: "moon.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullAmber)
+                            Text(formatted(state.typicalBedtime))
+                                .font(.serif(18))
+                                .foregroundColor(.lullInk0)
+                            Text("Usually asleep")
+                                .font(.mono(10))
+                                .kerning(1.2)
+                                .foregroundColor(.lullInk3)
+                        }
+                        Spacer()
+                        VStack(spacing: 4) {
+                            Image(systemName: "sun.horizon.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.lullAmber)
+                            Text(formatted(state.typicalWakeTime))
+                                .font(.serif(18))
+                                .foregroundColor(.lullInk0)
+                            Text("Usually up")
+                                .font(.mono(10))
+                                .kerning(1.2)
+                                .foregroundColor(.lullInk3)
+                        }
+                    }
+                    .padding(.horizontal, 52)
+                    .padding(.top, 12)
+                    .padding(.bottom, 36)
+
+                    Spacer().frame(height: 40)
+                }
+            }
+        }
+    }
+
+    private func settingsSection<Content: View>(title: String?, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let title {
+                SettingsSectionTitle(title)
+            }
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(settingsCardBackground)
+        }
+    }
+
+    private func settingsButton(
+        icon: String,
+        title: String,
+        subtitle: String? = nil,
+        accessory: SettingsRowAccessory = .chevron,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            SettingsRowContent(icon: icon, title: title, subtitle: subtitle, accessory: accessory)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var settingsDivider: some View {
+        Divider()
+            .background(Color.white.opacity(0.08))
+            .padding(.leading, 64)
+    }
+
+    private var settingsCardBackground: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(Color.white.opacity(0.055))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+            )
+    }
+
+    private func open(_ url: URL) {
+        openURL(url)
+    }
+
+    private static let appStoreURL = URL(string: "https://apps.apple.com/us/app/tenthirty-smart-sleep-plan/id6768480598")!
+    private static let reviewURL = URL(string: "https://apps.apple.com/us/app/tenthirty-smart-sleep-plan/id6768480598?action=write-review")!
+    private static let feedbackURL = URL(string: "mailto:czarinacatambing@gmail.com?subject=Feedback")!
+    private static let websiteURL = URL(string: "https://trytenthirty.com")!
+    private static let privacyURL = URL(string: "https://trytenthirty.com/privacy")!
+    private static let termsURL = URL(string: "https://trytenthirty.com/terms")!
 
     #if DEBUG
     private enum DebugSeedKind {
@@ -4853,6 +6154,77 @@ struct SettingsSheet: View {
 
     private func refreshLiveActivitiesStatus() {
         liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
+    }
+}
+
+private enum SettingsRowAccessory {
+    case chevron
+    case external
+    case none
+}
+
+private struct SettingsSectionTitle: View {
+    var title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundColor(.lullInk3)
+            .padding(.horizontal, 2)
+    }
+}
+
+private struct SettingsRowContent: View {
+    var icon: String
+    var title: String
+    var subtitle: String? = nil
+    var accessory: SettingsRowAccessory = .chevron
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .regular))
+                .foregroundColor(.lullAmber)
+                .frame(width: 30)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundColor(.lullInk0)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 14.5, weight: .regular))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            switch accessory {
+            case .chevron:
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.lullInk4)
+            case .external:
+                Image(systemName: "arrow.up.forward")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.lullInk4)
+            case .none:
+                EmptyView()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        .contentShape(Rectangle())
     }
 }
 

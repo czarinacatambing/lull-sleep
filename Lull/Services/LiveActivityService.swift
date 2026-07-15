@@ -47,16 +47,48 @@ class LiveActivityService {
             return
         }
 
-        // If already running just update it.
-        if let existing = Activity<PrepChecklistAttributes>.activities.first {
+        // Activity attributes are immutable. If the routine changed while a
+        // prep activity is already running, recreate it so labels/times match.
+        let existingActivities = Activity<PrepChecklistAttributes>.activities
+        if let existing = existingActivities.first {
             let state = PrepChecklistAttributes.ContentState(
                 doneIds: doneIds.map { $0.uuidString },
                 updatedAt: Date()
             )
-            Task { await existing.update(ActivityContent(state: state, staleDate: nil)) }
+            if prepActivityAttributesMatch(existing.attributes, items: items, bedtime: anchoredBedtime) {
+                Task {
+                    await existing.update(ActivityContent(state: state, staleDate: nil))
+                    for extra in existingActivities.dropFirst() {
+                        await extra.end(nil, dismissalPolicy: .immediate)
+                    }
+                }
+            } else {
+                Task {
+                    for activity in existingActivities {
+                        await activity.end(nil, dismissalPolicy: .immediate)
+                    }
+                    requestPrepChecklistActivity(items: items, doneIds: doneIds, bedtime: anchoredBedtime)
+                }
+            }
             return
         }
 
+        requestPrepChecklistActivity(items: items, doneIds: doneIds, bedtime: anchoredBedtime)
+    }
+
+    private func prepActivityAttributesMatch(
+        _ attributes: PrepChecklistAttributes,
+        items: [PrepChecklistAttributes.Item],
+        bedtime: Date
+    ) -> Bool {
+        attributes.items == items && abs(attributes.bedtime.timeIntervalSince(bedtime)) < 1
+    }
+
+    private func requestPrepChecklistActivity(
+        items: [PrepChecklistAttributes.Item],
+        doneIds: Set<UUID>,
+        bedtime anchoredBedtime: Date
+    ) {
         let attrs = PrepChecklistAttributes(items: items, bedtime: anchoredBedtime)
         let state = PrepChecklistAttributes.ContentState(
             doneIds: doneIds.map { $0.uuidString },

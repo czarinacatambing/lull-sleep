@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
+    @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showWelcome = true
     @State private var logoOpacity: Double = 0
@@ -243,6 +244,7 @@ struct ContentView: View {
                     .fullScreenCover(isPresented: $state.showSleepSounds) {
                         if state.canUseSleepSounds {
                             SleepSoundsStep(mode: .standalone)
+                                .environmentObject(sleepSoundsAudio)
                         } else {
                             Color.clear
                                 .onAppear {
@@ -255,13 +257,6 @@ struct ContentView: View {
                     .fullScreenCover(item: $state.activeStreakMilestone) { milestone in
                         StreakMilestoneView(milestone: milestone) {
                             state.acknowledgeStreakMilestone()
-                        }
-                    }
-                    .fullScreenCover(item: $state.pendingPromotion) { promotion in
-                        RoutinePromotedView(promotion: promotion) {
-                            // acknowledgePromotion routes to the Routine tab and queues
-                            // the brief pulse on the promoted row.
-                            state.acknowledgePromotion()
                         }
                     }
                     .fullScreenCover(item: $state.activePaywallRoute) { route in

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenThirty — Single-Screen Post-Onboarding Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#120d08; --bg-top:#392a1a; --bg-mid:#2c2013; --bg-deep:#1f160d;
+    --meadow-hi:#39411f; --meadow-lo:#20260f;
+    --card:rgba(66,50,34,.58); --line:rgba(240,214,170,.13);
+    --gold:#ecb964; --gold-deep:#d9a144; --gold-soft:rgba(236,185,100,.13);
+    --ink:#f3e9d6; --muted:#b5a189; --faint:#8b7a64; --lock:#c5b49b;
+    --serif:"Lora",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,system-ui,"SF Pro Text","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--page);color:var(--ink);padding:26px 20px 54px;font-family:var(--sans)}
+  ::selection{background:var(--gold);color:#2c2013}
+
+  .page-head{max-width:430px;margin:0 auto 18px}
+  .page-head h1{font-family:var(--serif);font-size:22px;font-weight:600}
+  .page-head p{color:var(--muted);font-size:13px;margin-top:8px;max-width:42ch;line-height:1.5}
+  .page-head .tag{display:inline-block;margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--gold);background:var(--gold-soft);
+      border:1px solid rgba(236,185,100,.25);padding:5px 11px;border-radius:999px}
+
+  .frames{display:block;max-width:430px;margin:0 auto}
+  .frame-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+  body.single-screen .frame-col{display:none}
+  body.single-screen .frame-col.active-frame{display:flex}
+  .frame-label{font-size:11.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+
+  .states{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:390px;min-height:30px}
+  .states button{font:inherit;font-size:11.5px;font-weight:700;color:var(--muted);
+    background:#1d150c;border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px;cursor:pointer;transition:all .18s ease}
+  .states button:hover{color:var(--ink)}
+  .states button.on{color:#2c2013;background:var(--gold);border-color:var(--gold)}
+  .states button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  .phone{width:390px;height:844px;border-radius:48px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(120% 55% at 50% -6%, #4a3820 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg-top) 0%,var(--bg-mid) 45%,var(--bg-deep) 100%);
+    border:1px solid rgba(240,214,170,.12);
+    box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 8px #070503, inset 0 0 0 9px rgba(240,214,170,.06);
+    display:flex;flex-direction:column}
+  .screen{flex:1;display:flex;flex-direction:column;padding:0 22px;position:relative;overflow:hidden;z-index:2}
+  .statusbar{height:52px;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 26px 4px;font-size:14px;font-weight:700}
+  .statusbar .right{color:var(--muted);font-size:12px}
+  .brandbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 2px}
+  .brandbar .wordmark{font-size:17px;font-weight:700}
+  .brandbar .wordmark i{font-style:normal;color:var(--gold)}
+  .gear{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted)}
+  .gear svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
+
+  /* ── the morphing status section (only this changes with enforcement state) ── */
+  .statusbox{margin-top:16px;padding:13px 15px;border-radius:16px;position:relative;overflow:hidden;
+    background:rgba(30,22,13,.5);border:1px solid var(--line);
+    transition:border-color .4s ease, background .4s ease, box-shadow .4s ease}
+  .statusbox .cap{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+    display:flex;align-items:center;gap:7px}
+  .statusbox .cap svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex:none}
+  .statusbox .apps{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:7px}
+  .statusbox .why{font-size:13px;color:var(--muted);margin-top:7px;line-height:1.5}
+  .statusbox .why b{color:var(--ink);font-weight:600}
+  .statusbox .cool{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--gold);
+    margin-top:6px;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(236,185,100,.35)}
+  .statusbox.locked{border-color:rgba(197,180,155,.4);background:rgba(46,36,24,.72);
+    box-shadow:0 0 22px rgba(197,180,155,.08)}
+  .statusbox.locked .cap{color:var(--lock)}
+  .statusbox.cooldown{border-color:rgba(236,185,100,.4);background:rgba(48,37,22,.72);
+    box-shadow:0 0 22px rgba(236,185,100,.1)}
+  .statusbox.cooldown .cap{color:var(--gold)}
+  .statusbox.window{border-color:rgba(190,168,224,.35);background:rgba(40,33,44,.5)}
+  .statusbox.window .cap{color:#d8c9ee}
+  .holdlate{margin-top:12px;position:relative;height:46px;border-radius:999px;overflow:hidden;
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));cursor:pointer;
+    border:none;width:100%;font:inherit;user-select:none;-webkit-user-select:none;touch-action:none}
+  .holdlate .fill{position:absolute;inset:0;width:0%;background:rgba(255,255,255,.3)}
+  .holdlate span{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
+    height:100%;font-size:14px;font-weight:800;color:#2c2013}
+  .statusbox .note{font-size:11.5px;color:var(--faint);margin-top:8px;text-align:center;font-weight:600}
+
+  .clearedline{font-size:11.5px;color:var(--faint);margin-top:11px;font-weight:600}
+  .clearedline b{color:var(--muted)}
+
+  /* ── inbox rows ── */
+  .inbox{margin-top:10px;display:flex;flex-direction:column;position:relative}
+  .row{position:relative;overflow:hidden;border-radius:18px;margin-bottom:10px;
+    background:var(--card);border:1px solid var(--line);backdrop-filter:blur(6px);
+    max-height:220px;
+    transition:max-height .45s cubic-bezier(.4,.1,.2,1), margin .45s ease,
+               border-color .35s ease, box-shadow .35s ease}
+  .row .inner{padding:13px 15px;display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  .row .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:16px;
+    background:rgba(236,185,100,.07);border:1px solid rgba(236,185,100,.3);transition:all .35s ease}
+  .row .nm{font-size:15px;font-weight:700;transition:font-size .35s ease}
+  .row .tt{font-size:12px;color:var(--faint);margin-top:2px;font-weight:600}
+  .row .tm{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+  .row .fill{position:absolute;inset:0;width:0%;background:rgba(236,185,100,.22);z-index:0}
+  .row .holdhint{display:none}
+  .row.active{border-color:rgba(236,185,100,.55);box-shadow:0 0 24px rgba(236,185,100,.14);
+    cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+  .row.active .inner{padding:18px 17px}
+  .row.active .ic{width:46px;height:46px;font-size:20px;border-color:rgba(236,185,100,.55);background:rgba(236,185,100,.1)}
+  .row.active .nm{font-family:var(--serif);font-size:22px;font-weight:600}
+  .row.active .tt{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .row.active .tt b{color:var(--gold);font-weight:700}
+  .row.active .tm{color:var(--gold);font-size:13px}
+  .row.active .holdhint{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--gold);opacity:.85;margin-top:7px}
+  .row.upcoming{opacity:.55}
+
+  /* poof burst + bounce promotion */
+  .row.poof .inner{animation:poof .5s cubic-bezier(.3,.6,.4,1) forwards}
+  @keyframes poof{
+    0%{transform:scale(1);opacity:1;filter:blur(0)}
+    35%{transform:scale(1.07);opacity:1}
+    100%{transform:scale(1.28);opacity:0;filter:blur(5px)}
+  }
+  .row.gone{max-height:0;margin-bottom:0;border-width:0}
+  .row.bounce{animation:riseBounce .65s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes riseBounce{
+    0%{transform:translateY(16px)}
+    60%{transform:translateY(-5px)}
+    100%{transform:translateY(0)}
+  }
+  .spark{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold);z-index:8;
+    box-shadow:0 0 10px 3px rgba(236,185,100,.6);pointer-events:none}
+
+  .gesture{color:var(--faint);font-size:12.5px;text-align:center;margin-top:8px;font-weight:600}
+  .gesture b{color:var(--gold);font-weight:700}
+
+  /* ── inbox-zero panel + roaming firefly ── */
+  .clearpanel{margin-top:26px;text-align:center;padding:0 6px}
+  .clearpanel .big{font-family:var(--serif);font-size:30px;font-weight:600}
+  .clearpanel .sub{color:var(--muted);font-size:14.5px;line-height:1.6;margin-top:10px}
+  .clearpanel .sub b{color:var(--ink);font-weight:600}
+  .clearpanel .earned{margin-top:12px;color:var(--gold);font-weight:700;font-size:14px}
+  .clearpanel .hint{margin-top:8px;color:var(--faint);font-size:12px;font-weight:600}
+  .screen.clear-mode .statusbox{border-color:rgba(190,168,224,.35);background:rgba(40,33,44,.5)}
+  .screen.clear-mode .statusbox .cap{color:#d8c9ee}
+  .screen.clear-mode .clearedline{font-size:19px;margin-top:16px;color:var(--muted)}
+  .screen.clear-mode .clearedline b{color:var(--ink)}
+  .screen.clear-mode .clearpanel{display:none}
+  .screen.clear-mode .inbox,
+  .screen.clear-mode .gesture{display:none}
+  .screen.clear-mode .clearpanel .big{font-size:31px;font-weight:500}
+  .screen.clear-mode .clearpanel .sub,
+  .screen.clear-mode .clearpanel .earned{display:none}
+  .screen.clear-mode .clearpanel .hint{display:none}
+  #bigfly{position:absolute;left:0;top:0;width:26px;height:26px;z-index:5;pointer-events:none;opacity:0}
+  #bigfly .core{position:absolute;inset:6px;border-radius:50%;background:#ffe9b8;
+    box-shadow:0 0 14px 6px rgba(255,224,160,.9),0 0 42px 22px rgba(236,185,100,.45),0 0 110px 60px rgba(236,185,100,.16)}
+  #bigfly .swirl{position:absolute;inset:-26px;border-radius:50%;
+    border:1.5px solid rgba(240,214,170,.28);border-bottom-color:transparent;border-left-color:transparent;
+    animation:spin 3.2s linear infinite}
+  #bigfly .swirl.b{inset:-44px;animation-duration:5s;opacity:.5;transform:rotate(120deg)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .today-firefly-field{position:absolute;inset:0;z-index:5;pointer-events:none}
+  .today-firefly-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 6px 2px var(--gold),0 0 16px 6px rgba(236,185,100,.5);
+    margin-left:-4px;margin-top:-4px;transform-origin:center;
+    animation:bob 6s ease-in-out infinite;
+    transition:left .95s cubic-bezier(.3,.7,.25,1),top .95s cubic-bezier(.3,.7,.25,1),opacity .7s ease}
+  .today-firefly-dot.dim{opacity:.5}
+  @keyframes bob{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-4px)}50%{transform:translate(-2px,3px)}75%{transform:translate(2px,2px)}}
+
+  /* ── meadow ── */
+  .meadow{position:absolute;left:0;right:0;bottom:0;height:230px;pointer-events:none;z-index:1}
+  .meadow .hill{position:absolute;left:-10%;right:-10%;bottom:-70px;height:190px;border-radius:50% 50% 0 0;
+    background:linear-gradient(180deg,var(--meadow-hi),var(--meadow-lo));opacity:.5}
+  .meadow .hill.b{bottom:-95px;left:-25%;right:25%;opacity:.4;background:linear-gradient(180deg,#2e3418,#1b2010)}
+  .blade{position:absolute;bottom:40px;width:1.5px;height:26px;background:#4a512c;opacity:.55;border-radius:2px}
+  .fly{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 9px 3px rgba(236,185,100,.5),0 0 20px 8px rgba(236,185,100,.15);
+    animation:drift 8s ease-in-out infinite alternate}
+  .fly.s{width:3.5px;height:3.5px;opacity:.75;animation-duration:10s}
+  @keyframes drift{from{transform:translate(0,0)}to{transform:translate(12px,-18px)}}
+  @media (prefers-reduced-motion:reduce){
+    .fly,#bigfly .swirl{animation:none}
+    .row,.row .inner{transition:none}
+    .row.poof .inner,.row.bounce{animation:none}
+  }
+
+  .tools{margin-top:auto;padding:12px 0 12px;text-align:center;position:relative;z-index:3}
+  .tools .bar{width:44px;height:5px;border-radius:99px;background:rgba(240,214,170,.25);margin:0 auto 8px}
+  .tools .t{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .tools .t b{color:var(--gold);font-weight:700}
+
+  .tabbar{height:80px;flex:none;display:flex;border-top:1px solid rgba(240,214,170,.1);
+    background:rgba(22,16,9,.78);backdrop-filter:blur(12px);position:relative;z-index:4}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    color:var(--faint);font-size:11px;font-weight:700;cursor:pointer;user-select:none}
+  .tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7}
+  .tab.on{color:var(--gold)}
+
+  /* ── Rules & Trends ── */
+  .pagetitle{font-family:var(--serif);font-size:32px;font-weight:600;margin-top:14px}
+  .pagesub{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .scroll{overflow-y:auto;flex:1;padding-bottom:14px;scrollbar-width:none;position:relative;z-index:2}
+  .scroll::-webkit-scrollbar{display:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px;margin-top:15px;backdrop-filter:blur(6px)}
+  .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+  .cardhead{display:flex;align-items:center;justify-content:space-between}
+  .edit{font-size:13px;font-weight:700;color:var(--gold)}
+  .kv{font-family:var(--serif);font-size:25px;font-weight:600;margin-top:9px;font-variant-numeric:tabular-nums}
+  .kd{color:var(--muted);font-size:13px;margin-top:5px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-size:12px;font-weight:600;color:var(--muted);background:rgba(30,22,13,.6);
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .rl{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(240,214,170,.08)}
+  .rl:last-child{border-bottom:none;padding-bottom:2px}
+  .rl .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;
+    background:rgba(236,185,100,.07);border:1px solid rgba(236,185,100,.3);font-size:16px}
+  .rl .nm{font-size:15px;font-weight:700}
+  .rl .gr{font-size:11.5px;color:var(--faint);margin-top:2px}
+  .rl .tm{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+  .toggle{width:38px;height:23px;border-radius:99px;background:var(--gold);position:relative;flex:none;margin-left:10px}
+  .toggle::after{content:"";position:absolute;top:3px;right:3px;width:17px;height:17px;border-radius:50%;background:#2c2013}
+  .toggle.off{background:#4a3a27}
+  .toggle.off::after{right:auto;left:3px;background:#8b7a64}
+  .explain{margin-top:12px;font-size:13.5px;line-height:1.8;color:var(--muted)}
+  .explain b{color:var(--ink);font-weight:600}
+  .explain .arrow{color:var(--gold);font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:15px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(6px)}
+  .stat .n{font-family:var(--serif);font-size:29px;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums}
+  .stat .n.neutral{color:var(--ink)}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:4px;line-height:1.4}
+  .bigcal{display:grid;grid-template-columns:24px repeat(7,1fr);gap:6px;margin-top:12px}
+  .bigcal .dh{text-align:center;font-size:10px;font-weight:700;color:var(--faint);padding-bottom:4px}
+  .bigcal .wk{font-size:9.5px;color:var(--faint);align-self:center;font-weight:700}
+  .cell{aspect-ratio:1;border-radius:9px;border:1px solid rgba(240,214,170,.14);position:relative}
+  .cell.past{background:rgba(30,22,13,.4)}
+  .cell.today{border-color:var(--gold);box-shadow:0 0 12px rgba(236,185,100,.2)}
+  .cell .ff{position:absolute;inset:0;margin:auto;width:8px;height:8px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 9px 3px rgba(236,185,100,.6)}
+  #flight2{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--gold);z-index:9;
+    box-shadow:0 0 16px 6px rgba(236,185,100,.65),0 0 40px 14px rgba(236,185,100,.2);pointer-events:none;opacity:0}
+  .travel-bug{position:fixed;width:64px;height:64px;margin-left:-32px;margin-top:-32px;z-index:50;
+    transform-origin:center;will-change:transform,opacity;pointer-events:none}
+  .travel-bug svg{width:100%;height:100%;overflow:visible}
+  .travel-bug .wings{transform-box:fill-box;transform-origin:center;animation:flap .26s ease-in-out infinite}
+  @keyframes flap{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.66)}}
+  .monthlabel{font-family:var(--serif);font-size:15px;color:var(--muted);text-align:center;margin-top:12px}
+  .insight{display:flex;gap:12px;align-items:center;margin-top:13px}
+  .insight .ic{width:38px;height:38px;border-radius:50%;background:rgba(236,185,100,.07);
+    border:1px solid rgba(236,185,100,.3);display:grid;place-items:center;font-size:16px;flex:none}
+  .insight .t1{font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .insight .t2{font-family:var(--serif);font-size:16px;font-weight:600;margin-top:2px}
+  .insight .t3{font-size:12px;color:var(--muted);margin-top:2px}
+  @media (max-width:900px){.frames{gap:28px}}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>TenThirty — single-screen flow <span style="color:var(--gold)">v5</span></h1>
+  <p>Tap the bottom tabs to move through the app. Hold the glowing rule 3s: the firefly rises from the meadow, zooms close, settles back to roam, then lands in Trends only when you tap Trends.</p>
+  <span class="tag">Today · Rules · Trends</span>
+</div>
+
+<div class="frames">
+
+  <!-- ═══════════ TODAY ═══════════ -->
+  <div class="frame-col">
+    <div class="states" role="tablist" aria-label="Enforcement states">
+      <button class="on" data-mode="unlocked">Unlocked</button>
+      <button data-mode="locked">Locked</button>
+      <button data-mode="cooldown">Cooldown</button>
+      <button data-mode="window">Sleep window</button>
+      <button data-mode="clear">Inbox zero</button>
+    </div>
+
+    <div class="phone">
+      <div class="statusbar"><span>6:27</span><span class="right">●●● 􀛨</span></div>
+      <div class="screen" id="todayScreen">
+
+        <div class="brandbar">
+          <div class="wordmark">TenThirty <i>•</i></div>
+          <div class="gear"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.6a7 7 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c0-.4.1-.8.1-1.2z"/></svg></div>
+        </div>
+
+        <!-- morphing status section -->
+        <div class="statusbox" id="statusbox"></div>
+
+        <!-- inbox -->
+        <div id="inboxwrap">
+          <div class="clearedline" id="clearedline"><b>4 cleared</b> earlier today · 3 to go</div>
+          <div class="inbox" id="inbox">
+            <div class="row active" data-n="1">
+              <div class="fill"></div>
+              <div class="inner">
+                <div class="ic">🛁</div>
+                <div>
+                  <div class="nm">Warm shower or bath</div>
+                  <div class="tt">Due <b>6:30 PM</b> · grace until 6:40</div>
+                  <div class="holdhint">Press &amp; hold 3s to confirm</div>
+                </div>
+                <div class="tm">6:30</div>
+              </div>
+            </div>
+            <div class="row upcoming" data-n="2">
+              <div class="fill"></div>
+              <div class="inner">
+                <div class="ic">💡</div>
+                <div>
+                  <div class="nm">Dim lights</div>
+                  <div class="tt">Grace 10 min</div>
+                  <div class="holdhint">Press &amp; hold 3s to confirm</div>
+                </div>
+                <div class="tm">9:15</div>
+              </div>
+            </div>
+            <div class="row upcoming" data-n="3">
+              <div class="fill"></div>
+              <div class="inner">
+                <div class="ic">📝</div>
+                <div>
+                  <div class="nm">Tomorrow's plan</div>
+                  <div class="tt">Grace 10 min</div>
+                  <div class="holdhint">Press &amp; hold 3s to confirm</div>
+                </div>
+                <div class="tm">10:25</div>
+              </div>
+            </div>
+          </div>
+          <div class="gesture">earn your firefly today — <b>clear all your tasks</b></div>
+        </div>
+
+        <!-- inbox zero panel -->
+        <div class="clearpanel" id="clearpanel" hidden>
+          <div class="big">Good Night</div>
+          <div class="sub">Your rules are done. Scroll-lock starts at <b>8:00 PM</b>.</div>
+          <div class="earned">✦ Firefly earned — you kept tonight's contract</div>
+          <div class="hint">Swipe up for tools to help you fall back asleep</div>
+        </div>
+
+        <!-- the roaming firefly -->
+        <div id="bigfly" hidden><div class="swirl"></div><div class="swirl b"></div><div class="core"></div></div>
+        <div class="today-firefly-field" id="todayFireflyField"></div>
+
+        <div class="tools">
+          <div class="bar"></div>
+          <div class="t">Swipe up for tools to help you fall back asleep</div>
+        </div>
+        <div class="meadow" aria-hidden="true">
+          <div class="hill b"></div><div class="hill"></div>
+          <div class="blade" style="left:12%"></div><div class="blade" style="left:17%;height:20px;transform:rotate(6deg)"></div>
+          <div class="blade" style="left:31%;height:30px;transform:rotate(-5deg)"></div>
+          <div class="blade" style="left:55%;height:22px"></div><div class="blade" style="left:62%;height:28px;transform:rotate(7deg)"></div>
+          <div class="blade" style="left:80%;height:24px;transform:rotate(-6deg)"></div>
+          <div class="fly" style="left:20%;bottom:74px"></div>
+          <div class="fly s" style="left:43%;bottom:56px;animation-delay:1.6s"></div>
+          <div class="fly s" style="left:71%;bottom:88px;animation-delay:3s"></div>
+          <div class="fly" style="left:85%;bottom:52px;animation-delay:.8s"></div>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab on"><svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>Today</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Rules</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 16v-4M11 16V8M16 16v-6"/></svg>Trends</div>
+      </div>
+    </div>
+    <div class="frame-label">Today — the sleep inbox</div>
+  </div>
+
+  <!-- ═══════════ RULES ═══════════ -->
+  <div class="frame-col">
+    <div class="states" style="visibility:hidden"><button>·</button></div>
+    <div class="phone">
+      <div class="statusbar"><span>6:27</span><span class="right">●●● 􀛨</span></div>
+      <div class="screen">
+        <div class="brandbar">
+          <div class="wordmark">TenThirty <i>•</i></div>
+          <div class="gear"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.6a7 7 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c0-.4.1-.8.1-1.2z"/></svg></div>
+        </div>
+        <div class="pagetitle">Rules</div>
+        <div class="pagesub">Your sleep contract</div>
+        <div class="scroll">
+          <div class="card">
+            <div class="cardhead"><div class="eyebrow">Sleep window</div><div class="edit">Edit</div></div>
+            <div class="kv">8:00 PM – 4:20 AM</div>
+            <div class="kd">Apps always lock during this window.</div>
+          </div>
+          <div class="card">
+            <div class="cardhead"><div class="eyebrow">Blocked apps</div><div class="edit">Edit apps</div></div>
+            <div class="chips" style="margin-top:12px">
+              <span class="chip">TikTok</span><span class="chip">Instagram</span>
+              <span class="chip">YouTube</span><span class="chip">Reddit</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Daily rules</div>
+            <div class="rl"><div class="ic">☕</div><div><div class="nm">Caffeine cutoff</div><div class="gr">Grace: 15 min</div></div><div class="tm">2:00 PM</div><div class="toggle"></div></div>
+            <div class="rl"><div class="ic">🏋️</div><div><div class="nm">Workout cutoff</div><div class="gr">Grace: 30 min</div></div><div class="tm">5:00 PM</div><div class="toggle"></div></div>
+            <div class="rl"><div class="ic">🛁</div><div><div class="nm">Warm shower or bath</div><div class="gr">Grace: 10 min</div></div><div class="tm">6:30 PM</div><div class="toggle"></div></div>
+            <div class="rl"><div class="ic">💡</div><div><div class="nm">Dim lights</div><div class="gr">Grace: 10 min</div></div><div class="tm">9:15 PM</div><div class="toggle"></div></div>
+            <div class="rl"><div class="ic">📵</div><div><div class="nm">Phone away</div><div class="gr">Grace: 5 min</div></div><div class="tm">10:15 PM</div><div class="toggle off"></div></div>
+            <div class="rl"><div class="ic">🙏</div><div><div class="nm">Gratitude journal</div><div class="gr">Grace: 10 min</div></div><div class="tm">10:20 PM</div><div class="toggle off"></div></div>
+            <div class="rl"><div class="ic">📝</div><div><div class="nm">Tomorrow's plan</div><div class="gr">Grace: 10 min</div></div><div class="tm">10:25 PM</div><div class="toggle"></div></div>
+          </div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="eyebrow">How enforcement works</div>
+            <div class="explain">
+              Miss a rule <span class="arrow">→</span> <b>apps lock.</b><br>
+              Confirm late <span class="arrow">→</span> <b>10-minute cooldown.</b><br>
+              Sleep window <span class="arrow">→</span> <b>apps stay locked until wake time.</b>
+            </div>
+          </div>
+        </div>
+        <div class="meadow" aria-hidden="true" style="height:150px;opacity:.55">
+          <div class="hill b"></div><div class="hill"></div>
+          <div class="fly s" style="left:24%;bottom:36px;animation-delay:1s"></div>
+          <div class="fly s" style="left:76%;bottom:52px;animation-delay:2.4s"></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>Today</div>
+        <div class="tab on"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Rules</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 16v-4M11 16V8M16 16v-6"/></svg>Trends</div>
+      </div>
+    </div>
+    <div class="frame-label">Rules — contract editor</div>
+  </div>
+
+  <!-- ═══════════ TRENDS ═══════════ -->
+  <div class="frame-col">
+    <div class="states" style="visibility:hidden"><button>·</button></div>
+    <div class="phone">
+      <div class="statusbar"><span>6:27</span><span class="right">●●● 􀛨</span></div>
+      <div class="screen">
+        <div class="brandbar">
+          <div class="wordmark">TenThirty <i>•</i></div>
+          <div class="gear"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.6a7 7 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c0-.4.1-.8.1-1.2z"/></svg></div>
+        </div>
+        <div class="pagetitle">Trends</div>
+        <div class="pagesub">Proof your contract worked</div>
+        <div class="scroll">
+          <div class="grid">
+            <div class="stat"><div class="n">5</div><div class="l">nights protected</div></div>
+            <div class="stat"><div class="n">3</div><div class="l">all-clear days</div></div>
+            <div class="stat"><div class="n">14</div><div class="l">late-night opens blocked</div></div>
+            <div class="stat"><div class="n neutral">2</div><div class="l">late confirmations</div></div>
+          </div>
+          <div class="card" style="position:relative" id="trendcal">
+            <div class="cardhead"><div class="eyebrow">Kept contracts</div><div class="edit" style="color:var(--faint)">Each firefly = one kept night</div></div>
+            <div class="bigcal">
+              <div></div><div class="dh">S</div><div class="dh">M</div><div class="dh">T</div><div class="dh">W</div><div class="dh">T</div><div class="dh">F</div><div class="dh">S</div>
+              <div class="wk">W1</div>
+              <div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div>
+              <div class="wk">W2</div>
+              <div class="cell past"><div class="ff"></div></div><div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell past"><div class="ff"></div></div>
+              <div class="wk">W3</div>
+              <div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell past"><div class="ff"></div></div><div class="cell past"></div><div class="cell past"><div class="ff"></div></div><div class="cell today" id="tonightCell" title="Click to replay the landing"></div>
+              <div class="wk">W4</div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="wk">W5</div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            </div>
+            <div class="monthlabel">July 2026</div>
+            <div id="flight2"></div>
+          </div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="eyebrow">Rule insights</div>
+            <div class="insight"><div class="ic">💡</div><div><div class="t1">Best rule</div><div class="t2">Dim lights</div><div class="t3">Completed on time 5 of 7 days</div></div></div>
+            <div class="insight"><div class="ic">📝</div><div><div class="t1">Needs work</div><div class="t2">Tomorrow's plan</div><div class="t3">Missed 3 times</div></div></div>
+            <div class="insight"><div class="ic">🌙</div><div><div class="t1">Sleep window</div><div class="t2">No scroll apps opened</div><div class="t3">5 of 7 nights</div></div></div>
+          </div>
+        </div>
+        <div class="meadow" aria-hidden="true" style="height:150px;opacity:.55">
+          <div class="hill b"></div><div class="hill"></div>
+          <div class="fly s" style="left:30%;bottom:40px;animation-delay:.6s"></div>
+          <div class="fly s" style="left:68%;bottom:58px;animation-delay:2s"></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>Today</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Rules</div>
+        <div class="tab on"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 16v-4M11 16V8M16 16v-6"/></svg>Trends</div>
+      </div>
+    </div>
+    <div class="frame-label">Trends — the meadow of kept nights</div>
+  </div>
+</div>
+
+<script>
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const HOLD_MS=3000;
+  document.body.classList.add('single-screen');
+
+  const BUG_SVG=`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="abgSingle" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff0c2" stop-opacity="1"/>
+      <stop offset="38%" stop-color="#f3c969" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#e7b574" stop-opacity="0"/></radialGradient></defs>
+    <g class="wings" fill="#23261f" fill-opacity=".82">
+      <path d="M30 28 C15 17 9 26 15 36 C21 45 30 38 30 31 Z"/>
+      <path d="M34 28 C49 17 55 26 49 36 C43 45 34 38 34 31 Z"/></g>
+    <circle cx="32" cy="46" r="16" fill="url(#abgSingle)"/>
+    <path d="M32 16 C29 16 28 19 28 23 L28 41 C28 47 30 51 32 51 C34 51 36 47 36 41 L36 23 C36 19 35 16 32 16 Z" fill="#15150f"/>
+    <circle cx="32" cy="15" r="4" fill="#0e0e0a"/>
+    <circle cx="32" cy="46" r="4.6" fill="#fff4d2"/>
+    <path d="M30 13 C26 8 23 7 21 5" stroke="#0e0e0a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <path d="M34 13 C38 8 41 7 43 5" stroke="#0e0e0a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  </svg>`;
+
+  const frameCols=[...document.querySelectorAll('.frame-col')];
+  const tabNames=['today','rules','trends'];
+  let fireflyEarned=false;
+  let fireflyLanded=false;
+  let latestRoamingRect=null;
+  function switchTab(name){
+    const leavingToday=name!=='today' && frameCols[0]?.classList.contains('active-frame');
+    const enteringToday=name==='today' && !frameCols[0]?.classList.contains('active-frame');
+    if(name==='trends' && fireflyEarned && !fireflyLanded){
+      latestRoamingRect=todayFireflyDot ? todayFireflyDot.getBoundingClientRect() : latestRoamingRect;
+      roaming=false;
+      if(todayRoamTimer)clearTimeout(todayRoamTimer);
+    }
+    const index=tabNames.indexOf(name);
+    if(index<0)return;
+    frameCols.forEach((col,i)=>col.classList.toggle('active-frame',i===index));
+    document.querySelectorAll('.tabbar .tab').forEach(tab=>{
+      const text=tab.textContent.trim().toLowerCase();
+      tab.classList.toggle('on',text===name);
+    });
+    if(name==='trends' && fireflyEarned && !fireflyLanded){
+      requestAnimationFrame(()=>landInTrends(latestRoamingRect));
+    }
+    if(enteringToday && fireflyEarned && !fireflyLanded){
+      bigfly.hidden=false;
+      startFly(false);
+    }
+  }
+  document.querySelectorAll('.tabbar .tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      const name=tab.textContent.trim().toLowerCase();
+      if(tabNames.includes(name))switchTab(name);
+    });
+  });
+  switchTab('today');
+
+  /* ── morphing status section templates ── */
+  const LOCKSVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  const APPS='TikTok · Instagram · YouTube · Reddit';
+  const TPL={
+    unlocked:`<div class="cap">${LOCKSVG}If a rule is missed, these lock</div><div class="apps">${APPS}</div>`,
+    locked:`<div class="cap">${LOCKSVG}Apps are locked</div>
+      <div class="why"><b>Warm shower or bath</b> was missed.</div>
+      <div class="apps">${APPS}</div>
+      <button class="holdlate" id="holdlate"><div class="fill"></div><span>Hold 3 sec to confirm late</span></button>
+      <div class="note">After confirming, apps unlock in 10 minutes</div>`,
+    cooldown:`<div class="cap">${LOCKSVG}Cooling down</div>
+      <div class="cool">7:42</div>
+      <div class="why">Apps unlock soon · next rule: <b>Dim lights</b> at 9:15 PM</div>
+      <div class="apps">${APPS}</div>`,
+    window:`<div class="cap">🌙&nbsp;Sleep window active</div>
+      <div class="why">Scroll apps locked until <b>4:20 AM</b> — no 1 AM scroll tonight.</div>`
+  };
+  const statusbox=document.getElementById('statusbox');
+  function setMode(mode){
+    document.querySelectorAll('.states button[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+    if(mode==='clear'){enterClear();return}
+    exitClear();
+    statusbox.className='statusbox'+(mode==='unlocked'?'':' '+mode);
+    statusbox.innerHTML=TPL[mode];
+    if(mode==='locked'){
+      const b=document.getElementById('holdlate');
+      wireHold(b,b.querySelector('.fill'),()=>setMode('cooldown'));
+    }
+  }
+  document.querySelectorAll('.states button[data-mode]').forEach(btn=>
+    btn.addEventListener('click',()=>setMode(btn.dataset.mode)));
+
+  /* ── hold helper ── */
+  function wireHold(el,fillEl,onDone){
+    let t0=null,raf=null;
+    function step(ts){if(!t0)t0=ts;const p=Math.min((ts-t0)/HOLD_MS,1);
+      fillEl.style.width=(p*100)+'%';
+      if(p>=1){stop();onDone();return}
+      raf=requestAnimationFrame(step)}
+    function start(e){e.preventDefault();stop();raf=requestAnimationFrame(step)}
+    function stop(){if(raf)cancelAnimationFrame(raf);raf=null;t0=null;fillEl.style.width='0%'}
+    el.addEventListener('pointerdown',start);
+    el.addEventListener('pointerup',stop);
+    el.addEventListener('pointerleave',stop);
+    el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter')start(e)});
+    el.addEventListener('keyup',stop);
+    el.setAttribute('tabindex','0');
+  }
+
+  /* ── inbox: poof burst → next rises with bounce ── */
+  const inbox=document.getElementById('inbox');
+  const clearedline=document.getElementById('clearedline');
+  let cleared=4,todo=3;
+  function sparks(row){
+    if(reduced)return;
+    const r=row.getBoundingClientRect(),host=row.parentElement,hr=host.getBoundingClientRect();
+    for(let i=0;i<12;i++){
+      const s=document.createElement('div');s.className='spark';
+      const cx=r.left-hr.left+r.width/2, cy=r.top-hr.top+r.height/2;
+      s.style.left=cx+'px';s.style.top=cy+'px';host.appendChild(s);
+      const ang=Math.random()*Math.PI*2, dist=42+Math.random()*66;
+      s.animate([
+        {transform:'translate(0,0) scale(1)',opacity:1},
+        {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist-14}px) scale(.25)`,opacity:0}
+      ],{duration:560+Math.random()*260,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'})
+      .onfinish=()=>s.remove();
+    }
+  }
+  function activate(row){
+    row.classList.remove('upcoming');row.classList.add('active','bounce');
+    row.addEventListener('animationend',()=>row.classList.remove('bounce'),{once:true});
+    const tt=row.querySelector('.tt');
+    if(row.dataset.n==='2')tt.innerHTML='Due <b>9:15 PM</b> · grace until 9:25';
+    if(row.dataset.n==='3')tt.innerHTML='Due <b>10:25 PM</b> · grace until 10:35';
+  }
+  function completeRow(row){
+    sparks(row);
+    row.classList.add('poof');
+    cleared++;todo--;
+    clearedline.innerHTML=`<b>${cleared} cleared</b> earlier today · ${todo} to go`;
+    setTimeout(()=>{
+      row.classList.add('gone');
+      const next=inbox.querySelector('.row.upcoming');
+      if(next)setTimeout(()=>activate(next),200);
+      else setTimeout(enterClear,650);
+    },reduced?0:480);
+  }
+  inbox.querySelectorAll('.row').forEach(row=>{
+    wireHold(row,row.querySelector('.fill'),()=>{
+      if(!row.classList.contains('active'))return;
+      completeRow(row);
+    });
+  });
+
+  /* ── inbox zero: big firefly zooms close, roams the meadow ── */
+  const bigfly=document.getElementById('bigfly');
+  const todayFireflyField=document.getElementById('todayFireflyField');
+  const clearpanel=document.getElementById('clearpanel');
+  const inboxwrap=document.getElementById('inboxwrap');
+  let roaming=false;
+  let todayFireflyDot=null;
+  let todayRoamTimer=null;
+  function enterClear(){
+    document.querySelectorAll('.states button[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode==='clear'));
+    document.getElementById('todayScreen').classList.add('clear-mode');
+    statusbox.className='statusbox window';
+    statusbox.innerHTML=TPL.window;
+    clearedline.innerHTML='<b>7 cleared</b> earlier today · 0 to go';
+    inbox.hidden=true;
+    inboxwrap.hidden=false;
+    clearpanel.hidden=true;
+    fireflyEarned=true;
+    fireflyLanded=false;
+    startFly(true);
+  }
+  function exitClear(){
+    document.getElementById('todayScreen').classList.remove('clear-mode');
+    stopTodayFirefly();
+    inbox.hidden=false;
+    clearpanel.hidden=true;inboxwrap.hidden=false;
+  }
+  function stopTodayFirefly(){
+    roaming=false;
+    if(todayRoamTimer)clearTimeout(todayRoamTimer);
+    todayRoamTimer=null;
+    todayFireflyField.innerHTML='';
+    todayFireflyDot=null;
+    bigfly.hidden=true;bigfly.style.opacity='0';
+  }
+  function startFly(playEntrance=true){
+    stopTodayFirefly();
+    roaming=true;
+
+    const home={x:.50,y:.66};
+    const dot=document.createElement('div');
+    dot.className='today-firefly-dot';
+    dot.style.left=(home.x*100)+'%';
+    dot.style.top=(home.y*100)+'%';
+    dot.style.opacity='0';
+    todayFireflyField.appendChild(dot);
+    todayFireflyDot=dot;
+
+    if(reduced){
+      dot.style.opacity='1';
+      latestRoamingRect=dot.getBoundingClientRect();
+      roamDot(home);
+      return;
+    }
+
+    if(!playEntrance){
+      dot.style.opacity='1';
+      latestRoamingRect=dot.getBoundingClientRect();
+      roamDot(home);
+      return;
+    }
+
+    const bug=document.createElement('div');
+    bug.className='travel-bug';
+    bug.innerHTML=BUG_SVG;
+    bug.style.position='absolute';
+    bug.style.left=(home.x*100)+'%';
+    bug.style.top=(home.y*100)+'%';
+    todayFireflyField.appendChild(bug);
+
+    // This mirrors fun.html: below screen -> close to viewer -> back to field -> resting glow.
+    bug.style.transform='translate(0,58vh) scale(.45) rotate(10deg)';
+    bug.style.opacity='0';
+    requestAnimationFrame(()=>{
+      bug.style.transition='opacity .5s ease, transform 2.05s cubic-bezier(.22,.55,.24,1)';
+      bug.style.opacity='1';
+      bug.style.transform='translate(0,-42vh) scale(2.9) rotate(-4deg)';
+      setTimeout(()=>{
+        bug.style.transition='transform 1.3s cubic-bezier(.45,0,.2,1)';
+        bug.style.transform='translate(0,0) scale(.5) rotate(0deg)';
+        setTimeout(()=>{
+          dot.style.opacity='1';
+          bug.style.transition='opacity .6s ease';
+          bug.style.opacity='0';
+          setTimeout(()=>bug.remove(),650);
+          latestRoamingRect=dot.getBoundingClientRect();
+          roamDot(home);
+        },1150);
+      },2050);
+    });
+  }
+
+  function roamDot(home){
+    if(!roaming || !todayFireflyDot)return;
+    const nx=.12+Math.random()*.76;
+    const ny=Math.random()<.82 ? (.58+Math.random()*.22) : (.46+Math.random()*.12);
+    todayFireflyDot.style.left=(nx*100)+'%';
+    todayFireflyDot.style.top=(ny*100)+'%';
+    latestRoamingRect=todayFireflyDot.getBoundingClientRect();
+    todayRoamTimer=setTimeout(()=>roamDot({x:nx,y:ny}),1700+Math.random()*2200);
+  }
+
+  /* ── the firefly settles into tonight's cell on the TRENDS phone ── */
+  const flight2=document.getElementById('flight2');
+  const tonightCell=document.getElementById('tonightCell');
+  function landInTrends(startRect){
+    const cal=document.getElementById('trendcal');
+    if(!cal||!tonightCell)return;
+    roaming=false;
+    fireflyLanded=true;
+    if(todayRoamTimer)clearTimeout(todayRoamTimer);
+    todayRoamTimer=null;
+    todayFireflyField.innerHTML='';
+    todayFireflyDot=null;
+    bigfly.hidden=true;
+    bigfly.style.opacity='0';
+    tonightCell.querySelectorAll('.ff').forEach(f=>f.remove());
+    const land=()=>{const f=document.createElement('div');f.className='ff';tonightCell.appendChild(f)};
+    if(reduced){land();return}
+    const tr=tonightCell.getBoundingClientRect();
+    const sx=startRect ? startRect.left+startRect.width/2 : innerWidth/2;
+    const sy=startRect ? startRect.top+startRect.height/2 : 92;
+    const ex=tr.left+tr.width/2;
+    const ey=tr.top+tr.height/2;
+
+    const traveler=document.createElement('div');
+    traveler.className='travel-bug';
+    traveler.innerHTML=BUG_SVG;
+    document.body.appendChild(traveler);
+    traveler.style.left=sx+'px';
+    traveler.style.top=sy+'px';
+    traveler.style.opacity='0';
+
+    const anim=traveler.animate([
+      {transform:'translate(0,0) scale(.55) rotate(0deg)',opacity:0},
+      {transform:'translate(-18px,18px) scale(1.35) rotate(-7deg)',opacity:1,offset:.22},
+      {transform:`translate(${(ex-sx)*.45+38}px,${(ey-sy)*.44-54}px) scale(1.05) rotate(8deg)`,opacity:1,offset:.58},
+      {transform:`translate(${ex-sx}px,${ey-sy}px) scale(.18) rotate(0deg)`,opacity:1}
+    ],{duration:2400,easing:'cubic-bezier(.42,.02,.25,1)',fill:'forwards'});
+    anim.onfinish=()=>{
+      traveler.remove();
+      land();
+      const landed=tonightCell.querySelector('.ff');
+      landed.animate([
+        {transform:'scale(.2)',opacity:0},
+        {transform:'scale(1.9)',opacity:1,offset:.45},
+        {transform:'scale(1)',opacity:1}
+      ],{duration:720,easing:'cubic-bezier(.34,1.56,.64,1)'});
+    };
+  }
+  /* init */
+  setMode('unlocked');
+</script>
+</body>
+</html>

@@ -28,7 +28,11 @@ struct LullApp: App {
         let windDownStartCategory = UNNotificationCategory(
             identifier: "WIND_DOWN_START", actions: [startRitualAction], intentIdentifiers: [], options: [])
 
-        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory, windDownStartCategory])
+        let appLockedAction = UNNotificationAction(identifier: "OPEN_TODAY", title: "Open TenThirty", options: [.foreground])
+        let appLockedCategory = UNNotificationCategory(
+            identifier: "APP_LOCKED", actions: [appLockedAction], intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory, windDownStartCategory, appLockedCategory])
     }
 
     var body: some Scene {
@@ -38,9 +42,11 @@ struct LullApp: App {
                 .environmentObject(subscriptions)
                 .environmentObject(sleepSoundsAudio)
                 .onAppear {
+                    #if DEBUG
+                    state.applyUITestLaunchArgumentsIfNeeded()
+                    #endif
                     appDelegate.state = state
                     PostHogReplayService.configureIfNeeded(installId: state.installId)
-                    state.refreshOnboardingFireflyCompanionFlag()
                     subscriptions.start()
                     state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
                     state.evaluateTrialStatus()
@@ -98,14 +104,18 @@ struct LullApp: App {
                     state.scheduleAllNotifications()
                 }
                 state.refreshAppBlockingShield()
-                state.resetPrepIfNeeded()
-                state.refreshPrepLiveActivityIfEligible()
-                // Apply any prep-item toggles made from the Lock Screen while the app was closed.
-                let pendingIds = LiveActivityService.shared.consumePendingToggles()
-                for id in pendingIds { state.togglePrepDone(id) }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                if !state.hasCompletedOnboarding {
+                    state.resetPrepIfNeeded()
+                    state.refreshPrepLiveActivityIfEligible()
+                    // Apply any prep-item toggles made from the Lock Screen while the app was closed.
                     let pendingIds = LiveActivityService.shared.consumePendingToggles()
-                    for id in pendingIds { state.togglePrepDone(id) }
+                    for id in pendingIds { state.togglePrepFromLiveActivity(id) }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        let pendingIds = LiveActivityService.shared.consumePendingToggles()
+                        for id in pendingIds { state.togglePrepFromLiveActivity(id) }
+                    }
+                } else {
+                    LiveActivityService.shared.end(dismissalPolicy: .immediate)
                 }
                 // The Sleep Companion "Mid-Sleep mode" button writes a flag
                 // to the App Group before openAppWhenRun foregrounds us.
@@ -158,6 +168,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 self.state?.requestedTab = 0
             case "WIND_DOWN_START":
                 self.state?.cancelWindDownStartNotifications()
+                self.state?.requestedTab = 0
+            case "APP_LOCKED":
                 self.state?.requestedTab = 0
             case "MID_SLEEP_CHECK":
                 self.state?.showMidSleepMode = true

@@ -1,8 +1,8 @@
 import SwiftUI
-import FamilyControls
 import PostHog
+import StoreKit
 
-// Onboarding coordinator — a quick profile, then a generated routine.
+// Onboarding coordinator — sleep-thief branch, rules, contract, then trial.
 struct OnboardingView: View {
     @EnvironmentObject var state: AppState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,20 +26,15 @@ struct OnboardingView: View {
         ZStack {
             switch step {
             case 0: OnbSleepProblemView(step: $step)
-            case 1: OnbBaselineRatingView(step: $step)
-            case 2: OnbPromiseView(step: $step)
-            case 3: OnbBedtimeView(
+            case 1: OnbSleepRulesView(step: $step)
+            case 2: OnbBedtimeView(
                 step: $step,
                 kind: .target,
                 bedtime: $state.targetBedtime,
                 wakeTime: $state.targetWakeTime
             )
-            case 4: OnbPreBedView(step: $step)
-            case 5: OnbMethodologyView(step: $step)
-            case 6: OnbRoutineReadyView(step: $step)
-            case 7: OnbCommitmentView(step: $step)
-            case 8: OnbAppBlockingCommitmentView(step: $step)
-            case 9: OnbTrialPaywallView()
+            case 3: OnbRoutineReadyView(step: $step)
+            case 4: OnbTrialPaywallView()
             default: EmptyView()
             }
 
@@ -103,16 +98,11 @@ struct OnboardingView: View {
 
     private func screenName(for step: Int) -> String {
         switch step {
-        case 0: return "sleep_problem"
-        case 1: return "baseline_rating"
-        case 2: return "promise"
-        case 3: return "bedtime"
-        case 4: return "pre_bed"
-        case 5: return "methodology"
-        case 6: return "routine_ready"
-        case 7: return "commitment"
-        case 8: return "app_blocking_commitment"
-        case 9: return "trial_paywall"
+        case 0: return "sleep_thief"
+        case 1: return "sleep_rules"
+        case 2: return "sleep_window"
+        case 3: return "sleep_contract"
+        case 4: return "trial_paywall"
         default: return "unknown"
         }
     }
@@ -341,7 +331,7 @@ struct OnbPromiseView: View {
                     HStack {
                         Button {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            step = 1
+                            step = 2
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 15, weight: .semibold))
@@ -367,17 +357,20 @@ struct OnbPromiseView: View {
                     .padding(.bottom, compact ? 22 : 30)
 
                     VStack(spacing: 14) {
-                        (Text("Unlock the power of a ")
-                            .foregroundColor(.lullInk0)
-                         + Text("wind-down ritual")
-                            .font(.serifItalic(compact ? 25 : 27))
-                            .foregroundColor(.lullAmber))
-                            .font(.serif(compact ? 25 : 27, weight: .semibold))
-                            .lineSpacing(4)
+                        VStack(spacing: 0) {
+                            Text("A ritual you can")
+                                .font(.serif(compact ? 25 : 27, weight: .semibold))
+                                .foregroundColor(.lullInk0)
+
+                            Text("actually follow")
+                                .font(.serifItalic(compact ? 25 : 27))
+                                .foregroundColor(.lullAmber)
+                                .padding(.top, -3)
+                        }
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 330)
 
-                        Text("A guided routine helps quiet the overthinking, removes the distractions, and walks you to sleep - night after night.")
+                        Text("TenThirty sends the nudge, gives you one card at a time, and closes the loop after you sleep.")
                             .font(.system(size: compact ? 13.5 : 14.5))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(4)
@@ -395,7 +388,7 @@ struct OnbPromiseView: View {
 
                     PrimaryCTA(title: "Let's continue") {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        step = 3
+                        step = 4
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, compact ? 24 : 34)
@@ -418,52 +411,359 @@ private struct PromiseStage: View {
         GeometryReader { geo in
             let width = geo.size.width
             let height = geo.size.height
-            let cardWidth = min(170, width * 0.48)
-            let cardHeight = min(236, height * 0.72)
-            let todayX = width * 0.02
-            let todayY = height - cardHeight - 10
-            let weekX = width - cardWidth - 2
-            let weekY = max(8, height * 0.02)
+            let phoneHeight = min(height - 4, 344)
+            let phoneWidth = min(width * 0.68, phoneHeight * 0.56)
+            let lift = sparkle ? -5.0 : 5.0
 
-            ZStack(alignment: .topLeading) {
+            ZStack {
                 PromiseSparkle(size: 13)
-                    .position(x: width * 0.13, y: height * 0.25)
+                    .position(x: width * 0.16, y: height * 0.23)
                     .opacity(sparkle ? 0.9 : 0.18)
                     .scaleEffect(sparkle ? 1.1 : 0.72)
 
                 PromiseSparkle(size: 18)
-                    .position(x: width * 0.86, y: height * 0.17)
+                    .position(x: width * 0.83, y: height * 0.18)
                     .opacity(sparkle ? 0.22 : 0.95)
                     .scaleEffect(sparkle ? 0.74 : 1.08)
 
                 PromiseSparkle(size: 12)
-                    .position(x: width * 0.91, y: height * 0.77)
+                    .position(x: width * 0.85, y: height * 0.82)
                     .opacity(sparkle ? 0.82 : 0.14)
                     .scaleEffect(sparkle ? 1.04 : 0.68)
 
-                PromiseCard(
-                    title: "You tonight",
-                    meta: "12:47 AM",
-                    style: .tonight
-                )
-                .frame(width: cardWidth, height: cardHeight)
-                .position(x: todayX + cardWidth / 2, y: todayY + cardHeight / 2)
+                PromisePhoneDemo(swipeProgress: sparkle ? 1 : 0)
+                    .frame(width: phoneWidth, height: phoneHeight)
+                    .shadow(color: Color.black.opacity(0.45), radius: 28, y: 18)
+                    .offset(y: lift)
 
-                PromiseCard(
-                    title: "You in a week",
-                    meta: "ASLEEP - 10:40 PM",
-                    style: .week
+                PromiseActionLabel(
+                    icon: "bell.badge.fill",
+                    title: "Reminder",
+                    subtitle: "10:05 PM"
                 )
-                .frame(width: cardWidth, height: cardHeight)
-                .position(x: weekX + cardWidth / 2, y: weekY + cardHeight / 2)
+                .position(x: max(42, width * 0.08), y: height * 0.34)
+                .offset(y: sparkle ? 5 : -3)
 
-                PromiseArrow()
-                    .stroke(Color.lullAmber, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                    .frame(width: 48, height: 42)
-                    .shadow(color: .lullAmberGlow, radius: 8)
-                    .position(x: width * 0.52, y: height * 0.54 + (sparkle ? -5 : 3))
+                PromiseActionLabel(
+                    icon: "hand.draw.fill",
+                    title: "Swipe",
+                    subtitle: "done"
+                )
+                .position(x: min(width - 56, width * 0.84), y: height * 0.44)
+                .offset(y: sparkle ? -4 : 5)
+
+                PromiseActionLabel(
+                    icon: "moon.zzz.fill",
+                    title: "Sleep",
+                    subtitle: "10:40 PM"
+                )
+                .position(x: max(42, width * 0.10), y: height * 0.73)
+                .offset(y: sparkle ? 4 : -4)
             }
         }
+    }
+}
+
+private struct PromisePhoneDemo: View {
+    var swipeProgress: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = geo.size.height
+            let cardOffset = CGFloat(swipeProgress) * 34
+            let cardRotation = Double(swipeProgress) * 7
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 34)
+                    .fill(Color(hex: "#050404"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 34)
+                            .strokeBorder(Color.white.opacity(0.30), lineWidth: 1.2)
+                    )
+
+                RoundedRectangle(cornerRadius: 29)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#211509"), Color(hex: "#100b07"), Color(hex: "#201708")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .padding(6)
+
+                VStack(spacing: 0) {
+                    PromiseStatusBar()
+                        .padding(.horizontal, 17)
+                        .padding(.top, 13)
+
+                    PromiseDynamicIsland()
+                        .padding(.top, -13)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        PromiseNotificationCard()
+                            .padding(.top, 9)
+
+                        Text("Tonight's ritual")
+                            .font(.serif(19, weight: .semibold))
+                            .foregroundColor(.lullInk0)
+                            .padding(.top, 2)
+
+                        ZStack {
+                            PromiseRitualMiniCard(
+                                title: "Warm shower",
+                                detail: "Finished 20 min ago",
+                                icon: "shower.fill",
+                                done: true
+                            )
+                            .scaleEffect(0.92)
+                            .offset(y: -12)
+                            .opacity(0.48)
+
+                            PromiseRitualMiniCard(
+                                title: "Brain dump",
+                                detail: "Swipe right when done",
+                                icon: "pencil.and.list.clipboard",
+                                done: swipeProgress > 0.5
+                            )
+                            .rotationEffect(.degrees(cardRotation))
+                            .offset(x: cardOffset, y: 16)
+                            .overlay(alignment: .topTrailing) {
+                                PromiseDoneStamp()
+                                    .opacity(swipeProgress)
+                                    .scaleEffect(0.78 + swipeProgress * 0.22)
+                                    .padding(.top, 12)
+                                    .padding(.trailing, 10)
+                            }
+                        }
+                        .frame(height: height * 0.30)
+                        .padding(.top, 2)
+
+                        HStack(spacing: 7) {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("swipe cards as you finish")
+                                .font(.mono(8))
+                                .kerning(0.8)
+                        }
+                        .foregroundColor(.lullInk3)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 2)
+
+                        PromiseSleepPayoff()
+                            .padding(.top, 7)
+                    }
+                    .padding(.horizontal, 16)
+
+                    Spacer(minLength: 10)
+                }
+
+                SleepyFace(isAsleep: true)
+                    .frame(width: 82, height: 82)
+                    .scaleEffect(0.68)
+                    .position(x: width * 0.29, y: height * 0.94)
+                    .shadow(color: Color.lullAmber.opacity(0.28), radius: 14, y: 7)
+            }
+            .frame(width: width, height: height)
+        }
+    }
+}
+
+private struct PromiseStatusBar: View {
+    var body: some View {
+        HStack {
+            Text("10:05")
+                .font(.system(size: 9, weight: .semibold))
+            Spacer()
+            HStack(spacing: 3) {
+                Image(systemName: "cellularbars")
+                Image(systemName: "wifi")
+                Image(systemName: "battery.100")
+            }
+            .font(.system(size: 7.5, weight: .semibold))
+        }
+        .foregroundColor(.lullInk0.opacity(0.88))
+    }
+}
+
+private struct PromiseDynamicIsland: View {
+    var body: some View {
+        Capsule()
+            .fill(Color.black.opacity(0.92))
+            .frame(width: 54, height: 15)
+            .overlay(
+                Circle()
+                    .fill(Color(hex: "#1b2733"))
+                    .frame(width: 5, height: 5)
+                    .offset(x: 17)
+            )
+    }
+}
+
+private struct PromiseNotificationCard: View {
+    var body: some View {
+        HStack(spacing: 9) {
+            ZStack {
+                Circle()
+                    .fill(Color.lullAmber.opacity(0.16))
+                    .frame(width: 28, height: 28)
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text("TenThirty")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.lullInk0)
+                    Text("now")
+                        .font(.system(size: 8))
+                        .foregroundColor(.lullInk3)
+                }
+
+                Text("Wind-down starts now")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundColor(.lullInk1)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(9)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.075))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+}
+
+private struct PromiseRitualMiniCard: View {
+    var title: String
+    var detail: String
+    var icon: String
+    var done: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(Color.lullAmber.opacity(0.13))
+                        .frame(width: 31, height: 31)
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.lullAmber)
+                }
+
+                Spacer()
+
+                Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(done ? Color(hex: "#8fce93") : .lullInk4)
+            }
+
+            Spacer(minLength: 0)
+
+            Text(title)
+                .font(.serif(18, weight: .semibold))
+                .foregroundColor(.lullInk0)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(detail)
+                .font(.system(size: 9.5))
+                .foregroundColor(.lullInk3)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, minHeight: 112, maxHeight: 122)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color(hex: "#15100c"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+                )
+        )
+        .shadow(color: Color.black.opacity(0.28), radius: 16, y: 10)
+    }
+}
+
+private struct PromiseDoneStamp: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 8, weight: .bold))
+            Text("DONE")
+                .font(.mono(8))
+                .kerning(0.8)
+        }
+        .foregroundColor(Color(hex: "#8fce93"))
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(Color(hex: "#8fce93").opacity(0.13)))
+        .overlay(Capsule().strokeBorder(Color(hex: "#8fce93").opacity(0.38), lineWidth: 1))
+    }
+}
+
+private struct PromiseSleepPayoff: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Asleep near target")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                Text("10:40 PM")
+                    .font(.serifItalic(18))
+                    .foregroundColor(.lullAmber)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.lullAmber.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+                )
+        )
+    }
+}
+
+private struct PromiseActionLabel: View {
+    var icon: String
+    var title: String
+    var subtitle: String
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.lullAmber)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+                .overlay(Circle().strokeBorder(Color.lullAmber.opacity(0.24), lineWidth: 1))
+
+            Text(title)
+                .font(.mono(8))
+                .kerning(0.8)
+                .foregroundColor(.lullInk2)
+                .lineLimit(1)
+
+            Text(subtitle)
+                .font(.system(size: 8))
+                .foregroundColor(.lullInk4)
+                .lineLimit(1)
+        }
+        .frame(width: 62)
     }
 }
 
@@ -749,14 +1049,6 @@ struct OnbSleepProblemView: View {
     @Binding var step: Int
     @EnvironmentObject var state: AppState
 
-    private let options = [
-        "I struggle to fall asleep even when I'm tired",
-        "My brain races the moment I lie down",
-        "I wake during the night and can't fall back asleep",
-        "I wake up feeling unrefreshed",
-        "Other",
-    ]
-
     var body: some View {
         LullScreen(glow: false, glowX: 0.2, glowY: -0.1, glowRadius: 210, glowOpacity: 0.7) {
             AmberGlow(x: 0.2, y: -0.1, radius: 210, opacity: 0.7)
@@ -764,7 +1056,11 @@ struct OnbSleepProblemView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 1, total: 4, showBack: false)
+                    OnbTopBar(step: 1, total: 4, showBack: false, onSkip: {
+                        state.setSleepThief(.scrolling)
+                        applySleepProblemMapping(.scrolling)
+                        step = 1
+                    })
                     StepProgress(step: 1, total: 4)
 
                     HStack {
@@ -775,12 +1071,12 @@ struct OnbSleepProblemView: View {
                     .padding(.top, 18)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Kicker(text: "Step one · what's keeping you up")
-                        Text("What's keeping you\nfrom sleep?")
+                        Kicker(text: "Step one · sleep thief")
+                        Text("What steals\nyour sleep?")
                             .font(.serif(30))
                             .foregroundColor(.lullInk0)
                             .padding(.top, 10)
-                        Text("Pick anything that sounds like you. Multiple is fine.")
+                        Text("Pick the thing TenThirty should protect you from first.")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(4)
@@ -790,33 +1086,108 @@ struct OnbSleepProblemView: View {
                     .padding(.bottom, 24)
 
                     VStack(spacing: 10) {
-                        ForEach(Array(options.enumerated()), id: \.offset) { i, text in
+                        ForEach(SleepThief.allCases) { thief in
                             ChoiceRow(
-                                text: text,
-                                selected: state.selectedSleepProblems.contains(i),
-                                onTap: { toggle(&state.selectedSleepProblems, i) }
+                                text: thief.title,
+                                selected: state.sleepThief == thief,
+                                onTap: {
+                                    state.setSleepThief(thief)
+                                    applySleepProblemMapping(thief)
+                                }
                             )
                         }
-                        ChoiceRow(
-                            text: "All of the above",
-                            hint: "Pick this if everything resonates",
-                            selected: state.selectedSleepProblems.count == options.count,
-                            onTap: {
-                                if state.selectedSleepProblems.count == options.count {
-                                    state.selectedSleepProblems = []
-                                } else {
-                                    state.selectedSleepProblems = Set(0..<options.count)
-                                }
-                            }
-                        )
                     }
                     .padding(.horizontal, 20)
 
                     VStack(spacing: 0) {
-                        PrimaryCTA(title: "Continue", disabled: state.selectedSleepProblems.isEmpty) { step = 1 }
+                        PrimaryCTA(title: "Choose sleep rules", disabled: state.sleepThief == nil) { step = 1 }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 32)
+                    .padding(.bottom, 36)
+                }
+            }
+        }
+    }
+
+    private func applySleepProblemMapping(_ thief: SleepThief) {
+        switch thief {
+        case .scrolling:
+            state.selectedSleepProblems = [0]
+            state.selectedPreBedActivities.insert(0)
+        case .racingMind:
+            state.selectedSleepProblems = [1]
+        case .bedtimeDelay:
+            state.selectedSleepProblems = [0, 4]
+        case .nightPhone:
+            state.selectedSleepProblems = [2]
+            state.selectedPreBedActivities.insert(0)
+        case .inconsistentNights:
+            state.selectedSleepProblems = [4]
+        }
+    }
+}
+
+// MARK: - Screen 2: Sleep Rules
+
+struct OnbSleepRulesView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        LullScreen(glow: false, glowX: 0.82, glowY: 0.06, glowRadius: 260, glowOpacity: 0.5) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer().frame(height: 16)
+                    OnbTopBar(step: 2, total: 4, onBack: { step = 0 }, onSkip: {
+                        if state.selectedSleepRules.isEmpty {
+                            state.toggleSleepRule(.dimLights)
+                            state.toggleSleepRule(.tomorrowsPlan)
+                        }
+                        step = 2
+                    })
+                    StepProgress(step: 2, total: 4)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Kicker(text: "Step two · your rules")
+                        Text("Choose your\nsleep rules.")
+                            .font(.serif(30))
+                            .foregroundColor(.lullInk0)
+                            .padding(.top, 10)
+                        Text("Pick 1-3. If you miss the grace window, scroll-lock starts until you recover, then cools down for 10 minutes.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.lullInk2)
+                            .lineSpacing(4)
+                    }
+                    .padding(.horizontal, Lull.horizontalPad)
+                    .padding(.top, 10)
+                    .padding(.bottom, 24)
+
+                    VStack(spacing: 10) {
+                        ForEach(SleepRuleKind.allCases) { rule in
+                            ChoiceRow(
+                                text: rule.title,
+                                hint: rule.detail,
+                                selected: state.selectedSleepRules.contains(rule),
+                                disabled: !state.selectedSleepRules.contains(rule) && state.selectedSleepRules.count >= 3,
+                                onTap: { state.toggleSleepRule(rule) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    Text("\(state.selectedSleepRules.count)/3 selected")
+                        .font(.mono(10))
+                        .kerning(1.3)
+                        .foregroundColor(.lullInk3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 18)
+
+                    PrimaryCTA(title: "Build my contract", disabled: state.selectedSleepRules.isEmpty) {
+                        step = 2
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                     .padding(.bottom, 36)
                 }
             }
@@ -848,7 +1219,10 @@ struct OnbWhatWakesView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 3, total: 6, onBack: { step = 4 })
+                    OnbTopBar(step: 3, total: 6, onBack: { step = 4 }, onSkip: {
+                        state.selectedWakes = []
+                        step = 6
+                    })
                     StepProgress(step: 3, total: 6)
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -899,8 +1273,11 @@ struct OnbBaselineRatingView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                OnbTopBar(step: 2, total: 4, onBack: { step = 0 })
-                StepProgress(step: 2, total: 4)
+                    OnbTopBar(step: 3, total: 4, onBack: { step = 1 }, onSkip: {
+                        state.baselineScore = 3
+                        step = 3
+                    })
+                StepProgress(step: 3, total: 4)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Kicker(text: "Step two · your baseline")
@@ -923,7 +1300,7 @@ struct OnbBaselineRatingView: View {
 
                 PrimaryCTA(title: "Continue", disabled: score == 0) {
                     state.baselineScore = AppState.clampedSleepScore(score)
-                    step = 2
+                    step = 3
                 }
                 .opacity(score == 0 ? 0.45 : 1)
                 .padding(.horizontal, 20)
@@ -1007,8 +1384,17 @@ struct OnbBedtimeView: View {
 
                 VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                OnbTopBar(step: kind.progressStep, total: 4, onBack: { step = 2 })
-                StepProgress(step: kind.progressStep, total: 4)
+                OnbTopBar(step: 3, total: 4, onBack: { step = 1 }, onSkip: {
+                    if kind == .target {
+                        state.currentBedtime = state.targetBedtime
+                        state.currentWakeTime = state.targetWakeTime
+                        state.typicalBedtime = state.targetBedtime
+                        state.typicalWakeTime = state.targetWakeTime
+                        state.refreshOnboardingClassifications()
+                    }
+                    step = 3
+                })
+                StepProgress(step: 3, total: 4)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Kicker(text: kind.kicker)
@@ -1079,14 +1465,14 @@ struct OnbBedtimeView: View {
                     if kind == .current {
                         state.targetBedtime = state.currentBedtime
                         state.targetWakeTime = state.currentWakeTime
-                        step = 4
+                        step = 3
                     } else {
                         state.currentBedtime = state.targetBedtime
                         state.currentWakeTime = state.targetWakeTime
                         state.typicalBedtime = state.targetBedtime
                         state.typicalWakeTime = state.targetWakeTime
                         state.refreshOnboardingClassifications()
-                        step = 4
+                        step = 3
                     }
                 }
                     .padding(.horizontal, 20)
@@ -1253,7 +1639,10 @@ struct OnbPreBedView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 4, total: 4, onBack: { step = 3 })
+                    OnbTopBar(step: 4, total: 4, onBack: { step = 4 }, onSkip: {
+                        state.selectedPreBedActivities = []
+                        step = 6
+                    })
                     StepProgress(step: 4, total: 4)
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -1283,7 +1672,7 @@ struct OnbPreBedView: View {
                     .padding(.horizontal, 20)
 
                     PrimaryCTA(title: "Build my routine", disabled: state.selectedPreBedActivities.isEmpty) {
-                        step = 5
+                        step = 6
                     }
                         .padding(.horizontal, 20)
                         .padding(.top, 32)
@@ -1328,7 +1717,10 @@ struct OnbTriedView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 6, total: 6, onBack: { step = 9 })
+                    OnbTopBar(step: 6, total: 6, onBack: { step = 8 }, onSkip: {
+                        state.selectedTriedThings = []
+                        step = 11
+                    })
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Last check · what you've tried")
@@ -1541,9 +1933,9 @@ struct OnbMethodologyView: View {
 
                     Spacer()
 
-                    PrimaryCTA(title: "Show my routine", disabled: !canProceed) {
+                    PrimaryCTA(title: "Show my contract", disabled: !canProceed) {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        step = 6
+                        step = 7
                     }
                     .opacity(canProceed ? 1 : 0.58)
                     .padding(.horizontal, Lull.horizontalPad)
@@ -1589,22 +1981,20 @@ struct OnbMethodologyView: View {
 struct OnbRoutineReadyView: View {
     @Binding var step: Int
     @EnvironmentObject var state: AppState
+    @State private var didGenerateContractRoutine = false
 
     private static let timeFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "h:mm"; return f
     }()
 
     private var headlineSub: String {
-        let windDownMins = state.coreRoutine
-            .filter { $0.mode == .inSequence }
-            .reduce(0) { $0 + (NightlyStepKind.forLabel($1.label)?.estimatedMinutes ?? 5) }
-        let count = state.scheduledRoutine.count
-        return "\(windDownMins) min wind-down. \(count) steps. We kept what works and quietly dropped what doesn't."
+        "If you miss a rule, scroll-lock starts. Complete it late and the lock cools down for 10 minutes."
     }
 
     var body: some View {
         routineContent
         .onAppear {
+            generateRoutineIfNeeded()
             playRevealHaptic()
         }
     }
@@ -1622,14 +2012,14 @@ struct OnbRoutineReadyView: View {
                     // Copy
                     VStack(spacing: 16) {
                         Kicker(
-                            text: state.routineShouldStartNow ? "Your routine is ready for tonight!" : "Your routine is ready",
+                            text: "Your sleep contract is ready",
                             color: .lullAmberSoft
                         )
                         VStack(spacing: -4) {
-                            Text("Tonight's plan,")
+                            Text("Choose the rules.")
                                 .font(.serif(32))
                                 .foregroundColor(.lullInk0)
-                            Text("built for your brain.")
+                            Text("We'll enforce timing.")
                                 .font(.serifItalic(36))
                                 .foregroundColor(.lullAmber)
                         }
@@ -1643,24 +2033,27 @@ struct OnbRoutineReadyView: View {
                     .padding(.top, 40)
                     .padding(.bottom, 8)
 
-                    // Personalized routine card
-                    let displayRoutine = state.scheduledRoutine.filter {
-                        $0.step.label != "Brightness check" && $0.step.label != "Temperature check"
-                    }
+                    // Sleep-contract card
+                    let displayRoutine = state.sleepContractPreviewItems
                     VStack(spacing: 0) {
-                        ForEach(Array(displayRoutine.enumerated()), id: \.offset) { i, row in
+                        ForEach(displayRoutine) { row in
                             HStack(spacing: 14) {
-                                Text(row.timeString)
+                                Text(OnbRoutineReadyView.timeFmt.string(from: row.dueAt))
                                     .font(.mono(11))
                                     .kerning(0.6)
                                     .foregroundColor(.lullInk3)
                                     .frame(width: 50, alignment: .leading)
                                 Ember(size: 5)
-                                Text(row.step.label)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.lullInk1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.rule.title)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.lullInk1)
+                                    Text("Grace: \(row.rule.graceMinutes)m")
+                                        .font(.mono(9))
+                                        .foregroundColor(.lullInk4)
+                                }
                                 Spacer()
-                                Text(row.badge)
+                                Text("RULE")
                                     .font(.mono(9))
                                     .kerning(0.4)
                                     .foregroundColor(.lullInk4)
@@ -1669,21 +2062,25 @@ struct OnbRoutineReadyView: View {
                             .padding(.vertical, 12)
                             Divider().background(Color.lullLine)
                         }
-                        // Target sleep time
                         HStack(spacing: 14) {
                             Text(OnbRoutineReadyView.timeFmt.string(from: state.typicalBedtime))
                                 .font(.mono(11))
                                 .kerning(0.6)
                                 .foregroundColor(.lullInk3)
                                 .frame(width: 50, alignment: .leading)
-                            Image(systemName: "moon.fill")
-                                .font(.system(size: 7))
+                            Image(systemName: "lock.shield.fill")
+                                .font(.system(size: 9))
                                 .foregroundColor(.lullAmber)
-                            Text("Sleep")
-                                .font(.system(size: 14))
-                                .foregroundColor(.lullInk1)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Scroll apps locked")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.lullInk1)
+                                Text("Until \(OnbRoutineReadyView.timeFmt.string(from: state.typicalWakeTime))")
+                                    .font(.mono(9))
+                                    .foregroundColor(.lullInk4)
+                            }
                             Spacer()
-                            Text("Target")
+                            Text("LOCK")
                                 .font(.mono(9))
                                 .kerning(0.4)
                                 .foregroundColor(.lullInk4)
@@ -1703,14 +2100,10 @@ struct OnbRoutineReadyView: View {
 
                     VStack(spacing: 0) {
                         PrimaryCTA(
-                            title: state.shouldOfferImmediateOnboardingRitual ? "Continue" : "Set tonight's reminder"
+                            title: "Continue to activation"
                         ) {
-                            step = 7
+                            step = 4
                         }
-                        GhostButton(title: "Customize first") {
-                            state.completeOnboardingToRoutine()
-                        }
-                            .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 28)
@@ -1726,6 +2119,18 @@ struct OnbRoutineReadyView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             feedback.impactOccurred(intensity: 0.65)
         }
+    }
+
+    private func generateRoutineIfNeeded() {
+        guard !didGenerateContractRoutine else { return }
+        didGenerateContractRoutine = true
+        state.currentBedtime = state.targetBedtime
+        state.currentWakeTime = state.targetWakeTime
+        state.typicalBedtime = state.targetBedtime
+        state.typicalWakeTime = state.targetWakeTime
+        state.refreshOnboardingClassifications()
+        let answers = OnboardingAnswers(from: state)
+        state.applyGeneratedRoutine(generateStartingRoutine(from: answers), scheduleNotifications: false)
     }
 }
 
@@ -1904,365 +2309,16 @@ struct OnbCommitmentView: View {
     }
 }
 
-// MARK: - App-Blocking Commitment
-
-struct OnbAppBlockingCommitmentView: View {
-    @Binding var step: Int
-    @EnvironmentObject var state: AppState
-    @ObservedObject private var probe = AppBlockingAccessProbe.shared
-    @State private var selection = FamilyActivitySelection()
-    @State private var showPicker = false
-    @State private var isSaving = false
-
-    private static let timeFmt: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "h:mm a"
-        return f
-    }()
-
-    private var lockAt: Date { state.typicalBedtime }
-    private var unlockAt: Date { state.typicalWakeTime }
-    private var appCount: Int { selection.applicationTokens.count }
-    private var categoryCount: Int { selection.categoryTokens.count }
-    private var selectedCount: Int { appCount + categoryCount }
-    private var hasSelection: Bool { selectedCount > 0 }
-
-    var body: some View {
-        LullScreen(glow: true, glowX: 0.48, glowY: 0.16, glowRadius: 290, glowOpacity: 0.64) {
-            GeometryReader { geo in
-                let compact = geo.size.height < 740
-
-                VStack(spacing: 0) {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: compact ? 14 : 18) {
-                            Spacer().frame(height: compact ? 18 : 30)
-                            BrandMark(large: false)
-
-                            VStack(spacing: 12) {
-                                HStack(spacing: 8) {
-                                    Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
-                                    OnbPremiumChip()
-                                }
-                                (Text("What should TenThirty ")
-                                    .foregroundColor(.lullInk0)
-                                 + Text("lock away?")
-                                    .font(.serifItalic(compact ? 34 : 38))
-                                    .foregroundColor(.lullAmber))
-                                    .font(.serif(compact ? 32 : 36, weight: .semibold))
-                                    .multilineTextAlignment(.center)
-
-                                Text("During your sleep window, TenThirty blocks the apps that keep you scrolling. It only runs at night, and you can bypass it any night you need to.")
-                                    .font(.system(size: 14.5))
-                                    .foregroundColor(.lullInk2)
-                                    .lineSpacing(4)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: 318)
-                            }
-                            .padding(.top, compact ? 10 : 18)
-
-                            HStack(spacing: 10) {
-                                OnbBlockingTimeTile(
-                                    title: "LOCK AT",
-                                    value: Self.timeFmt.string(from: lockAt)
-                                )
-                                OnbBlockingTimeTile(
-                                    title: "UNLOCK AT",
-                                    value: Self.timeFmt.string(from: unlockAt)
-                                )
-                            }
-                            .padding(.horizontal, Lull.horizontalPad)
-
-                            accessCard
-                                .padding(.horizontal, Lull.horizontalPad)
-
-                            appPickerCard
-                                .padding(.horizontal, Lull.horizontalPad)
-
-                            Spacer().frame(height: hasSelection && probe.isApproved ? 128 : 92)
-                        }
-                        .frame(maxWidth: 430)
-                        .frame(maxWidth: .infinity)
-                    }
-
-                    bottomBar
-                }
-            }
-        }
-        .familyActivityPicker(isPresented: $showPicker, selection: $selection)
-        .onAppear {
-            selection = state.appBlockingSelection
-            probe.refresh()
-        }
-    }
-
-    private var accessCard: some View {
-        VStack(alignment: .leading, spacing: probe.isApproved ? 0 : 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("STEP 1 · APP BLOCKING")
-                    .font(.mono(10))
-                    .kerning(1.3)
-                    .foregroundColor(.lullInk3)
-                Spacer()
-                Text(probe.isApproved ? "ACCESS APPROVED" : probe.statusText.uppercased())
-                    .font(.mono(9.5))
-                    .kerning(1)
-                    .foregroundColor(probe.isApproved ? Color(hex: "#8fce93") : .lullAmber)
-            }
-
-            if !probe.isApproved {
-                Text(probe.detailText)
-                    .font(.system(size: 13))
-                    .foregroundColor(.lullInk2)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    Task { await probe.requestAccess() }
-                } label: {
-                    HStack(spacing: 8) {
-                        if probe.isChecking {
-                            ProgressView()
-                                .tint(.lullBgDeep)
-                        } else {
-                            Image(systemName: "lock.shield")
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        Text("Check access")
-                            .font(.system(size: 14.5, weight: .semibold))
-                    }
-                    .foregroundColor(.lullBgDeep)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 46)
-                    .background(Capsule().fill(Color.lullAmber))
-                    .shadow(color: .lullAmberGlow, radius: 12, y: 4)
-                }
-                .buttonStyle(.plain)
-                .disabled(probe.isChecking)
-                .opacity(probe.isChecking ? 0.75 : 1)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color.white.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(probe.isApproved ? Color(hex: "#8fce93").opacity(0.25) : Color.lullAmber.opacity(0.16), lineWidth: 1)
-        )
-    }
-
-    private var appPickerCard: some View {
-        Button {
-            guard probe.isApproved else { return }
-            showPicker = true
-        } label: {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 8) {
-                    Text("STEP 2 · CHOOSE APPS")
-                        .font(.mono(10))
-                        .kerning(1.3)
-                        .foregroundColor(probe.isApproved ? .lullInk1 : .lullInk3)
-                    if selectedCount > 0 {
-                        Text("· \(selectedCount) SELECTED")
-                            .font(.mono(10))
-                            .kerning(1.0)
-                            .foregroundColor(.lullAmber)
-                    }
-                    Spacer()
-                    Image(systemName: probe.isApproved ? "chevron.right" : "lock.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(probe.isApproved ? .lullAmber : .lullInk4)
-                }
-
-                HStack(spacing: 10) {
-                    ForEach(selectionSlots, id: \.self) { slot in
-                        OnbBlockingSelectionSlot(kind: slot)
-                    }
-                }
-
-                if selectedCount > 0 {
-                    Text(selectionSummary)
-                        .font(.system(size: 12.5))
-                        .foregroundColor(.lullInk3)
-                        .lineSpacing(3)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(probe.isApproved ? Color.white.opacity(0.04) : Color.white.opacity(0.025))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .strokeBorder(
-                        probe.isApproved ? Color.lullAmber.opacity(0.16) : Color.lullLineStrong,
-                        style: StrokeStyle(lineWidth: 1, dash: probe.isApproved ? [] : [5, 5])
-                    )
-            )
-            .opacity(probe.isApproved ? 1 : 0.52)
-        }
-        .buttonStyle(.plain)
-        .disabled(!probe.isApproved)
-    }
-
-    private var bottomBar: some View {
-        VStack(spacing: 10) {
-            if probe.isApproved && hasSelection {
-                PrimaryCTA(title: isSaving ? "Saving..." : "Lock it in for tonight", disabled: isSaving) {
-                    guard !isSaving else { return }
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    isSaving = true
-                    state.configureAppBlocking(
-                        selection: selection,
-                        enabled: true,
-                        startTime: lockAt,
-                        endTime: unlockAt,
-                        graceMinutes: state.appBlockingGraceMinutes
-                    )
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
-                        step = 9
-                    }
-                }
-            }
-
-            GhostButton(title: "Not tonight") {
-                step = 9
-            }
-        }
-        .padding(.horizontal, Lull.horizontalPad)
-        .padding(.top, 18)
-        .padding(.bottom, 34)
-        .background(
-            LinearGradient(
-                colors: [Color.lullBg.opacity(0), Color.lullBg.opacity(0.96), Color.lullBg],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .bottom)
-        )
-    }
-
-    private var selectionSlots: [OnbBlockingSelectionSlot.Kind] {
-        var slots: [OnbBlockingSelectionSlot.Kind] = []
-        let tokenCount = min(selectedCount, 3)
-        for index in 0..<tokenCount {
-            slots.append(index < appCount ? .app : .category)
-        }
-        while slots.count < 3 {
-            slots.append(.empty)
-        }
-        return slots
-    }
-
-    private var selectionSummary: String {
-        var parts: [String] = []
-        if appCount > 0 {
-            parts.append("\(appCount) \(appCount == 1 ? "app" : "apps")")
-        }
-        if categoryCount > 0 {
-            parts.append("\(categoryCount) \(categoryCount == 1 ? "category" : "categories")")
-        }
-        return parts.joined(separator: " · ")
-    }
-}
-
-private struct OnbBlockingTimeTile: View {
-    var title: String
-    var value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.mono(10))
-                .kerning(1.2)
-                .foregroundColor(.lullInk4)
-            Text(value)
-                .font(.system(size: 19, weight: .semibold))
-                .foregroundColor(.lullInk1)
-                .minimumScaleFactor(0.82)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.035))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.lullLineStrong, lineWidth: 1)
-        )
-    }
-}
-
-private struct OnbPremiumChip: View {
-    var body: some View {
-        Text("PREMIUM")
-            .font(.mono(8.5))
-            .kerning(1.1)
-            .foregroundColor(.lullAmber)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(Color.lullAmber.opacity(0.10)))
-            .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.28), lineWidth: 1))
-    }
-}
-
-private struct OnbBlockingSelectionSlot: View {
-    enum Kind: Hashable {
-        case app
-        case category
-        case empty
-    }
-
-    var kind: Kind
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(background)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(border, style: StrokeStyle(lineWidth: 1, dash: kind == .empty ? [5, 5] : []))
-                )
-                .frame(width: 50, height: 50)
-
-            Image(systemName: icon)
-                .font(.system(size: kind == .empty ? 17 : 16, weight: .semibold))
-                .foregroundColor(iconColor)
-        }
-    }
-
-    private var icon: String {
-        switch kind {
-        case .app: return "app.fill"
-        case .category: return "square.grid.2x2.fill"
-        case .empty: return "plus"
-        }
-    }
-
-    private var background: Color {
-        kind == .empty ? Color.clear : Color.lullAmber.opacity(0.10)
-    }
-
-    private var border: Color {
-        kind == .empty ? Color.lullLineStrong : Color.lullAmber.opacity(0.30)
-    }
-
-    private var iconColor: Color {
-        kind == .empty ? .lullInk4 : .lullAmber
-    }
-}
-
 // MARK: - Trial Paywall
 
 struct OnbTrialPaywallView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isStartingTrial = false
     @State private var statusMessage: String?
+    @State private var didPresentOfferCodeSheet = false
 
     var body: some View {
         LullScreen(glow: true, glowX: 0.5, glowY: 0.04, glowRadius: 320, glowOpacity: 0.62) {
@@ -2282,7 +2338,7 @@ struct OnbTrialPaywallView: View {
                             trialBenefits(compact: compact)
                             TrialReassuranceCard()
 
-                            Text("Free for 7 nights. No card, no charge.\nAfter that, TenThirty is $49.99/yr only if you choose to stay.")
+                            Text("7 nights free, then TenThirty is $49.99/yr. Apple will confirm before the trial starts.")
                                 .font(.system(size: 13))
                                 .foregroundColor(.lullInk3)
                                 .lineSpacing(4)
@@ -2309,13 +2365,17 @@ struct OnbTrialPaywallView: View {
                 }
             }
         }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, didPresentOfferCodeSheet else { return }
+            Task { await refreshAfterOfferCodeRedemption() }
+        }
     }
 
     private func trialHero(compact: Bool) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: compact ? 4 : 6) {
             Kicker(text: "Your first week", color: .lullAmberSoft)
 
-            VStack(spacing: compact ? -11 : -13) {
+            VStack(spacing: compact ? -15 : -17) {
                 Text("Try 7 nights")
                     .font(.serif(compact ? 38 : 44, weight: .semibold))
                     .foregroundColor(.lullInk0)
@@ -2328,7 +2388,7 @@ struct OnbTrialPaywallView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
 
-            Text("Start your wind-down ritual tonight, then decide after you've actually slept.")
+            Text("Start 7 nights with scroll-lock enforcement. Your rules, protected when timing matters.")
                 .font(.system(size: 14.5))
                 .foregroundColor(.lullInk2)
                 .lineSpacing(4)
@@ -2341,24 +2401,24 @@ struct OnbTrialPaywallView: View {
     private func trialBenefits(compact: Bool) -> some View {
         VStack(spacing: compact ? 10 : 12) {
             TrialBenefit(
-                title: "A routine built for your brain",
-                detail: "Personalized to what actually keeps you up"
+                title: "Hard sleep-window lock",
+                detail: "Selected apps stay blocked through your sleep window"
             )
             TrialBenefit(
-                title: "Block the 1am scroll",
-                detail: "Lock distracting apps through your sleep window"
+                title: "Rules with consequences",
+                detail: "Miss a grace window and scroll-lock protects the moment"
             )
             TrialBenefit(
-                title: "Quiet the overthinking",
-                detail: "Brain dump + guided breathing, step by step"
+                title: "Late recovery cooldown",
+                detail: "Complete a rule late, then wait 10 minutes before unlock"
             )
             TrialBenefit(
-                title: "A nudge when it's time",
-                detail: "Gentle reminders that keep you on track"
+                title: "Tomorrow's plan",
+                detail: "Clear the loops that keep replaying at bedtime"
             )
             TrialBenefit(
-                title: "Drift off, then silence",
-                detail: "Sleep sounds that fade out on their own"
+                title: "One firefly per kept contract",
+                detail: "Quiet proof that you kept your word tonight"
             )
         }
         .padding(16)
@@ -2374,10 +2434,48 @@ struct OnbTrialPaywallView: View {
 
     private func bottomBar(bottomInset: CGFloat) -> some View {
         VStack(spacing: 12) {
-            TrialCTA {
+            TrialCTA(
+                title: isStartingTrial ? "Starting..." : "Start scroll-lock trial",
+                subtitle: "Then $49.99/year. Cancel anytime.",
+                disabled: isStartingTrial || subscriptions.isLoading
+            ) {
+                guard !isStartingTrial && !subscriptions.isLoading else { return }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-                state.completeOnboarding()
+                state.trackPaywallPrimaryTapped(product: .yearly)
+                Task { await purchase(.yearly) }
             }
+
+            Button {
+                guard !isStartingTrial && !subscriptions.isLoading else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                state.trackPaywallPrimaryTapped(product: .monthly)
+                Task { await purchase(.monthly) }
+            } label: {
+                Text("I'll skip the trial and go with $6.99/month")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .underline()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .disabled(isStartingTrial || subscriptions.isLoading)
+            .opacity(isStartingTrial || subscriptions.isLoading ? 0.55 : 1)
+
+            Button {
+                guard !isStartingTrial && !subscriptions.isLoading else { return }
+                redeemOfferCode()
+            } label: {
+                Text("Have a coupon code? Redeem it")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.lullAmberSoft)
+                    .underline()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .disabled(isStartingTrial || subscriptions.isLoading)
+            .opacity(isStartingTrial || subscriptions.isLoading ? 0.55 : 1)
 
             HStack(spacing: 26) {
                 footerButton("Terms") {
@@ -2420,6 +2518,65 @@ struct OnbTrialPaywallView: View {
         openURL(url)
     }
 
+    private func redeemOfferCode() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        statusMessage = "Enter your code in Apple's sheet. We'll unlock TenThirty once Apple confirms it."
+        didPresentOfferCodeSheet = true
+        SKPaymentQueue.default().presentCodeRedemptionSheet()
+
+        Task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            guard !Task.isCancelled else { return }
+            await refreshAfterOfferCodeRedemption()
+        }
+    }
+
+    @MainActor
+    private func refreshAfterOfferCodeRedemption() async {
+        await subscriptions.refreshCustomerInfo()
+        if subscriptions.isLullProActive {
+            state.applyRevenueCatEntitlement(isActive: true)
+            state.completeOnboarding()
+            state.startAppBlockingOfferSetup()
+        } else if didPresentOfferCodeSheet {
+            statusMessage = "If Apple accepted your code, it may take a moment to appear. Tap Restore if TenThirty does not unlock."
+        }
+    }
+
+    @MainActor
+    private func purchase(_ product: LullStoreProduct) async {
+        isStartingTrial = true
+        statusMessage = nil
+        defer { isStartingTrial = false }
+
+        do {
+            if subscriptions.currentOffering == nil {
+                await subscriptions.refreshOfferings()
+            }
+
+            state.trackPurchaseStarted(product: product)
+            try await subscriptions.purchase(product)
+            await subscriptions.refreshCustomerInfo()
+
+            guard subscriptions.isLullProActive else {
+                statusMessage = "We could not confirm the purchase yet. Please try again, or restore if Apple already approved it."
+                return
+            }
+
+            state.applyRevenueCatEntitlement(isActive: true)
+            state.trackPurchaseSucceeded(product: product)
+            state.completeOnboarding()
+            state.startAppBlockingOfferSetup()
+        } catch {
+            if error.localizedDescription.localizedCaseInsensitiveContains("cancel") {
+                state.trackPurchaseCancelled(product: product)
+            } else {
+                state.trackPurchaseFailed(product: product, error: error)
+            }
+            statusMessage = error.localizedDescription
+        }
+    }
+
     @MainActor
     private func restore() async {
         statusMessage = nil
@@ -2427,6 +2584,7 @@ struct OnbTrialPaywallView: View {
         if subscriptions.isLullProActive {
             state.applyRevenueCatEntitlement(isActive: true)
             state.completeOnboarding()
+            state.startAppBlockingOfferSetup()
         } else {
             statusMessage = subscriptions.lastErrorMessage ?? "No active TenThirty Premium purchase was found."
         }
@@ -2508,10 +2666,10 @@ private struct TrialReassuranceCard: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Nothing to enter. Nothing to cancel.")
+                Text("Official App Store trial.")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.lullInk0)
-                Text("We won't ask for payment details to start your trial. Decide if TenThirty's worth it after you've actually slept.")
+                Text("Apple handles payment details securely. You can cancel anytime in your App Store subscriptions.")
                     .font(.system(size: 12))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(2)
@@ -2538,15 +2696,18 @@ private struct TrialReassuranceCard: View {
 }
 
 private struct TrialCTA: View {
+    var title: String
+    var subtitle: String
+    var disabled: Bool
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                Text("Start my free week")
+                Text(title)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.lullBgDeep)
-                Text("No payment info needed")
+                Text(subtitle)
                     .font(.mono(9.5))
                     .kerning(0.8)
                     .foregroundColor(.lullBgDeep.opacity(0.72))
@@ -2558,6 +2719,8 @@ private struct TrialCTA: View {
             .shadow(color: Color.black.opacity(0.4), radius: 12, y: 8)
         }
         .buttonStyle(.plain)
+        .disabled(disabled)
+        .opacity(disabled ? 0.72 : 1)
         .overlay {
             GeometryReader { proxy in
                 let frame = proxy.frame(in: .global)
@@ -2565,7 +2728,7 @@ private struct TrialCTA: View {
                     .preference(key: FireflyCTAFramePreferenceKey.self, value: frame)
                     .preference(
                         key: FireflyCTAStatePreferenceKey.self,
-                        value: FireflyCTAState(frame: frame, enabled: true)
+                        value: FireflyCTAState(frame: frame, enabled: !disabled)
                     )
             }
         }

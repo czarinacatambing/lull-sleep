@@ -1,0 +1,916 @@
+<title>TenThirty — Design Review & Proposed Redesign</title>
+<style>
+  :root{
+    --bg:#0c0807; --bg1:#120c0a; --bg2:#1a110e; --bg3:#231612;
+    --ink0:#f5e7d7; --ink1:#e5d3bf; --ink2:#b9a691; --ink3:#8a7a68; --ink4:#5c4f42;
+    --amber:#f0b96b; --amber-soft:#d99a4a; --amber-deep:#a66a2a; --coral:#e89189;
+    --line:rgba(255,220,190,.08); --line-strong:rgba(255,220,190,.14);
+    --bg-deep:#1a0d06;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+    --sans:-apple-system,system-ui,'Segoe UI',Roboto,sans-serif;
+    --mono:-apple-system,system-ui,'Segoe UI',Roboto,sans-serif; /* no monospace anywhere per direction */
+    --page:#0a0806;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #17100b 0%, transparent 60%),
+      var(--page);
+    color:var(--ink1);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 24px 120px}
+
+  /* ---- page intro ---- */
+  .masthead{border-bottom:1px solid var(--line-strong);padding-bottom:34px;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber-soft)}
+  h1.title{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,54px);color:var(--ink0);margin:14px 0 10px;line-height:1.05}
+  .lede{max-width:680px;color:var(--ink2);font-size:16px}
+  .lede b{color:var(--ink1);font-weight:600}
+
+  .legend{display:flex;flex-wrap:wrap;gap:22px;margin-top:26px;font-size:13px;color:var(--ink3)}
+  .legend .k{display:flex;align-items:center;gap:9px}
+  .swatch{width:26px;height:16px;border-radius:4px;border:1px solid var(--line-strong)}
+  .tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;border-radius:999px;border:1px solid var(--line-strong)}
+  .tag.cur{color:var(--ink3)}
+  .tag.pro{color:var(--amber);border-color:rgba(240,185,107,.4);background:rgba(240,185,107,.06)}
+
+  /* ---- section ---- */
+  section.screen{margin-top:72px}
+  .screen-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .screen-num{font-family:var(--mono);font-size:12px;color:var(--amber-deep);letter-spacing:.15em}
+  .screen-head h2{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--ink0);margin:0}
+  .screen-sub{color:var(--ink3);font-size:14px;max-width:720px;margin:0 0 26px}
+
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
+  @media(max-width:900px){.compare{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .col-tag{align-self:center}
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:340px;max-width:100%;height:720px;border-radius:44px;
+    background:linear-gradient(#0c0807,#120c0a);
+    border:1px solid var(--line-strong);
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.9), inset 0 0 0 6px #050403, inset 0 0 0 7px rgba(255,220,190,.05);
+    position:relative;overflow:hidden;
+  }
+  .phone.meadow{background:
+    radial-gradient(120% 62% at 50% 52%, rgba(111,75,37,.26) 0%, transparent 60%),
+    linear-gradient(#2a1d11,#20170e 32%,#141009 62%,#070604 100%);
+  }
+  .phone .horizon{position:absolute;left:4%;right:4%;top:55%;height:2px;filter:blur(1.4px);
+    background:linear-gradient(90deg,rgba(215,163,90,.18),rgba(125,110,56,.12),transparent);}
+  .phone .grass{position:absolute;left:0;right:0;bottom:0;height:120px;pointer-events:none;
+    background:radial-gradient(90% 120% at 50% 130%, rgba(29,33,16,.7), transparent 70%);}
+  .phone .grass::before{content:"";position:absolute;left:0;right:0;bottom:0;height:64px;
+    -webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 7px);
+            mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 7px);
+    background:linear-gradient(#0c0a06,#050403);opacity:.85}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#050403;border-radius:14px;z-index:40}
+  .statusbar{position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12px;font-weight:600;color:var(--ink1);z-index:30}
+  .statusbar .r{display:flex;gap:6px;align-items:center}
+  .screen-inner{position:absolute;inset:0;padding:56px 20px 0;overflow:hidden}
+  .screen-inner.scroll{overflow-y:auto}
+  .screen-inner.scroll::-webkit-scrollbar{width:0}
+
+  /* firefly */
+  .firefly{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 12px 4px rgba(240,185,107,.45),0 0 30px 10px rgba(240,185,107,.18);z-index:20}
+  @keyframes pulse{0%,100%{opacity:.7;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
+  .firefly{animation:pulse 2.4s ease-in-out infinite}
+
+  /* ---- generic in-phone components ---- */
+  .brand{display:inline-flex;align-items:center;gap:6px;font-size:17px;color:#fff}
+  .brand .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px 2px rgba(240,185,107,.5)}
+  .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber-soft)}
+  .serif{font-family:var(--serif);color:var(--ink0);font-weight:400}
+  /* in-phone data labels: clean sans with tabular figures (NO monospace) */
+  .mono{font-family:var(--sans);font-variant-numeric:tabular-nums}
+  .fakemono{font-family:var(--sans);font-variant-numeric:tabular-nums}
+
+  .card{background:rgba(26,17,14,.58);border:1px solid var(--line);border-radius:18px;padding:16px}
+  .card.accent{border-color:rgba(240,185,107,.34)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line-strong);font-size:11.5px;color:var(--ink1)}
+  .cta{height:48px;border-radius:15px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;color:var(--amber);background:rgba(255,255,255,.045);position:relative;overflow:hidden}
+  .cta .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(240,185,107,.28)}
+  .cta-amber{height:52px;border-radius:14px;background:var(--amber);color:var(--bg-deep);font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 0 26px rgba(240,185,107,.35)}
+  .ico{width:34px;height:34px;border-radius:50%;background:rgba(240,185,107,.12);display:flex;align-items:center;justify-content:center;color:var(--amber);flex:0 0 auto;font-size:15px}
+  .row{display:flex;align-items:center;gap:10px}
+  .divider{height:1px;background:var(--line);margin:12px 0}
+
+  /* choice rows (onboarding) */
+  .choice{position:relative;border-radius:18px;padding:16px 18px 16px 52px;font-size:15px;color:var(--ink1);
+    background:rgba(255,255,255,.025);border:1px solid var(--line)}
+  .choice.sel{color:var(--ink0);background:linear-gradient(rgba(240,185,107,.10),rgba(240,185,107,.04));border-color:rgba(240,185,107,.55);box-shadow:0 10px 22px -8px rgba(0,0,0,.5)}
+  .choice::before{content:"";position:absolute;left:18px;top:17px;width:22px;height:22px;border:1.5px solid rgba(255,255,255,.25)}
+  .choice.sq::before{border-radius:7px}
+  .choice.rad::before{border-radius:50%}
+  .choice.sel::before{background:var(--amber);border-color:var(--amber)}
+  .choice.sel::after{content:"✓";position:absolute;left:23px;top:16px;color:var(--bg-deep);font-size:12px;font-weight:800}
+  .choice.rad.sel::after{content:"";left:25px;top:23px;width:8px;height:8px;border-radius:50%;background:var(--bg-deep)}
+  .ch-hint{font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.35;font-weight:400}
+  .fakemono.ch-hint{letter-spacing:.04em}
+  .grace-chip{position:absolute;right:14px;top:16px;font-size:9px;letter-spacing:.1em;color:var(--amber-soft);border:1px solid rgba(217,154,74,.3);border-radius:999px;padding:2px 7px}
+
+  /* contract-ready card */
+  .lullcard{background:linear-gradient(rgba(255,255,255,.025),rgba(255,255,255,.025));border:1px solid var(--line-strong);border-radius:18px}
+  .cr-row{display:flex;align-items:center;gap:10px;padding:12px 2px}
+  .cr-t{width:44px;font-size:13px;color:var(--ink1)}
+  .cr-mid{flex:1;font-size:14px;color:var(--ink0)}
+  .cr-g{font-size:9px;color:var(--ink4);margin-top:2px}
+  .cr-tag{font-size:9px;letter-spacing:.12em;color:var(--ink4)}
+  .cr-div{height:1px;background:var(--line)}
+  .ember{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px 2px rgba(240,185,107,.4);flex:0 0 auto}
+  .cr-row2{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .cr-mid2{font-size:14.5px;color:var(--ink0)}
+  .cr-t2{font-size:15px;color:var(--ink1)}
+  .cr-g2{color:var(--ink4);font-size:12px}
+  .lockrow{border-bottom:none}
+  /* benefits */
+  .ben{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+  .ben b{color:var(--ink0);font-weight:600}
+  .ben-d{font-size:12px;color:var(--ink3);line-height:1.4;margin-top:1px}
+  .ben-ic{width:24px;height:24px;border-radius:50%;background:rgba(240,185,107,.12);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+
+  /* rules editor rows */
+  .rulerow{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:16px;background:rgba(26,17,14,.5);border:1px solid var(--line);margin-bottom:10px}
+  .rulerow.on{border-left:2px solid var(--amber);border-color:rgba(240,185,107,.3)}
+  /* night dots (trends) */
+  .nd{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink4);display:inline-block}
+  .nd.f{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px 3px rgba(240,185,107,.45)}
+  /* trends calendar with fireflies-in-cells */
+  .cal-hd{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:9.5px;color:var(--ink3);margin-bottom:10px}
+  .cal-row{display:grid;grid-template-columns:repeat(7,1fr);align-items:start}
+  .cal-col{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .cell{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.13);position:relative}
+  .cell.clear{background:rgba(240,185,107,.18);border-color:rgba(240,185,107,.25)}
+  .cell.today{background:rgba(240,185,107,.10);border-color:rgba(240,185,107,.72);border-width:1.6px}
+  .cell .ff{position:absolute;inset:0;margin:auto;width:8px;height:8px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 12px 4px rgba(240,185,107,.5),0 0 30px 10px rgba(240,185,107,.16);animation:pulse 2.6s ease-in-out infinite}
+  .dn{font-size:9.5px;color:var(--ink3)}
+  .cal-big .cell{width:38px;height:38px;border-radius:10px}
+  .cal-big .cell .ff{width:9px;height:9px}
+  .cal-big .dn{font-size:11px}
+  /* the meadow→calendar migration diagram */
+  .flightpath{position:relative;height:2px;margin:2px 0}
+  .flightpath::after{content:"";position:absolute;left:0;right:0;top:0;border-top:1.5px dashed rgba(240,185,107,.35)}
+
+  /* tab bar */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;padding:0 20px 8px;background:rgba(18,12,10,.82);border-top:1px solid var(--line);z-index:35;backdrop-filter:blur(8px)}
+  .tabbar .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--ink3)}
+  .tabbar .tab.on{color:var(--amber)}
+  .tabbar .tab svg{width:20px;height:20px}
+
+  /* proposed checkpoint rail */
+  .rail{position:relative;padding-left:26px}
+  .rail::before{content:"";position:absolute;left:8px;top:6px;bottom:10px;width:2px;background:linear-gradient(var(--amber-deep),var(--line))}
+  .node{position:relative;margin-bottom:14px}
+  .node .bullet{position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;border:2px solid var(--amber-deep);background:var(--bg)}
+  .node.done .bullet{background:var(--amber);border-color:var(--amber);box-shadow:0 0 8px rgba(240,185,107,.5)}
+  .node.active .bullet{border-color:var(--amber);background:var(--bg);box-shadow:0 0 0 4px rgba(240,185,107,.14),0 0 12px rgba(240,185,107,.5)}
+  .node.done .t{color:var(--ink4);text-decoration:line-through}
+
+  /* notes */
+  .notes{margin-top:26px;border-left:2px solid rgba(240,185,107,.4);padding:4px 0 4px 20px;max-width:820px}
+  .notes h4{margin:0 0 12px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber-soft)}
+  .notes ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .notes li{position:relative;padding-left:24px;font-size:14.5px;color:var(--ink2)}
+  .notes li::before{content:"→";position:absolute;left:0;color:var(--amber-deep);font-family:var(--mono)}
+  .notes li b{color:var(--ink0);font-weight:600}
+  .notes li .why{color:var(--ink3)}
+
+  .callout{margin-top:22px;background:rgba(240,185,107,.05);border:1px solid rgba(240,185,107,.18);border-radius:14px;padding:16px 18px;font-size:14px;color:var(--ink2);max-width:860px}
+  .callout b{color:var(--amber)}
+  .fnote{font-size:12px;color:var(--ink4);margin-top:6px}
+  a.jump{color:var(--amber-soft);text-decoration:none;font-size:13px;border-bottom:1px solid rgba(217,154,74,.3)}
+</style>
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="eyebrow">Design review · proposed changes · nothing shipped yet</div>
+    <h1 class="title">TenThirty, as an enforcement system</h1>
+    <p class="lede">A faithful redesign pass on the onboarding flow and the three post-onboarding tabs. Each screen shows the <b>current build</b> next to a <b>proposed</b> version, with the reasoning below. The goal isn't a new look — it's to make the existing "sleep contract" idea read as <b>firm, calm, and instrument-precise</b>, and to give each screen a single clear focus. Approve what you like; I'll only touch Swift after you sign off.</p>
+    <div class="legend">
+      <span class="k"><span class="tag cur">Current</span> as built today</span>
+      <span class="k"><span class="tag pro">Proposed</span> suggested change</span>
+      <span class="k"><span class="swatch" style="background:#0c0807"></span> bg #0c0807</span>
+      <span class="k"><span class="swatch" style="background:#f0b96b"></span> amber #f0b96b</span>
+      <span class="k"><span class="swatch" style="background:#e89189"></span> coral (overdue)</span>
+    </div>
+  </div>
+
+  <!-- ============ THEME NOTE ============ -->
+  <div class="callout">
+    <b>Same palette, same fonts — no new type families.</b> Everything below stays inside TenThirty's existing world: Iowan serif for headlines and rule titles, the system sans for everything else, warm amber on near-black. The proposals change <i>hierarchy, structure, and copy</i>, not the typeface. Where the current build feels flat, it's almost always because every element carries equal weight — so the fixes are about deciding what should be loud and what should recede.
+  </div>
+
+  <!-- ================= WELCOME ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">00</span><h2>Welcome</h2></div>
+    <p class="screen-sub">First launch. Sets the emotional promise before the one-minute setup.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="horizon"></div><div class="grass"></div>
+          <div class="firefly" style="right:60px;bottom:150px"></div>
+          <div class="screen-inner" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:34px;padding-right:34px">
+            <div class="brand" style="justify-content:center;margin-bottom:44px">TenThirty<span class="dot"></span></div>
+            <div class="serif" style="font-size:27px;line-height:1.25;margin-bottom:18px">For the nights your brain won't switch off.</div>
+            <div style="font-size:14.5px;color:var(--ink3);line-height:1.5">A one-minute setup, then a routine built around your night.</div>
+            <div style="flex:1"></div>
+            <div class="cta-amber" style="margin-bottom:40px">Help me sleep</div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="horizon"></div><div class="grass"></div>
+          <div class="firefly" style="right:58px;bottom:148px"></div>
+          <div class="screen-inner" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:34px;padding-right:34px">
+            <div class="brand" style="justify-content:center;margin-bottom:10px">TenThirty<span class="dot"></span></div>
+            <div class="mono" style="font-size:12px;letter-spacing:.28em;color:var(--amber-soft);margin-bottom:40px">10:30 PM</div>
+            <div class="serif" style="font-size:27px;line-height:1.25;margin-bottom:18px">For the nights your brain won't switch off.</div>
+            <div style="font-size:14.5px;color:var(--ink3);line-height:1.5">One minute to set your contract. Then TenThirty guards your bedtime.</div>
+            <div style="flex:1"></div>
+            <div class="cta-amber" style="margin-bottom:40px">Help me sleep</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Name the promise in the wordmark.</b> <span class="why">"TenThirty" is a bedtime, but nothing on screen says so. A quiet <span class="mono">10:30 PM</span> readout under the wordmark makes the name mean something instantly — and previews the instrument voice.</span></li>
+        <li><b>Retire the word "routine."</b> <span class="why">"a routine built around your night" is old positioning. Per the pivot, this is a contract/enforcement product — the subcopy now says what TenThirty actually does: guards your bedtime.</span></li>
+        <li><b>Otherwise: leave it.</b> <span class="why">The firefly + meadow open is already a distinctive, on-brand moment. Restraint here.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ONB 1 — SLEEP THIEF ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">01</span><h2>Onboarding · Sleep thief</h2></div>
+    <p class="screen-sub">Step 1 of 4. Single-select — the one problem to protect against first.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px"></div>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">1 / 4</span>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="brand" style="justify-content:center;margin-bottom:22px">TenThirty<span class="dot"></span></div>
+            <div class="kick fakemono" style="margin-bottom:8px">Step one · sleep thief</div>
+            <div class="serif" style="font-size:30px;line-height:1.15;margin-bottom:8px">What steals<br>your sleep?</div>
+            <div style="font-size:14px;color:var(--ink2);margin-bottom:20px">Pick the thing TenThirty should protect you from first.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="choice sq sel">I get stuck scrolling</div>
+              <div class="choice sq">My brain won't shut off</div>
+              <div class="choice sq">I keep delaying bedtime</div>
+              <div class="choice sq">I wake up and grab my phone</div>
+              <div class="choice sq">My nights are inconsistent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px"></div>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">01 / 04</span>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber);box-shadow:0 0 6px rgba(240,185,107,.6)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="brand" style="justify-content:center;margin-bottom:22px">TenThirty<span class="dot"></span></div>
+            <div class="kick" style="margin-bottom:8px">Step one · sleep thief</div>
+            <div class="serif" style="font-size:30px;line-height:1.15;margin-bottom:8px">What steals<br>your sleep?</div>
+            <div style="font-size:14px;color:var(--ink2);margin-bottom:20px">Pick the one TenThirty should protect you from first.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="choice rad sel">I get stuck scrolling</div>
+              <div class="choice rad">My brain won't shut off</div>
+              <div class="choice rad">I keep delaying bedtime</div>
+              <div class="choice rad">I wake up and grab my phone</div>
+              <div class="choice rad">My nights are inconsistent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Radio, not checkbox, for a single choice.</b> <span class="why">This screen is single-select but uses the same square checkmark box as the multi-select rules screen. A round radio affordance tells the user "pick one" before they read a word — and visually distinguishes it from step 2.</span></li>
+        <li><b>Zero-pad the step counter.</b> <span class="why"><span class="mono">01 / 04</span> reads as a fixed-length progress readout that doesn't jump width as you advance.</span></li>
+        <li><b>Tiny copy tighten:</b> <span class="why">"Pick the one…" mirrors the single-select constraint.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ONB 2 — SLEEP RULES ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">02</span><h2>Onboarding · Sleep rules</h2></div>
+    <p class="screen-sub">Step 2 of 4. Multi-select (1–3) — the rules that become the enforceable contract.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)">‹</div>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">2 / 4</span>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="kick fakemono" style="margin-bottom:8px">Step two · your rules</div>
+            <div class="serif" style="font-size:30px;line-height:1.15;margin-bottom:8px">Choose your<br>sleep rules.</div>
+            <div style="font-size:13.5px;color:var(--ink2);margin-bottom:18px;line-height:1.45">Pick 1-3. If you miss the grace window, scroll-lock starts until you recover, then cools down for 10 minutes.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="choice sq sel">Caffeine cutoff<div class="ch-hint fakemono">CONFIRM YOU'RE DONE WITH CAFFEINE FOR TODAY.</div></div>
+              <div class="choice sq sel">Dim lights<div class="ch-hint fakemono">LOWER LIGHTS BEFORE YOUR SLEEPY SIGNAL GETS CROWDED OUT.</div></div>
+              <div class="choice sq">Warm shower or bath<div class="ch-hint fakemono">TAKE A WARM SHOWER OR BATH BEFORE BED.</div></div>
+              <div class="choice sq">Tomorrow's plan<div class="ch-hint fakemono">WRITE TOMORROW'S PLAN SO YOUR BRAIN CAN STOP REHEARSING.</div></div>
+            </div>
+            <div class="fakemono" style="text-align:center;font-size:11px;color:var(--ink3);margin-top:16px">2/3 selected</div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)">‹</div>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">02 / 04</span>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber);box-shadow:0 0 6px rgba(240,185,107,.6)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="kick" style="margin-bottom:8px">Step two · your rules</div>
+            <div class="serif" style="font-size:30px;line-height:1.15;margin-bottom:8px">Choose your<br>sleep rules.</div>
+            <div style="font-size:13.5px;color:var(--ink2);margin-bottom:18px;line-height:1.45">Pick 1–3. Miss the grace window and scroll-lock starts, until you recover.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="choice sq sel">Caffeine cutoff<div class="ch-hint">Confirm you're done with caffeine for today.</div><span class="grace-chip mono">GRACE 15m</span></div>
+              <div class="choice sq sel">Dim lights<div class="ch-hint">Lower lights before your sleepy signal gets crowded out.</div><span class="grace-chip mono">GRACE 10m</span></div>
+              <div class="choice sq">Warm shower or bath<div class="ch-hint">Take a warm shower or bath before bed.</div><span class="grace-chip mono">GRACE 10m</span></div>
+              <div class="choice sq">Tomorrow's plan<div class="ch-hint">Write tomorrow's plan so your brain can stop rehearsing.</div><span class="grace-chip mono">GRACE 10m</span></div>
+            </div>
+            <div class="mono" style="text-align:center;font-size:11px;color:var(--amber-soft);margin-top:16px;letter-spacing:.08em">2 / 3 SELECTED</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Preview the consequence per rule.</b> <span class="why">A small <span class="mono">GRACE 15m</span> chip on each card shows what "enforcement" concretely means before the user commits — the screen's whole purpose is that these rules have teeth.</span></li>
+        <li><b>Sentence-case hints instead of ALL-CAPS.</b> <span class="why">The component force-uppercases hints; at 3 lines that's a wall of shouting caps. Sentence case is calmer and far more readable — and matches the "calm, non-shaming" tone target.</span></li>
+        <li><b>Make the selection counter feel live</b> <span class="why">— it turns amber once a valid selection exists, as quiet confirmation you can continue.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ONB 3 — SLEEP WINDOW ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">03</span><h2>Onboarding · Sleep window</h2></div>
+    <p class="screen-sub">Step 3 of 4. Drag the arc to set target asleep + wake. The distinctive component of the flow.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)">‹</div>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">3 / 4</span>
+              <span class="fakemono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="kick fakemono" style="margin-bottom:8px">Step three · sleep window</div>
+            <div class="serif" style="font-size:25px;line-height:1.15;margin-bottom:6px">What's your preferred<br>sleeping schedule?</div>
+            <div style="font-size:13.5px;color:var(--ink2);margin-bottom:14px">Your routine will aim you toward this.</div>
+            <div style="text-align:center;margin-bottom:6px"><span class="serif" style="font-size:32px">8h 0m</span><div class="fakemono" style="font-size:10px;letter-spacing:.16em;color:var(--ink4);text-transform:uppercase">Target window</div></div>
+            <div style="display:flex;justify-content:center;margin:6px 0">
+              <svg width="190" height="190" viewBox="0 0 220 220">
+                <circle cx="110" cy="110" r="90" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="20"/>
+                <circle cx="110" cy="110" r="90" fill="none" stroke="#f0b96b" stroke-width="20" stroke-linecap="round" stroke-dasharray="189 566" transform="rotate(247.5 110 110)" opacity=".9"/>
+                <circle cx="75.6" cy="26.8" r="13" fill="#f0b96b"/><text x="75.6" y="31" text-anchor="middle" font-size="12" fill="#1a0d06">☾</text>
+                <circle cx="199.2" cy="121.7" r="13" fill="#f0b96b"/><text x="199.2" y="126" text-anchor="middle" font-size="12" fill="#1a0d06">☀</text>
+              </svg>
+            </div>
+            <div class="row" style="justify-content:space-around;margin-top:2px">
+              <div style="text-align:center"><div style="color:var(--amber);font-size:14px">☾</div><div class="serif" style="font-size:19px">10:30 PM</div><div class="fakemono" style="font-size:9.5px;letter-spacing:.1em;color:var(--ink4);text-transform:uppercase">Target asleep</div></div>
+              <div style="text-align:center"><div style="color:var(--amber);font-size:14px">☀</div><div class="serif" style="font-size:19px">6:30 AM</div><div class="fakemono" style="font-size:9.5px;letter-spacing:.1em;color:var(--ink4);text-transform:uppercase">Target wake</div></div>
+            </div>
+            <div style="position:absolute;left:20px;right:20px;bottom:26px"><div class="cta-amber">Continue</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner">
+            <div class="row" style="justify-content:space-between;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)">‹</div>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">03 / 04</span>
+              <span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--ink3)">SKIP</span>
+            </div>
+            <div class="row" style="gap:5px;margin-bottom:22px"><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--amber);box-shadow:0 0 6px rgba(240,185,107,.6)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line)"></span></div>
+            <div class="kick" style="margin-bottom:8px">Step three · sleep window</div>
+            <div class="serif" style="font-size:25px;line-height:1.15;margin-bottom:6px">When does the<br>window close?</div>
+            <div style="font-size:13.5px;color:var(--ink2);margin-bottom:14px">Apps lock through this window, every night.</div>
+            <div style="display:flex;justify-content:center;margin:2px 0 4px;position:relative">
+              <svg width="198" height="198" viewBox="0 0 220 220">
+                <circle cx="110" cy="110" r="90" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="18"/>
+                <circle cx="110" cy="110" r="90" fill="none" stroke="url(#ag)" stroke-width="18" stroke-linecap="round" stroke-dasharray="189 566" transform="rotate(247.5 110 110)"/>
+                <defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0b96b"/><stop offset="1" stop-color="#a66a2a"/></linearGradient></defs>
+                <circle cx="75.6" cy="26.8" r="12" fill="#f0b96b" stroke="#1a0d06" stroke-width="2"/>
+                <circle cx="199.2" cy="121.7" r="12" fill="#f0b96b" stroke="#1a0d06" stroke-width="2"/>
+              </svg>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center"><span class="mono" style="font-size:30px;color:var(--ink0);font-weight:500">8:00</span><div class="mono" style="font-size:9px;letter-spacing:.18em;color:var(--amber-soft);text-transform:uppercase;margin-top:2px">Hours locked</div></div>
+            </div>
+            <div class="row" style="justify-content:space-around;margin-top:2px">
+              <div style="text-align:center"><div style="color:var(--amber);font-size:14px">☾</div><div class="mono" style="font-size:18px;color:var(--ink0)">10:30 PM</div><div class="mono" style="font-size:9px;letter-spacing:.12em;color:var(--ink4);text-transform:uppercase">Lock</div></div>
+              <div style="text-align:center"><div style="color:var(--amber);font-size:14px">☀</div><div class="mono" style="font-size:18px;color:var(--ink0)">6:30 AM</div><div class="mono" style="font-size:9px;letter-spacing:.12em;color:var(--ink4);text-transform:uppercase">Unlock</div></div>
+            </div>
+            <div style="position:absolute;left:20px;right:20px;bottom:26px"><div class="cta-amber">Continue</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Put the readout inside the dial.</b> <span class="why">The current layout stacks duration above the clock and times below — three separate blocks. Centering the hours count inside the arc makes the whole component read as one instrument you're tuning.</span></li>
+        <li><b>Reframe the window as a lock, not a "schedule."</b> <span class="why">"sleeping schedule / your routine will aim you toward this" is soft/aspirational; the window is actually the hard enforcement boundary. Labels become <span class="mono">LOCK</span> / <span class="mono">UNLOCK</span> — honest about what the times do.</span></li>
+        <li><b>Weight the times up</b> <span class="why">so the two handles read as precise, deliberate set-points rather than captions.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ONB 4 — CONTRACT READY ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">04</span><h2>Onboarding · Contract ready</h2></div>
+    <p class="screen-sub">The payoff screen — the generated contract, presented before activation. The emotional climax of setup.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="text-align:center">
+            <div class="brand" style="justify-content:center;font-size:24px;margin:6px 0 20px">TenThirty<span class="dot"></span></div>
+            <div class="kick fakemono" style="color:var(--amber-soft);margin-bottom:12px">Your sleep contract is ready</div>
+            <div class="serif" style="font-size:30px;line-height:1.1">Choose the rules.</div>
+            <div class="serif" style="font-size:33px;font-style:italic;color:var(--amber);margin-bottom:12px">We'll enforce timing.</div>
+            <div style="font-size:13px;color:var(--ink2);margin-bottom:18px;line-height:1.5">If you miss a rule, scroll-lock starts. Complete it late and the lock cools down for 10 minutes.</div>
+            <div class="lullcard" style="text-align:left;padding:4px 16px">
+              <div class="cr-row"><span class="fakemono cr-t">2:00</span><span class="ember"></span><div class="cr-mid">Caffeine cutoff<div class="fakemono cr-g">Grace: 15m</div></div><span class="fakemono cr-tag">RULE</span></div>
+              <div class="cr-div"></div>
+              <div class="cr-row"><span class="fakemono cr-t">9:15</span><span class="ember"></span><div class="cr-mid">Dim lights<div class="fakemono cr-g">Grace: 10m</div></div><span class="fakemono cr-tag">RULE</span></div>
+              <div class="cr-div"></div>
+              <div class="cr-row"><span class="fakemono cr-t">10:30</span><span style="color:var(--amber)">🛡</span><div class="cr-mid">Scroll apps locked<div class="fakemono cr-g">Until 6:30</div></div><span class="fakemono cr-tag">LOCK</span></div>
+            </div>
+            <div class="cta-amber" style="margin-top:20px">Continue to activation</div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="text-align:center">
+            <div class="brand" style="justify-content:center;font-size:24px;margin:6px 0 18px">TenThirty<span class="dot"></span></div>
+            <div class="kick" style="color:var(--amber-soft);margin-bottom:10px">Your contract</div>
+            <div class="serif" style="font-size:29px;line-height:1.12">You choose the rules.</div>
+            <div class="serif" style="font-size:31px;font-style:italic;color:var(--amber);margin-bottom:16px">TenThirty holds the line.</div>
+            <div class="lullcard" style="text-align:left;padding:14px 16px 8px">
+              <div class="mono" style="font-size:9px;letter-spacing:.16em;color:var(--ink4);display:flex;justify-content:space-between;padding:0 2px 8px;border-bottom:1px solid var(--line)"><span>CHECKPOINT</span><span>DUE · GRACE</span></div>
+              <div class="cr-row2"><div class="cr-mid2">Caffeine cutoff</div><span class="mono cr-t2">2:00<span class="cr-g2"> +15</span></span></div>
+              <div class="cr-row2"><div class="cr-mid2">Dim lights</div><span class="mono cr-t2">9:15<span class="cr-g2"> +10</span></span></div>
+              <div class="cr-row2 lockrow"><div class="cr-mid2" style="color:var(--amber)">🛡 Scroll apps lock</div><span class="mono cr-t2" style="color:var(--amber)">10:30</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink4);padding:10px 2px 4px;border-top:1px solid var(--line);margin-top:6px;display:flex;justify-content:space-between"><span>UNLOCK</span><span>6:30 AM</span></div>
+            </div>
+            <div style="font-size:12px;color:var(--ink3);margin:12px 4px 0;line-height:1.5">Miss a rule and scroll-lock starts. Confirm late, and it cools down for 10 minutes.</div>
+            <div class="cta-amber" style="margin-top:16px">Sign &amp; activate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Make it read like a contract, not a feature list.</b> <span class="why">Column headers (<span class="mono">CHECKPOINT · DUE · GRACE</span>) and a single right-aligned, tabular-aligned time column turn the card into a document you're agreeing to. The lock line is set apart as the terminal clause; UNLOCK is the footer.</span></li>
+        <li><b>"Sign &amp; activate" instead of "Continue to activation."</b> <span class="why">This is the commitment moment — the CTA should name the commitment. It also sets up the paywall as "protect what you just signed."</span></li>
+        <li><b>Headline owns the deal both ways:</b> <span class="why">"You choose the rules / TenThirty holds the line" states each party's role — you and the enforcer.</span></li>
+        <li><span class="why">Grace shown compactly as <span class="mono">+15</span> so the eye scans one aligned number column instead of "Grace: 15m" prose per row.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ONB 5 — TRIAL PAYWALL ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">05</span><h2>Onboarding · Trial paywall</h2></div>
+    <p class="screen-sub">7-day free trial. Final step before the app opens.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:150px">
+            <div class="brand" style="justify-content:center;margin:2px 0 18px">TenThirty<span class="dot"></span></div>
+            <div class="kick fakemono" style="color:var(--amber-soft);margin-bottom:8px">Your first week</div>
+            <div class="serif" style="font-size:32px;line-height:1.05">Try 7 nights</div>
+            <div class="serif" style="font-size:34px;font-style:italic;color:var(--amber);margin-bottom:12px">free</div>
+            <div style="font-size:14px;color:var(--ink2);margin-bottom:16px;line-height:1.5">Start 7 nights with scroll-lock enforcement. Your rules, protected when timing matters.</div>
+            <div class="lullcard" style="padding:14px 16px;margin-bottom:14px;text-align:center">
+              <div style="color:var(--amber);letter-spacing:2px">★★★★★</div>
+              <div class="serif" style="font-size:16px;margin:6px 0 2px">"It's been great for me"</div>
+              <div class="fakemono" style="font-size:11px;color:var(--ink3)">- Beth M.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Hard sleep-window lock</b><div class="ben-d">Selected apps stay blocked through your sleep window</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Rules with consequences</b><div class="ben-d">Miss a grace window and scroll-lock protects the moment</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Late recovery cooldown</b><div class="ben-d">Complete a rule late, then wait 10 minutes before unlock</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>One firefly per kept contract</b><div class="ben-d">Quiet proof that you kept your word tonight</div></div></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px 20px 22px;background:linear-gradient(transparent,var(--bg) 30%)">
+            <div class="cta-amber" style="height:60px;flex-direction:column;gap:2px;line-height:1.1"><span>Start scroll-lock trial</span><span class="fakemono" style="font-size:10px;font-weight:500;opacity:.8">Then $49.99/year. Cancel anytime.</span></div>
+            <div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:10px;text-decoration:underline">I'll skip the trial and go with $6.99/month</div>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:150px">
+            <div class="brand" style="justify-content:center;margin:2px 0 18px">TenThirty<span class="dot"></span></div>
+            <div class="kick" style="color:var(--amber-soft);margin-bottom:8px">Your first week</div>
+            <div class="serif" style="font-size:32px;line-height:1.05">Try 7 nights</div>
+            <div class="serif" style="font-size:34px;font-style:italic;color:var(--amber);margin-bottom:12px">free</div>
+            <div style="font-size:14px;color:var(--ink2);margin-bottom:16px;line-height:1.5">Protect the contract you just signed — free for 7 nights.</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Hard sleep-window lock</b><div class="ben-d">Selected apps stay blocked through your sleep window</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Rules with consequences</b><div class="ben-d">Miss a grace window and scroll-lock protects the moment</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>Late recovery cooldown</b><div class="ben-d">Confirm late, then wait 10 minutes before unlock</div></div></div>
+              <div class="ben"><span class="ben-ic">✓</span><div><b>One firefly per kept contract</b><div class="ben-d">Quiet proof that you kept your word tonight</div></div></div>
+            </div>
+            <div class="lullcard" style="padding:12px 16px;margin-top:16px;text-align:center">
+              <div style="color:var(--amber);letter-spacing:2px;font-size:13px">★★★★★</div>
+              <div class="serif" style="font-size:15px;margin:5px 0 2px">"It's been great for me"</div>
+              <div class="mono" style="font-size:10px;color:var(--ink3)">BETH M.</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px 20px 22px;background:linear-gradient(transparent,var(--bg) 30%)">
+            <div class="cta-amber" style="height:60px;flex-direction:column;gap:3px;line-height:1.1"><span>Start scroll-lock trial</span><span class="mono" style="font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.85">FREE 7 DAYS · THEN $49.99/YR</span></div>
+            <div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:10px">Prefer monthly? <span style="color:var(--ink2);text-decoration:underline">Skip the trial · $6.99/mo</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Lead with benefits, demote the testimonial.</b> <span class="why">A single anonymous 5-star quote up top is the weakest kind of social proof and pushes the concrete value below the fold. Benefits first (what you get), quote as a small footer reassurance.</span></li>
+        <li><b>Tie the offer to the moment before it.</b> <span class="why">"Protect the contract you just signed" connects the paywall to the activation the user just completed, instead of restating features.</span></li>
+        <li><b>Price as one honest line.</b> <span class="why"><span class="mono">FREE 7 DAYS · THEN $49.99/YR</span> — the full terms sit right under the button, so it reads as a receipt, not marketing.</span></li>
+        <li><span class="why">Monthly downgrade phrased as a calm choice ("Prefer monthly?") rather than a guilt-shaped "I'll skip the trial."</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div style="margin-top:78px;border-top:1px solid var(--line-strong);padding-top:34px">
+    <div class="eyebrow">Part two</div>
+    <h1 class="title" style="font-size:clamp(28px,4vw,40px)">The three daily tabs</h1>
+    <p class="lede">Today, Rules, Trends — the surface the user lives in after setup. This is where the biggest structural change is proposed: <b>Today becomes a single-focus checkpoint rail</b> instead of a stack of equal-weight cards.</p>
+  </div>
+
+  <!-- ================= TODAY ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">06</span><h2>Today</h2><span class="tag pro" style="margin-left:6px">major change</span></div>
+    <p class="screen-sub">The action queue. Should always answer: what's next, when's it due, what locks if I miss it, are my apps locked right now.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="firefly" style="right:40px;top:120px;width:6px;height:6px"></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div style="margin-bottom:16px"><div style="font-size:28px;font-weight:600;color:var(--ink0)">TenThirty</div><div class="fakemono" style="font-size:12px;letter-spacing:.1em;color:var(--ink3);margin-top:4px">9:12 PM</div></div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="row"><div class="ico">🔓</div><div><div class="fakemono" style="font-size:11px;letter-spacing:.13em;color:var(--amber-soft)">UNLOCKED</div><div style="font-size:17px;font-weight:600;color:var(--ink0)">Next rule: Warm shower</div></div></div>
+              <div class="divider"></div>
+              <div class="row" style="justify-content:space-between"><span style="font-size:13px;color:var(--ink3)">Blocked apps</span><span style="font-size:13px;color:var(--ink1)">4 apps selected</span><span style="font-size:13px;color:var(--amber);font-weight:600">Edit</span></div>
+            </div>
+            <div class="row" style="justify-content:space-between;margin-bottom:12px"><span style="font-size:20px;font-weight:600;color:var(--ink0)">Next rule</span><span class="fakemono" style="font-size:10.5px;color:var(--ink3)">1 cleared · 4 to go</span></div>
+            <div class="card accent" style="margin-bottom:12px">
+              <div class="row" style="align-items:flex-start"><div class="ico">🚿</div><div><div class="fakemono" style="font-size:10.5px;letter-spacing:.12em;color:var(--amber-soft)">Available now</div><div style="font-size:20px;font-weight:600;color:var(--ink0);margin:2px 0">Warm shower or bath</div><div style="font-size:13px;color:var(--ink3)">Take a warm shower or bath before bed.</div></div></div>
+              <div class="row" style="justify-content:space-between;margin:12px 0"><span style="font-size:13px;font-weight:600;color:var(--ink2)">Due 6:30 PM</span><span class="fakemono" style="font-size:10.5px;color:var(--ink4)">Grace 10m</span></div>
+              <div class="cta"><div class="fill" style="width:0"></div>Hold 3 sec to confirm</div>
+            </div>
+            <div class="card">
+              <div class="row" style="align-items:flex-start"><div class="ico" style="background:rgba(240,185,107,.1)">💡</div><div><div class="fakemono" style="font-size:10.5px;letter-spacing:.12em;color:var(--ink3)">Upcoming</div><div style="font-size:20px;font-weight:600;color:var(--ink0);margin:2px 0">Dim lights</div><div style="font-size:13px;color:var(--ink3)">Lower lights before bed.</div></div></div>
+              <div class="row" style="justify-content:space-between;margin:12px 0"><span style="font-size:13px;font-weight:600;color:var(--ink2)">Due 9:15 PM</span><span class="fakemono" style="font-size:10.5px;color:var(--ink4)">Grace 10m</span></div>
+              <div class="cta" style="color:var(--ink4)">Available later</div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab on"><span style="font-size:18px">☾</span>Today</div><div class="tab"><span style="font-size:18px">🛡</span>Rules</div><div class="tab"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="firefly" style="right:44px;top:118px;width:6px;height:6px"></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:12px">
+              <div class="serif" style="font-size:30px">Tonight</div>
+              <div class="mono" style="font-size:22px;color:var(--ink1)">9:12<span style="font-size:12px;color:var(--ink3)"> PM</span></div>
+            </div>
+            <!-- status strip -->
+            <div class="row" style="justify-content:space-between;padding:9px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(26,17,14,.5);margin-bottom:20px">
+              <span class="row" style="gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#7ed4a0;box-shadow:0 0 8px #7ed4a0"></span><span class="mono" style="font-size:11px;letter-spacing:.1em;color:var(--ink1)">UNLOCKED</span></span>
+              <span class="mono" style="font-size:11px;color:var(--ink3)">4 APPS ARMED</span>
+            </div>
+            <!-- rail -->
+            <div class="rail">
+              <div class="node done"><div class="bullet"></div><div class="row" style="justify-content:space-between"><span class="t serif" style="font-size:16px">Caffeine cutoff</span><span class="mono t" style="font-size:12px">2:00</span></div></div>
+
+              <!-- ACTIVE HERO -->
+              <div class="node active" style="margin:6px 0 18px">
+                <div class="bullet"></div>
+                <div class="card accent" style="padding:16px;box-shadow:0 0 30px -8px rgba(240,185,107,.35)">
+                  <div class="mono" style="font-size:10.5px;letter-spacing:.12em;color:var(--amber-soft);margin-bottom:6px">DUE 6:30 PM · GRACE 6:40</div>
+                  <div class="serif" style="font-size:24px;margin-bottom:12px">Warm shower or bath</div>
+                  <div style="font-size:11px;color:var(--ink3);margin-bottom:7px">If missed, these lock:</div>
+                  <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:14px">
+                    <span class="pill">TikTok</span><span class="pill">Instagram</span><span class="pill">YouTube</span><span class="pill">Reddit</span>
+                  </div>
+                  <div class="cta"><div class="fill" style="width:34%"></div>Hold to confirm</div>
+                </div>
+              </div>
+
+              <div class="node"><div class="bullet" style="border-color:var(--ink4)"></div><div class="row" style="justify-content:space-between"><span class="t serif" style="font-size:16px;color:var(--ink2)">Dim lights</span><span class="mono t" style="font-size:12px;color:var(--ink3)">9:15</span></div></div>
+              <div class="node"><div class="bullet" style="border-color:var(--ink4)"></div><div class="row" style="justify-content:space-between"><span class="t serif" style="font-size:16px;color:var(--ink2)">Phone away</span><span class="mono t" style="font-size:12px;color:var(--ink3)">10:15</span></div></div>
+              <div class="node"><div class="bullet" style="border-color:var(--ink4)"></div><div class="row" style="justify-content:space-between"><span class="t serif" style="font-size:16px;color:var(--ink2)">Tomorrow's plan</span><span class="mono t" style="font-size:12px;color:var(--ink3)">10:25</span></div></div>
+            </div>
+            <div class="mono" style="text-align:center;font-size:10.5px;color:var(--ink4);letter-spacing:.1em;margin-top:8px">1 OF 5 CLEARED · SCROLL-LOCK 10:30 PM</div>
+          </div>
+          <div class="tabbar"><div class="tab on"><span style="font-size:18px">☾</span>Today</div><div class="tab"><span style="font-size:18px">🛡</span>Rules</div><div class="tab"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>One rule owns the screen.</b> <span class="why">Today the status card + every rule card share the same size, border and CTA, so nothing tells the eye where to act. The proposed layout makes the <i>next</i> rule a glowing hero node and collapses everything else to slim rail rows — exactly the "current rule should own the screen" intent in your spec.</span></li>
+        <li><b>The evening becomes a timeline, not a list.</b> <span class="why">The rules are a timed sequence, so a vertical rail with real times encodes true information: cleared checkpoints tick off behind you, upcoming ones wait ahead. It also removes the repeated-card monotony without losing any rule.</span></li>
+        <li><b>Show the apps, not a count.</b> <span class="why">"4 apps selected" is abstract. Naming TikTok / Instagram / YouTube / Reddit on the active card makes the stakes concrete at the moment of the hold.</span></li>
+        <li><b>Enforcement state as a one-line strip.</b> <span class="why">A slim <span class="mono">● UNLOCKED · 4 APPS ARMED</span> bar with a status color (green unlocked / amber cooling / coral locked) is faster to read than a full card, and frees vertical space for the hero.</span></li>
+        <li><b>Serif for the human voice, sans for the clock.</b> <span class="why">Rule titles in serif (calm); times and counters stay in the system sans but weighted and colored to read as precise. The current header mixes a sans wordmark with the serif used elsewhere — "Tonight" unifies the voice.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= RULES ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">07</span><h2>Rules</h2></div>
+    <p class="screen-sub">Where the user edits the contract: sleep window, blocked apps, each rule's time &amp; grace, and enforcement.</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div class="serif" style="font-size:30px">Rules</div>
+            <div style="font-size:13.5px;color:var(--ink3);margin:4px 0 18px">Edit your sleep contract, blocked apps, and enforcement.</div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="kick fakemono" style="margin-bottom:12px">Sleep window</div>
+              <div class="row" style="justify-content:space-between;padding:6px 0"><span style="font-size:15px;color:var(--ink1)">Sleep</span><span style="font-size:15px;color:var(--amber);border:1px solid var(--line);border-radius:8px;padding:5px 12px">10:30 PM</span></div>
+              <div class="row" style="justify-content:space-between;padding:6px 0"><span style="font-size:15px;color:var(--ink1)">Wake</span><span style="font-size:15px;color:var(--amber);border:1px solid var(--line);border-radius:8px;padding:5px 12px">6:30 AM</span></div>
+              <div style="font-size:13px;color:var(--ink3);margin-top:8px">Apps always lock during this window.</div>
+            </div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="kick fakemono">Blocked apps</span><span style="font-size:13.5px;color:var(--amber);font-weight:600">Edit apps</span></div>
+              <div style="font-size:18px;font-weight:600;color:var(--ink0)">4 apps selected</div>
+              <div style="font-size:13px;color:var(--ink3);margin-top:4px">These apps lock after missed rules and during your sleep window.</div>
+            </div>
+            <div style="font-size:20px;font-weight:600;color:var(--ink0);margin:6px 0 12px">Daily rules</div>
+            <div class="card accent" style="margin-bottom:10px">
+              <div class="row" style="justify-content:space-between"><div class="row"><div class="ico">☕</div><div><div style="font-size:16px;font-weight:600;color:var(--ink0)">Caffeine cutoff</div><div style="font-size:12.5px;color:var(--ink3)">Confirm you're done for today.</div></div></div><div style="width:42px;height:26px;border-radius:999px;background:var(--amber);position:relative"><span style="position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#1a0d06"></span></div></div>
+              <div class="row" style="justify-content:space-between;margin-top:10px;font-size:13.5px;color:var(--ink2)"><span>Due</span><span class="fakemono" style="color:var(--amber)">2:00 PM</span></div>
+              <div class="row" style="justify-content:space-between;margin-top:6px;font-size:13.5px;color:var(--ink2)"><span>Grace: 15 min</span><span style="color:var(--amber)">− +</span></div>
+            </div>
+            <div class="card" style="margin-bottom:10px">
+              <div class="row" style="justify-content:space-between"><div class="row"><div class="ico" style="background:rgba(240,185,107,.1)">💡</div><div><div style="font-size:16px;font-weight:600;color:var(--ink0)">Dim lights</div><div style="font-size:12.5px;color:var(--ink3)">Lower lights before bed.</div></div></div><div style="width:42px;height:26px;border-radius:999px;background:rgba(255,255,255,.1);position:relative"><span style="position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ink3)"></span></div></div>
+            </div>
+            <div class="card">
+              <div class="kick fakemono" style="margin-bottom:8px">How enforcement works</div>
+              <div style="font-size:14px;color:var(--ink2);line-height:1.7">Miss a rule -&gt; apps lock.<br>Confirm late -&gt; 10-minute cooldown.<br>Sleep window -&gt; apps stay locked until wake.</div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab"><span style="font-size:18px">☾</span>Today</div><div class="tab on"><span style="font-size:18px">🛡</span>Rules</div><div class="tab"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div class="serif" style="font-size:30px">Your contract</div>
+            <div style="font-size:13.5px;color:var(--ink3);margin:4px 0 18px">Set the terms. TenThirty enforces them.</div>
+            <!-- window hero -->
+            <div class="card" style="margin-bottom:14px;text-align:center;padding:18px 16px">
+              <div class="kick" style="margin-bottom:10px">Sleep window · apps always lock</div>
+              <div class="row" style="justify-content:center;gap:12px;align-items:center"><span class="mono" style="font-size:24px;color:var(--ink0)">10:30<span style="font-size:12px;color:var(--ink3)"> PM</span></span><span style="color:var(--amber-deep)">→</span><span class="mono" style="font-size:24px;color:var(--ink0)">6:30<span style="font-size:12px;color:var(--ink3)"> AM</span></span></div>
+              <div class="mono" style="font-size:10px;letter-spacing:.14em;color:var(--amber-soft);margin-top:8px">8 HOURS LOCKED · <span style="text-decoration:underline">EDIT</span></div>
+            </div>
+            <div class="card" style="margin-bottom:14px">
+              <div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="kick">Blocked apps</span><span style="font-size:13.5px;color:var(--amber);font-weight:600">Edit</span></div>
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill">TikTok</span><span class="pill">Instagram</span><span class="pill">YouTube</span><span class="pill">Reddit</span></div>
+            </div>
+            <div style="font-size:15px;font-weight:600;color:var(--ink0);margin:6px 0 12px">Daily rules</div>
+            <div class="rulerow on">
+              <div class="row" style="gap:11px"><div class="ico">☕</div><div><div class="serif" style="font-size:16px">Caffeine cutoff</div><div class="mono" style="font-size:10.5px;color:var(--amber-soft);margin-top:3px">DUE 2:00 PM · GRACE 15m</div></div></div>
+              <div style="width:42px;height:26px;border-radius:999px;background:var(--amber);position:relative"><span style="position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#1a0d06"></span></div>
+            </div>
+            <div class="rulerow on">
+              <div class="row" style="gap:11px"><div class="ico">🚿</div><div><div class="serif" style="font-size:16px">Warm shower or bath</div><div class="mono" style="font-size:10.5px;color:var(--amber-soft);margin-top:3px">DUE 6:30 PM · GRACE 10m</div></div></div>
+              <div style="width:42px;height:26px;border-radius:999px;background:var(--amber);position:relative"><span style="position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#1a0d06"></span></div>
+            </div>
+            <div class="rulerow">
+              <div class="row" style="gap:11px"><div class="ico" style="background:rgba(255,255,255,.05);color:var(--ink3)">💡</div><div><div class="serif" style="font-size:16px;color:var(--ink2)">Dim lights</div><div class="mono" style="font-size:10.5px;color:var(--ink4);margin-top:3px">OFF</div></div></div>
+              <div style="width:42px;height:26px;border-radius:999px;background:rgba(255,255,255,.1);position:relative"><span style="position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ink3)"></span></div>
+            </div>
+            <div class="card" style="margin-top:14px">
+              <div class="kick" style="margin-bottom:10px">How enforcement works</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink2)">
+                <div class="row" style="gap:8px"><span class="mono" style="color:var(--coral);font-size:11px">MISS</span><span>→ apps lock</span></div>
+                <div class="row" style="gap:8px"><span class="mono" style="color:var(--amber);font-size:11px">LATE</span><span>→ 10-minute cooldown</span></div>
+                <div class="row" style="gap:8px"><span class="mono" style="color:var(--ink3);font-size:11px">WINDOW</span><span>→ locked until wake</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab"><span style="font-size:18px">☾</span>Today</div><div class="tab on"><span style="font-size:18px">🛡</span>Rules</div><div class="tab"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>Sleep window as a single readout.</b> <span class="why">Two stacked date-picker rows read like a settings form. One centered <span class="mono">10:30 PM → 6:30 AM</span> line states the boundary at a glance (tap to edit the handles). It's the most important term in the contract, so it leads.</span></li>
+        <li><b>Name the blocked apps.</b> <span class="why">Same as Today — chips beat "4 apps selected." The user recognizes their own apps instantly.</span></li>
+        <li><b>Collapse each rule to one line until edited.</b> <span class="why">Enabled rules show <span class="mono">DUE 2:00 PM · GRACE 15m</span> inline; the time-picker + grace-stepper only expand on tap. Enabled rules carry an amber left-edge; disabled ones recede. The list stops being a tall wall of controls.</span></li>
+        <li><b>Enforcement rules as labeled consequences.</b> <span class="why">The three ASCII "-&gt;" lines become color-coded <span class="mono">MISS / LATE / WINDOW</span> → outcome pairs — same information, but it reads as the rulebook it is.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= TRENDS ================= -->
+  <section class="screen">
+    <div class="screen-head"><span class="screen-num">08</span><h2>Trends</h2></div>
+    <p class="screen-sub">The proof loop — evidence the contract protected the user. Tone: non-shaming, no "perfect days."</p>
+    <div class="compare">
+      <!-- CURRENT -->
+      <div class="col"><span class="tag cur col-tag">Current</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:18px">
+              <div class="serif" style="font-size:30px">Trends</div>
+              <div style="display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:12px"><span style="padding:6px 14px;background:rgba(240,185,107,.2);color:var(--amber)">Weekly</span><span style="padding:6px 14px;color:var(--ink3)">Monthly</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="card" style="min-height:84px"><div style="font-size:28px;font-weight:600;color:var(--amber)">5</div><div style="font-size:12.5px;color:var(--ink3)">Nights protected</div></div>
+              <div class="card" style="min-height:84px"><div style="font-size:28px;font-weight:600;color:var(--amber)">3</div><div style="font-size:12.5px;color:var(--ink3)">All-clear days</div></div>
+              <div class="card" style="min-height:84px"><div style="font-size:28px;font-weight:600;color:var(--amber)">14</div><div style="font-size:12.5px;color:var(--ink3)">Lock activations</div></div>
+              <div class="card" style="min-height:84px"><div style="font-size:28px;font-weight:600;color:var(--amber)">2</div><div style="font-size:12.5px;color:var(--ink3)">Late confirmations</div></div>
+            </div>
+            <div class="card" style="margin-top:14px">
+              <div class="kick fakemono" style="margin-bottom:10px">Rule insights</div>
+              <div style="font-size:12.5px;color:var(--ink4)">Best rule</div>
+              <div style="font-size:16px;font-weight:600;color:var(--ink0);margin-bottom:10px">Dim lights · completed 5 times</div>
+              <div class="divider"></div>
+              <div style="font-size:12.5px;color:var(--ink4)">Needs work</div>
+              <div style="font-size:16px;font-weight:600;color:var(--ink0)">Tomorrow's plan · 3 late</div>
+            </div>
+            <!-- the calendar (drawn in the shared meadow layer, below the panel) -->
+            <div style="margin-top:22px">
+              <div class="cal-hd"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+              <div class="cal-row">
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">8</span></div>
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">9</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">10</span></div>
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">11</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">12</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">13</span></div>
+                <div class="cal-col"><div class="cell today"></div><span class="dn" style="color:var(--amber)">14</span></div>
+              </div>
+              <div class="serif" style="text-align:center;font-size:18px;color:var(--ink1);margin-top:16px">Week of Jul 8</div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab"><span style="font-size:18px">☾</span>Today</div><div class="tab"><span style="font-size:18px">🛡</span>Rules</div><div class="tab on"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+      <!-- PROPOSED -->
+      <div class="col"><span class="tag pro col-tag">Proposed</span>
+        <div class="phone meadow">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="r">5G ▪▪▪</span></div>
+          <div class="screen-inner scroll" style="padding-bottom:80px">
+            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="serif" style="font-size:30px">Trends</div>
+              <div style="display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:12px"><span style="padding:6px 14px;background:rgba(240,185,107,.2);color:var(--amber)">Week</span><span style="padding:6px 14px;color:var(--ink3)">Month</span></div>
+            </div>
+            <div class="serif" style="font-size:19px;color:var(--ink1);margin-bottom:4px">5 of 7 nights protected.</div>
+            <div style="font-size:12.5px;color:var(--ink3);margin-bottom:20px">3 all-clear · 14 late-night opens blocked · 2 late</div>
+            <!-- HERO: the calendar, with earned fireflies resting in their cells -->
+            <div class="cal-big">
+              <div class="cal-hd"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+              <div class="cal-row">
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">8</span></div>
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">9</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">10</span></div>
+                <div class="cal-col"><div class="cell clear"><span class="ff"></span></div><span class="dn">11</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">12</span></div>
+                <div class="cal-col"><div class="cell"></div><span class="dn">13</span></div>
+                <div class="cal-col"><div class="cell today"></div><span class="dn" style="color:var(--amber)">14</span></div>
+              </div>
+              <div class="serif" style="text-align:center;font-size:18px;color:var(--ink1);margin:16px 0 8px">Week of Jul 8</div>
+              <div style="text-align:center;font-size:12px;color:var(--ink3);max-width:250px;margin:0 auto;line-height:1.5">Each firefly is a night you cleared every rule and kept your apps closed.</div>
+            </div>
+            <div class="card" style="margin-top:20px">
+              <div class="kick" style="margin-bottom:12px">Rule insights</div>
+              <div class="row" style="justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;color:var(--ink1)">Dim lights</span><span style="font-size:12px;color:#7ed4a0">on time 5 of 7</span></div>
+              <div class="divider"></div>
+              <div class="row" style="justify-content:space-between"><span style="font-size:14px;color:var(--ink1)">Tomorrow's plan</span><span style="font-size:12px;color:var(--amber-soft)">late 3 times</span></div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab"><span style="font-size:18px">☾</span>Today</div><div class="tab"><span style="font-size:18px">🛡</span>Rules</div><div class="tab on"><span style="font-size:18px">📈</span>Trends</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:22px">
+      <b>The firefly's whole journey lives here.</b> After onboarding, Today shows the coachmark <i>"Earn your first firefly by clearing tonight's sleep rules"</i>, which fades as the deck appears. Clear every rule and the firefly rises and roams the Today meadow. Open Trends and that same firefly flies to the calendar cell for the night you earned it. The current screen buries that payoff below a stats grid — so the fireflies land off-screen unless you scroll.
+    </div>
+    <div class="notes">
+      <h4>What changes &amp; why</h4>
+      <ul>
+        <li><b>The calendar becomes the hero.</b> <span class="why">It's the destination of every earned firefly and the truest proof the contract held — yet today it sits <i>below</i> a 2×2 stat grid, so on first open you see numbers and the fireflies are scrolled out of view. Moving the calendar up top means the migration you just watched on Today actually resolves on screen.</span></li>
+        <li><b>Say what a firefly means, right under the grid.</b> <span class="why">New users see glowing dots on dates with no explanation. One line — "each firefly is a night you cleared every rule and kept your apps closed" — turns decoration into proof.</span></li>
+        <li><b>Demote the 2×2 grid to a single supporting line.</b> <span class="why">"3 all-clear · 14 opens blocked · 2 late" carries the same numbers without four hero tiles that read like tracking/optimization — the framing your audience pivot moves away from.</span></li>
+        <li><b>Insights as calm verdicts, not rankings.</b> <span class="why">"on time 5 of 7" / "late 3 times" state the pattern without "best rule / needs work" language that can read as judgment.</span></li>
+        <li><span class="why"><b>Optional:</b> the calendar cells are small (32pt) and the fireflies can overlap the today outline. Slightly larger cells + a hair more row spacing give each firefly room to read as its own light. Renaming the tab to "Proof" is possible but not proposed here — flag if you want it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= SUMMARY ================= -->
+  <section class="screen" style="margin-top:80px;border-top:1px solid var(--line-strong);padding-top:40px">
+    <div class="eyebrow">If you approve</div>
+    <h1 class="title" style="font-size:clamp(26px,4vw,38px)">What I'd change, in priority order</h1>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:28px">
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P1 · TRENDS</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">Calendar as hero</div><div style="font-size:13.5px;color:var(--ink2)">Move the firefly calendar above the stats so the firefly you watched roam the meadow actually lands on screen — and label what a firefly means.</div></div>
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P1 · TODAY</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">Checkpoint rail</div><div style="font-size:13.5px;color:var(--ink2)">Give Today a single hero rule + timeline rail. The biggest structural change and the one that most changes how the product feels to use.</div></div>
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P2 · GLOBAL</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">App chips</div><div style="font-size:13.5px;color:var(--ink2)">Replace "4 apps selected" with the real app names on Today &amp; Rules. Makes the stakes concrete everywhere.</div></div>
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P2 · TRENDS</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">Demote the stat grid</div><div style="font-size:13.5px;color:var(--ink2)">Collapse the 2×2 amber-number grid into one supporting line. Same numbers, less tracking-dashboard energy.</div></div>
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P3 · COPY</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">Contract language</div><div style="font-size:13.5px;color:var(--ink2)">"Sign &amp; activate," "holds the line," LOCK/UNLOCK, sentence-case hints. Small, safe, and reinforces positioning.</div></div>
+      <div class="card" style="padding:20px"><div class="mono" style="color:var(--amber-deep);font-size:12px;margin-bottom:8px">P3 · ONB</div><div class="serif" style="font-size:19px;color:var(--ink0);margin-bottom:8px">Radio vs check</div><div style="font-size:13.5px;color:var(--ink2)">Single-select step 1 gets radio affordance; grace-chip previews on step 2. Small clarity wins.</div></div>
+    </div>
+    <div class="callout" style="margin-top:30px">Tell me which of these to proceed with (all, some, or "just P1"), and whether you want any tweaks to the mockups first. I won't touch Swift until you say go — and I'll take them one screen at a time so each change is easy to review.</div>
+  </section>
+</div>

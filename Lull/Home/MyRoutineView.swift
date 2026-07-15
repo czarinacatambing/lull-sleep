@@ -166,18 +166,22 @@ struct MyRoutineView: View {
                         Spacer().frame(height: 28)
 
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Edit Routine")
+                            Text("Rules")
                                 .font(.serif(30))
                                 .foregroundColor(.lullInk0)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                            Text("Add, remove, or swap sleep tactics. Or tap to configure.")
+                            Text("Edit your sleep contract, blocked apps, and replacement plan.")
                                 .font(.system(size: 13.5, weight: .regular, design: .default))
                                 .foregroundColor(.lullInk3)
                                 .lineSpacing(3)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 22)
+
+                        RulesContractSummaryCard()
+                            .environmentObject(state)
+                            .padding(.horizontal, 22)
 
                         RoutineStepSection(
                             number: "01",
@@ -430,7 +434,7 @@ struct RoutineTopHeader: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("My routine")
+                Text("Sleep contract")
                     .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundColor(.lullAmberSoft)
                 Text("Tonight")
@@ -454,6 +458,158 @@ struct RoutineTopHeader: View {
                     .fill(Color.lullAmber.opacity(0.045))
                     .overlay(Capsule().strokeBorder(Color.lullLine, lineWidth: 1))
             )
+        }
+    }
+}
+
+private struct RulesContractSummaryCard: View {
+    @EnvironmentObject private var state: AppState
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    private var sleepWindow: String {
+        "\(Self.timeFormatter.string(from: state.typicalBedtime)) - \(Self.timeFormatter.string(from: state.appBlockingEndTime))"
+    }
+
+    private var blockedAppSummary: String {
+        let appCount = state.appBlockingSelection.applicationTokens.count
+        let categoryCount = state.appBlockingSelection.categoryTokens.count
+
+        switch (appCount, categoryCount) {
+        case (0, 0):
+            return "Choose the apps that steal your sleep."
+        case (_, 0):
+            return "\(appCount) app\(appCount == 1 ? "" : "s") selected"
+        case (0, _):
+            return "\(categoryCount) categor\(categoryCount == 1 ? "y" : "ies") selected"
+        default:
+            return "\(appCount) app\(appCount == 1 ? "" : "s") · \(categoryCount) categor\(categoryCount == 1 ? "y" : "ies")"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            contractHeader
+
+            Divider().overlay(Color.lullLine)
+
+            VStack(spacing: 10) {
+                contractRow(
+                    icon: "moon.fill",
+                    title: "Sleep window",
+                    detail: "Apps always lock during this window.",
+                    trailing: sleepWindow
+                )
+
+                contractRow(
+                    icon: "lock.shield.fill",
+                    title: "Blocked apps",
+                    detail: blockedAppSummary,
+                    trailing: "Edit"
+                ) {
+                    state.startAppBlockingOfferSetup()
+                }
+            }
+
+            if !state.sleepContractPreviewItems.isEmpty {
+                Divider().overlay(Color.lullLine)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Daily rules")
+                        .font(.mono(10.5))
+                        .kerning(1.4)
+                        .foregroundColor(.lullInk4)
+
+                    ForEach(state.sleepContractPreviewItems) { item in
+                        contractRow(
+                            icon: ruleIcon(item.rule),
+                            title: item.rule.title,
+                            detail: item.rule.detail,
+                            trailing: "\(Self.timeFormatter.string(from: item.dueAt)) · \(item.rule.graceMinutes)m"
+                        )
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.lullBg2.opacity(0.56))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(Color.lullLine, lineWidth: 1)
+                )
+        )
+    }
+
+    private var contractHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Sleep contract")
+                .font(.mono(10.5))
+                .kerning(1.5)
+                .foregroundColor(.lullAmberSoft)
+            Text("Miss a rule → apps lock. Confirm late → cooldown.")
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundColor(.lullInk2)
+                .lineSpacing(3)
+        }
+    }
+
+    @ViewBuilder
+    private func contractRow(icon: String,
+                             title: String,
+                             detail: String,
+                             trailing: String,
+                             action: (() -> Void)? = nil) -> some View {
+        let content = HStack(alignment: .center, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.lullAmber)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(Color.lullAmber.opacity(0.10)))
+                .overlay(Circle().strokeBorder(Color.lullAmber.opacity(0.24), lineWidth: 1))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                Text(detail)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundColor(.lullInk3)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(trailing)
+                .font(.mono(10.5))
+                .foregroundColor(action == nil ? .lullInk3 : .lullAmber)
+                .multilineTextAlignment(.trailing)
+        }
+        .contentShape(Rectangle())
+
+        if let action {
+            Button(action: action) { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+
+    private func ruleIcon(_ rule: SleepRuleKind) -> String {
+        switch rule {
+        case .morningSun: return "sun.max.fill"
+        case .caffeineCutoff: return "cup.and.saucer.fill"
+        case .workoutCutoff: return "figure.strengthtraining.traditional"
+        case .warmShower: return "shower.fill"
+        case .dimLights: return "lightbulb.fill"
+        case .tomorrowsPlan: return "checklist"
+        case .gratitudeJournal: return "heart.text.square.fill"
         }
     }
 }
@@ -1025,7 +1181,7 @@ struct EditStepSheet: View {
                             }
                     }
 
-                    if section == .prep && (!isAppBlockingStep || state.canUseHardAppBlocking) {
+                    if section == .prep && !isAppBlockingStep {
                         WhenSlider(value: $leadTime)
                     } else if isAppBlockingStep && !state.canUseHardAppBlocking {
                         VStack(alignment: .leading, spacing: 6) {
@@ -1196,7 +1352,7 @@ struct EditStepSheet: View {
             updated.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
             updated.notifyEnabled = notifyEnabled
         }
-        if section == .prep {
+        if section == .prep && !isAppBlockingStep {
             updated.leadTimeMins = Int((leadTime / 5).rounded() * 5)
         }
         if isAppBlockingStep {
@@ -1461,7 +1617,10 @@ struct InlineAppBlockingSection: View {
                                 AppBlockingBadge(title: badge)
                             }
 
-                            Button(action: { showPicker = true }) {
+                            Button(action: {
+                                guard !state.isContractEditingLocked() else { return }
+                                showPicker = true
+                            }) {
                                 VStack(spacing: 6) {
                                     RoundedRectangle(cornerRadius: 14)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -1478,6 +1637,8 @@ struct InlineAppBlockingSection: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .disabled(state.isContractEditingLocked())
+                            .opacity(state.isContractEditingLocked() ? 0.55 : 1)
                         }
                     }
                 }
@@ -1549,6 +1710,7 @@ struct InlineAppBlockingSection: View {
                     .foregroundColor(.lullInk4)
             } else {
                 Button {
+                    state.trackHardAppBlockingPermissionRequested()
                     Task { await probe.requestAccess() }
                 } label: {
                     HStack(spacing: 8) {

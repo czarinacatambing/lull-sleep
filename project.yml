@@ -8,8 +8,8 @@ options:
 
 settings:
   SWIFT_VERSION: "5.10"
-  MARKETING_VERSION: "2.0.3"
-  CURRENT_PROJECT_VERSION: "7"
+  MARKETING_VERSION: "2.0.6"
+  CURRENT_PROJECT_VERSION: "4"
   LULL_ANALYTICS_ENABLED: "NO"
   LULL_ANALYTICS_COHORT: ""
   LULL_RESEARCH_DATA_ENABLED: "NO"
@@ -97,6 +97,8 @@ targets:
     dependencies:
       - target: LullActivities
         embed: true
+      - target: LullShieldConfiguration
+        embed: true
       - package: RevenueCat
         product: RevenueCat
       - package: RevenueCat
@@ -104,7 +106,35 @@ targets:
       - package: PostHog
         product: PostHog
     scheme:
-      testTargets: []
+      testTargets:
+        - LullTests
+        - LullUITests
+
+  LullTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: LullTests
+    dependencies:
+      - target: Lull
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app.tests
+      GENERATE_INFOPLIST_FILE: YES
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TenThirty.app/TenThirty"
+      BUNDLE_LOADER: "$(TEST_HOST)"
+
+  LullUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: LullUITests
+    dependencies:
+      - target: Lull
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app.uitests
+      GENERATE_INFOPLIST_FILE: YES
 
   LullActivities:
     type: app-extension
@@ -139,6 +169,41 @@ targets:
       TARGETED_DEVICE_FAMILY: "1"
     entitlements:
       path: LullActivities/LullActivities.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.trylull.app
+
+  LullShieldConfiguration:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: LullShieldConfiguration
+    dependencies:
+      - framework: ManagedSettings.framework
+        implicit: true
+      - framework: ManagedSettingsUI.framework
+        implicit: true
+      - framework: UIKit.framework
+        implicit: true
+    info:
+      path: LullShieldConfiguration/Info.plist
+      properties:
+        CFBundleDisplayName: TenThirty Shield
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        NSExtension:
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShieldConfigurationExtension"
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app.shield-configuration
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: "2WLHFD257A"
+      SKIP_INSTALL: YES
+      LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+      TARGETED_DEVICE_FAMILY: "1"
+    entitlements:
+      path: LullShieldConfiguration/LullShieldConfiguration.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.trylull.app

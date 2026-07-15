@@ -633,7 +633,7 @@ private func noScreensEnforcementModes(
 ) -> [RemedyID: RemedyEnforcementMode] {
     guard selected.contains(.noScreens) else { return [:] }
     // Onboarding should teach the no-screens habit with reminders only. App
-    // blocking is offered later, after the first completed nightly routine.
+    // blocking is offered as a separate setup card after onboarding.
     return [.noScreens: .nudge]
 }
 

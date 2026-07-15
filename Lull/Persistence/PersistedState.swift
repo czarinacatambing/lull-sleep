@@ -14,7 +14,10 @@ struct PersistedState: Codable {
     //   8 — app-managed trial and premium/free routine snapshots
     //   9 — streak milestone queue and acknowledgement state
     //   10 — generated routine engine metadata
-    var schemaVersion: Int = 10
+    //   11 — sleep-contract rules and completion state
+    //   12 — editable sleep-contract rule config and lock event history
+    //   13 — contract-native all-clear event history
+    var schemaVersion: Int = 13
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -31,6 +34,13 @@ struct PersistedState: Codable {
     var chronotype: Chronotype
     var bottleneck: SleepBottleneck
     var committedRoutineTime: Date?
+    var sleepThief: SleepThief? = nil
+    var sleepContractActivatedAt: Date? = nil
+    var selectedSleepRules: [SleepRuleKind] = []
+    var sleepRuleConfigurations: [SleepRuleKind: SleepRuleConfiguration] = [:]
+    var sleepRuleCompletions: [SleepRuleCompletion] = []
+    var contractLockEvents: [ContractLockEvent] = []
+    var contractAllClearEvents: [ContractAllClearEvent] = []
     var timeZoneIdentifier: String
     var paywallState: PaywallState = PaywallState()
     var originalGeneratedRoutine: [RoutineStep]? = nil
@@ -78,7 +88,7 @@ struct PersistedState: Codable {
     var appBlockingGraceMinutes: Int = 5
     var gentleBlockingBypassedUntil: Date? = nil
 
-    init(schemaVersion: Int = 10,
+    init(schemaVersion: Int = 13,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
@@ -102,6 +112,13 @@ struct PersistedState: Codable {
          chronotype: Chronotype = .steadySleeper,
          bottleneck: SleepBottleneck = .inconsistentRhythm,
          committedRoutineTime: Date? = nil,
+         sleepThief: SleepThief? = nil,
+         sleepContractActivatedAt: Date? = nil,
+         selectedSleepRules: [SleepRuleKind] = [],
+         sleepRuleConfigurations: [SleepRuleKind: SleepRuleConfiguration] = [:],
+         sleepRuleCompletions: [SleepRuleCompletion] = [],
+         contractLockEvents: [ContractLockEvent] = [],
+         contractAllClearEvents: [ContractAllClearEvent] = [],
          timeZoneIdentifier: String = TimeZone.autoupdatingCurrent.identifier,
          paywallState: PaywallState = PaywallState(),
          originalGeneratedRoutine: [RoutineStep]? = nil,
@@ -139,6 +156,13 @@ struct PersistedState: Codable {
         self.chronotype               = chronotype
         self.bottleneck               = bottleneck
         self.committedRoutineTime     = committedRoutineTime
+        self.sleepThief               = sleepThief
+        self.sleepContractActivatedAt = sleepContractActivatedAt
+        self.selectedSleepRules       = selectedSleepRules
+        self.sleepRuleConfigurations  = sleepRuleConfigurations
+        self.sleepRuleCompletions     = sleepRuleCompletions
+        self.contractLockEvents        = contractLockEvents
+        self.contractAllClearEvents    = contractAllClearEvents
         self.timeZoneIdentifier       = timeZoneIdentifier
         self.paywallState             = paywallState
         self.originalGeneratedRoutine = originalGeneratedRoutine
@@ -187,6 +211,13 @@ struct PersistedState: Codable {
         chronotype               = (try? c.decodeIfPresent(Chronotype.self,   forKey: .chronotype)) ?? .steadySleeper
         bottleneck               = (try? c.decodeIfPresent(SleepBottleneck.self, forKey: .bottleneck)) ?? .inconsistentRhythm
         committedRoutineTime     = try? c.decodeIfPresent(Date.self,          forKey: .committedRoutineTime)
+        sleepThief               = try? c.decodeIfPresent(SleepThief.self,    forKey: .sleepThief)
+        sleepContractActivatedAt = try? c.decodeIfPresent(Date.self,          forKey: .sleepContractActivatedAt)
+        selectedSleepRules       = (try? c.decodeIfPresent([SleepRuleKind].self, forKey: .selectedSleepRules)) ?? []
+        sleepRuleConfigurations  = (try? c.decodeIfPresent([SleepRuleKind: SleepRuleConfiguration].self, forKey: .sleepRuleConfigurations)) ?? [:]
+        sleepRuleCompletions     = (try? c.decodeIfPresent([SleepRuleCompletion].self, forKey: .sleepRuleCompletions)) ?? []
+        contractLockEvents       = (try? c.decodeIfPresent([ContractLockEvent].self, forKey: .contractLockEvents)) ?? []
+        contractAllClearEvents   = (try? c.decodeIfPresent([ContractAllClearEvent].self, forKey: .contractAllClearEvents)) ?? []
         timeZoneIdentifier       = (try? c.decodeIfPresent(String.self,        forKey: .timeZoneIdentifier)) ?? TimeZone.autoupdatingCurrent.identifier
         paywallState             = (try? c.decodeIfPresent(PaywallState.self, forKey: .paywallState)) ?? PaywallState()
         originalGeneratedRoutine = try? c.decodeIfPresent([RoutineStep].self,  forKey: .originalGeneratedRoutine)

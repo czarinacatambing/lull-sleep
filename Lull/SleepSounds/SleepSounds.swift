@@ -132,6 +132,23 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
     }
 
     func play(config: SleepSoundStepConfig) {
+        play(config: config, preservingRemainingSeconds: nil, allowCrossfade: false)
+    }
+
+    @discardableResult
+    func switchSound(to soundId: SoundId, fallbackConfig: SleepSoundStepConfig) -> SleepSoundStepConfig {
+        updateRemaining()
+        var updated = currentConfig ?? fallbackConfig
+        updated.soundId = soundId
+        play(config: updated, preservingRemainingSeconds: remainingSeconds, allowCrossfade: false)
+        return updated
+    }
+
+    private func play(
+        config: SleepSoundStepConfig,
+        preservingRemainingSeconds preservedSeconds: Int?,
+        allowCrossfade: Bool
+    ) {
         guard let soundId = config.soundId else { return }
         stopSample()
 
@@ -152,7 +169,7 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
         audio.numberOfLoops = -1
         audio.delegate = self
         audio.currentTime = 0
-        let shouldCrossfade = player != nil && currentConfig?.soundId != soundId
+        let shouldCrossfade = allowCrossfade && player != nil && currentConfig?.soundId != soundId
         audio.volume = shouldCrossfade ? 0 : 1
         audio.prepareToPlay()
         guard audio.play() else {
@@ -167,7 +184,13 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
         lastPlaybackError = nil
         pausedRemainingSeconds = nil
         resetPlayerAdvanceTracking(audio)
-        endDate = config.infinite ? nil : Date().addingTimeInterval(TimeInterval((config.durationMinutes ?? 60) * 60))
+        if config.infinite {
+            endDate = nil
+        } else if let preservedSeconds {
+            endDate = Date().addingTimeInterval(TimeInterval(max(1, preservedSeconds)))
+        } else {
+            endDate = Date().addingTimeInterval(TimeInterval((config.durationMinutes ?? 60) * 60))
+        }
         updateRemaining()
         startPlaybackTimer()
         updateNowPlaying()
@@ -265,8 +288,18 @@ final class SleepSoundsAudioStore: NSObject, ObservableObject {
     }
 
     private func soundURL(for soundId: SoundId) -> URL? {
-        Bundle.main.url(forResource: soundId.rawValue, withExtension: "m4a", subdirectory: "sleep")
-            ?? Bundle.main.url(forResource: soundId.rawValue, withExtension: "m4a")
+        let bundle = Bundle.main
+        if let url = bundle.url(forResource: soundId.rawValue, withExtension: "m4a") {
+            return url
+        }
+        if let url = bundle.url(forResource: soundId.rawValue, withExtension: "m4a", subdirectory: "sleep") {
+            return url
+        }
+        if let url = bundle.url(forResource: soundId.rawValue, withExtension: "m4a", subdirectory: "Audio/sleep") {
+            return url
+        }
+        return bundle.urls(forResourcesWithExtension: "m4a", subdirectory: nil)?
+            .first { $0.deletingPathExtension().lastPathComponent == soundId.rawValue }
     }
 
     private func prepareAudioSession() -> Bool {
@@ -588,7 +621,7 @@ struct SleepSoundsStep: View {
 
     private var ctaTitle: String {
         guard config.soundId != nil else { return "Pick a sound" }
-        return "Save"
+        return mode == .editStep ? "Save" : "Start sound"
     }
 
     var body: some View {
@@ -861,7 +894,7 @@ struct SleepSoundsStep: View {
     }
 
     private var ctaIcon: String {
-        return "checkmark"
+        return mode == .editStep ? "checkmark" : "play.fill"
     }
 
     private func primaryAction() {
@@ -1256,13 +1289,7 @@ struct NightlySleepSoundsView: View {
             let preparedConfig = playableConfig(config)
             activeConfig = preparedConfig
             startPlaybackTask?.cancel()
-            startPlaybackTask = Task {
-                try? await Task.sleep(nanoseconds: 1_100_000_000)
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    audioStore.play(config: preparedConfig)
-                }
-            }
+            audioStore.play(config: preparedConfig)
         }
         .onDisappear {
             startPlaybackTask?.cancel()
@@ -1275,15 +1302,8 @@ struct NightlySleepSoundsView: View {
                     startPlaybackTask?.cancel()
                     var updated = activeConfig
                     updated.soundId = newSound
-                    activeConfig = updated
+                    activeConfig = audioStore.switchSound(to: newSound, fallbackConfig: updated)
                     activePanel = nil
-                    startPlaybackTask = Task {
-                        try? await Task.sleep(nanoseconds: 350_000_000)
-                        guard !Task.isCancelled else { return }
-                        await MainActor.run {
-                            audioStore.play(config: updated)
-                        }
-                    }
                 }
             case .timer:
                 NightlySoundTimerSheet(config: activeConfig) { updated in
