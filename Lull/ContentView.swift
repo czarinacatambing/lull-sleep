@@ -71,7 +71,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.bottom, 44)
 
-                        Text("For the nights your brain won't switch off.")
+                        Text("The night belongs to sleep again")
                             .font(.serif(28))
                             .foregroundColor(.lullInk0)
                             .multilineTextAlignment(.center)
@@ -79,7 +79,7 @@ struct ContentView: View {
                             .frame(maxWidth: min(280, geo.size.width - 52))
                             .padding(.bottom, 18)
 
-                        Text("A one-minute setup, then a routine built around your night.")
+                        Text("One-minute setup. Pick your rules. Then we hold you to them.")
                             .font(.system(size: 14.5))
                             .foregroundColor(.lullInk3)
                             .multilineTextAlignment(.center)
@@ -163,7 +163,7 @@ struct ContentView: View {
             GeometryReader { geo in
                 TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
                     let point = position(in: geo, time: timeline.date.timeIntervalSinceReferenceDate)
-                    FireflyDot(index: 0, reduceMotion: true, drifts: false)
+                    FireflyMascotView(phase: phase, reduceMotion: reduceMotion)
                         .scaleEffect(scale)
                         .opacity(visible ? opacity : 0)
                         .position(point)
@@ -192,11 +192,11 @@ struct ContentView: View {
         }
 
         private var scale: CGFloat {
-            if exiting { return 0.8 }
+            if exiting { return 0.42 }
             switch phase {
-            case 0: return 0.72
-            case 1: return 2.45
-            default: return 0.9
+            case 0: return 0.18
+            case 1: return 0.9
+            default: return 0.48
             }
         }
 

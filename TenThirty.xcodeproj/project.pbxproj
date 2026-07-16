@@ -20,7 +20,9 @@
 		1BD47C6443F351AED487B09B /* solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 90504C0B0DCEF617FA4FC716 /* solf.m4a */; };
 		1F9D43C73E5C722B5F900AAC /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */; };
 		24278111E7955F4561A4222E /* birds.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CBF7175F6DA3A7BA38910681 /* birds.m4a */; };
+		29D8B59B6D29B3EB96ED70F3 /* LullDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2CF48DB758A4F4F492F353CE /* ResearchDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB18882B975D7347E1D65745 /* ResearchDataService.swift */; };
+		2F88B6C14E75E1D055638CD1 /* AppBlockingMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */; };
 		30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */; };
 		332D984A7A784F8AD67D9B8F /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C163F36C48766A614974E4C /* GetUpPromptView.swift */; };
 		341F0FCC2C410B751C3708AF /* NavigationSmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */; };
@@ -41,6 +43,7 @@
 		4A7647B4EBF6CD411C316D0E /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2385C445922205A436F4B026 /* TTSService.swift */; };
 		4DA13DCEE8863D4187741DA7 /* JetBrainsMono-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */; };
 		4E09A57D7261D99C31D09327 /* body-scan.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1C51123AF137B74CCBDA4417 /* body-scan.mp3 */; };
+		4E4502983A48721156A970B5 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C813AB20100CD4B6D67151A /* DeviceActivity.framework */; };
 		5012B8A4B4866DB9C0F6D4E0 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D654C67A1483730850BC0E54 /* HomeTabView.swift */; };
 		5115A9C0AA3C84514F222297 /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */; };
 		52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */; };
@@ -50,6 +53,7 @@
 		6044976E016E9F1AF4A07B3B /* SleepSounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */; };
 		6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */; };
 		61969AEEB6ADACC5F82A5E95 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */; };
+		649DDA0A4D2C92AB4A20BE4D /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89C950D6903593FCCD8E72A0 /* FamilyControls.framework */; };
 		656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3D586CE81D7451C6957C877 /* min-solf.m4a */; };
 		65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */; };
 		6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
@@ -89,19 +93,23 @@
 		BF6F6C79DC2880C582CE60CF /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */; };
 		C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */; };
 		C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873B7BBBAAB5C557836239AF /* AnalyticsService.swift */; };
+		C5DF131067A425ED767AEEDA /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */; };
 		C5FAB66EB8F0888EFFEE6FC9 /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */; };
 		C91CCD4D2846FDE2D33C77BE /* BrainDumpsBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */; };
 		CDF607DF39D2A90DFEFD43C0 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6523881C2EC7B58DFCA165D /* UIKit.framework */; };
 		CF52FD25ABC10323B6E0E3B1 /* lake.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 0313A840CBD937B5C481137E /* lake.m4a */; };
+		D5300FC22C3AD54B02A512F1 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAB82CAA732FD9E110E374E /* DeviceActivityMonitorExtension.swift */; };
 		D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */; };
 		D9184A0EFB741ED93A5126F7 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */; };
 		DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C2234E45847B2DE54E8990CC /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DF2D27730B6251AEB5488051 /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */; };
+		E4CCDFB04798B6DF6769F6AD /* AppBlockingMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */; };
 		E53A1FB2F48D4BBD02792A51 /* ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3DDE682D8A92F301E51A601 /* ambient.m4a */; };
 		EF1A784BD5448370F97D31DE /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7D6C4993FCB04901D5BBAF /* Confetti.swift */; };
 		F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */; };
 		F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176C4201AF8923866534227B /* AmbientLightService.swift */; };
 		F77D77A5A237886B69C0A47F /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950458402381490A51AB031A /* NightlyFlowView.swift */; };
+		F9A51F05DAF3107C10EBAAC5 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 15EDD99B9EBA3F48DECE8845 /* RiveRuntime */; };
 		FC5359BF6D2C5C428FCBA0B0 /* Natural History of Selborne - letters 7-13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */; };
 		FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		FF4B61596848A08BDB4875FA /* Natural History of Selborne - letters 1-6.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */; };
@@ -129,6 +137,13 @@
 			remoteGlobalIDString = 72FB3C74BE0EBA872A5AEA53;
 			remoteInfo = LullActivities;
 		};
+		8676DD00F1278788F57E2D7A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 666C3A41C65950B4077F2512;
+			remoteInfo = LullDeviceActivityMonitor;
+		};
 		BD480A53FF9A7AFC6FF2D941 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = EB6D1691C7A8EF191AE112B7 /* Project object */;
@@ -147,6 +162,7 @@
 			files = (
 				DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */,
 				799BA67A397EA6AB2DD2B04A /* LullShieldConfiguration.appex in Embed Foundation Extensions */,
+				29D8B59B6D29B3EB96ED70F3 /* LullDeviceActivityMonitor.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -165,6 +181,7 @@
 		176C4201AF8923866534227B /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 		1B7D6C4993FCB04901D5BBAF /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
 		1C51123AF137B74CCBDA4417 /* body-scan.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "body-scan.mp3"; sourceTree = "<group>"; };
+		1C813AB20100CD4B6D67151A /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = DeviceActivity.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglePrepItemIntent.swift; sourceTree = "<group>"; };
 		218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
 		2316827F53961A9543FE7144 /* rules of east and west.m4a */ = {isa = PBXFileReference; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
@@ -189,6 +206,7 @@
 		5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 7-13.m4a"; sourceTree = "<group>"; };
 		5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDumpsBrowser.swift; sourceTree = "<group>"; };
 		62D6C835AC588EAEA2DEEF43 /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
+		63428ED4EA5FE1F032D37DF2 /* LullDeviceActivityMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullDeviceActivityMonitor.entitlements; sourceTree = "<group>"; };
 		64B383598ABE5BE7D1191AD6 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ManagedSettings.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		689C88C380117A100D1610A0 /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
@@ -207,6 +225,7 @@
 		7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
 		820FCDADF72AB76B94600AA0 /* LullUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LullUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		873B7BBBAAB5C557836239AF /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		89C950D6903593FCCD8E72A0 /* FamilyControls.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FamilyControls.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A23CDA9BBE30563F3F47D9F /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSubscriptionManager.swift; sourceTree = "<group>"; };
 		90504C0B0DCEF617FA4FC716 /* solf.m4a */ = {isa = PBXFileReference; path = solf.m4a; sourceTree = "<group>"; };
@@ -215,10 +234,12 @@
 		944F2D82E309E25515532D12 /* StreakMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakMilestoneView.swift; sourceTree = "<group>"; };
 		950458402381490A51AB031A /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
 		9D067205DC708FB6337C2659 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WidgetKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingMonitorStore.swift; sourceTree = "<group>"; };
 		A0032E2F445A4B5E35EA46FE /* in captivity.m4a */ = {isa = PBXFileReference; path = "in captivity.m4a"; sourceTree = "<group>"; };
 		A3D586CE81D7451C6957C877 /* min-solf.m4a */ = {isa = PBXFileReference; path = "min-solf.m4a"; sourceTree = "<group>"; };
 		A3DDE682D8A92F301E51A601 /* ambient.m4a */ = {isa = PBXFileReference; path = ambient.m4a; sourceTree = "<group>"; };
 		A4C034E5DA6A11A12D3C2E1B /* LullShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullShieldConfiguration.entitlements; sourceTree = "<group>"; };
+		A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB18882B975D7347E1D65745 /* ResearchDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDataService.swift; sourceTree = "<group>"; };
 		ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRegressionTests.swift; sourceTree = "<group>"; };
 		AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
@@ -234,6 +255,7 @@
 		C2234E45847B2DE54E8990CC /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
 		C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		CB540AA3A6C622ECBA1B013F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
 		CBF7175F6DA3A7BA38910681 /* birds.m4a */ = {isa = PBXFileReference; path = birds.m4a; sourceTree = "<group>"; };
 		CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistAttributes.swift; sourceTree = "<group>"; };
@@ -246,6 +268,7 @@
 		E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
 		E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		EAAB82CAA732FD9E110E374E /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
 		EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-01.mp3"; sourceTree = "<group>"; };
 		F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSleepAttributes.swift; sourceTree = "<group>"; };
@@ -265,6 +288,7 @@
 				42D9CE908D6DDC0FBA6059F9 /* RevenueCat in Frameworks */,
 				042C4AF1CA3D790A3AC763C9 /* RevenueCatUI in Frameworks */,
 				BA2910867BB429F08E777E88 /* PostHog in Frameworks */,
+				F9A51F05DAF3107C10EBAAC5 /* RiveRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +310,16 @@
 				DF2D27730B6251AEB5488051 /* ManagedSettings.framework in Frameworks */,
 				65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */,
 				CDF607DF39D2A90DFEFD43C0 /* UIKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E4E54F8ACFAF441DA6DAC0AE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4E4502983A48721156A970B5 /* DeviceActivity.framework in Frameworks */,
+				649DDA0A4D2C92AB4A20BE4D /* FamilyControls.framework in Frameworks */,
+				C5DF131067A425ED767AEEDA /* ManagedSettings.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,6 +386,7 @@
 			children = (
 				176C4201AF8923866534227B /* AmbientLightService.swift */,
 				873B7BBBAAB5C557836239AF /* AnalyticsService.swift */,
+				9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */,
 				B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */,
 				3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */,
 				0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */,
@@ -383,6 +418,16 @@
 				05BFA1F85B39656D31732381 /* LullTheme.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		480A630FC412387993761D9D /* LullDeviceActivityMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				EAAB82CAA732FD9E110E374E /* DeviceActivityMonitorExtension.swift */,
+				CB540AA3A6C622ECBA1B013F /* Info.plist */,
+				63428ED4EA5FE1F032D37DF2 /* LullDeviceActivityMonitor.entitlements */,
+			);
+			path = LullDeviceActivityMonitor;
 			sourceTree = "<group>";
 		};
 		4879D6956623D9EE545CDF0B /* Nightly */ = {
@@ -452,6 +497,7 @@
 			children = (
 				8A23CDA9BBE30563F3F47D9F /* Lull.app */,
 				C2234E45847B2DE54E8990CC /* LullActivities.appex */,
+				A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */,
 				E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */,
 				FAFF27B8728ACFEDFF0618E5 /* LullTests.xctest */,
 				820FCDADF72AB76B94600AA0 /* LullUITests.xctest */,
@@ -472,6 +518,7 @@
 			children = (
 				F693DF470CC0A1FB6C532B4D /* Lull */,
 				1FFDB8AB5D6FE8A1C447BEA5 /* LullActivities */,
+				480A630FC412387993761D9D /* LullDeviceActivityMonitor */,
 				0329F9F493652810F9F6D3AC /* LullShieldConfiguration */,
 				7F8A770B9C40D43FFDDF9B12 /* LullTests */,
 				59D249DFB593ABC6BFD84709 /* LullUITests */,
@@ -485,6 +532,8 @@
 			children = (
 				F5C3E599230C7E37F4484E0C /* ActivityKit.framework */,
 				4E593F705AAD77F682F02D48 /* AppIntents.framework */,
+				1C813AB20100CD4B6D67151A /* DeviceActivity.framework */,
+				89C950D6903593FCCD8E72A0 /* FamilyControls.framework */,
 				65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */,
 				4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */,
 				FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */,
@@ -594,6 +643,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		666C3A41C65950B4077F2512 /* LullDeviceActivityMonitor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52872C6EE083EEEAA15548C6 /* Build configuration list for PBXNativeTarget "LullDeviceActivityMonitor" */;
+			buildPhases = (
+				6830AB21A9C2129E88EA419A /* Sources */,
+				E4E54F8ACFAF441DA6DAC0AE /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LullDeviceActivityMonitor;
+			packageProductDependencies = (
+			);
+			productName = LullDeviceActivityMonitor;
+			productReference = A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		6E0477808D478A19734E305B /* LullUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E6CB8A6AC84921D3D131FF7C /* Build configuration list for PBXNativeTarget "LullUITests" */;
@@ -644,12 +711,14 @@
 			dependencies = (
 				2FFD1A33265399839D3EAFFB /* PBXTargetDependency */,
 				01DE765A01E04EBF9DC8090D /* PBXTargetDependency */,
+				B6A580ABBBEF8DD5CBABFC8A /* PBXTargetDependency */,
 			);
 			name = Lull;
 			packageProductDependencies = (
 				9168199F664E685FFEA2CA16 /* RevenueCat */,
 				EE0B8D64BEA5E3057A1923AB /* RevenueCatUI */,
 				D95616AB69110C2AC95DD17E /* PostHog */,
+				15EDD99B9EBA3F48DECE8845 /* RiveRuntime */,
 			);
 			productName = Lull;
 			productReference = 8A23CDA9BBE30563F3F47D9F /* Lull.app */;
@@ -700,6 +769,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					666C3A41C65950B4077F2512 = {
+						DevelopmentTeam = 2WLHFD257A;
+						ProvisioningStyle = Automatic;
+					};
 					6E0477808D478A19734E305B = {
 						TestTargetID = 92BAF8B887787563B36A27C5;
 					};
@@ -729,6 +802,7 @@
 			packageReferences = (
 				4A040BCED23F999C738A55BF /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+				C2D8CDA48A65C4AFAB63AD01 /* XCRemoteSwiftPackageReference "rive-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 795352AC8A7ECB22EBCF0B01 /* Products */;
@@ -737,6 +811,7 @@
 			targets = (
 				92BAF8B887787563B36A27C5 /* Lull */,
 				72FB3C74BE0EBA872A5AEA53 /* LullActivities */,
+				666C3A41C65950B4077F2512 /* LullDeviceActivityMonitor */,
 				C26CF48E9B6C019FD86F2B1F /* LullShieldConfiguration */,
 				B8678974615C635AE5DEFE0D /* LullTests */,
 				6E0477808D478A19734E305B /* LullUITests */,
@@ -793,6 +868,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6830AB21A9C2129E88EA419A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4CCDFB04798B6DF6769F6AD /* AppBlockingMonitorStore.swift in Sources */,
+				D5300FC22C3AD54B02A512F1 /* DeviceActivityMonitorExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		805A49FC54AB788E0A2DFF03 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -824,6 +908,7 @@
 			files = (
 				F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */,
 				C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */,
+				2F88B6C14E75E1D055638CD1 /* AppBlockingMonitorStore.swift in Sources */,
 				109C5040A2EDE1A7BF714EB0 /* AppState.swift in Sources */,
 				7C89EEC6A4008BA04F46B13A /* AudioPlaybackService.swift in Sources */,
 				A51F34060A14A7EF3F681486 /* AudioRecordingService.swift in Sources */,
@@ -893,6 +978,11 @@
 			isa = PBXTargetDependency;
 			target = 92BAF8B887787563B36A27C5 /* Lull */;
 			targetProxy = 5B366B007FF241B5A966F7E5 /* PBXContainerItemProxy */;
+		};
+		B6A580ABBBEF8DD5CBABFC8A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 666C3A41C65950B4077F2512 /* LullDeviceActivityMonitor */;
+			targetProxy = 8676DD00F1278788F57E2D7A /* PBXContainerItemProxy */;
 		};
 		C4855214755DEF2835BCEBBF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1016,7 +1106,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1113,7 +1203,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1201,6 +1291,22 @@
 			};
 			name = Debug;
 		};
+		BD365D11560B24FE01E887F2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullDeviceActivityMonitor/LullDeviceActivityMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullDeviceActivityMonitor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.trylull.app.device-activity-monitor";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		BE623D62B9ED90F2D74A4ED8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1218,6 +1324,22 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TenThirty.app/TenThirty";
 			};
 			name = Release;
+		};
+		F757722FFEAFFF79FA0DC632 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LullDeviceActivityMonitor/LullDeviceActivityMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2WLHFD257A;
+				INFOPLIST_FILE = LullDeviceActivityMonitor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.trylull.app.device-activity-monitor";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -1258,6 +1380,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		52872C6EE083EEEAA15548C6 /* Build configuration list for PBXNativeTarget "LullDeviceActivityMonitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F757722FFEAFFF79FA0DC632 /* Debug */,
+				BD365D11560B24FE01E887F2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		C369E4D45497C616CB1A6977 /* Build configuration list for PBXProject "TenThirty" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1287,6 +1418,14 @@
 				minimumVersion = 3.59.3;
 			};
 		};
+		C2D8CDA48A65C4AFAB63AD01 /* XCRemoteSwiftPackageReference "rive-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rive-app/rive-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.13.0;
+			};
+		};
 		EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
@@ -1298,6 +1437,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		15EDD99B9EBA3F48DECE8845 /* RiveRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C2D8CDA48A65C4AFAB63AD01 /* XCRemoteSwiftPackageReference "rive-ios" */;
+			productName = RiveRuntime;
+		};
 		9168199F664E685FFEA2CA16 /* RevenueCat */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EECDB9EAAAFFC80A9F029E55 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;

@@ -1,4 +1,5 @@
 import SwiftUI
+import FamilyControls
 import PostHog
 import StoreKit
 
@@ -34,7 +35,8 @@ struct OnboardingView: View {
                 wakeTime: $state.targetWakeTime
             )
             case 3: OnbRoutineReadyView(step: $step)
-            case 4: OnbTrialPaywallView()
+            case 4: OnbAppBlockingCommitmentView(step: $step)
+            case 5: OnbTrialPaywallView()
             default: EmptyView()
             }
 
@@ -102,7 +104,8 @@ struct OnboardingView: View {
         case 1: return "sleep_rules"
         case 2: return "sleep_window"
         case 3: return "sleep_contract"
-        case 4: return "trial_paywall"
+        case 4: return "app_blocking_commitment"
+        case 5: return "trial_paywall"
         default: return "unknown"
         }
     }
@@ -130,8 +133,8 @@ private struct OnboardingFireflyCompanion: View {
                 let bobY = reduceMotion ? 0 : cos(time * (ctaReady ? 0.64 : 0.42)) * (ctaReady ? 5 : 12)
                 let flicker = reduceMotion ? 1.0 : 0.90 + (sin(time * 1.7) + 1) * 0.045
 
-                FireflyDot(index: 0, reduceMotion: true, drifts: false)
-                    .scaleEffect(ctaReady ? 0.84 : 0.92)
+                FireflyMascotView(phase: 2, reduceMotion: reduceMotion)
+                    .scaleEffect(ctaReady ? 0.42 : 0.48)
                     .opacity((visible ? 1 : 0) * flicker)
                     .position(x: point.x + horizontalTravel + bobX, y: point.y + bobY)
                     .animation(.easeInOut(duration: reduceMotion ? 0.18 : 3.0), value: isCTAReady(for: displayedStep))
@@ -1056,12 +1059,12 @@ struct OnbSleepProblemView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 1, total: 4, showBack: false, onSkip: {
+                    OnbTopBar(step: 1, total: 5, showBack: false, onSkip: {
                         state.setSleepThief(.scrolling)
                         applySleepProblemMapping(.scrolling)
                         step = 1
                     })
-                    StepProgress(step: 1, total: 4)
+                    StepProgress(step: 1, total: 5)
 
                     HStack {
                         Spacer()
@@ -1090,6 +1093,7 @@ struct OnbSleepProblemView: View {
                             ChoiceRow(
                                 text: thief.title,
                                 selected: state.sleepThief == thief,
+                                markerStyle: .radio,
                                 onTap: {
                                     state.setSleepThief(thief)
                                     applySleepProblemMapping(thief)
@@ -1139,14 +1143,14 @@ struct OnbSleepRulesView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer().frame(height: 16)
-                    OnbTopBar(step: 2, total: 4, onBack: { step = 0 }, onSkip: {
+                    OnbTopBar(step: 2, total: 5, onBack: { step = 0 }, onSkip: {
                         if state.selectedSleepRules.isEmpty {
                             state.toggleSleepRule(.dimLights)
                             state.toggleSleepRule(.tomorrowsPlan)
                         }
                         step = 2
                     })
-                    StepProgress(step: 2, total: 4)
+                    StepProgress(step: 2, total: 5)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Kicker(text: "Step two · your rules")
@@ -1154,7 +1158,7 @@ struct OnbSleepRulesView: View {
                             .font(.serif(30))
                             .foregroundColor(.lullInk0)
                             .padding(.top, 10)
-                        Text("Pick 1-3. If you miss the grace window, scroll-lock starts until you recover, then cools down for 10 minutes.")
+                        Text("Pick 1-3. If you miss the grace window, your selected apps lock until you recover, then cool down for 10 minutes.")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(4)
@@ -1384,7 +1388,7 @@ struct OnbBedtimeView: View {
 
                 VStack(spacing: 0) {
                 Spacer().frame(height: 16)
-                OnbTopBar(step: 3, total: 4, onBack: { step = 1 }, onSkip: {
+                OnbTopBar(step: 3, total: 5, onBack: { step = 1 }, onSkip: {
                     if kind == .target {
                         state.currentBedtime = state.targetBedtime
                         state.currentWakeTime = state.targetWakeTime
@@ -1394,7 +1398,7 @@ struct OnbBedtimeView: View {
                     }
                     step = 3
                 })
-                StepProgress(step: 3, total: 4)
+                StepProgress(step: 3, total: 5)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Kicker(text: kind.kicker)
@@ -1988,7 +1992,7 @@ struct OnbRoutineReadyView: View {
     }()
 
     private var headlineSub: String {
-        "If you miss a rule, scroll-lock starts. Complete it late and the lock cools down for 10 minutes."
+        "If you miss a rule, selected apps lock. Complete it late and the lock cools down for 10 minutes."
     }
 
     var body: some View {
@@ -2100,7 +2104,7 @@ struct OnbRoutineReadyView: View {
 
                     VStack(spacing: 0) {
                         PrimaryCTA(
-                            title: "Continue to activation"
+                            title: "Choose apps to block"
                         ) {
                             step = 4
                         }
@@ -2131,6 +2135,324 @@ struct OnbRoutineReadyView: View {
         state.refreshOnboardingClassifications()
         let answers = OnboardingAnswers(from: state)
         state.applyGeneratedRoutine(generateStartingRoutine(from: answers), scheduleNotifications: false)
+    }
+}
+
+// MARK: - App Blocking Commitment
+
+struct OnbAppBlockingCommitmentView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+    @ObservedObject private var probe = AppBlockingAccessProbe.shared
+    @State private var selection = FamilyActivitySelection()
+    @State private var showPicker = false
+    @State private var isSaving = false
+
+    private var appCount: Int { selection.applicationTokens.count }
+    private var categoryCount: Int { selection.categoryTokens.count }
+    private var selectedCount: Int { appCount + categoryCount }
+    private var hasSelection: Bool { selectedCount > 0 }
+    private var nextStep: Int { 5 }
+
+    var body: some View {
+        LullScreen(glow: true, glowX: 0.48, glowY: 0.16, glowRadius: 290, glowOpacity: 0.64) {
+            GeometryReader { geo in
+                let compact = geo.size.height < 740
+
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: compact ? 14 : 18) {
+                            Spacer().frame(height: compact ? 18 : 30)
+                            BrandMark(large: false)
+
+                            VStack(spacing: 12) {
+                                Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
+
+                                (Text("What should\nTenThirty\n")
+                                    .foregroundColor(.lullInk0)
+                                 + Text("lock away?")
+                                    .font(.serifItalic(compact ? 34 : 38))
+                                    .foregroundColor(.lullAmber))
+                                    .font(.serif(compact ? 32 : 36, weight: .semibold))
+                                    .multilineTextAlignment(.center)
+
+                                Text("When you missed your commitment and during your sleep window, TenThirty blocks the apps that keep you scrolling.")
+                                    .font(.system(size: 14.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(4)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 318)
+                            }
+                            .padding(.top, compact ? 10 : 18)
+
+                            accessCard
+                                .padding(.horizontal, Lull.horizontalPad)
+
+                            appPickerCard
+                                .padding(.horizontal, Lull.horizontalPad)
+
+                            Spacer().frame(height: hasSelection && probe.isApproved ? 128 : 92)
+                        }
+                        .frame(maxWidth: 430)
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    bottomBar
+                }
+            }
+        }
+        .familyActivityPicker(isPresented: $showPicker, selection: $selection)
+        .onAppear {
+            selection = state.appBlockingSelection
+            probe.refresh()
+        }
+    }
+
+    private var accessCard: some View {
+        VStack(alignment: .leading, spacing: probe.isApproved ? 0 : 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("STEP 1 · APP BLOCKING")
+                    .font(.mono(10))
+                    .kerning(1.3)
+                    .foregroundColor(.lullInk3)
+                Spacer()
+                Text(probe.isApproved ? "ACCESS APPROVED" : probe.statusText.uppercased())
+                    .font(.mono(9.5))
+                    .kerning(1)
+                    .foregroundColor(probe.isApproved ? Color(hex: "#8fce93") : .lullAmber)
+            }
+
+            if !probe.isApproved {
+                Text(probe.detailText)
+                    .font(.system(size: 13))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await probe.requestAccess() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if probe.isChecking {
+                            ProgressView()
+                                .tint(.lullBgDeep)
+                        } else {
+                            Image(systemName: "lock.shield")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text("Check access")
+                            .font(.system(size: 14.5, weight: .semibold))
+                    }
+                    .foregroundColor(.lullBgDeep)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Capsule().fill(Color.lullAmber))
+                    .shadow(color: .lullAmberGlow, radius: 12, y: 4)
+                }
+                .buttonStyle(.plain)
+                .disabled(probe.isChecking)
+                .opacity(probe.isChecking ? 0.75 : 1)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(probe.isApproved ? Color(hex: "#8fce93").opacity(0.25) : Color.lullAmber.opacity(0.16), lineWidth: 1)
+        )
+    }
+
+    private var appPickerCard: some View {
+        Button {
+            guard probe.isApproved else { return }
+            showPicker = true
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Text("STEP 2 · CHOOSE APPS")
+                        .font(.mono(10))
+                        .kerning(1.3)
+                        .foregroundColor(probe.isApproved ? .lullInk1 : .lullInk3)
+                    if selectedCount > 0 {
+                        Text("· \(selectedCount) SELECTED")
+                            .font(.mono(10))
+                            .kerning(1.0)
+                            .foregroundColor(.lullAmber)
+                    }
+                    Spacer()
+                    Image(systemName: probe.isApproved ? "chevron.right" : "lock.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(probe.isApproved ? .lullAmber : .lullInk4)
+                }
+
+                HStack(spacing: 10) {
+                    ForEach(selectionSlots, id: \.self) { slot in
+                        OnbBlockingSelectionSlot(kind: slot)
+                    }
+                }
+
+                if selectedCount > 0 {
+                    Text(selectionSummary)
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(probe.isApproved ? Color.white.opacity(0.04) : Color.white.opacity(0.025))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        probe.isApproved ? Color.lullAmber.opacity(0.16) : Color.lullLineStrong,
+                        style: StrokeStyle(lineWidth: 1, dash: probe.isApproved ? [] : [5, 5])
+                    )
+            )
+            .opacity(probe.isApproved ? 1 : 0.52)
+        }
+        .buttonStyle(.plain)
+        .disabled(!probe.isApproved)
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            if probe.isApproved && hasSelection {
+                PrimaryCTA(title: isSaving ? "Saving..." : "Finish setup", disabled: isSaving) {
+                    guard !isSaving else { return }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    isSaving = true
+                    state.configureAppBlocking(
+                        selection: selection,
+                        enabled: true,
+                        startTime: state.typicalBedtime,
+                        endTime: state.typicalWakeTime,
+                        graceMinutes: state.appBlockingGraceMinutes
+                    )
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+                        step = nextStep
+                    }
+                }
+            }
+
+            GhostButton(title: "Not now") {
+                step = nextStep
+            }
+        }
+        .padding(.horizontal, Lull.horizontalPad)
+        .padding(.top, 18)
+        .padding(.bottom, 34)
+        .background(
+            LinearGradient(
+                colors: [Color.lullBg.opacity(0), Color.lullBg.opacity(0.96), Color.lullBg],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    private var selectionSlots: [OnbBlockingSelectionSlot.Kind] {
+        var slots: [OnbBlockingSelectionSlot.Kind] = []
+        let tokenCount = min(selectedCount, 3)
+        for index in 0..<tokenCount {
+            slots.append(index < appCount ? .app : .category)
+        }
+        while slots.count < 3 {
+            slots.append(.empty)
+        }
+        return slots
+    }
+
+    private var selectionSummary: String {
+        var parts: [String] = []
+        if appCount > 0 {
+            parts.append("\(appCount) \(appCount == 1 ? "app" : "apps")")
+        }
+        if categoryCount > 0 {
+            parts.append("\(categoryCount) \(categoryCount == 1 ? "category" : "categories")")
+        }
+        return parts.joined(separator: " · ")
+    }
+}
+
+private struct OnbBlockingTimeTile: View {
+    var title: String
+    var value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.mono(10))
+                .kerning(1.2)
+                .foregroundColor(.lullInk4)
+            Text(value)
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundColor(.lullInk1)
+                .minimumScaleFactor(0.82)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.035))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.lullLineStrong, lineWidth: 1)
+        )
+    }
+}
+
+private struct OnbBlockingSelectionSlot: View {
+    enum Kind: Hashable {
+        case app
+        case category
+        case empty
+    }
+
+    var kind: Kind
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(border, style: StrokeStyle(lineWidth: 1, dash: kind == .empty ? [5, 5] : []))
+                )
+                .frame(width: 50, height: 50)
+
+            Image(systemName: icon)
+                .font(.system(size: kind == .empty ? 17 : 16, weight: .semibold))
+                .foregroundColor(iconColor)
+        }
+    }
+
+    private var icon: String {
+        switch kind {
+        case .app: return "app.fill"
+        case .category: return "square.grid.2x2.fill"
+        case .empty: return "plus"
+        }
+    }
+
+    private var background: Color {
+        kind == .empty ? Color.clear : Color.lullAmber.opacity(0.10)
+    }
+
+    private var border: Color {
+        kind == .empty ? Color.lullLineStrong : Color.lullAmber.opacity(0.30)
+    }
+
+    private var iconColor: Color {
+        kind == .empty ? .lullInk4 : .lullAmber
     }
 }
 
@@ -2291,7 +2613,7 @@ struct OnbCommitmentView: View {
                 }
             }
 
-            GhostButton(title: "Not tonight") {
+            GhostButton(title: "Not now") {
                 step = nextStep
             }
         }
@@ -2388,7 +2710,7 @@ struct OnbTrialPaywallView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
 
-            Text("Start 7 nights with scroll-lock enforcement. Your rules, protected when timing matters.")
+            Text("Start 7 nights with app-lock enforcement. Your rules, protected when timing matters.")
                 .font(.system(size: 14.5))
                 .foregroundColor(.lullInk2)
                 .lineSpacing(4)
@@ -2406,7 +2728,7 @@ struct OnbTrialPaywallView: View {
             )
             TrialBenefit(
                 title: "Rules with consequences",
-                detail: "Miss a grace window and scroll-lock protects the moment"
+                detail: "Miss a grace window and selected apps lock"
             )
             TrialBenefit(
                 title: "Late recovery cooldown",
@@ -2435,7 +2757,7 @@ struct OnbTrialPaywallView: View {
     private func bottomBar(bottomInset: CGFloat) -> some View {
         VStack(spacing: 12) {
             TrialCTA(
-                title: isStartingTrial ? "Starting..." : "Start scroll-lock trial",
+                title: isStartingTrial ? "Starting..." : "Start TenThirty trial",
                 subtitle: "Then $49.99/year. Cancel anytime.",
                 disabled: isStartingTrial || subscriptions.isLoading
             ) {
@@ -2537,7 +2859,6 @@ struct OnbTrialPaywallView: View {
         if subscriptions.isLullProActive {
             state.applyRevenueCatEntitlement(isActive: true)
             state.completeOnboarding()
-            state.startAppBlockingOfferSetup()
         } else if didPresentOfferCodeSheet {
             statusMessage = "If Apple accepted your code, it may take a moment to appear. Tap Restore if TenThirty does not unlock."
         }
@@ -2566,7 +2887,6 @@ struct OnbTrialPaywallView: View {
             state.applyRevenueCatEntitlement(isActive: true)
             state.trackPurchaseSucceeded(product: product)
             state.completeOnboarding()
-            state.startAppBlockingOfferSetup()
         } catch {
             if error.localizedDescription.localizedCaseInsensitiveContains("cancel") {
                 state.trackPurchaseCancelled(product: product)
@@ -2584,7 +2904,6 @@ struct OnbTrialPaywallView: View {
         if subscriptions.isLullProActive {
             state.applyRevenueCatEntitlement(isActive: true)
             state.completeOnboarding()
-            state.startAppBlockingOfferSetup()
         } else {
             statusMessage = subscriptions.lastErrorMessage ?? "No active TenThirty Premium purchase was found."
         }

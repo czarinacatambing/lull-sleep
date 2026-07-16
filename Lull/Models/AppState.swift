@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import UserNotifications
 import ActivityKit
+import DeviceActivity
 import FamilyControls
 import ManagedSettings
 import PostHog
@@ -192,6 +193,13 @@ struct SleepRuleCompletion: Codable, Identifiable, Equatable {
     var completedWithinGrace: Bool
 }
 
+struct SleepRuleSlip: Codable, Identifiable, Equatable {
+    var id: UUID = UUID()
+    let rule: SleepRuleKind
+    let dueAt: Date
+    var slippedAt: Date
+}
+
 struct SleepRuleConfiguration: Codable, Equatable {
     var dueTime: Date?
     var graceMinutes: Int?
@@ -205,8 +213,11 @@ struct SleepContractItem: Identifiable, Equatable {
     let graceEndsAt: Date
     let startsTomorrow: Bool
     let completion: SleepRuleCompletion?
+    let slip: SleepRuleSlip?
 
     var isCompleted: Bool { completion != nil }
+    var isSlipped: Bool { slip != nil }
+    var isResolved: Bool { isCompleted || isSlipped }
     var isRange: Bool {
         !Calendar.current.isDate(availableAt, equalTo: dueAt, toGranularity: .minute)
     }
@@ -329,7 +340,9 @@ class AppState: ObservableObject {
     private static let shieldWakeTimeTextKey = "tenthirty_shieldWakeTimeText"
     private static let shieldLockReasonKey = "tenthirty_shieldLockReason"
     private static let shieldRuleTitleKey = "tenthirty_shieldRuleTitle"
+    private static let slipPenaltyMinutes = 10
     private let appBlockingStore = ManagedSettingsStore()
+    private let deviceActivityCenter = DeviceActivityCenter()
     private var appBlockingRefreshWorkItem: DispatchWorkItem?
     private var persistedTimeZoneIdentifier = TimeZone.autoupdatingCurrent.identifier
 
@@ -422,6 +435,7 @@ class AppState: ObservableObject {
     @Published var selectedSleepRules: Set<SleepRuleKind> = []
     @Published var sleepRuleConfigurations: [SleepRuleKind: SleepRuleConfiguration] = [:]
     @Published var sleepRuleCompletions: [SleepRuleCompletion] = []
+    @Published var sleepRuleSlips: [SleepRuleSlip] = []
     @Published var contractLockEvents: [ContractLockEvent] = []
     @Published var contractAllClearEvents: [ContractAllClearEvent] = []
     @Published var paywallState = PaywallState()
@@ -1077,6 +1091,9 @@ class AppState: ObservableObject {
             sleepLogs[idx].actualRitualStart = nil
             sleepLogs[idx].actualBedtime = nil
             sleepLogs[idx].stepAttempts.removeAll()
+        }
+        sleepRuleSlips.removeAll {
+            cal.isDate(contractAnchorDate(for: $0.dueAt), inSameDayAs: bedtimeDay)
         }
 
         persist()
@@ -2027,7 +2044,7 @@ class AppState: ObservableObject {
         ])
 
         let snapshot = PersistedState(
-            schemaVersion: 13,
+            schemaVersion: 14,
             testerName: testerName,
             selectedSleepProblems: selectedSleepProblems,
             selectedWakes: selectedWakes,
@@ -2056,6 +2073,7 @@ class AppState: ObservableObject {
             selectedSleepRules: Array(selectedSleepRules),
             sleepRuleConfigurations: sleepRuleConfigurations,
             sleepRuleCompletions: sleepRuleCompletions,
+            sleepRuleSlips: sleepRuleSlips,
             contractLockEvents: contractLockEvents,
             contractAllClearEvents: contractAllClearEvents,
             timeZoneIdentifier: persistedTimeZoneIdentifier,
@@ -2108,6 +2126,7 @@ class AppState: ObservableObject {
             _selectedSleepRules       = Published(initialValue: Set(saved.selectedSleepRules))
             _sleepRuleConfigurations  = Published(initialValue: saved.sleepRuleConfigurations)
             _sleepRuleCompletions     = Published(initialValue: saved.sleepRuleCompletions)
+            _sleepRuleSlips           = Published(initialValue: saved.sleepRuleSlips)
             _contractLockEvents       = Published(initialValue: saved.contractLockEvents)
             _contractAllClearEvents   = Published(initialValue: saved.contractAllClearEvents)
             _paywallState             = Published(initialValue: saved.paywallState)
@@ -2275,6 +2294,7 @@ class AppState: ObservableObject {
         selectedSleepRules = [.caffeineCutoff, .dimLights, .tomorrowsPlan]
         sleepRuleConfigurations = [:]
         sleepRuleCompletions = []
+        sleepRuleSlips = []
         contractLockEvents = []
         contractAllClearEvents = []
     }
@@ -2310,6 +2330,7 @@ class AppState: ObservableObject {
             selectedSleepRules:       Array(selectedSleepRules),
             sleepRuleConfigurations:  sleepRuleConfigurations,
             sleepRuleCompletions:     sleepRuleCompletions,
+            sleepRuleSlips:           sleepRuleSlips,
             contractLockEvents:       contractLockEvents,
             contractAllClearEvents:   contractAllClearEvents,
             timeZoneIdentifier:       persistedTimeZoneIdentifier,
@@ -2483,6 +2504,9 @@ class AppState: ObservableObject {
         } else {
             sleepRuleCompletions.append(completion)
         }
+        sleepRuleSlips.removeAll {
+            $0.rule == item.rule && Calendar.current.isDate($0.dueAt, equalTo: item.dueAt, toGranularity: .minute)
+        }
 
         trackAnalytics(completedWithinGrace ? "sleep_rule_completed_on_time" : "sleep_rule_completed_late", [
             "sleep_rule": item.rule.rawValue,
@@ -2497,7 +2521,38 @@ class AppState: ObservableObject {
             ])
         }
         persist()
+        scheduleAllNotifications()
         refreshAppBlockingShield(now: completedAt)
+    }
+
+    func recordSleepRuleSlip(_ item: SleepContractItem, at slippedAt: Date = Date()) {
+        let slip = SleepRuleSlip(
+            rule: item.rule,
+            dueAt: item.dueAt,
+            slippedAt: slippedAt
+        )
+
+        if let index = sleepRuleSlips.firstIndex(where: {
+            $0.rule == item.rule && Calendar.current.isDate($0.dueAt, equalTo: item.dueAt, toGranularity: .minute)
+        }) {
+            sleepRuleSlips[index] = slip
+        } else {
+            sleepRuleSlips.append(slip)
+        }
+
+        sleepRuleCompletions.removeAll {
+            $0.rule == item.rule && Calendar.current.isDate($0.dueAt, equalTo: item.dueAt, toGranularity: .minute)
+        }
+
+        trackAnalytics("sleep_rule_slipped", [
+            "sleep_rule": item.rule.rawValue,
+            "due_at": Self.researchDateString(item.dueAt),
+            "slipped_at": Self.researchDateString(slippedAt),
+            "sleep_window_penalty_minutes": "\(Self.slipPenaltyMinutes)"
+        ])
+        persist()
+        scheduleAllNotifications()
+        refreshAppBlockingShield(now: slippedAt)
     }
 
     func isSleepRuleCompleted(_ rule: SleepRuleKind, now: Date = Date()) -> Bool {
@@ -2573,7 +2628,7 @@ class AppState: ObservableObject {
         let isSleepWindow = isWithinSleepWindow(now: now)
         let actionableSource = isSleepWindow ? contractItemsAround(now: now) : items
         let actionable = actionableSource
-            .filter { !$0.isCompleted && !$0.startsTomorrow && $0.availableAt <= now }
+            .filter { !$0.isResolved && !$0.startsTomorrow && $0.availableAt <= now }
             .filter { now.timeIntervalSince($0.dueAt) <= 18 * 60 * 60 }
             .sorted { lhs, rhs in
                 if lhs.graceEndsAt != rhs.graceEndsAt { return lhs.graceEndsAt < rhs.graceEndsAt }
@@ -2583,7 +2638,7 @@ class AppState: ObservableObject {
         let lockState: SleepContractEnforcementSnapshot.LockState
         if isSleepWindow {
             lockState = .sleepWindow(until: nextOccurrence(of: appBlockingEndTime, after: now) ?? appBlockingEndTime)
-        } else if let overdue = actionable.first(where: { $0.completion == nil && now >= $0.graceEndsAt }) {
+        } else if let overdue = actionable.first(where: { !$0.isResolved && now >= $0.graceEndsAt }) {
             lockState = .lockedByRule(overdue)
         } else if let cooldown = activeSleepContractCooldown(now: now) {
             lockState = .coolingDown(cooldown.item, until: cooldown.until)
@@ -2642,7 +2697,7 @@ class AppState: ObservableObject {
         let activatedAt = sleepContractActivatedAt
         let startsTomorrow = activatedAt.map { activatedAt in
             Calendar.current.isDate(contractAnchorDate(for: activatedAt), inSameDayAs: contractAnchorDate(for: dueAt)) &&
-            activatedAt > graceEndsAt
+            activatedAt > dueAt
         } ?? false
         return SleepContractItem(
             rule: rule,
@@ -2650,12 +2705,19 @@ class AppState: ObservableObject {
             dueAt: dueAt,
             graceEndsAt: graceEndsAt,
             startsTomorrow: startsTomorrow,
-            completion: completion(for: rule, dueAt: dueAt)
+            completion: completion(for: rule, dueAt: dueAt),
+            slip: slip(for: rule, dueAt: dueAt)
         )
     }
 
     private func completion(for rule: SleepRuleKind, dueAt: Date) -> SleepRuleCompletion? {
         sleepRuleCompletions.first {
+            $0.rule == rule && Calendar.current.isDate($0.dueAt, equalTo: dueAt, toGranularity: .minute)
+        }
+    }
+
+    private func slip(for rule: SleepRuleKind, dueAt: Date) -> SleepRuleSlip? {
+        sleepRuleSlips.first {
             $0.rule == rule && Calendar.current.isDate($0.dueAt, equalTo: dueAt, toGranularity: .minute)
         }
     }
@@ -2705,7 +2767,7 @@ class AppState: ObservableObject {
             .filter { now.timeIntervalSince($0.dueAt) <= 18 * 60 * 60 }
             .sorted { $0.dueAt < $1.dueAt }
             .first { item in
-                item.completion == nil && !item.startsTomorrow && now >= item.graceEndsAt
+                !item.isResolved && !item.startsTomorrow && now >= item.graceEndsAt
             }
     }
 
@@ -2723,7 +2785,39 @@ class AppState: ObservableObject {
     }
 
     private func isWithinSleepWindow(now: Date = Date()) -> Bool {
-        isWithinWindow(now: now, start: typicalBedtime, end: appBlockingEndTime)
+        isWithinWindow(now: now, start: effectiveSleepWindowStart(now: now), end: appBlockingEndTime)
+    }
+
+    func effectiveSleepWindowStart(now: Date = Date()) -> Date {
+        let scheduledStart = scheduledSleepWindowStart(now: now)
+        guard hasSleepRuleSlip(onContractDay: contractAnchorDate(for: now)),
+              let penaltyStart = Calendar.current.date(byAdding: .minute, value: -Self.slipPenaltyMinutes, to: scheduledStart) else {
+            return scheduledStart
+        }
+        return penaltyStart
+    }
+
+    func slippedSleepWindowStart(now: Date = Date()) -> Date {
+        let scheduledStart = scheduledSleepWindowStart(now: now)
+        return Calendar.current.date(byAdding: .minute, value: -Self.slipPenaltyMinutes, to: scheduledStart) ?? scheduledStart
+    }
+
+    private func scheduledSleepWindowStart(now: Date) -> Date {
+        let calendar = Calendar.current
+        let anchor = contractAnchorDate(for: now)
+        let bedtimeComponents = calendar.dateComponents([.hour, .minute], from: typicalBedtime)
+        return calendar.date(
+            bySettingHour: bedtimeComponents.hour ?? 22,
+            minute: bedtimeComponents.minute ?? 30,
+            second: 0,
+            of: anchor
+        ) ?? typicalBedtime
+    }
+
+    private func hasSleepRuleSlip(onContractDay contractDay: Date, calendar: Calendar = .current) -> Bool {
+        sleepRuleSlips.contains { slip in
+            calendar.isDate(contractAnchorDate(for: slip.dueAt), inSameDayAs: contractDay)
+        }
     }
 
     private func isWithinWindow(now: Date, start: Date, end: Date) -> Bool {
@@ -2774,6 +2868,10 @@ class AppState: ObservableObject {
             appBlockingStore.clearAllSettings()
         }
 
+        let hasMonitorConfiguration = appBlockingEnabled &&
+            hasTargets &&
+            (canUseHardAppBlocking || !bypassed)
+        rescheduleDeviceActivityMonitors(now: now, hasConfiguration: hasMonitorConfiguration)
         scheduleNextAppBlockingShieldRefresh(now: now, hasConfiguration: appBlockingEnabled && hasTargets)
     }
 
@@ -2861,6 +2959,7 @@ class AppState: ObservableObject {
         defaults?.set(wakeText, forKey: Self.shieldWakeTimeTextKey)
         defaults?.set(reason, forKey: Self.shieldLockReasonKey)
         defaults?.set(ruleTitle, forKey: Self.shieldRuleTitleKey)
+        defaults?.synchronize()
     }
 
     private func scheduleNextAppBlockingShieldRefresh(now: Date, hasConfiguration: Bool) {
@@ -2881,6 +2980,158 @@ class AppState: ObservableObject {
         }
         appBlockingRefreshWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+    }
+
+    private func rescheduleDeviceActivityMonitors(now: Date, hasConfiguration: Bool) {
+        let priorNames = AppBlockingMonitorStore.activityNames()
+
+        guard hasConfiguration else {
+            if !priorNames.isEmpty {
+                deviceActivityCenter.stopMonitoring(priorNames)
+            }
+            AppBlockingMonitorStore.clearSchedule()
+            return
+        }
+
+        let windows = appBlockingMonitorWindows(now: now)
+        guard !windows.isEmpty else {
+            if !priorNames.isEmpty {
+                deviceActivityCenter.stopMonitoring(priorNames)
+            }
+            AppBlockingMonitorStore.save(selection: appBlockingSelection, windows: [])
+            AppBlockingMonitorStore.saveActivityNames([])
+            return
+        }
+
+        AppBlockingMonitorStore.save(selection: appBlockingSelection, windows: windows)
+        if !priorNames.isEmpty {
+            deviceActivityCenter.stopMonitoring(priorNames)
+        }
+
+        let scheduledNames = windows.compactMap { window -> DeviceActivityName? in
+            let activityName = DeviceActivityName("tenthirty.lock.\(window.id)")
+            guard let schedule = deviceActivitySchedule(for: window, now: now) else { return nil }
+            do {
+                try deviceActivityCenter.startMonitoring(activityName, during: schedule)
+                return activityName
+            } catch {
+                #if DEBUG
+                print("[DeviceActivity] Failed to schedule \(activityName.rawValue): \(error.localizedDescription)")
+                #endif
+                return nil
+            }
+        }
+        AppBlockingMonitorStore.saveActivityNames(scheduledNames)
+    }
+
+    private func appBlockingMonitorWindows(now: Date) -> [AppBlockingMonitorWindow] {
+        let calendar = Calendar.current
+        let horizon = now.addingTimeInterval(48 * 60 * 60)
+        let wakeText = formattedAppBlockingWakeTime()
+        var windows: [AppBlockingMonitorWindow] = []
+
+        let anchor = contractAnchorDate(for: now)
+        let ruleAnchors = [0, 1].compactMap { calendar.date(byAdding: .day, value: $0, to: anchor) }
+        for ruleAnchor in ruleAnchors {
+            for item in orderedSelectedSleepRules.map({ sleepContractItem(for: $0, on: ruleAnchor) }) {
+                guard !item.isResolved, !item.startsTomorrow else { continue }
+                let start = item.graceEndsAt
+                let end = ruleLockMonitorEnd(start: start)
+                guard end > now, start < horizon else { continue }
+                windows.append(AppBlockingMonitorWindow(
+                    id: monitorWindowID(prefix: "rule", rule: item.rule, start: start),
+                    start: start,
+                    end: end,
+                    reason: .rule,
+                    ruleTitle: item.rule.title,
+                    wakeTimeText: wakeText
+                ))
+            }
+        }
+
+        for sleepAnchor in [-1, 0, 1].compactMap({ calendar.date(byAdding: .day, value: $0, to: anchor) }) {
+            let start = sleepWindowStart(onContractDay: sleepAnchor)
+            let end = sleepWindowMonitorEnd(start: start)
+            guard end > now, start < horizon else { continue }
+            windows.append(AppBlockingMonitorWindow(
+                id: monitorWindowID(prefix: "sleep", rule: nil, start: start),
+                start: start,
+                end: end,
+                reason: .sleepWindow,
+                ruleTitle: nil,
+                wakeTimeText: wakeText
+            ))
+        }
+
+        if let cooldown = activeSleepContractCooldown(now: now) {
+            windows.append(AppBlockingMonitorWindow(
+                id: monitorWindowID(prefix: "cooldown", rule: cooldown.item.rule, start: now),
+                start: now,
+                end: cooldown.until,
+                reason: .rule,
+                ruleTitle: cooldown.item.rule.title,
+                wakeTimeText: wakeText
+            ))
+        }
+
+        return Array(Dictionary(grouping: windows, by: \.id).compactMap { $0.value.first })
+            .sorted { lhs, rhs in
+                if lhs.start != rhs.start { return lhs.start < rhs.start }
+                return lhs.id < rhs.id
+            }
+    }
+
+    private func deviceActivitySchedule(for window: AppBlockingMonitorWindow, now: Date) -> DeviceActivitySchedule? {
+        let calendar = Calendar.current
+        let start = max(window.start, now.addingTimeInterval(2))
+        let end = window.end
+        guard end > start else { return nil }
+        var startComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: start)
+        startComponents.calendar = calendar
+        startComponents.timeZone = calendar.timeZone
+        var endComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: end)
+        endComponents.calendar = calendar
+        endComponents.timeZone = calendar.timeZone
+        return DeviceActivitySchedule(intervalStart: startComponents, intervalEnd: endComponents, repeats: false)
+    }
+
+    private func monitorWindowID(prefix: String, rule: SleepRuleKind?, start: Date) -> String {
+        let timestamp = Int(start.timeIntervalSince1970)
+        if let rule {
+            return "\(prefix).\(rule.rawValue).\(timestamp)"
+        }
+        return "\(prefix).\(timestamp)"
+    }
+
+    private func ruleLockMonitorEnd(start: Date) -> Date {
+        sleepWindowMonitorEnd(start: start)
+    }
+
+    private func sleepWindowStart(onContractDay contractDay: Date) -> Date {
+        let calendar = Calendar.current
+        let bedtimeComponents = calendar.dateComponents([.hour, .minute], from: typicalBedtime)
+        let scheduledStart = calendar.date(
+            bySettingHour: bedtimeComponents.hour ?? 22,
+            minute: bedtimeComponents.minute ?? 30,
+            second: 0,
+            of: contractDay
+        ) ?? contractDay
+
+        guard hasSleepRuleSlip(onContractDay: contractDay),
+              let penaltyStart = calendar.date(byAdding: .minute, value: -Self.slipPenaltyMinutes, to: scheduledStart) else {
+            return scheduledStart
+        }
+        return penaltyStart
+    }
+
+    private func sleepWindowMonitorEnd(start: Date) -> Date {
+        nextOccurrence(of: appBlockingEndTime, after: start) ?? start.addingTimeInterval(18 * 60 * 60)
+    }
+
+    private func formattedAppBlockingWakeTime() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: typicalWakeTime)
     }
 
     private func nextAppBlockingBoundary(after now: Date) -> Date? {
@@ -2904,7 +3155,7 @@ class AppState: ObservableObject {
             return dates
         }
         let sleepBoundaries = [
-            nextOccurrence(of: typicalBedtime, after: now),
+            nextOccurrence(of: effectiveSleepWindowStart(now: now), after: now),
             nextOccurrence(of: appBlockingEndTime, after: now)
         ].compactMap { $0 }
         return (ruleBoundaries + sleepBoundaries)
@@ -3673,6 +3924,10 @@ class AppState: ObservableObject {
         hasConfiguredAppBlockingTargets
     }
 
+    var requiresBlockedAppsBeforeRuleActions: Bool {
+        canUseHardAppBlocking && !hasConfiguredAppBlockingTargets
+    }
+
     var shouldOfferAppBlockingSetup: Bool {
         hasNoScreensRoutineStep &&
         !hasConfiguredAppBlockingTargets
@@ -3797,40 +4052,70 @@ class AppState: ObservableObject {
     }
 
     func scheduleSleepContractRuleNotifications() {
-        let center = UNUserNotificationCenter.current()
         let calendar = Calendar.current
+        let now = Date()
+        let anchor = contractAnchorDate(for: now)
 
-        for rule in orderedSelectedSleepRules {
-            let item = sleepContractItem(for: rule, on: Date())
-            let fireDate = rule == .morningSun ? item.availableAt : item.dueAt
-            var comps = calendar.dateComponents([.hour, .minute], from: fireDate)
-            comps.second = 0
+        for dayOffset in 0..<2 {
+            guard let contractDay = calendar.date(byAdding: .day, value: dayOffset, to: anchor) else { continue }
+            for rule in orderedSelectedSleepRules {
+                let item = sleepContractItem(for: rule, on: contractDay)
+                guard !item.startsTomorrow else { continue }
 
-            let content = UNMutableNotificationContent()
-            content.title = rule.title
-            content.body = sleepContractNotificationBody(for: item)
-            content.sound = .default
-            content.categoryIdentifier = "SLEEP_CONTRACT_RULE"
-            content.interruptionLevel = .timeSensitive
-            content.relevanceScore = 1.0
+                let dueFireDate = rule == .morningSun ? item.availableAt : item.dueAt
+                if dueFireDate > now {
+                    scheduleSleepContractNotification(
+                        identifier: "sleep_contract_due_\(rule.rawValue)_\(dayOffset)",
+                        title: rule.title,
+                        body: sleepContractNotificationBody(for: item),
+                        fireDate: dueFireDate
+                    )
+                }
 
-            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
-            let request = UNNotificationRequest(
-                identifier: "sleep_contract_rule_\(rule.rawValue)",
-                content: content,
-                trigger: trigger
-            )
-            center.add(request)
+                if item.graceEndsAt > now {
+                    scheduleSleepContractNotification(
+                        identifier: "sleep_contract_grace_\(rule.rawValue)_\(dayOffset)",
+                        title: "Selected apps lock now",
+                        body: "\(rule.title) was not confirmed before grace ended. Open TenThirty to complete it late.",
+                        fireDate: item.graceEndsAt
+                    )
+                }
+            }
         }
+    }
+
+    private func scheduleSleepContractNotification(identifier: String,
+                                                   title: String,
+                                                   body: String,
+                                                   fireDate: Date) {
+        let calendar = Calendar.current
+        var comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        comps.second = 0
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.categoryIdentifier = "SLEEP_CONTRACT_RULE"
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 1.0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 
     private func sleepContractNotificationBody(for item: SleepContractItem) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         if item.isRange {
-            return "Confirm by \(formatter.string(from: item.dueAt)) to keep scroll-lock from starting."
+            return "Confirm by \(formatter.string(from: item.dueAt)) before your selected apps get locked."
         }
-        return "Confirm before grace ends at \(formatter.string(from: item.graceEndsAt)) to keep scroll-lock from starting."
+        return "Confirm before grace ends at \(formatter.string(from: item.graceEndsAt)) before your selected apps get locked."
     }
 
     // Fires 10 min before wind-down ritual starts (i.e. 40 min before typicalBedtime)

@@ -571,7 +571,7 @@ struct DashboardView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "plus")
                                 .font(.system(size: 12, weight: .bold))
-                            Text("Add scroll-lock")
+                            Text("Choose apps to lock")
                                 .font(.system(size: 14.5, weight: .semibold))
                         }
                         .foregroundColor(.lullBgDeep)
@@ -2668,7 +2668,7 @@ struct TodayFireflyScene: View {
                         )
                         Group {
                             if entering {
-                                EarnedFireflyEntranceDot(
+                                FireflyMascotView(
                                     phase: entrancePhase,
                                     reduceMotion: reduceMotion
                                 )
@@ -2994,7 +2994,7 @@ struct TodayFireflyScene: View {
 
     private func weekDayNumberPosition(index: Int, size: CGSize) -> CGPoint {
         let unit = weekDayCellUnitPosition(index: index, size: size)
-        return CGPoint(x: unit.x * size.width, y: min(size.height * 0.86, unit.y * size.height + 28))
+        return CGPoint(x: unit.x * size.width, y: min(size.height * 0.86, unit.y * size.height + 22))
     }
 
     private func dayCellUnitPosition(day: Int, size: CGSize) -> CGPoint {
@@ -3014,7 +3014,7 @@ struct TodayFireflyScene: View {
         let x0: CGFloat = 0.14
         let x1: CGFloat = 0.86
         let colStep = (x1 - x0) / 6
-        return CGPoint(x: x0 + CGFloat(index) * colStep, y: metrics.y0 + 0.06)
+        return CGPoint(x: x0 + CGFloat(index) * colStep, y: metrics.y0 + 0.015)
     }
 
     private func weekdayPosition(index: Int, size: CGSize) -> CGPoint {
@@ -3034,12 +3034,15 @@ struct TodayFireflyScene: View {
 
     private func calendarMetrics(size: CGSize) -> (weekdayY: CGFloat, y0: CGFloat, y1: CGFloat, monthY: CGFloat) {
         let height = max(size.height, 1)
-        let reservedTop = (calendarTopInset + 18) / height
-        let weekdayY = min(0.68, max(0.39, reservedTop))
-        let y0 = min(0.74, weekdayY + 0.055)
-        let monthY: CGFloat = 0.90
+        let reservedTop = (calendarTopInset + 10) / height
+        let embedded = calendarTopInset <= 0
+        let weekdayY = embedded
+            ? min(0.22, max(0.11, reservedTop))
+            : min(0.60, max(0.39, reservedTop))
+        let y0 = min(0.71, weekdayY + (embedded ? 0.09 : 0.032))
+        let monthY: CGFloat = embedded ? 0.84 : 0.90
         let rowBottomLimit = monthY - 0.12
-        let availableSpan = max(0.14, min(0.30, rowBottomLimit - y0))
+        let availableSpan = max(embedded ? 0.30 : 0.20, min(embedded ? 0.44 : 0.34, rowBottomLimit - y0))
         let y1 = min(rowBottomLimit, y0 + availableSpan)
         return (weekdayY, y0, y1, monthY)
     }
@@ -3083,163 +3086,6 @@ struct FireflyDot: View {
                 pulse.toggle()
             }
         }
-    }
-}
-
-private struct EarnedFireflyEntranceDot: View {
-    let phase: Int
-    let reduceMotion: Bool
-    @State private var wingFlutter = false
-
-    private var wingOpacity: Double {
-        phase == 1 ? 0.26 : 0.16
-    }
-
-    private var glowScale: CGFloat {
-        phase == 1 ? 1.22 : 0.92
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.lullAmber.opacity(0.34),
-                            Color.lullAmber.opacity(0.16),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 32
-                    )
-                )
-                .frame(width: 72, height: 72)
-                .scaleEffect(glowScale)
-                .blur(radius: 1.2)
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(0.86),
-                            Color.lullAmber.opacity(0.96),
-                            Color.lullAmber.opacity(0.24),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 19
-                    )
-                )
-                .frame(width: 34, height: 34)
-                .shadow(color: .lullAmberGlow, radius: 18)
-
-            ZStack {
-                wing
-                    .rotationEffect(.degrees(wingFlutter ? -24 : -17), anchor: .leading)
-                    .offset(x: 0, y: -9)
-                wing
-                    .scaleEffect(x: 1, y: -1)
-                    .rotationEffect(.degrees(wingFlutter ? 24 : 17), anchor: .leading)
-                    .offset(x: 0, y: 9)
-            }
-            .offset(x: -1, y: -2)
-            .opacity(0.38)
-
-            insectBody
-                .scaleEffect(0.58)
-                .opacity(0.24)
-        }
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 0.18).repeatForever(autoreverses: true)) {
-                wingFlutter.toggle()
-            }
-        }
-    }
-
-    private var wing: some View {
-        Ellipse()
-            .fill(
-                RadialGradient(
-                    colors: [
-                        Color.lullInk0.opacity(wingOpacity),
-                            Color.lullAmber.opacity(0.08),
-                        .clear
-                    ],
-                    center: .leading,
-                    startRadius: 1,
-                    endRadius: 22
-                )
-            )
-            .frame(width: 32, height: 17)
-            .overlay(
-                Ellipse()
-                    .stroke(Color.lullInk0.opacity(wingOpacity * 0.45), lineWidth: 0.6)
-            )
-            .blur(radius: 0.12)
-    }
-
-    private var insectBody: some View {
-        ZStack {
-            antenna
-                .stroke(Color.black.opacity(0.70), lineWidth: 0.9)
-                .frame(width: 18, height: 10)
-                .offset(x: -21, y: -8)
-
-            Capsule()
-                .fill(Color.black.opacity(0.84))
-                .frame(width: 32, height: 8.5)
-                .offset(x: -1, y: -1)
-
-            Ellipse()
-                .fill(Color.black.opacity(0.88))
-                .frame(width: 13, height: 11)
-                .offset(x: -15, y: -2)
-
-            Ellipse()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(0.92),
-                            Color.lullAmber.opacity(0.95),
-                            Color.lullAmber.opacity(0.12)
-                        ],
-                        center: .leading,
-                        startRadius: 0,
-                        endRadius: 17
-                    )
-                )
-                .frame(width: 27, height: 17)
-                .offset(x: 15, y: 1)
-                .shadow(color: .lullAmberGlow, radius: 18)
-
-            VStack(spacing: 2) {
-                ForEach(0..<3, id: \.self) { _ in
-                    Capsule()
-                        .fill(Color.black.opacity(0.18))
-                        .frame(width: 1.2, height: 12)
-                }
-            }
-            .rotationEffect(.degrees(90))
-            .offset(x: 14, y: 1)
-
-            Circle()
-                .fill(Color.white.opacity(0.72))
-                .frame(width: 4.5, height: 4.5)
-                .offset(x: 6, y: -3)
-        }
-        .rotationEffect(.degrees(-4))
-    }
-
-    private var antenna: Path {
-        var path = Path()
-        path.move(to: CGPoint(x: 16, y: 8))
-        path.addCurve(to: CGPoint(x: 3, y: 2), control1: CGPoint(x: 12, y: 4), control2: CGPoint(x: 8, y: 2))
-        path.move(to: CGPoint(x: 16, y: 8))
-        path.addCurve(to: CGPoint(x: 5, y: 9), control1: CGPoint(x: 12, y: 9), control2: CGPoint(x: 8, y: 10))
-        return path
     }
 }
 
@@ -5699,33 +5545,7 @@ struct SettingsSheet: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomerCenter = false
-    #if DEBUG
-    @State private var seededNightCount: Int? = nil
-    #endif
     @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
-    @State private var initialSleepScheduleSignature: String? = nil
-
-    private static let timeFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
-    }()
-
-    private var sleepDurationText: String {
-        let mins = AppState.clockDurationMinutes(from: state.typicalBedtime, to: state.typicalWakeTime)
-        let h = mins / 60
-        let m = mins % 60
-        return m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
-    }
-
-    private func formatted(_ date: Date) -> String {
-        Self.timeFmt.string(from: date)
-    }
-
-    private var sleepScheduleSignature: String {
-        let cal = Calendar.autoupdatingCurrent
-        let bed = cal.dateComponents([.hour, .minute], from: state.typicalBedtime)
-        let wake = cal.dateComponents([.hour, .minute], from: state.typicalWakeTime)
-        return "\(bed.hour ?? 0):\(bed.minute ?? 0)-\(wake.hour ?? 0):\(wake.minute ?? 0)"
-    }
 
     var body: some View {
         NavigationStack {
@@ -5757,15 +5577,10 @@ struct SettingsSheet: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .onDisappear {
-            if initialSleepScheduleSignature != sleepScheduleSignature {
-                state.sleepWindowWasEdited()
-            } else {
-                state.persist()
-                state.scheduleAllNotifications()
-            }
+            state.persist()
+            state.scheduleAllNotifications()
         }
         .onAppear {
-            initialSleepScheduleSignature = sleepScheduleSignature
             refreshLiveActivitiesStatus()
         }
         .task {
@@ -5792,22 +5607,6 @@ struct SettingsSheet: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 26) {
                 premiumCard
-
-                settingsSection(title: nil) {
-                    NavigationLink {
-                        sleepWindowEditor
-                            .navigationTitle("Adjust Sleep Window")
-                            .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        SettingsRowContent(
-                            icon: "moon.zzz.fill",
-                            title: "Adjust Sleep Window",
-                            subtitle: sleepDurationText,
-                            accessory: .chevron
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
 
                 settingsSection(title: "About") {
                     ShareLink(
@@ -5849,15 +5648,6 @@ struct SettingsSheet: View {
                         open(Self.termsURL)
                     }
                 }
-
-                #if DEBUG
-                VStack(alignment: .leading, spacing: 12) {
-                    SettingsSectionTitle("Debug")
-                    debugSeedButton(count: 3, kind: .milestone)
-                    debugSeedButton(count: 6, kind: .activeTrial)
-                    debugSeedButton(count: 7, kind: .paywall)
-                }
-                #endif
 
                 Spacer().frame(height: 28)
             }
@@ -5955,77 +5745,6 @@ struct SettingsSheet: View {
         }
     }
 
-    private var sleepWindowEditor: some View {
-        ZStack {
-            Color.lullBg.ignoresSafeArea()
-            AmberGlow(x: 0.5, y: -0.05, radius: 220, opacity: 0.5)
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Kicker(text: "Sleep window")
-                        Text("When do you usually sleep?")
-                            .font(.serif(22))
-                            .foregroundColor(.lullInk0)
-                    }
-                    .padding(.horizontal, 26)
-                    .padding(.top, 8)
-                    .padding(.bottom, 20)
-
-                    VStack(spacing: 3) {
-                        Text(sleepDurationText)
-                            .font(.serif(34))
-                            .foregroundColor(.lullInk0)
-                        Text("Typical window")
-                            .font(.mono(10))
-                            .kerning(1.6)
-                            .foregroundColor(.lullInk3)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, 16)
-
-                    SleepArcClock(bedtime: $state.typicalBedtime, wakeTime: $state.typicalWakeTime)
-                        .frame(width: 260, height: 260)
-                        .frame(maxWidth: .infinity)
-
-                    HStack {
-                        VStack(spacing: 4) {
-                            Image(systemName: "moon.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullAmber)
-                            Text(formatted(state.typicalBedtime))
-                                .font(.serif(18))
-                                .foregroundColor(.lullInk0)
-                            Text("Usually asleep")
-                                .font(.mono(10))
-                                .kerning(1.2)
-                                .foregroundColor(.lullInk3)
-                        }
-                        Spacer()
-                        VStack(spacing: 4) {
-                            Image(systemName: "sun.horizon.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullAmber)
-                            Text(formatted(state.typicalWakeTime))
-                                .font(.serif(18))
-                                .foregroundColor(.lullInk0)
-                            Text("Usually up")
-                                .font(.mono(10))
-                                .kerning(1.2)
-                                .foregroundColor(.lullInk3)
-                        }
-                    }
-                    .padding(.horizontal, 52)
-                    .padding(.top, 12)
-                    .padding(.bottom, 36)
-
-                    Spacer().frame(height: 40)
-                }
-            }
-        }
-    }
-
     private func settingsSection<Content: View>(title: String?, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             if let title {
@@ -6076,81 +5795,6 @@ struct SettingsSheet: View {
     private static let websiteURL = URL(string: "https://trytenthirty.com")!
     private static let privacyURL = URL(string: "https://trytenthirty.com/privacy")!
     private static let termsURL = URL(string: "https://trytenthirty.com/terms")!
-
-    #if DEBUG
-    private enum DebugSeedKind {
-        case activeTrial
-        case milestone
-        case paywall
-    }
-
-    private func debugSeedButton(count: Int, kind: DebugSeedKind) -> some View {
-        let didSeed = seededNightCount == count
-        return Button {
-            state.debugSeedCompletedNightsAndExpireTrial(
-                count: count,
-                presentMilestone: kind == .milestone,
-                expireTrial: kind == .paywall
-            )
-            seededNightCount = count
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: didSeed ? "checkmark.circle.fill" : "timer")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.lullAmber)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(debugSeedTitle(count: count, kind: kind))
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.lullInk0)
-                    Text(didSeed
-                         ? debugSeedCompleteText(count: count, kind: kind)
-                         : debugSeedDescription(count: count, kind: kind))
-                        .font(.system(size: 12.5))
-                        .foregroundColor(.lullInk3)
-                        .lineSpacing(2)
-                }
-                Spacer()
-            }
-            .padding(14)
-            .lullCard(radius: 14, accent: didSeed)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func debugSeedDescription(count: Int, kind: DebugSeedKind) -> String {
-        switch kind {
-        case .activeTrial:
-            return "Creates \(count) completed nights with ratings and keeps the trial active."
-        case .milestone:
-            return "Creates \(count) completed nights with ratings, then shows the milestone card."
-        case .paywall:
-            return "Creates \(count) completed nights with ratings, then expires the trial."
-        }
-    }
-
-    private func debugSeedTitle(count: Int, kind: DebugSeedKind) -> String {
-        switch kind {
-        case .activeTrial:
-            return "Seed \(count)-night active trial test"
-        case .milestone:
-            return "Seed \(count)-night milestone test"
-        case .paywall:
-            return "Seed \(count)-night paywall test"
-        }
-    }
-
-    private func debugSeedCompleteText(count: Int, kind: DebugSeedKind) -> String {
-        switch kind {
-        case .activeTrial:
-            return "\(count) nights seeded. Trial remains active."
-        case .milestone:
-            return "\(count) nights seeded. Milestone card requested."
-        case .paywall:
-            return "\(count) nights seeded. RevenueCat paywall requested."
-        }
-    }
-    #endif
 
     private func refreshLiveActivitiesStatus() {
         liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled

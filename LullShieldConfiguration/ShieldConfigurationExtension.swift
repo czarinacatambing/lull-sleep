@@ -6,7 +6,6 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     private let appGroupSuite = "group.com.trylull.app"
     private let wakeTimeKey = "tenthirty_shieldWakeTimeText"
     private let lockReasonKey = "tenthirty_shieldLockReason"
-    private let ruleTitleKey = "tenthirty_shieldRuleTitle"
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
         shieldConfiguration()
@@ -30,7 +29,7 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
             backgroundColor: UIColor(red: 0.05, green: 0.03, blue: 0.02, alpha: 1),
             icon: UIImage(systemName: "moon.stars.fill"),
             title: ShieldConfiguration.Label(
-                text: "Scroll-lock is active.",
+                text: titleText,
                 color: UIColor(red: 1.0, green: 0.96, blue: 0.90, alpha: 1)
             ),
             subtitle: ShieldConfiguration.Label(
@@ -40,17 +39,25 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         )
     }
 
+    private var titleText: String {
+        switch lockReason {
+        case "rule":
+            return "TenThirty has locked this app."
+        case "sleep_window":
+            return "TenThirty is protecting your sleep from doomscrolling."
+        default:
+            return "Scroll-lock is active."
+        }
+    }
+
     private var subtitleText: String {
         switch lockReason {
         case "rule":
-            if let ruleTitle, !ruleTitle.isEmpty {
-                return "Open TenThirty and confirm \(ruleTitle) to start recovery."
-            }
-            return "Open TenThirty and confirm your rule to start recovery."
+            return "You missed a commitment and have to first complete it before gaining access to this app."
         case "sleep_window":
-            return "Your sleep window is protected until \(wakeTimeText)."
+            return "We're protecting your sleep. You can access this app outside your sleep window."
         default:
-            return "TenThirty is protecting your scroll-lock window until \(wakeTimeText)."
+            return "We're protecting your sleep. You can access this app outside your sleep window."
         }
     }
 
@@ -62,7 +69,4 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         UserDefaults(suiteName: appGroupSuite)?.string(forKey: lockReasonKey) ?? "sleep_window"
     }
 
-    private var ruleTitle: String? {
-        UserDefaults(suiteName: appGroupSuite)?.string(forKey: ruleTitleKey)
-    }
 }

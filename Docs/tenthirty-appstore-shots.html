@@ -1,0 +1,215 @@
+<title>TenThirty — App Store Screenshots</title>
+<style>
+  :root{
+    --bg:#0c0807; --bg2:#1a110e;
+    --ink0:#f5e7d7; --ink1:#e5d3bf; --ink2:#b9a691; --ink3:#8a7a68; --ink4:#5c4f42;
+    --amber:#f0b96b; --amber-soft:#d99a4a; --amber-deep:#a66a2a; --coral:#e89189; --mint:#7ed4a0;
+    --line:rgba(255,220,190,.08); --line-strong:rgba(255,220,190,.14); --bgdeep:#1a0d06;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+    --sans:-apple-system,system-ui,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#080705;color:var(--ink1);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:44px 0 90px}
+  .head{max-width:760px;margin:0 auto 30px;padding:0 24px;text-align:center}
+  .head .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber-soft)}
+  .head h1{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--ink0);margin:12px 0 8px}
+  .head p{color:var(--ink3);font-size:14px;margin:0}
+
+  .strip{display:flex;gap:22px;overflow-x:auto;padding:8px 24px 26px;scroll-snap-type:x mandatory}
+  .strip::-webkit-scrollbar{height:8px}
+  .strip::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+
+  /* App Store poster: 1290x2796 ratio */
+  .poster{flex:0 0 auto;width:328px;height:711px;border-radius:26px;overflow:hidden;scroll-snap-align:center;
+    position:relative;display:flex;flex-direction:column;align-items:center;
+    box-shadow:0 30px 70px -30px rgba(0,0,0,.9),inset 0 0 0 1px rgba(255,220,190,.06)}
+  .poster.p1{background:radial-gradient(120% 70% at 50% 0%,#1c130c,#0c0807 70%)}
+  .poster.p2{background:radial-gradient(120% 70% at 50% 0%,#1a130d,#0b0806 70%)}
+  .poster.p3{background:radial-gradient(120% 70% at 50% 0%,#20150c,#0c0807 70%)}
+  .poster.p4{background:radial-gradient(130% 80% at 50% 8%,#241a10,#0a0705 72%)}
+  .poster.p5{background:radial-gradient(120% 60% at 50% 62%,rgba(111,75,37,.34),transparent 60%),linear-gradient(#241a10,#0d0a06 60%,#070604)}
+
+  .cap{padding:34px 26px 12px;text-align:center;width:100%}
+  .cap h2{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.12;color:var(--ink0);margin:0 0 9px;text-wrap:balance}
+  .cap p{font-size:12.5px;color:var(--ink2);margin:0;line-height:1.4}
+  .cap .accent{color:var(--amber)}
+
+  /* device (partial, bleeds off bottom) */
+  .dev{position:relative;width:236px;flex:1;margin-top:auto;border-radius:34px 34px 0 0;overflow:hidden;
+    border:1px solid var(--line-strong);border-bottom:none;
+    box-shadow:0 -6px 40px -12px rgba(0,0,0,.7),inset 0 0 0 5px #050403;
+    background:linear-gradient(#0c0807,#120c0a)}
+  .dev.meadow{background:radial-gradient(120% 60% at 50% 60%,rgba(111,75,37,.28),transparent 60%),linear-gradient(#2a1d11,#1a130c 45%,#0b0806)}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:78px;height:17px;background:#050403;border-radius:10px;z-index:20}
+  .scr{position:absolute;inset:0;padding:34px 14px 0;font-size:11px}
+
+  /* shared in-phone bits */
+  .stat{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:rgba(26,17,14,.5);margin-bottom:13px}
+  .stat .l{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.08em}
+  .dot{width:6px;height:6px;border-radius:50%}
+  .kick{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-soft)}
+  .h-title{font-family:var(--serif);font-size:19px;color:var(--ink0)}
+  .clock{font-size:15px;color:var(--ink1);font-variant-numeric:tabular-nums}
+  .chip{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid var(--line-strong);font-size:9px;color:var(--ink1);margin:0 3px 3px 0}
+  .card{background:rgba(26,17,14,.62);border:1px solid rgba(240,185,107,.34);border-radius:14px;padding:11px}
+  .hold{height:34px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.05);
+    display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:11px;font-weight:600;position:relative;overflow:hidden}
+  .hold .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(240,185,107,.28)}
+  .ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    color:var(--amber-soft);background:rgba(0,0,0,.2);border:1px solid var(--line);font-size:12px}
+
+  /* rail */
+  .rail{position:relative;padding-left:18px}
+  .rail::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:1.5px;background:linear-gradient(var(--amber-deep),var(--line))}
+  .node{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;position:relative}
+  .bul{position:absolute;left:-18px;top:2px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:1.5px solid var(--amber-deep)}
+  .bul.done{background:var(--amber);border-color:var(--amber)}
+  .bul.act{border-color:var(--amber);box-shadow:0 0 0 3px rgba(240,185,107,.14),0 0 8px rgba(240,185,107,.5)}
+  .node .n{font-size:12px;font-weight:600;color:var(--ink2)}
+  .node .n.done{color:var(--ink4)}
+  .node .t{font-size:10px;color:var(--ink3);font-variant-numeric:tabular-nums}
+
+  /* firefly */
+  .ff{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 10px 3px rgba(240,185,107,.5),0 0 24px 8px rgba(240,185,107,.16)}
+  .grass{position:absolute;left:0;right:0;bottom:0;height:70px;
+    background:radial-gradient(90% 120% at 50% 130%,rgba(29,33,16,.7),transparent 70%)}
+  .grass::before{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;
+    -webkit-mask:repeating-linear-gradient(90deg,#000 0 1.5px,transparent 1.5px 5px);mask:repeating-linear-gradient(90deg,#000 0 1.5px,transparent 1.5px 5px);
+    background:linear-gradient(#0c0a06,#050403);opacity:.85}
+  .brand{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#fff}
+  .brand .bd{width:4px;height:4px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px 1px rgba(240,185,107,.6)}
+  .note{max-width:760px;margin:22px auto 0;padding:0 24px;font-size:13px;color:var(--ink3);line-height:1.6}
+  .note b{color:var(--ink1)}
+</style>
+
+<div class="head">
+  <div class="eyebrow">App Store · 6.7" screenshots</div>
+  <h1>TenThirty — store gallery</h1>
+  <p>Five poster frames, slogan + matching screen. Scroll sideways. →</p>
+</div>
+
+<div class="strip">
+
+  <!-- 1 -->
+  <div class="poster p1">
+    <div class="cap"><h2>The scroll is why<br>you're still awake.</h2><p>TenThirty closes the apps keeping you up.</p></div>
+    <div class="dev">
+      <div class="notch"></div>
+      <div class="scr">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:11px">
+          <span class="h-title">Tonight</span><span class="clock">11:02<span style="font-size:9px;color:var(--ink3)"> PM</span></span>
+        </div>
+        <div class="stat" style="border-color:rgba(232,145,137,.4)">
+          <span class="l"><span class="dot" style="background:var(--coral);box-shadow:0 0 7px var(--coral)"></span><span style="color:var(--ink1)">APPS ARE LOCKED</span></span>
+        </div>
+        <div style="text-align:center;padding:6px 4px 12px">
+          <div class="kick" style="margin-bottom:8px">Blocked right now</div>
+          <div style="line-height:1.9">
+            <span class="chip">TikTok</span><span class="chip">Instagram</span><span class="chip">YouTube</span><span class="chip">Reddit</span><span class="chip">X</span><span class="chip">Snapchat</span>
+          </div>
+        </div>
+        <div class="card" style="border-color:var(--line);background:rgba(26,17,14,.4)">
+          <div style="font-size:11px;color:var(--ink2);line-height:1.5">Locked until <b style="color:var(--ink0)">6:30 AM</b>. Finish your rule to lift it, or wait for morning.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="poster p2">
+    <div class="cap"><h2>A shutdown plan.<br><span class="accent">Not more sleep sounds.</span></h2><p>One minute to set up, built around your night.</p></div>
+    <div class="dev">
+      <div class="notch"></div>
+      <div class="scr" style="text-align:center">
+        <div class="brand" style="justify-content:center;margin:2px 0 12px">TenThirty<span class="bd"></span></div>
+        <div class="kick" style="margin-bottom:7px">Your contract</div>
+        <div class="h-title" style="font-size:16px;line-height:1.2">You choose the rules.</div>
+        <div class="h-title" style="font-size:17px;font-style:italic;color:var(--amber);margin-bottom:12px">TenThirty holds the line.</div>
+        <div class="card" style="text-align:left;border-color:var(--line-strong);background:rgba(255,255,255,.02);padding:4px 11px">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px"><span style="color:var(--ink0)">Caffeine cutoff</span><span style="color:var(--ink2);font-variant-numeric:tabular-nums">2:00 +15</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px"><span style="color:var(--ink0)">Dim lights</span><span style="color:var(--ink2);font-variant-numeric:tabular-nums">9:15 +10</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:11px"><span style="color:var(--amber)">🛡 Apps lock</span><span style="color:var(--amber);font-variant-numeric:tabular-nums">10:30</span></div>
+        </div>
+        <div style="margin-top:12px;height:34px;border-radius:11px;background:var(--amber);color:var(--bgdeep);font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(240,185,107,.35)">Sign &amp; activate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="poster p3">
+    <div class="cap"><h2>Miss your wind-down,<br>lose your apps.</h2><p>Enforcement you opted into — not another reminder.</p></div>
+    <div class="dev">
+      <div class="notch"></div>
+      <div class="scr">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px">
+          <span class="h-title">Tonight</span><span class="clock">9:12<span style="font-size:9px;color:var(--ink3)"> PM</span></span>
+        </div>
+        <div class="rail">
+          <div class="node"><span class="bul done"></span><span class="n done">Caffeine cutoff</span><span class="t">2:00</span></div>
+          <div class="node" style="align-items:flex-start;margin-bottom:12px">
+            <span class="bul act" style="top:6px"></span>
+            <div class="card" style="width:100%">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px"><div class="ico">🚿</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--amber-soft)">DUE 6:30 PM · GRACE 6:40</div></div>
+              <div style="font-size:15px;font-weight:600;color:var(--ink0);margin-bottom:8px">Warm shower or bath</div>
+              <div style="font-size:9px;color:var(--ink3);margin-bottom:5px">If missed, these get blocked:</div>
+              <div style="margin-bottom:9px"><span class="chip">TikTok</span><span class="chip">Instagram</span><span class="chip">YouTube</span></div>
+              <div class="hold"><div class="fill" style="width:38%"></div>Hold to confirm</div>
+            </div>
+          </div>
+          <div class="node"><span class="bul"></span><span class="n">Dim lights</span><span class="t">9:15</span></div>
+          <div class="node"><span class="bul"></span><span class="n">Phone away</span><span class="t">10:15</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="poster p4">
+    <div class="cap"><h2>No 1am scroll<br>tonight.</h2><p>Your apps stay blocked until you wake.</p></div>
+    <div class="dev meadow">
+      <div class="notch"></div>
+      <div class="scr">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:11px">
+          <span class="h-title">Tonight</span><span class="clock">1:14<span style="font-size:9px;color:var(--ink3)"> AM</span></span>
+        </div>
+        <div class="stat" style="border-color:rgba(240,185,107,.34)">
+          <span class="l"><span class="dot" style="background:var(--amber-soft);box-shadow:0 0 7px var(--amber-soft)"></span><span style="color:var(--ink1)">SLEEP WINDOW</span></span>
+        </div>
+        <div style="text-align:center;padding:14px 6px">
+          <div style="font-size:22px;margin-bottom:8px">🌙</div>
+          <div class="h-title" style="font-size:18px;line-height:1.25;margin-bottom:6px">Apps are blocked tonight.</div>
+          <div style="font-size:11px;color:var(--ink2)">Locked until 6:30 AM. No 1am scroll.</div>
+        </div>
+      </div>
+      <div class="grass"></div>
+      <div class="ff" style="right:44px;top:120px"></div>
+      <div class="ff" style="left:40px;top:150px;width:5px;height:5px"></div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="poster p5">
+    <div class="cap"><h2>For minds that<br>won't switch off.</h2><p>Overthinkers. ADHD. Anyone who can't put it down.</p></div>
+    <div class="dev meadow">
+      <div class="notch"></div>
+      <div class="scr" style="text-align:center">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;text-align:left">
+          <span class="h-title">Tonight</span><span class="clock">10:05<span style="font-size:9px;color:var(--ink3)"> PM</span></span>
+        </div>
+        <div class="kick" style="margin-bottom:8px;letter-spacing:.18em">All clear</div>
+        <div class="h-title" style="font-size:20px;line-height:1.2;margin-bottom:8px">You cleared today's commitments.</div>
+        <div style="font-size:11px;color:var(--ink2)">Your apps will be blocked at 10:30 pm.</div>
+      </div>
+      <div class="grass"></div>
+      <div class="ff" style="left:50%;top:44%;transform:translateX(-50%);width:8px;height:8px"></div>
+      <div class="ff" style="right:52px;top:150px;width:5px;height:5px"></div>
+      <div class="ff" style="left:44px;top:190px;width:5px;height:5px"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Notes.</b> These are layout mockups at the 6.7" App Store ratio (1290×2796) — headline in your serif, subhead in system sans, on warm gradient/meadow backgrounds that carry across the set. Frame 1 leads with the hook (most people never swipe past it). For the real export you'd drop actual device screenshots into the frames and render at full resolution. Want me to reorder, reword any caption, or swap which app screen sits under a given slogan?
+</div>

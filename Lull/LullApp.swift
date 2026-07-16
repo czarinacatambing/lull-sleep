@@ -32,7 +32,18 @@ struct LullApp: App {
         let appLockedCategory = UNNotificationCategory(
             identifier: "APP_LOCKED", actions: [appLockedAction], intentIdentifiers: [], options: [])
 
-        UNUserNotificationCenter.current().setNotificationCategories([bedtimeCategory, morningCategory, midSleepCategory, windDownStartCategory, appLockedCategory])
+        let contractRuleAction = UNNotificationAction(identifier: "OPEN_TODAY", title: "Open TenThirty", options: [.foreground])
+        let contractRuleCategory = UNNotificationCategory(
+            identifier: "SLEEP_CONTRACT_RULE", actions: [contractRuleAction], intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories([
+            bedtimeCategory,
+            morningCategory,
+            midSleepCategory,
+            windDownStartCategory,
+            appLockedCategory,
+            contractRuleCategory
+        ])
     }
 
     var body: some Scene {
@@ -169,7 +180,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             case "WIND_DOWN_START":
                 self.state?.cancelWindDownStartNotifications()
                 self.state?.requestedTab = 0
-            case "APP_LOCKED":
+            case "APP_LOCKED", "SLEEP_CONTRACT_RULE":
                 self.state?.requestedTab = 0
             case "MID_SLEEP_CHECK":
                 self.state?.showMidSleepMode = true

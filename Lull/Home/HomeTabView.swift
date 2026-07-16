@@ -38,6 +38,7 @@ struct HomeTabView: View {
     @State private var didStartFirstFireflyHandoff = false
     @State private var childRequestsSolidTabBar = false
     @State private var contractTrendRange: ContractTrendRange = .week
+    @State private var showSettings = false
     private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     init() { _selectedTab = State(initialValue: 0) }
@@ -171,20 +172,22 @@ struct HomeTabView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
 
-                TodayFireflyScene(
-                    mode: sharedFireflyMode,
-                    dates: sharedFireflyDates,
-                    currentDate: currentDate,
-                    loggedShadeDates: sharedLoggedShadeDates,
-                    calendarTopInset: sharedCalendarTopInset,
-                    calendarRange: sharedCalendarRange,
-                    entranceToken: earnedFireflyEntranceToken,
-                    reduceMotion: reduceMotion
-                )
-                .ignoresSafeArea()
-                .opacity(0.86)
-                .allowsHitTesting(false)
-                .transition(.opacity)
+                if selectedTab != 2 {
+                    TodayFireflyScene(
+                        mode: sharedFireflyMode,
+                        dates: sharedFireflyDates,
+                        currentDate: currentDate,
+                        loggedShadeDates: sharedLoggedShadeDates,
+                        calendarTopInset: sharedCalendarTopInset,
+                        calendarRange: sharedCalendarRange,
+                        entranceToken: earnedFireflyEntranceToken,
+                        reduceMotion: reduceMotion
+                    )
+                    .ignoresSafeArea()
+                    .opacity(0.86)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                }
             }
 
             TabView(selection: $selectedTab) {
@@ -194,6 +197,9 @@ struct HomeTabView: View {
                     },
                     onFirstDeckInteraction: {
                         dismissFirstFireflyPrompt(method: "interaction")
+                    },
+                    onSettings: {
+                        showSettings = true
                     }
                 )
                     .tag(0)
@@ -202,7 +208,10 @@ struct HomeTabView: View {
                 ContractTrendsView(
                     currentDate: currentDate,
                     sharedCalendarTopInset: $insightsPanelTopInset,
-                    range: $contractTrendRange
+                    range: $contractTrendRange,
+                    fireflyDates: sharedFireflyDates,
+                    loggedShadeDates: sharedLoggedShadeDates,
+                    reduceMotion: reduceMotion
                 )
                     .tag(2)
             }
@@ -337,6 +346,11 @@ struct HomeTabView: View {
         }
         .onChange(of: firstFireflyHandoffWindow) { _, _ in
             advanceFirstFireflyPromptForCurrentWindowIfNeeded()
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -504,6 +518,8 @@ private struct TodayContractQueueView: View {
     let onFirstDeckInteraction: () -> Void
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var showAppPicker = false
+    @State private var showBlockedAppsRequiredAlert = false
+    let onSettings: () -> Void
 
     var body: some View {
         let snapshot = state.sleepContractSnapshot(now: now)
@@ -540,6 +556,12 @@ private struct TodayContractQueueView: View {
         .preferredColorScheme(.dark)
         .contentShape(Rectangle())
         .familyActivityPicker(isPresented: $showAppPicker, selection: $appPickerSelection)
+        .alert("Choose apps to block first", isPresented: $showBlockedAppsRequiredAlert) {
+            Button("Choose apps") { openBlockedAppsPicker() }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("TenThirty needs blocked apps before rule confirmations can do anything useful.")
+        }
         .onReceive(timer) { date in
             now = date
             handleAllClearIfNeeded()
@@ -557,15 +579,26 @@ private struct TodayContractQueueView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .center) {
             Text("Tonight")
                 .font(.serif(30))
                 .foregroundColor(.lullInk0)
             Spacer()
-            Text(Self.timeFormatter.string(from: now))
-                .font(.system(size: 22, weight: .regular))
-                .monospacedDigit()
-                .foregroundColor(.lullInk1)
+            Button(action: onSettings) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.04))
+                        .frame(width: 38, height: 38)
+                    Circle()
+                        .strokeBorder(Color.lullLineStrong, lineWidth: 1)
+                        .frame(width: 38, height: 38)
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.lullInk2)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Settings")
         }
     }
 
@@ -588,20 +621,76 @@ private struct TodayContractQueueView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(1.8)
                 .foregroundColor(.lullAmberSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
             Text("You cleared today's commitments.")
                 .font(.serif(28))
                 .foregroundColor(.lullInk0)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
             Text("Your selected apps will be blocked at \(Self.timeFormatter.string(from: state.typicalBedtime)).")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.lullInk2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
+        .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 30)
-        .padding(.top, 28)
+        .frame(minHeight: 340, alignment: .center)
+    }
+
+    private var startsTomorrow: some View {
+        VStack(spacing: 12) {
+            Text("STARTS TOMORROW")
+                .font(.system(size: 11, weight: .semibold))
+                .kerning(1.8)
+                .foregroundColor(.lullAmberSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("We'll start with the rules you committed to tomorrow.")
+                .font(.serif(28))
+                .foregroundColor(.lullInk0)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Your selected apps will still be blocked during your sleep window tonight.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.lullInk2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 30)
+        .frame(minHeight: 340, alignment: .center)
+    }
+
+    private var slipsLogged: some View {
+        VStack(spacing: 12) {
+            Text("LOGGED")
+                .font(.system(size: 11, weight: .semibold))
+                .kerning(1.8)
+                .foregroundColor(.lullAmberSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Thanks for being honest.")
+                .font(.serif(28))
+                .foregroundColor(.lullInk0)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Apps will lock 10 minutes earlier than your sleep window tonight.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.lullInk2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 30)
+        .frame(minHeight: 340, alignment: .center)
     }
 
     private func sleepWindowState(snapshot: SleepContractEnforcementSnapshot) -> some View {
@@ -652,9 +741,12 @@ private struct TodayContractQueueView: View {
                     item: hero,
                     now: now,
                     canComplete: state.canCompleteSleepRule(hero, now: now),
+                    requiresBlockedApps: state.requiresBlockedAppsBeforeRuleActions,
                     appSelection: state.appBlockingSelection,
                     reduceMotion: reduceMotion,
-                    onConfirm: { confirmRule(hero) }
+                    onConfirm: { confirmRule(hero) },
+                    onSlip: { recordSlip(hero) },
+                    onChooseApps: { openBlockedAppsPicker() }
                 )
                 .id(hero.id)
                 .transition(.asymmetric(
@@ -668,8 +760,16 @@ private struct TodayContractQueueView: View {
 
                 railFooter(cleared: done.count, total: totalCount(snapshot))
             } else {
-                allClear
-                railFooter(cleared: done.count, total: totalCount(snapshot))
+                if allSelectedRulesStartTomorrow(snapshot) {
+                    startsTomorrow
+                    tomorrowFooter
+                } else if hasSlippedItems(snapshot) {
+                    slipsLogged
+                    railFooter(cleared: done.count, total: totalCount(snapshot))
+                } else {
+                    allClear
+                    railFooter(cleared: done.count, total: totalCount(snapshot))
+                }
             }
         }
         .background(alignment: .topLeading) {
@@ -684,7 +784,7 @@ private struct TodayContractQueueView: View {
     }
 
     private func railFooter(cleared: Int, total: Int) -> some View {
-        Text("\(cleared) of \(total) cleared · apps blocked \(Self.timeFormatter.string(from: state.typicalBedtime))")
+        Text("\(cleared) of \(total) cleared · apps blocked \(Self.timeFormatter.string(from: state.effectiveSleepWindowStart(now: now)))")
             .font(.system(size: 11, weight: .medium))
             .foregroundColor(.lullInk4)
             .multilineTextAlignment(.center)
@@ -694,6 +794,10 @@ private struct TodayContractQueueView: View {
     }
 
     private func confirmRule(_ item: SleepContractItem) {
+        guard !state.requiresBlockedAppsBeforeRuleActions else {
+            showBlockedAppsRequiredAlert = true
+            return
+        }
         onFirstDeckInteraction()
         withAnimation(reduceMotion ? .easeInOut(duration: 0.18) : .spring(response: 0.5, dampingFraction: 0.7)) {
             state.completeSleepRule(item, at: Date())
@@ -702,12 +806,24 @@ private struct TodayContractQueueView: View {
         handleAllClearIfNeeded()
     }
 
+    private func recordSlip(_ item: SleepContractItem) {
+        guard !state.requiresBlockedAppsBeforeRuleActions else {
+            showBlockedAppsRequiredAlert = true
+            return
+        }
+        onFirstDeckInteraction()
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.18) : .spring(response: 0.5, dampingFraction: 0.7)) {
+            state.recordSleepRuleSlip(item, at: Date())
+            now = Date()
+        }
+    }
+
     private func doneItems(_ snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
-        snapshot.allItems.filter(\.isCompleted).sorted { $0.dueAt < $1.dueAt }
+        snapshot.allItems.filter(\.isResolved).sorted { $0.dueAt < $1.dueAt }
     }
 
     private func heroItem(_ snapshot: SleepContractEnforcementSnapshot) -> SleepContractItem? {
-        let pending = snapshot.allItems.filter { !$0.isCompleted && !$0.startsTomorrow }
+        let pending = snapshot.allItems.filter { !$0.isResolved && !$0.startsTomorrow }
         let actionable = pending
             .filter { $0.availableAt <= now }
             .sorted { $0.graceEndsAt < $1.graceEndsAt }
@@ -717,12 +833,32 @@ private struct TodayContractQueueView: View {
     private func upcomingItems(_ snapshot: SleepContractEnforcementSnapshot,
                                excluding hero: SleepContractItem?) -> [SleepContractItem] {
         snapshot.allItems
-            .filter { !$0.isCompleted && $0.id != hero?.id }
+            .filter { !$0.isResolved && !$0.startsTomorrow && $0.id != hero?.id }
             .sorted { $0.dueAt < $1.dueAt }
     }
 
     private func totalCount(_ snapshot: SleepContractEnforcementSnapshot) -> Int {
         snapshot.allItems.filter { !$0.startsTomorrow }.count
+    }
+
+    private func allSelectedRulesStartTomorrow(_ snapshot: SleepContractEnforcementSnapshot) -> Bool {
+        !state.selectedSleepRules.isEmpty &&
+            !snapshot.allItems.isEmpty &&
+            snapshot.allItems.allSatisfy(\.startsTomorrow)
+    }
+
+    private func hasSlippedItems(_ snapshot: SleepContractEnforcementSnapshot) -> Bool {
+        snapshot.allItems.contains(where: \.isSlipped)
+    }
+
+    private var tomorrowFooter: some View {
+        Text("Rules start tomorrow · apps blocked \(Self.timeFormatter.string(from: state.effectiveSleepWindowStart(now: now)))")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.lullInk4)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 30)
+            .padding(.top, 16)
     }
 
     private var appSummary: String {
@@ -792,6 +928,23 @@ private struct ContractStatusStrip: View {
                     .font(.system(size: 12, weight: .semibold))
                     .kerning(0.8)
                     .foregroundColor(.lullInk1)
+                if let cooldownCountdown {
+                    Text(cooldownCountdown)
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.lullAmber)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(Color.lullAmber.opacity(0.10))
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(Color.lullAmber.opacity(0.32), lineWidth: 1)
+                        )
+                        .accessibilityLabel("Cooldown \(cooldownCountdown) remaining")
+                }
                 Spacer(minLength: 8)
                 if hasBlockedApps {
                     Text(appSummary)
@@ -845,10 +998,12 @@ private struct ContractStatusStrip: View {
         return hasBlockedApps ? "Edit" : "Choose apps"
     }
 
+    private var cooldownCountdown: String? {
+        guard case .coolingDown(_, let until) = snapshot.lockState else { return nil }
+        return Self.countdown(until, from: snapshot.now)
+    }
+
     private var subtitle: String? {
-        if !canEditBlockedApps {
-            return "Blocked-app edits unlock after this lock clears."
-        }
         if !hasBlockedApps {
             return "Choose apps so a missed rule can block them."
         }
@@ -858,7 +1013,7 @@ private struct ContractStatusStrip: View {
         case .lockedByRule(let item):
             return "\(item.rule.title) was missed. Hold below to confirm late."
         case .coolingDown(let item, let until):
-            return "Apps unlock in \(Self.countdown(until, from: snapshot.now)). \(item.rule.title) was late."
+            return "Apps and blocked-app edits unlock in \(Self.countdown(until, from: snapshot.now)). \(item.rule.title) was late."
         case .sleepWindow(let until):
             return "Apps are blocked until \(Self.timeFormatter.string(from: until))."
         }
@@ -913,7 +1068,7 @@ private struct AppTokenChip: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 Label(token)
                     .labelStyle(.titleOnly)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 10.5, weight: .medium))
                     .foregroundColor(.lullInk1)
                     .lineLimit(1)
             }
@@ -925,8 +1080,8 @@ private struct ChipShell<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         content
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
             .background(Capsule().fill(Color.white.opacity(0.03)))
             .overlay(Capsule().strokeBorder(Color.lullLineStrong, lineWidth: 1))
     }
@@ -952,6 +1107,13 @@ private enum RuleGlyph {
         formatter.dateFormat = "h:mm a"
         return formatter
     }()
+
+    static func scheduleText(for item: SleepContractItem) -> String {
+        if item.isRange {
+            return "\(timeFormatter.string(from: item.availableAt)) - \(timeFormatter.string(from: item.dueAt))"
+        }
+        return timeFormatter.string(from: item.dueAt)
+    }
 }
 
 // MARK: - Rail bullet + rows
@@ -1005,9 +1167,9 @@ private struct DoneRailRow: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.lullInk3)
                 Spacer()
-                Text(RuleGlyph.timeFormatter.string(from: item.dueAt))
+                Text(item.isSlipped ? "Missed" : RuleGlyph.scheduleText(for: item))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.lullInk4)
+                    .foregroundColor(item.isSlipped ? Color(hex: "#e89189") : .lullInk4)
             }
             .padding(.bottom, 16)
         }
@@ -1026,7 +1188,7 @@ private struct RuleRailRow: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.lullInk2)
                     Spacer()
-                    Text(RuleGlyph.timeFormatter.string(from: item.dueAt))
+                    Text(RuleGlyph.scheduleText(for: item))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.lullInk3)
                 }
@@ -1048,9 +1210,12 @@ private struct HeroRuleCard: View {
     let item: SleepContractItem
     let now: Date
     let canComplete: Bool
+    let requiresBlockedApps: Bool
     let appSelection: FamilyActivitySelection
     let reduceMotion: Bool
     let onConfirm: () -> Void
+    let onSlip: () -> Void
+    let onChooseApps: () -> Void
 
     @State private var holdProgress: CGFloat = 0
     @State private var isHolding = false
@@ -1127,13 +1292,17 @@ private struct HeroRuleCard: View {
                     .foregroundColor(.lullInk3)
                 AppChips(selection: appSelection)
             } else {
-                Text("Choose apps in the strip above so this rule can protect them.")
+                Text("Choose apps to block before confirming rules.")
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundColor(.lullInk3)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             holdCTA
+
+            if shouldShowSlipAction {
+                slipAction
+            }
         }
         .padding(16)
         .contractCardBackground(accent: canComplete)
@@ -1150,9 +1319,9 @@ private struct HeroRuleCard: View {
             }
             HStack {
                 Spacer()
-                Text(canComplete ? ctaText : "Available later")
+                Text(holdCTAText)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(canComplete ? .lullAmber : .lullInk4)
+                    .foregroundColor(holdCTAColor)
                 Spacer()
             }
         }
@@ -1169,9 +1338,33 @@ private struct HeroRuleCard: View {
         }
     }
 
+    private var shouldShowSlipAction: Bool {
+        canComplete && !requiresBlockedApps && !item.startsTomorrow
+    }
+
+    private var slipAction: some View {
+        VStack(spacing: 5) {
+            Button(action: onSlip) {
+                Text("I didn't keep it")
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundColor(.lullInk3)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
+    }
+
     private var holdGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { _ in
+                if requiresBlockedApps {
+                    guard !isHolding else { return }
+                    isHolding = true
+                    onChooseApps()
+                    return
+                }
                 startHoldIfNeeded()
             }
             .onEnded { _ in
@@ -1180,7 +1373,7 @@ private struct HeroRuleCard: View {
     }
 
     private func startHoldIfNeeded() {
-        guard canComplete, !isHolding, !isPoofing else { return }
+        guard !requiresBlockedApps, canComplete, !isHolding, !isPoofing else { return }
         isHolding = true
         holdWorkItem?.cancel()
         holdProgress = 0
@@ -1229,7 +1422,17 @@ private struct HeroRuleCard: View {
     }
 
     private var ctaText: String {
-        now > item.graceEndsAt ? "Hold 3 sec to confirm late" : "Hold 3 sec to confirm"
+        now > item.graceEndsAt ? "Hold 3 sec to confirm late (I did it)" : "Hold 3 sec to confirm (I did it)"
+    }
+
+    private var holdCTAText: String {
+        if requiresBlockedApps { return "Choose apps to block first" }
+        return canComplete ? ctaText : "Available later"
+    }
+
+    private var holdCTAColor: Color {
+        if requiresBlockedApps { return .lullAmber }
+        return canComplete ? .lullAmber : .lullInk4
     }
 
     private var metaText: String {
@@ -1389,6 +1592,7 @@ private struct RulesContractEditorView: View {
     @State private var selection = FamilyActivitySelection()
     @State private var showPicker = false
     @State private var didHydrate = false
+    @State private var showBlockedAppsRequiredAlert = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1402,10 +1606,13 @@ private struct RulesContractEditorView: View {
                         .foregroundColor(.lullInk3)
                 }
 
+                if state.requiresBlockedAppsBeforeRuleActions {
+                    blockedAppsRequiredCard
+                }
                 sleepWindowCard
                 blockedAppsCard
                 rulesList
-                enforcementCard
+                enforcementNote
                 Spacer().frame(height: 118)
             }
             .padding(.horizontal, 22)
@@ -1413,6 +1620,12 @@ private struct RulesContractEditorView: View {
         }
         .preferredColorScheme(.dark)
         .familyActivityPicker(isPresented: $showPicker, selection: $selection)
+        .alert("Choose apps to block first", isPresented: $showBlockedAppsRequiredAlert) {
+            Button("Choose apps") { openBlockedAppsPicker() }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("Rules can be edited after TenThirty knows which apps it should lock.")
+        }
         .onAppear(perform: hydrate)
         .onChange(of: showPicker) { _, open in
             guard !open else { return }
@@ -1420,18 +1633,57 @@ private struct RulesContractEditorView: View {
         }
     }
 
+    private var blockedAppsRequiredCard: some View {
+        Button {
+            openBlockedAppsPicker()
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Choose apps before editing rules")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.lullInk0)
+                    Text("Your rules need something to enforce. Add blocked apps first, then you can change rule timing and grace periods.")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.lullInk3)
+                        .lineSpacing(3)
+                }
+
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .padding(.top, 5)
+            }
+            .padding(16)
+            .contractCardBackground(accent: true)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var sleepWindowCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Kicker(text: "Sleep window", color: .lullAmberSoft)
             DatePicker("Sleep", selection: $state.typicalBedtime, displayedComponents: .hourAndMinute)
                 .tint(.lullAmber)
-                .disabled(isEditingLocked)
+                .disabled(isRuleConfigurationLocked)
             DatePicker("Wake", selection: $state.typicalWakeTime, displayedComponents: .hourAndMinute)
                 .tint(.lullAmber)
-                .disabled(isEditingLocked)
+                .disabled(isRuleConfigurationLocked)
             Text("Apps always lock during this window.")
                 .font(.system(size: 13.5, weight: .medium))
                 .foregroundColor(.lullInk3)
+            if state.requiresBlockedAppsBeforeRuleActions {
+                Text("Add apps to block before changing your sleep window.")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(.lullInk4)
+                    .lineSpacing(3)
+            }
             if isEditingLocked {
                 Text("Sleep-window edits are available after the current lock clears.")
                     .font(.system(size: 12.5, weight: .medium))
@@ -1441,6 +1693,12 @@ private struct RulesContractEditorView: View {
         }
         .padding(18)
         .contractCardBackground()
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            if state.requiresBlockedAppsBeforeRuleActions {
+                showBlockedAppsRequiredAlert = true
+            }
+        }
         .onChange(of: state.typicalBedtime) { _, _ in state.sleepWindowWasEdited() }
         .onChange(of: state.typicalWakeTime) { _, _ in state.sleepWindowWasEdited() }
     }
@@ -1489,23 +1747,26 @@ private struct RulesContractEditorView: View {
                 .foregroundColor(.lullInk0)
 
             ForEach(SleepRuleKind.allCases) { rule in
-                RuleEditorRow(rule: rule, isEditingLocked: isEditingLocked)
+                RuleEditorRow(
+                    rule: rule,
+                    isEditingLocked: isEditingLocked,
+                    requiresBlockedApps: state.requiresBlockedAppsBeforeRuleActions,
+                    onBlockedAppsRequired: { showBlockedAppsRequiredAlert = true }
+                )
                     .environmentObject(state)
             }
         }
     }
 
-    private var enforcementCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker(text: "How enforcement works", color: .lullAmberSoft)
-            Text("Miss a rule -> apps lock.")
-            Text("Confirm late -> 10-minute cooldown.")
-            Text("Sleep window -> apps stay locked until wake time.")
-        }
-        .font(.system(size: 14.5, weight: .medium))
-        .foregroundColor(.lullInk2)
-        .padding(18)
-        .contractCardBackground()
+    private var enforcementNote: some View {
+        Text("If you miss a rule, selected apps lock. If you confirm late, apps go into a 10 minute cooldown. If it's your sleep window, apps stay locked until wake time.")
+            .font(.system(size: 12.5, weight: .medium))
+            .foregroundColor(.lullInk4.opacity(0.82))
+            .multilineTextAlignment(.center)
+            .lineSpacing(3)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 18)
+            .padding(.top, 2)
     }
 
     private var blockedAppSummary: String {
@@ -1552,17 +1813,27 @@ private struct RulesContractEditorView: View {
     private var isEditingLocked: Bool {
         state.isContractEditingLocked()
     }
+
+    private var isRuleConfigurationLocked: Bool {
+        isEditingLocked || state.requiresBlockedAppsBeforeRuleActions
+    }
 }
 
 private struct RuleEditorRow: View {
     @EnvironmentObject private var state: AppState
     let rule: SleepRuleKind
     let isEditingLocked: Bool
+    let requiresBlockedApps: Bool
+    let onBlockedAppsRequired: () -> Void
 
     private var isEnabled: Binding<Bool> {
         Binding(
             get: { state.selectedSleepRules.contains(rule) },
             set: { enabled in
+                guard !requiresBlockedApps else {
+                    onBlockedAppsRequired()
+                    return
+                }
                 if enabled != state.selectedSleepRules.contains(rule) {
                     state.toggleSleepRule(rule)
                 }
@@ -1582,6 +1853,10 @@ private struct RuleEditorRow: View {
             get: { state.sleepRuleGraceMinutes(rule) },
             set: { state.setSleepRuleGraceMinutes(rule, to: $0) }
         )
+    }
+
+    private var isConfigurationLocked: Bool {
+        isEditingLocked || requiresBlockedApps
     }
 
     var body: some View {
@@ -1605,7 +1880,7 @@ private struct RuleEditorRow: View {
                 Toggle("", isOn: isEnabled)
                     .labelsHidden()
                     .tint(.lullAmber)
-                    .disabled(isEditingLocked)
+                    .disabled(isConfigurationLocked)
             }
 
             if isEnabled.wrappedValue {
@@ -1616,7 +1891,7 @@ private struct RuleEditorRow: View {
                 } else {
                     DatePicker("Due", selection: timeBinding, displayedComponents: .hourAndMinute)
                         .tint(.lullAmber)
-                        .disabled(isEditingLocked)
+                        .disabled(isConfigurationLocked)
                 }
 
                 Stepper(value: graceBinding, in: 0...60, step: 5) {
@@ -1625,7 +1900,12 @@ private struct RuleEditorRow: View {
                         .foregroundColor(.lullInk2)
                 }
                 .tint(.lullAmber)
-                .disabled(isEditingLocked)
+                .disabled(isConfigurationLocked)
+                if requiresBlockedApps {
+                    Text("Add apps to block before editing this rule.")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundColor(.lullInk4)
+                }
                 if isEditingLocked {
                     Text("Rule edits start after the current lock clears.")
                         .font(.system(size: 12.5, weight: .medium))
@@ -1635,6 +1915,12 @@ private struct RuleEditorRow: View {
         }
         .padding(16)
         .contractCardBackground(accent: isEnabled.wrappedValue)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            if requiresBlockedApps {
+                onBlockedAppsRequired()
+            }
+        }
     }
 
     private var icon: String {
@@ -1661,65 +1947,102 @@ private struct ContractTrendsView: View {
     let currentDate: Date
     @Binding var sharedCalendarTopInset: CGFloat
     @Binding var range: ContractTrendRange
+    let fireflyDates: [Date]
+    let loggedShadeDates: Set<Date>
+    let reduceMotion: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("Trends")
-                        .font(.serif(30))
-                        .foregroundColor(.lullInk0)
-                    Spacer()
-                    Picker("", selection: $range) {
-                        ForEach(ContractTrendRange.allCases) { option in
-                            Text(option.rawValue).tag(option)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+                statsSection
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: ContractTrendsPanelHeightKey.self, value: proxy.size.height)
                         }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 180)
-                }
+                    )
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    trendStat("Nights protected", value: "\(protectedNights)")
-                    trendStat("All-clear days", value: "\(allClearDays)")
-                    trendStat("Lock activations", value: "\(lockActivations)")
-                    trendStat("Late confirmations", value: "\(lateConfirmations)")
-                }
+                trendsCalendar
+                    .frame(height: calendarSpace)
+                    .padding(.horizontal, 4)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Kicker(text: "Rule insights", color: .lullAmberSoft)
-                    Text("Best rule")
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundColor(.lullInk4)
-                    Text(bestRuleText)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.lullInk0)
-                    Divider().overlay(Color.lullLine)
-                    Text("Needs work")
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundColor(.lullInk4)
-                    Text(needsWorkText)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.lullInk0)
-                }
-                .padding(16)
-                .contractCardBackground()
+                insightsCard
+                    .padding(.horizontal, 22)
+
+                Spacer().frame(height: 118)
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 54)
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.preference(key: ContractTrendsPanelHeightKey.self, value: proxy.size.height)
-                }
-            )
-
-            Spacer(minLength: 0)
         }
-        .padding(.bottom, 118)
         .preferredColorScheme(.dark)
         .onPreferenceChange(ContractTrendsPanelHeightKey.self) { height in
-            sharedCalendarTopInset = height + 78
+            sharedCalendarTopInset = height + 22
         }
+    }
+
+    private var statsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Trends")
+                    .font(.serif(30))
+                    .foregroundColor(.lullInk0)
+                Spacer()
+                Picker("", selection: $range) {
+                    ForEach(ContractTrendRange.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                trendStat("Nights protected", value: "\(protectedNights)")
+                trendStat("All-clear days", value: "\(allClearDays)")
+                trendStat("Lock activations", value: "\(lockActivations)")
+                trendStat("Late confirmations", value: "\(lateConfirmations)")
+            }
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 54)
+    }
+
+    private var insightsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Kicker(text: "Rule insights", color: .lullAmberSoft)
+            Text("Best rule")
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundColor(.lullInk4)
+            Text(bestRuleText)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.lullInk0)
+            Divider().overlay(Color.lullLine)
+            Text("Needs work")
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundColor(.lullInk4)
+            Text(needsWorkText)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.lullInk0)
+        }
+        .padding(16)
+        .contractCardBackground()
+    }
+
+    private var calendarSpace: CGFloat {
+        range == .week ? 220 : 340
+    }
+
+    private var trendsCalendar: some View {
+        TodayFireflyScene(
+            mode: .calendar,
+            dates: fireflyDates,
+            currentDate: currentDate,
+            loggedShadeDates: loggedShadeDates,
+            calendarTopInset: 0,
+            calendarRange: range == .week ? .week : .month,
+            entranceToken: 0,
+            reduceMotion: reduceMotion
+        )
+        .opacity(0.90)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func trendStat(_ title: String, value: String) -> some View {

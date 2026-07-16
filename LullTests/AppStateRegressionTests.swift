@@ -151,6 +151,34 @@ final class AppStateRegressionTests: XCTestCase {
         }
     }
 
+    func testSlippedRuleStartsSleepWindowTenMinutesEarlyWithoutClearing() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.dimLights]
+
+        let slipTime = localDate(2026, 6, 28, 21, 15)
+        let item = state.todaysContractItems(now: slipTime).first!
+        state.recordSleepRuleSlip(item, at: slipTime)
+
+        XCTAssertFalse(state.hasClearedContractDay(now: localDate(2026, 6, 28, 21, 16)))
+        XCTAssertEqual(localHourMinute(state.effectiveSleepWindowStart(now: localDate(2026, 6, 28, 21, 16))), "21:50")
+
+        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 49)).lockState {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Expected apps to stay unlocked before the slipped early window")
+        }
+
+        if case .sleepWindow = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 55)).lockState {
+            XCTAssertTrue(state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 55)).allItems.first?.isSlipped == true)
+        } else {
+            XCTFail("Expected slipped rule to start the sleep-window lock 10 minutes early")
+        }
+    }
+
     func testPostMidnightSleepWindowUsesPreviousContractDayItems() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)

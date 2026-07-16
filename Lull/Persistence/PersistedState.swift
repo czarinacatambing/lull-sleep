@@ -17,7 +17,8 @@ struct PersistedState: Codable {
     //   11 — sleep-contract rules and completion state
     //   12 — editable sleep-contract rule config and lock event history
     //   13 — contract-native all-clear event history
-    var schemaVersion: Int = 13
+    //   14 — slipped sleep-contract rule history
+    var schemaVersion: Int = 14
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -39,6 +40,7 @@ struct PersistedState: Codable {
     var selectedSleepRules: [SleepRuleKind] = []
     var sleepRuleConfigurations: [SleepRuleKind: SleepRuleConfiguration] = [:]
     var sleepRuleCompletions: [SleepRuleCompletion] = []
+    var sleepRuleSlips: [SleepRuleSlip] = []
     var contractLockEvents: [ContractLockEvent] = []
     var contractAllClearEvents: [ContractAllClearEvent] = []
     var timeZoneIdentifier: String
@@ -88,7 +90,7 @@ struct PersistedState: Codable {
     var appBlockingGraceMinutes: Int = 5
     var gentleBlockingBypassedUntil: Date? = nil
 
-    init(schemaVersion: Int = 13,
+    init(schemaVersion: Int = 14,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
@@ -117,6 +119,7 @@ struct PersistedState: Codable {
          selectedSleepRules: [SleepRuleKind] = [],
          sleepRuleConfigurations: [SleepRuleKind: SleepRuleConfiguration] = [:],
          sleepRuleCompletions: [SleepRuleCompletion] = [],
+         sleepRuleSlips: [SleepRuleSlip] = [],
          contractLockEvents: [ContractLockEvent] = [],
          contractAllClearEvents: [ContractAllClearEvent] = [],
          timeZoneIdentifier: String = TimeZone.autoupdatingCurrent.identifier,
@@ -161,6 +164,7 @@ struct PersistedState: Codable {
         self.selectedSleepRules       = selectedSleepRules
         self.sleepRuleConfigurations  = sleepRuleConfigurations
         self.sleepRuleCompletions     = sleepRuleCompletions
+        self.sleepRuleSlips           = sleepRuleSlips
         self.contractLockEvents        = contractLockEvents
         self.contractAllClearEvents    = contractAllClearEvents
         self.timeZoneIdentifier       = timeZoneIdentifier
@@ -216,6 +220,7 @@ struct PersistedState: Codable {
         selectedSleepRules       = (try? c.decodeIfPresent([SleepRuleKind].self, forKey: .selectedSleepRules)) ?? []
         sleepRuleConfigurations  = (try? c.decodeIfPresent([SleepRuleKind: SleepRuleConfiguration].self, forKey: .sleepRuleConfigurations)) ?? [:]
         sleepRuleCompletions     = (try? c.decodeIfPresent([SleepRuleCompletion].self, forKey: .sleepRuleCompletions)) ?? []
+        sleepRuleSlips           = (try? c.decodeIfPresent([SleepRuleSlip].self, forKey: .sleepRuleSlips)) ?? []
         contractLockEvents       = (try? c.decodeIfPresent([ContractLockEvent].self, forKey: .contractLockEvents)) ?? []
         contractAllClearEvents   = (try? c.decodeIfPresent([ContractAllClearEvent].self, forKey: .contractAllClearEvents)) ?? []
         timeZoneIdentifier       = (try? c.decodeIfPresent(String.self,        forKey: .timeZoneIdentifier)) ?? TimeZone.autoupdatingCurrent.identifier

@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.10"
   MARKETING_VERSION: "2.0.6"
-  CURRENT_PROJECT_VERSION: "4"
+  CURRENT_PROJECT_VERSION: "1"
   LULL_ANALYTICS_ENABLED: "NO"
   LULL_ANALYTICS_COHORT: ""
   LULL_RESEARCH_DATA_ENABLED: "NO"
@@ -25,6 +25,9 @@ packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios.git
     from: 3.59.3
+  Rive:
+    url: https://github.com/rive-app/rive-ios
+    from: 6.13.0
 
 targets:
   Lull:
@@ -99,12 +102,16 @@ targets:
         embed: true
       - target: LullShieldConfiguration
         embed: true
+      - target: LullDeviceActivityMonitor
+        embed: true
       - package: RevenueCat
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
       - package: PostHog
         product: PostHog
+      - package: Rive
+        product: RiveRuntime
     scheme:
       testTargets:
         - LullTests
@@ -205,5 +212,43 @@ targets:
     entitlements:
       path: LullShieldConfiguration/LullShieldConfiguration.entitlements
       properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.trylull.app
+
+  LullDeviceActivityMonitor:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: LullDeviceActivityMonitor
+      - path: Lull/Services/AppBlockingMonitorStore.swift
+    dependencies:
+      - framework: DeviceActivity.framework
+        implicit: true
+      - framework: FamilyControls.framework
+        implicit: true
+      - framework: ManagedSettings.framework
+        implicit: true
+    info:
+      path: LullDeviceActivityMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: TenThirty Monitor
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        NSExtension:
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).LullDeviceActivityMonitorExtension"
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.trylull.app.device-activity-monitor
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: "2WLHFD257A"
+      SKIP_INSTALL: YES
+      LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+      TARGETED_DEVICE_FAMILY: "1"
+    entitlements:
+      path: LullDeviceActivityMonitor/LullDeviceActivityMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
         com.apple.security.application-groups:
           - group.com.trylull.app

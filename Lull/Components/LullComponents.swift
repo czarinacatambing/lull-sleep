@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(RiveRuntime)
+import RiveRuntime
+#endif
 
 private struct LullUsesMeadowBackgroundKey: EnvironmentKey {
     static let defaultValue = false
@@ -46,6 +49,204 @@ struct BrandDotFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
         value = nextValue() ?? value
+    }
+}
+
+// MARK: - FireflyMascot
+
+struct FireflyMascotView: View {
+    let phase: Int
+    let reduceMotion: Bool
+
+    var body: some View {
+        Group {
+            #if canImport(RiveRuntime)
+            if Self.hasRiveAsset {
+                RiveFireflyMascotView()
+            } else {
+                FireflyMascotFallbackView(phase: phase, reduceMotion: reduceMotion)
+            }
+            #else
+            FireflyMascotFallbackView(phase: phase, reduceMotion: reduceMotion)
+            #endif
+        }
+        .frame(width: 72, height: 72)
+        .accessibilityHidden(true)
+    }
+
+    #if canImport(RiveRuntime)
+    private static var hasRiveAsset: Bool {
+        Bundle.main.url(forResource: "FireflyMascot", withExtension: "riv") != nil
+    }
+    #endif
+}
+
+#if canImport(RiveRuntime)
+private struct RiveFireflyMascotView: View {
+    private let viewModel = RiveViewModel(fileName: "FireflyMascot")
+
+    var body: some View {
+        viewModel.view()
+            .frame(width: 72, height: 72)
+            .allowsHitTesting(false)
+    }
+}
+#endif
+
+private struct FireflyMascotFallbackView: View {
+    let phase: Int
+    let reduceMotion: Bool
+    @State private var wingFlutter = false
+
+    private var wingOpacity: Double {
+        phase == 1 ? 0.26 : 0.16
+    }
+
+    private var glowScale: CGFloat {
+        phase == 1 ? 1.22 : 0.92
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.lullAmber.opacity(0.34),
+                            Color.lullAmber.opacity(0.16),
+                            .clear
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 32
+                    )
+                )
+                .frame(width: 72, height: 72)
+                .scaleEffect(glowScale)
+                .blur(radius: 1.2)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.86),
+                            Color.lullAmber.opacity(0.96),
+                            Color.lullAmber.opacity(0.24),
+                            .clear
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 19
+                    )
+                )
+                .frame(width: 34, height: 34)
+                .shadow(color: .lullAmberGlow, radius: 18)
+
+            ZStack {
+                wing
+                    .rotationEffect(.degrees(wingFlutter ? -24 : -17), anchor: .leading)
+                    .offset(x: 0, y: -9)
+                wing
+                    .scaleEffect(x: 1, y: -1)
+                    .rotationEffect(.degrees(wingFlutter ? 24 : 17), anchor: .leading)
+                    .offset(x: 0, y: 9)
+            }
+            .offset(x: -1, y: -2)
+            .opacity(0.38)
+
+            insectBody
+                .scaleEffect(0.58)
+                .opacity(0.24)
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.18).repeatForever(autoreverses: true)) {
+                wingFlutter.toggle()
+            }
+        }
+    }
+
+    private var wing: some View {
+        Ellipse()
+            .fill(
+                RadialGradient(
+                    colors: [
+                        Color.lullInk0.opacity(wingOpacity),
+                        Color.lullAmber.opacity(0.08),
+                        .clear
+                    ],
+                    center: .leading,
+                    startRadius: 1,
+                    endRadius: 22
+                )
+            )
+            .frame(width: 32, height: 17)
+            .overlay(
+                Ellipse()
+                    .stroke(Color.lullInk0.opacity(wingOpacity * 0.45), lineWidth: 0.6)
+            )
+            .blur(radius: 0.12)
+    }
+
+    private var insectBody: some View {
+        ZStack {
+            antenna
+                .stroke(Color.black.opacity(0.70), lineWidth: 0.9)
+                .frame(width: 18, height: 10)
+                .offset(x: -21, y: -8)
+
+            Capsule()
+                .fill(Color.black.opacity(0.84))
+                .frame(width: 32, height: 8.5)
+                .offset(x: -1, y: -1)
+
+            Ellipse()
+                .fill(Color.black.opacity(0.88))
+                .frame(width: 13, height: 11)
+                .offset(x: -15, y: -2)
+
+            Ellipse()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.92),
+                            Color.lullAmber.opacity(0.95),
+                            Color.lullAmber.opacity(0.12)
+                        ],
+                        center: .leading,
+                        startRadius: 0,
+                        endRadius: 17
+                    )
+                )
+                .frame(width: 27, height: 17)
+                .offset(x: 15, y: 1)
+                .shadow(color: .lullAmberGlow, radius: 18)
+
+            VStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { _ in
+                    Capsule()
+                        .fill(Color.black.opacity(0.18))
+                        .frame(width: 1.2, height: 12)
+                }
+            }
+            .rotationEffect(.degrees(90))
+            .offset(x: 14, y: 1)
+
+            Circle()
+                .fill(Color.white.opacity(0.72))
+                .frame(width: 4.5, height: 4.5)
+                .offset(x: 6, y: -3)
+        }
+        .rotationEffect(.degrees(-4))
+    }
+
+    private var antenna: Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 16, y: 8))
+        path.addCurve(to: CGPoint(x: 3, y: 2), control1: CGPoint(x: 12, y: 4), control2: CGPoint(x: 8, y: 2))
+        path.move(to: CGPoint(x: 16, y: 8))
+        path.addCurve(to: CGPoint(x: 5, y: 9), control1: CGPoint(x: 12, y: 9), control2: CGPoint(x: 8, y: 10))
+        return path
     }
 }
 
@@ -204,7 +405,7 @@ struct Ember: View {
 
 struct Kicker: View {
     var text: String
-    var color: Color = .lullInk3
+    var color: SwiftUI.Color = .lullInk3
 
     var body: some View {
         Text(text)
@@ -219,7 +420,7 @@ struct SerifTitle: View {
     var text: String
     var size: CGFloat = 28
     var italic: Bool = false
-    var color: Color = .lullInk0
+    var color: SwiftUI.Color = .lullInk0
 
     var body: some View {
         Text(text)
@@ -309,11 +510,17 @@ struct OnbTopBar: View {
 // MARK: - ChoiceRow
 
 struct ChoiceRow: View {
+    enum MarkerStyle {
+        case checkbox
+        case radio
+    }
+
     var text: String
     var hint: String? = nil
     var selected: Bool = false
     var big: Bool = false
     var disabled: Bool = false
+    var markerStyle: MarkerStyle = .checkbox
     var onTap: () -> Void
 
     var body: some View {
@@ -323,18 +530,36 @@ struct ChoiceRow: View {
         }) {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 7)
-                        .strokeBorder(selected ? Color.lullAmber : Color.white.opacity(0.25), lineWidth: 1.5)
-                        .background(
-                            RoundedRectangle(cornerRadius: 7)
-                                .fill(selected ? Color.lullAmber : .clear)
-                        )
-                        .frame(width: 22, height: 22)
+                    switch markerStyle {
+                    case .checkbox:
+                        RoundedRectangle(cornerRadius: 7)
+                            .strokeBorder(selected ? Color.lullAmber : Color.white.opacity(0.25), lineWidth: 1.5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7)
+                                    .fill(selected ? Color.lullAmber : .clear)
+                            )
+                            .frame(width: 22, height: 22)
+                    case .radio:
+                        Circle()
+                            .strokeBorder(selected ? Color.lullAmber : Color.white.opacity(0.25), lineWidth: 1.5)
+                            .background(
+                                Circle()
+                                    .fill(selected ? Color.lullAmber.opacity(0.12) : .clear)
+                            )
+                            .frame(width: 22, height: 22)
+                    }
 
                     if selected {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.lullBgDeep)
+                        switch markerStyle {
+                        case .checkbox:
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.lullBgDeep)
+                        case .radio:
+                            Circle()
+                                .fill(Color.lullAmber)
+                                .frame(width: 10, height: 10)
+                        }
                     }
                 }
                 .frame(width: 22, height: 22)
@@ -635,7 +860,7 @@ private struct ConfettiParticle: Identifiable {
     var velocityY: CGFloat
     var rotation: Double
     var rotationSpeed: Double
-    var color: Color
+    var color: SwiftUI.Color
     var shape: ConfettiShape
     var width: CGFloat
     var height: CGFloat
@@ -646,7 +871,7 @@ struct ConfettiView: View {
     @State private var timer: Timer?
     @State private var elapsed: Double = 0
 
-    private static let colors: [Color] = [
+    private static let colors: [SwiftUI.Color] = [
         Color(hex: "#f0b96b"), // amber
         Color(hex: "#f4826a"), // coral
         Color(hex: "#7ed4a0"), // mint
