@@ -2247,7 +2247,15 @@ struct OnbAppBlockingCommitmentView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Button {
-                    Task { await probe.requestAccess() }
+                    state.trackHardAppBlockingPermissionRequested()
+                    Task {
+                        await probe.requestAccess()
+                        state.trackHardAppBlockingPermissionResult(
+                            granted: probe.isApproved,
+                            source: "onboarding",
+                            hasError: probe.statusText == "Request failed"
+                        )
+                    }
                 } label: {
                     HStack(spacing: 8) {
                         if probe.isChecking {
@@ -2358,6 +2366,7 @@ struct OnbAppBlockingCommitmentView: View {
             }
 
             GhostButton(title: "Not now") {
+                state.trackAppBlockingSkipped(context: "onboarding")
                 step = nextStep
             }
         }
@@ -2658,6 +2667,7 @@ struct OnbTrialPaywallView: View {
     @State private var isStartingTrial = false
     @State private var statusMessage: String?
     @State private var didPresentOfferCodeSheet = false
+    @State private var didTrackPaywallView = false
 
     var body: some View {
         LullScreen(glow: true, glowX: 0.5, glowY: 0.04, glowRadius: 320, glowOpacity: 0.62) {
@@ -2707,6 +2717,11 @@ struct OnbTrialPaywallView: View {
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active, didPresentOfferCodeSheet else { return }
             Task { await refreshAfterOfferCodeRedemption() }
+        }
+        .onAppear {
+            guard !didTrackPaywallView else { return }
+            didTrackPaywallView = true
+            state.trackPaywallViewed(context: "onboarding")
         }
     }
 
@@ -2901,7 +2916,7 @@ struct OnbTrialPaywallView: View {
             }
 
             state.applyRevenueCatEntitlement(isActive: true)
-            state.trackPurchaseSucceeded(product: product)
+            state.trackPurchaseSucceeded(product: product, isTrial: subscriptions.isInTrial)
             state.completeOnboarding()
         } catch {
             if error.localizedDescription.localizedCaseInsensitiveContains("cancel") {
@@ -2916,11 +2931,21 @@ struct OnbTrialPaywallView: View {
     @MainActor
     private func restore() async {
         statusMessage = nil
+        state.trackRestoreStarted(context: "onboarding_paywall")
         await subscriptions.restorePurchases()
         if subscriptions.isLullProActive {
+            state.trackRestoreSucceeded(
+                context: "onboarding_paywall",
+                isTrial: subscriptions.isInTrial,
+                productIdentifier: subscriptions.activeProductIdentifier
+            )
             state.applyRevenueCatEntitlement(isActive: true)
             state.completeOnboarding()
         } else {
+            state.trackRestoreFailed(
+                context: "onboarding_paywall",
+                errorMessage: subscriptions.lastErrorMessage
+            )
             statusMessage = subscriptions.lastErrorMessage ?? "No active TenThirty Premium purchase was found."
         }
     }

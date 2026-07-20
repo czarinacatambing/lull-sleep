@@ -1550,6 +1550,21 @@ class AppState: ObservableObject {
         trackAnalytics("app_opened")
     }
 
+    func trackFirstOpenIfNeeded() {
+        let key = "tenthirty.analytics.first_open.v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let queued = AnalyticsService.track(
+            "first_open",
+            installId: installId,
+            properties: baseAnalyticsProperties().merging([
+                "is_onboarding_complete": hasCompletedOnboarding ? "true" : "false"
+            ]) { _, new in new }
+        )
+        if queued {
+            UserDefaults.standard.set(true, forKey: key)
+        }
+    }
+
     func trackOnboardingStarted() {
         trackAnalytics("onboarding_started")
     }
@@ -1570,6 +1585,15 @@ class AppState: ObservableObject {
         ])
     }
 
+    func trackPaywallViewed(context: String) {
+        trackAnalytics("paywall_viewed", [
+            "context": context,
+            "offer_type": "seven_night_trial",
+            "trial_days": "7",
+            "default_product_id": LullStoreProduct.yearly.productID
+        ])
+    }
+
     func trackPurchaseStarted(product: LullStoreProduct) {
         trackAnalytics("purchase_started", [
             "product_id": product.productID,
@@ -1577,10 +1601,37 @@ class AppState: ObservableObject {
         ])
     }
 
-    func trackPurchaseSucceeded(product: LullStoreProduct) {
+    func trackPurchaseSucceeded(product: LullStoreProduct, isTrial: Bool) {
         trackAnalytics("purchase_succeeded", [
             "product_id": product.productID,
-            "product": product.rawValue
+            "product": product.rawValue,
+            "is_trial": isTrial ? "true" : "false"
+        ])
+        trackAnalytics(isTrial ? "trial_started" : "subscription_started", [
+            "product_id": product.productID,
+            "product": product.rawValue,
+            "conversion_source": "onboarding_paywall"
+        ])
+    }
+
+    func trackRestoreStarted(context: String) {
+        trackAnalytics("restore_started", ["context": context])
+    }
+
+    func trackRestoreSucceeded(context: String,
+                               isTrial: Bool,
+                               productIdentifier: String?) {
+        trackAnalytics("restore_succeeded", [
+            "context": context,
+            "is_trial": isTrial ? "true" : "false",
+            "product_id": productIdentifier ?? ""
+        ])
+    }
+
+    func trackRestoreFailed(context: String, errorMessage: String?) {
+        trackAnalytics("restore_failed", [
+            "context": context,
+            "has_error": errorMessage?.isEmpty == false ? "true" : "false"
         ])
     }
 
@@ -1603,6 +1654,20 @@ class AppState: ObservableObject {
 
     func trackHardAppBlockingPermissionRequested() {
         trackAnalytics("hard_app_blocking_permission_requested")
+    }
+
+    func trackHardAppBlockingPermissionResult(granted: Bool,
+                                               source: String,
+                                               hasError: Bool = false) {
+        trackAnalytics("hard_app_blocking_permission_result", [
+            "granted": granted ? "true" : "false",
+            "source": source,
+            "has_error": hasError ? "true" : "false"
+        ])
+    }
+
+    func trackAppBlockingSkipped(context: String) {
+        trackAnalytics("app_blocking_skipped", ["context": context])
     }
 
     func trackTodayFirstFireflyPromptShown() {

@@ -65,6 +65,14 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
 
     private var hasStarted = false
 
+    var isInTrial: Bool {
+        customerInfo?.entitlements.all[LullRevenueCatConfig.proEntitlementID]?.periodType == .trial
+    }
+
+    var activeProductIdentifier: String? {
+        customerInfo?.entitlements.all[LullRevenueCatConfig.proEntitlementID]?.productIdentifier
+    }
+
     var currentSubscriptionDetails: LullSubscriptionDetails? {
         guard let entitlement = customerInfo?.entitlements.all[LullRevenueCatConfig.proEntitlementID] else {
             return nil
@@ -112,9 +120,10 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
         )
     }
 
-    func start() {
+    func start(postHogUserID: String) {
         guard !hasStarted else { return }
         hasStarted = true
+        Purchases.shared.attribution.setPostHogUserID(postHogUserID)
         Purchases.shared.delegate = self
         Task {
             await refreshCustomerInfo()

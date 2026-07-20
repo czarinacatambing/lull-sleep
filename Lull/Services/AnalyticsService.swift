@@ -51,10 +51,11 @@ enum AnalyticsService {
         }
     }
 
+    @discardableResult
     static func track(_ event: String,
                       installId: String,
-                      properties: Properties = [:]) {
-        guard let config = Config.current else { return }
+                      properties: Properties = [:]) -> Bool {
+        guard let config = Config.current else { return false }
         var merged = baseProperties()
         properties.forEach { merged[$0.key] = $0.value }
 
@@ -69,6 +70,7 @@ enum AnalyticsService {
                 to: config.host
             )
         }
+        return true
     }
 
     private static func send(_ payload: CaptureRequest, to host: URL) async {
