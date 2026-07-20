@@ -4,7 +4,7 @@ import Foundation
 final class LullDeviceActivityMonitorExtension: DeviceActivityMonitor {
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
-        AppBlockingMonitorStore.applyCurrentShield()
+        AppBlockingMonitorStore.applyShield(for: activity)
     }
 
     override func intervalDidEnd(for activity: DeviceActivityName) {

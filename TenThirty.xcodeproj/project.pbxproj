@@ -110,6 +110,7 @@
 		F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176C4201AF8923866534227B /* AmbientLightService.swift */; };
 		F77D77A5A237886B69C0A47F /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950458402381490A51AB031A /* NightlyFlowView.swift */; };
 		F9A51F05DAF3107C10EBAAC5 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 15EDD99B9EBA3F48DECE8845 /* RiveRuntime */; };
+		FA7C0D3D92D2EA20AF2460CF /* TenThirtyLegalLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2809736068E106B7CBA49441 /* TenThirtyLegalLinks.swift */; };
 		FC5359BF6D2C5C428FCBA0B0 /* Natural History of Selborne - letters 7-13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */; };
 		FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		FF4B61596848A08BDB4875FA /* Natural History of Selborne - letters 1-6.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */; };
@@ -187,6 +188,7 @@
 		2316827F53961A9543FE7144 /* rules of east and west.m4a */ = {isa = PBXFileReference; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
 		2385C445922205A436F4B026 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 1-6.m4a"; sourceTree = "<group>"; };
+		2809736068E106B7CBA49441 /* TenThirtyLegalLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenThirtyLegalLinks.swift; sourceTree = "<group>"; };
 		29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
 		2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2BA98E7B07449D1F26DE06CF /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
@@ -398,6 +400,7 @@
 				707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */,
 				AB18882B975D7347E1D65745 /* ResearchDataService.swift */,
 				D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */,
+				2809736068E106B7CBA49441 /* TenThirtyLegalLinks.swift */,
 				2385C445922205A436F4B026 /* TTSService.swift */,
 			);
 			path = Services;
@@ -956,6 +959,7 @@
 				6044976E016E9F1AF4A07B3B /* SleepSounds.swift in Sources */,
 				80B63035BF11522615698AC4 /* StreakMilestoneView.swift in Sources */,
 				4A7647B4EBF6CD411C316D0E /* TTSService.swift in Sources */,
+				FA7C0D3D92D2EA20AF2460CF /* TenThirtyLegalLinks.swift in Sources */,
 				52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */,
 				981BDB3543079203B64425EE /* TonightPreviewCard.swift in Sources */,
 			);
@@ -1126,7 +1130,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.7;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1229,7 +1233,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.7;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

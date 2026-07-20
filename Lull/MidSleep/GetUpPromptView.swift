@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 struct GetUpPromptView: View {
     @EnvironmentObject var state: AppState
@@ -46,7 +45,7 @@ struct GetUpPromptView: View {
                         }
                         .padding(.top, 20)
 
-                        Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Check your phone at \(buzzTimeString) — if you see a notification, it's time to go back.")
+                        Text("Your bed should mean sleep. Sit somewhere dim, do something boring. Check back around \(buzzTimeString), then return to bed.")
                             .font(.system(size: 13.5))
                             .foregroundColor(.lullInk2)
                             .multilineTextAlignment(.center)
@@ -66,7 +65,7 @@ struct GetUpPromptView: View {
                         // Timer pill
                         HStack(spacing: 10) {
                             Ember(size: 5)
-                            Text("SILENT NOTIF AT \(buzzTimeString)")
+                            Text("CHECK BACK AT \(buzzTimeString)")
                                 .font(.mono(12))
                                 .kerning(0.8)
                                 .foregroundColor(.lullInk2)
@@ -79,7 +78,6 @@ struct GetUpPromptView: View {
 
                         VStack(spacing: 0) {
                             PrimaryCTA(title: "I'm getting up") {
-                                scheduleGetUpNotification()
                                 dismiss()
                             }
                             GhostButton(title: "I'd rather stay · try a story") { dismiss() }
@@ -93,24 +91,6 @@ struct GetUpPromptView: View {
                 }
             }
         }
-    }
-
-    private func scheduleGetUpNotification() {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["get_up_return"])
-
-        let content = UNMutableNotificationContent()
-        content.title = "Time to come back."
-        content.body = "You've been up 20 minutes. Your bed is waiting — lie back down."
-        content.sound = nil
-        content.interruptionLevel = .timeSensitive
-        content.relevanceScore = 1.0
-
-        let fireDate = buzzTime
-        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        let request = UNNotificationRequest(identifier: "get_up_return", content: content, trigger: trigger)
-        center.add(request)
     }
 }
 

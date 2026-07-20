@@ -8,7 +8,7 @@ options:
 
 settings:
   SWIFT_VERSION: "5.10"
-  MARKETING_VERSION: "2.0.6"
+  MARKETING_VERSION: "2.0.7"
   CURRENT_PROJECT_VERSION: "1"
   LULL_ANALYTICS_ENABLED: "NO"
   LULL_ANALYTICS_COHORT: ""
@@ -66,8 +66,8 @@ targets:
           - JetBrainsMono-Italic-VariableFont_wght.ttf
         UIBackgroundModes:
           - audio
-        NSSupportsLiveActivities: true
-        NSSupportsLiveActivitiesFrequentUpdates: true
+        NSSupportsLiveActivities: false
+        NSSupportsLiveActivitiesFrequentUpdates: false
         LullAnalyticsEnabled: "$(LULL_ANALYTICS_ENABLED)"
         LullAnalyticsCohort: "$(LULL_ANALYTICS_COHORT)"
         LullPostHogAPIKey: "$(LULL_POSTHOG_API_KEY)"

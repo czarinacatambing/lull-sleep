@@ -25,6 +25,7 @@ struct HomeTabView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: Int
     @State private var currentDate = Date()
     @State private var insightsPanelTopInset: CGFloat = 0
@@ -307,6 +308,7 @@ struct HomeTabView: View {
         // showMidSleepMode = true before this view mounted (welcome splash up),
         // onChange never fired. Pick it up on first appear.
         .onAppear {
+            refreshClockAndDailyState()
             if state.showMidSleepMode {
                 sleepSoundsAudio.stop()
                 selectedTab = 3
@@ -320,7 +322,12 @@ struct HomeTabView: View {
         }
         .onReceive(minuteTimer) { date in
             currentDate = date
+            state.resetPrepIfNeeded()
             advanceFirstFireflyPromptForCurrentWindowIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            refreshClockAndDailyState()
         }
         // Restore brightness when navigating away from Mid-sleep
         .onChange(of: selectedTab) { oldTab, newTab in
@@ -360,6 +367,14 @@ struct HomeTabView: View {
         DispatchQueue.main.async {
             earnedFireflyEntranceToken += 1
         }
+    }
+
+    private func refreshClockAndDailyState() {
+        let now = Date()
+        currentDate = now
+        state.resetPrepIfNeeded()
+        state.refreshAppBlockingShield(now: now)
+        advanceFirstFireflyPromptForCurrentWindowIfNeeded()
     }
 
     private func startFirstFireflyHandoffIfNeeded() {
@@ -510,13 +525,14 @@ private struct TodayFirstFireflyCoachmark: View {
 private struct TodayContractQueueView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var appBlockingAccess = AppBlockingAccessProbe.shared
     @State private var now = Date()
     @State private var didReportAllClear = false
     @State private var appPickerSelection = FamilyActivitySelection()
     let onAllClear: () -> Void
     let onFirstDeckInteraction: () -> Void
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let contractStateTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     @State private var showAppPicker = false
     @State private var showBlockedAppsRequiredAlert = false
     let onSettings: () -> Void
@@ -540,8 +556,9 @@ private struct TodayContractQueueView: View {
                 if state.selectedSleepRules.isEmpty {
                     emptyRules
                 } else if isSleepWindow(snapshot) {
-                    sleepWindowState(snapshot: snapshot)
-                    if !state.hasClearedContractDay(now: now) {
+                    if state.hasClearedContractDay(now: now) {
+                        sleepWindowMessage(snapshot: snapshot)
+                    } else {
                         rail(snapshot: snapshot)
                     }
                 } else {
@@ -562,13 +579,19 @@ private struct TodayContractQueueView: View {
         } message: {
             Text("TenThirty needs blocked apps before rule confirmations can do anything useful.")
         }
-        .onReceive(timer) { date in
+        .onReceive(contractStateTimer) { date in
             now = date
             handleAllClearIfNeeded()
-            state.refreshAppBlockingShield(now: date)
         }
         .onAppear {
+            now = Date()
             appPickerSelection = state.appBlockingSelection
+            handleAllClearIfNeeded()
+            state.refreshAppBlockingShield(now: now)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            now = Date()
             handleAllClearIfNeeded()
             state.refreshAppBlockingShield(now: now)
         }
@@ -693,29 +716,37 @@ private struct TodayContractQueueView: View {
         .frame(minHeight: 340, alignment: .center)
     }
 
-    private func sleepWindowState(snapshot: SleepContractEnforcementSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker(text: "Sleep window active", color: .lullAmberSoft)
-            Text(state.hasBlockedAppTargets ? "Apps are blocked tonight." : "Choose blocked apps to protect this window.")
-                .font(.serif(26))
+    private func sleepWindowMessage(snapshot: SleepContractEnforcementSnapshot) -> some View {
+        VStack(spacing: 12) {
+            Text("SLEEP WINDOW")
+                .font(.system(size: 11, weight: .semibold))
+                .kerning(1.8)
+                .foregroundColor(.lullAmberSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("It's time for sleep.")
+                .font(.serif(28))
                 .foregroundColor(.lullInk0)
-            Text(sleepWindowDetail(snapshot: snapshot))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Your selected apps are now blocked until \(sleepWindowWakeText(snapshot: snapshot)).")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.lullInk2)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
-        .padding(18)
-        .contractCardBackground(accent: state.hasBlockedAppTargets)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 30)
+        .frame(minHeight: 340, alignment: .center)
     }
 
-    private func sleepWindowDetail(snapshot: SleepContractEnforcementSnapshot) -> String {
-        guard state.hasBlockedAppTargets else {
-            return "Rules still track here, but TenThirty cannot lock apps until you select them in Rules."
-        }
+    private func sleepWindowWakeText(snapshot: SleepContractEnforcementSnapshot) -> String {
         if case .sleepWindow(let until) = snapshot.lockState {
-            return "Apps are blocked until \(Self.timeFormatter.string(from: until))."
+            return Self.timeFormatter.string(from: until)
         }
-        return "Apps are blocked until wake."
+        return Self.timeFormatter.string(from: state.appBlockingEndTime)
     }
 
     private func isSleepWindow(_ snapshot: SleepContractEnforcementSnapshot) -> Bool {
@@ -1217,7 +1248,7 @@ private struct HeroRuleCard: View {
     let onSlip: () -> Void
     let onChooseApps: () -> Void
 
-    @State private var holdProgress: CGFloat = 0
+    @State private var holdStartedAt: Date?
     @State private var isHolding = false
     @State private var holdWorkItem: DispatchWorkItem?
     @State private var isPoofing = false
@@ -1312,10 +1343,12 @@ private struct HeroRuleCard: View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .fill(Color.white.opacity(0.045))
-            GeometryReader { proxy in
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(Color.lullAmber.opacity(0.28))
-                    .frame(width: proxy.size.width * holdProgress)
+            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30.0, paused: holdStartedAt == nil)) { timeline in
+                GeometryReader { proxy in
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(Color.lullAmber.opacity(0.28))
+                        .frame(width: proxy.size.width * holdProgress(at: timeline.date))
+                }
             }
             HStack {
                 Spacer()
@@ -1376,16 +1409,13 @@ private struct HeroRuleCard: View {
         guard !requiresBlockedApps, canComplete, !isHolding, !isPoofing else { return }
         isHolding = true
         holdWorkItem?.cancel()
-        holdProgress = 0
-        withAnimation(.linear(duration: holdDuration)) {
-            holdProgress = 1
-        }
+        holdStartedAt = Date()
 
         let workItem = DispatchWorkItem {
             guard isHolding else { return }
             isHolding = false
             holdWorkItem = nil
-            holdProgress = 0
+            holdStartedAt = nil
             triggerConfirm()
         }
         holdWorkItem = workItem
@@ -1399,11 +1429,16 @@ private struct HeroRuleCard: View {
         holdWorkItem = nil
         if resetProgress {
             withAnimation(.easeOut(duration: 0.18)) {
-                holdProgress = 0
+                holdStartedAt = nil
             }
         } else {
-            holdProgress = 0
+            holdStartedAt = nil
         }
+    }
+
+    private func holdProgress(at date: Date) -> CGFloat {
+        guard let holdStartedAt else { return 0 }
+        return min(1, max(0, CGFloat(date.timeIntervalSince(holdStartedAt) / holdDuration)))
     }
 
     // Poof the card into dust, then advance the queue.
@@ -1593,6 +1628,8 @@ private struct RulesContractEditorView: View {
     @State private var showPicker = false
     @State private var didHydrate = false
     @State private var showBlockedAppsRequiredAlert = false
+    @State private var now = Date()
+    private let lockStateTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1626,7 +1663,13 @@ private struct RulesContractEditorView: View {
         } message: {
             Text("Rules can be edited after TenThirty knows which apps it should lock.")
         }
-        .onAppear(perform: hydrate)
+        .onAppear {
+            now = Date()
+            hydrate()
+        }
+        .onReceive(lockStateTimer) { date in
+            now = date
+        }
         .onChange(of: showPicker) { _, open in
             guard !open else { return }
             saveBlockingSelection()
@@ -1811,7 +1854,7 @@ private struct RulesContractEditorView: View {
     }
 
     private var isEditingLocked: Bool {
-        state.isContractEditingLocked()
+        state.isContractEditingLocked(now: now)
     }
 
     private var isRuleConfigurationLocked: Bool {
@@ -2078,7 +2121,7 @@ private struct ContractTrendsView: View {
 
     private var lockActivations: Int {
         state.contractLockEvents.filter {
-            interval.contains($0.occurredAt)
+            $0.kind == .rule && interval.contains($0.occurredAt)
         }.count
     }
 

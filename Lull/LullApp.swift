@@ -16,14 +16,6 @@ struct LullApp: App {
         let bedtimeCategory = UNNotificationCategory(
             identifier: "BEDTIME_REMINDER", actions: [doneAction], intentIdentifiers: [], options: [])
 
-        let logAction = UNNotificationAction(identifier: "LOG_SLEEP", title: "Log it", options: [.foreground])
-        let morningCategory = UNNotificationCategory(
-            identifier: "MORNING_CHECKIN", actions: [logAction], intentIdentifiers: [], options: [])
-
-        let midSleepAction = UNNotificationAction(identifier: "OPEN_MID_SLEEP", title: "Open TenThirty", options: [.foreground])
-        let midSleepCategory = UNNotificationCategory(
-            identifier: "MID_SLEEP_CHECK", actions: [midSleepAction], intentIdentifiers: [], options: [])
-
         let startRitualAction = UNNotificationAction(identifier: "OPEN_RITUAL", title: "Start ritual", options: [.foreground])
         let windDownStartCategory = UNNotificationCategory(
             identifier: "WIND_DOWN_START", actions: [startRitualAction], intentIdentifiers: [], options: [])
@@ -38,8 +30,6 @@ struct LullApp: App {
 
         UNUserNotificationCenter.current().setNotificationCategories([
             bedtimeCategory,
-            morningCategory,
-            midSleepCategory,
             windDownStartCategory,
             appLockedCategory,
             contractRuleCategory
@@ -61,6 +51,7 @@ struct LullApp: App {
                     subscriptions.start()
                     state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
                     state.evaluateTrialStatus()
+                    state.clearObsoleteNotifications()
                 }
                 .onChange(of: subscriptions.isLullProActive) { _, isActive in
                     state.applyRevenueCatEntitlement(isActive: isActive)
@@ -111,6 +102,7 @@ struct LullApp: App {
                 state.evaluateTrialStatus()
                 state.trackAppOpened()
                 state.flushResearchData()
+                state.clearObsoleteNotifications()
                 if state.handleTimeZoneChangeIfNeeded() {
                     state.scheduleAllNotifications()
                 }
@@ -172,18 +164,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let category = response.notification.request.content.categoryIdentifier
         DispatchQueue.main.async {
             switch category {
-            case "MORNING_CHECKIN", "BEDTIME_REMINDER":
-                // Both surfaces live on the Today tab now — the morning hero
-                // handles rating, and the prep checklist sits below it for
-                // bedtime prep items.
+            case "BEDTIME_REMINDER":
                 self.state?.requestedTab = 0
             case "WIND_DOWN_START":
                 self.state?.cancelWindDownStartNotifications()
                 self.state?.requestedTab = 0
             case "APP_LOCKED", "SLEEP_CONTRACT_RULE":
                 self.state?.requestedTab = 0
-            case "MID_SLEEP_CHECK":
-                self.state?.showMidSleepMode = true
             default:
                 break
             }

@@ -1,4 +1,3 @@
-import ActivityKit
 import FamilyControls
 import ManagedSettings
 import RevenueCatUI
@@ -2642,6 +2641,9 @@ struct TodayFireflyScene: View {
     let reduceMotion: Bool
     @State private var entrancePhase = 2
     @State private var handledEntranceToken = 0
+    @State private var smoothTime: TimeInterval = 0
+    @State private var lastFrameDate: Date?
+    private let driftTimer = Timer.publish(every: 1.0 / 24.0, on: .main, in: .common).autoconnect()
 
     private var monthSymbols: [String] {
         Calendar.current.shortStandaloneWeekdaySymbols.map { String($0.prefix(1)) }
@@ -2649,44 +2651,53 @@ struct TodayFireflyScene: View {
 
     var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: false)) { timeline in
-                ZStack {
-                    if mode == .calendar {
-                        calendarGrid(size: geo.size)
-                            .transition(.opacity)
-                    }
-
-                    ForEach(Array(dates.enumerated()), id: \.element) { index, date in
-                        let newest = index == dates.count - 1
-                        let entering = isEnteringNewestFirefly(newest)
-                        let position = fireflyPosition(
-                            index: index,
-                            date: date,
-                            size: geo.size,
-                            isNewest: newest,
-                            time: timeline.date.timeIntervalSinceReferenceDate
-                        )
-                        Group {
-                            if entering {
-                                FireflyMascotView(
-                                    phase: entrancePhase,
-                                    reduceMotion: reduceMotion
-                                )
-                            } else {
-                                FireflyDot(index: index, reduceMotion: reduceMotion, drifts: mode == .cluster)
-                            }
-                        }
-                        .scaleEffect(fireflyScale(isNewest: newest))
-                        .opacity(fireflyOpacity(isNewest: newest))
-                        .position(position)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.95), value: mode)
-                    }
+            let animationTime = smoothTime
+            ZStack {
+                if mode == .calendar {
+                    calendarGrid(size: geo.size)
+                        .transition(.opacity)
                 }
-                .frame(width: geo.size.width, height: geo.size.height)
+
+                ForEach(Array(dates.enumerated()), id: \.element) { index, date in
+                    let newest = index == dates.count - 1
+                    let entering = isEnteringNewestFirefly(newest)
+                    let position = fireflyPosition(
+                        index: index,
+                        date: date,
+                        size: geo.size,
+                        isNewest: newest,
+                        time: animationTime
+                    )
+                    Group {
+                        if entering {
+                            FireflyMascotView(
+                                phase: entrancePhase,
+                                reduceMotion: reduceMotion
+                            )
+                        } else {
+                            FireflyDot(index: index, reduceMotion: reduceMotion, drifts: mode == .cluster)
+                        }
+                    }
+                    .scaleEffect(fireflyScale(isNewest: newest))
+                    .opacity(fireflyOpacity(isNewest: newest))
+                    .position(position)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.95), value: mode)
+                }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
             .onChange(of: entranceToken) { _, newToken in
                 prepareEntranceIfNeeded(newToken)
             }
+        }
+        .onReceive(driftTimer) { date in
+            guard !reduceMotion else { return }
+            guard let lastFrameDate else {
+                lastFrameDate = date
+                return
+            }
+            let elapsed = date.timeIntervalSince(lastFrameDate)
+            self.lastFrameDate = date
+            smoothTime += min(max(elapsed, 0), 1.0 / 20.0)
         }
     }
 
@@ -4105,6 +4116,8 @@ private struct AppBlockingCardContent: View {
     @State private var graceMinutes = 5
     @State private var showPicker = false
     @State private var didHydrate = false
+    @State private var now = Date()
+    private let lockStateTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private var appCount: Int { selection.applicationTokens.count }
     private var categoryCount: Int { selection.categoryTokens.count }
@@ -4129,7 +4142,13 @@ private struct AppBlockingCardContent: View {
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.04)))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
         .familyActivityPicker(isPresented: $showPicker, selection: $selection)
-        .onAppear(perform: hydrate)
+        .onAppear {
+            now = Date()
+            hydrate()
+        }
+        .onReceive(lockStateTimer) { date in
+            now = date
+        }
         .onChange(of: showPicker) { _, isPresented in
             guard !isPresented else { return }
             save()
@@ -4326,7 +4345,7 @@ private struct AppBlockingCardContent: View {
     }
 
     private var isEditingLocked: Bool {
-        state.isContractEditingLocked()
+        state.isContractEditingLocked(now: now)
     }
 
     private func save() {
@@ -5543,9 +5562,7 @@ struct SettingsSheet: View {
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomerCenter = false
-    @State private var liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
 
     var body: some View {
         NavigationStack {
@@ -5580,17 +5597,9 @@ struct SettingsSheet: View {
             state.persist()
             state.scheduleAllNotifications()
         }
-        .onAppear {
-            refreshLiveActivitiesStatus()
-        }
         .task {
             await subscriptions.refreshCustomerInfo()
             state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                refreshLiveActivitiesStatus()
-            }
         }
         .sheet(isPresented: $showCustomerCenter) {
             CustomerCenterView()
@@ -5792,13 +5801,9 @@ struct SettingsSheet: View {
     private static let appStoreURL = URL(string: "https://apps.apple.com/us/app/tenthirty-smart-sleep-plan/id6768480598")!
     private static let reviewURL = URL(string: "https://apps.apple.com/us/app/tenthirty-smart-sleep-plan/id6768480598?action=write-review")!
     private static let feedbackURL = URL(string: "mailto:czarinacatambing@gmail.com?subject=Feedback")!
-    private static let websiteURL = URL(string: "https://trytenthirty.com")!
-    private static let privacyURL = URL(string: "https://trytenthirty.com/privacy")!
-    private static let termsURL = URL(string: "https://trytenthirty.com/terms")!
-
-    private func refreshLiveActivitiesStatus() {
-        liveActivitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
-    }
+    private static let websiteURL = TenThirtyLegalLinks.website
+    private static let privacyURL = TenThirtyLegalLinks.privacy
+    private static let termsURL = TenThirtyLegalLinks.terms
 }
 
 private enum SettingsRowAccessory {

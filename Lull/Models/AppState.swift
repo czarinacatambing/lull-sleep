@@ -333,9 +333,10 @@ private func sleepMidpointMinute(bedtime: Date, wakeTime: Date) -> Int {
 
 class AppState: ObservableObject {
     static let maxSleepScore = 5
-    private static let morningRatingNotificationIdentifiers =
+    private static let obsoleteNotificationIdentifiers =
         ["morning_rating_primary", "morning_rating_noon"] +
-        (0..<14).flatMap { ["morning_rating_primary_\($0)", "morning_rating_noon_\($0)"] }
+        (0..<14).flatMap { ["morning_rating_primary_\($0)", "morning_rating_noon_\($0)"] } +
+        ["mid_sleep_check", "get_up_return"]
     private static let appGroupSuite = "group.com.trylull.app"
     private static let shieldWakeTimeTextKey = "tenthirty_shieldWakeTimeText"
     private static let shieldLockReasonKey = "tenthirty_shieldLockReason"
@@ -789,22 +790,7 @@ class AppState: ObservableObject {
     var suppressPrepLiveActivityForSession = false
 
     func refreshPrepLiveActivityIfEligible() {
-        guard !hasCompletedOnboarding else {
-            LiveActivityService.shared.end(dismissalPolicy: .immediate)
-            return
-        }
-        guard !suppressPrepLiveActivityForSession else { return }
-        guard !preWindDownSteps.isEmpty else {
-            LiveActivityService.shared.end(dismissalPolicy: .immediate)
-            return
-        }
-
-        LiveActivityService.shared.startIfNeeded(
-            prepSteps: preWindDownSteps,
-            doneIds: prepDoneIds,
-            bedtime: typicalBedtime,
-            leadTimes: Self.prepLeadTimes
-        )
+        LiveActivityService.shared.end(dismissalPolicy: .immediate)
     }
 
     static func defaultAppBlockingStart(from bedtime: Date) -> Date {
@@ -2697,7 +2683,7 @@ class AppState: ObservableObject {
         let activatedAt = sleepContractActivatedAt
         let startsTomorrow = activatedAt.map { activatedAt in
             Calendar.current.isDate(contractAnchorDate(for: activatedAt), inSameDayAs: contractAnchorDate(for: dueAt)) &&
-            activatedAt > dueAt
+            activatedAt > graceEndsAt
         } ?? false
         return SleepContractItem(
             rule: rule,
@@ -3364,8 +3350,7 @@ class AppState: ObservableObject {
             sleepLogs.append(entry)
             loggedEntry = entry
         }
-        clearMorningRatingNotifications()
-        scheduleMorningRatingNotifications(skipToday: true)
+        clearObsoleteNotifications()
         justTriggeredNightFivePaywall = false
         persist()
         if let loggedEntry {
@@ -3942,26 +3927,6 @@ class AppState: ObservableObject {
         requestedTab = 1
     }
 
-    func scheduleMidSleepNotification() {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["mid_sleep_check"])
-
-        let content = UNMutableNotificationContent()
-        content.title = "Still awake?"
-        content.body = "TenThirty can help you drift back. One tap, no decisions."
-        content.sound = .none
-        content.categoryIdentifier = "MID_SLEEP_CHECK"
-        content.interruptionLevel = .timeSensitive
-        content.relevanceScore = 1.0
-
-        let fireDate = Calendar.current.date(byAdding: .hour, value: 3, to: typicalBedtime) ?? typicalBedtime
-        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-
-        let request = UNNotificationRequest(identifier: "mid_sleep_check", content: content, trigger: trigger)
-        center.add(request)
-    }
-
     // Per-item primary notification copy — see Docs/notification-copy.md
     private static let prepNotificationCopy: [String: (title: String, body: String)] = [
         R.dimTheLights: (
@@ -4051,22 +4016,33 @@ class AppState: ObservableObject {
         scheduleWindDownStartNotifications()
     }
 
-    func scheduleSleepContractRuleNotifications() {
+    func sleepContractNotificationItems(now: Date = Date()) -> [(item: SleepContractItem, dayOffset: Int)] {
         let calendar = Calendar.current
-        let now = Date()
         let anchor = contractAnchorDate(for: now)
+        var notificationItems: [(item: SleepContractItem, dayOffset: Int)] = []
 
         for dayOffset in 0..<2 {
             guard let contractDay = calendar.date(byAdding: .day, value: dayOffset, to: anchor) else { continue }
             for rule in orderedSelectedSleepRules {
                 let item = sleepContractItem(for: rule, on: contractDay)
                 guard !item.startsTomorrow else { continue }
+                guard !item.isResolved else { continue }
+                notificationItems.append((item, dayOffset))
+            }
+        }
 
-                let dueFireDate = rule == .morningSun ? item.availableAt : item.dueAt
+        return notificationItems
+    }
+
+    func scheduleSleepContractRuleNotifications() {
+        let now = Date()
+
+        for (item, dayOffset) in sleepContractNotificationItems(now: now) {
+                let dueFireDate = item.rule == .morningSun ? item.availableAt : item.dueAt
                 if dueFireDate > now {
                     scheduleSleepContractNotification(
-                        identifier: "sleep_contract_due_\(rule.rawValue)_\(dayOffset)",
-                        title: rule.title,
+                        identifier: "sleep_contract_due_\(item.rule.rawValue)_\(dayOffset)",
+                        title: item.rule.title,
                         body: sleepContractNotificationBody(for: item),
                         fireDate: dueFireDate
                     )
@@ -4074,13 +4050,12 @@ class AppState: ObservableObject {
 
                 if item.graceEndsAt > now {
                     scheduleSleepContractNotification(
-                        identifier: "sleep_contract_grace_\(rule.rawValue)_\(dayOffset)",
+                        identifier: "sleep_contract_grace_\(item.rule.rawValue)_\(dayOffset)",
                         title: "Selected apps lock now",
-                        body: "\(rule.title) was not confirmed before grace ended. Open TenThirty to complete it late.",
+                        body: "\(item.rule.title) was not confirmed before grace ended. Open TenThirty to complete it late.",
                         fireDate: item.graceEndsAt
                     )
                 }
-            }
         }
     }
 
@@ -4228,136 +4203,10 @@ class AppState: ObservableObject {
         ])
     }
 
-    func clearMorningRatingNotifications() {
+    func clearObsoleteNotifications() {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: Self.morningRatingNotificationIdentifiers)
-        center.removeDeliveredNotifications(withIdentifiers: Self.morningRatingNotificationIdentifiers)
-    }
-
-    func scheduleMorningRatingNotifications(skipToday: Bool = false) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: Self.morningRatingNotificationIdentifiers)
-
-        // Keep this scheduled even when Live Activities are enabled. A sleep
-        // Live Activity can be removed by iOS before morning on longer sleep
-        // windows, so the notification is the reliability fallback.
-
-        let cal = Calendar.current
-        let now = Date()
-        let wakeComps = cal.dateComponents([.hour, .minute], from: typicalWakeTime)
-        let startOffset = skipToday ? 1 : 0
-        let dayOffsets = Array(startOffset..<(startOffset + 14))
-
-        for (slot, dayOffset) in dayOffsets.enumerated() {
-            guard let targetDay = cal.date(byAdding: .day, value: dayOffset, to: cal.startOfDay(for: now)),
-                  let wakeAnchor = cal.date(bySettingHour: wakeComps.hour ?? 7,
-                                            minute: wakeComps.minute ?? 0,
-                                            second: 0,
-                                            of: targetDay)
-            else { continue }
-
-            guard shouldScheduleMorningRatingNotification(forWakeTime: wakeAnchor, calendar: cal) else { continue }
-
-            let primaryFire = wakeAnchor
-            let ratingWindowEnd = firstPrepStart(afterWakeTime: wakeAnchor, calendar: cal)
-
-            if primaryFire > now {
-                let content = UNMutableNotificationContent()
-                content.title = "How did you sleep?"
-                content.body = "Take 5 seconds to rate last night. It helps TenThirty improve your routine."
-                content.sound = .default
-                content.categoryIdentifier = "MORNING_CHECKIN"
-                content.interruptionLevel = .timeSensitive
-                content.relevanceScore = 1.0
-
-                var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: primaryFire)
-                comps.second = 0
-
-                let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-                let request = UNNotificationRequest(identifier: "morning_rating_primary_\(slot)", content: content, trigger: trigger)
-                center.add(request)
-            }
-
-            if let noonFire = cal.date(bySettingHour: 12, minute: 0, second: 0, of: targetDay),
-               noonFire > now,
-               noonFire >= wakeAnchor,
-               noonFire < ratingWindowEnd {
-                let noonContent = UNMutableNotificationContent()
-                noonContent.title = "Still time to log your sleep"
-                noonContent.body = "A quick rating helps track what's working for you."
-                noonContent.sound = .default
-                noonContent.categoryIdentifier = "MORNING_CHECKIN"
-                noonContent.interruptionLevel = .timeSensitive
-                noonContent.relevanceScore = 1.0
-
-                var noonComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: noonFire)
-                noonComps.second = 0
-
-                let noonTrigger = UNCalendarNotificationTrigger(dateMatching: noonComps, repeats: false)
-                let noonRequest = UNNotificationRequest(identifier: "morning_rating_noon_\(slot)", content: noonContent, trigger: noonTrigger)
-                center.add(noonRequest)
-            }
-        }
-    }
-
-    private func shouldScheduleMorningRatingNotification(forWakeTime wake: Date,
-                                                         calendar: Calendar) -> Bool {
-        let bedtimeDay = bedtimeDate(forWakeTime: wake, calendar: calendar)
-        let entries = sleepLogs.filter { calendar.isDate($0.date, inSameDayAs: bedtimeDay) }
-        let sorted = entries.sorted { lhs, rhs in
-            let lhsHasNightlyData = hasNightlyData(lhs)
-            let rhsHasNightlyData = hasNightlyData(rhs)
-            if lhsHasNightlyData != rhsHasNightlyData {
-                return lhsHasNightlyData && !rhsHasNightlyData
-            }
-            return lhs.date > rhs.date
-        }
-
-        if let primary = sorted.first, hasNightlyData(primary) {
-            return primary.score == 0
-        }
-
-        return !entries.contains { $0.score > 0 }
-    }
-
-    private func hasNightlyData(_ entry: SleepLogEntry) -> Bool {
-        entry.completedNightlyFlow
-            || entry.actualBedtime != nil
-            || !entry.stepAttempts.isEmpty
-    }
-
-    private func firstPrepStart(afterWakeTime wake: Date,
-                                calendar: Calendar) -> Date {
-        let bedtimeComponents = calendar.dateComponents([.hour, .minute], from: typicalBedtime)
-        let firstLeadMinutes = preWindDownSteps
-            .map(\.resolvedLeadTimeMins)
-            .max() ?? windDownDurationMinutes
-        var bedtimeAnchor = bedtimeDate(forWakeTime: wake, calendar: calendar)
-        let bedtime = calendar.date(
-            bySettingHour: bedtimeComponents.hour ?? 22,
-            minute: bedtimeComponents.minute ?? 30,
-            second: 0,
-            of: bedtimeAnchor
-        ) ?? wake
-        var prepStart = calendar.date(byAdding: .minute, value: -firstLeadMinutes, to: bedtime) ?? bedtime
-
-        while prepStart <= wake {
-            guard let nextAnchor = calendar.date(byAdding: .day, value: 1, to: bedtimeAnchor),
-                  let nextBedtime = calendar.date(
-                    bySettingHour: bedtimeComponents.hour ?? 22,
-                    minute: bedtimeComponents.minute ?? 30,
-                    second: 0,
-                    of: nextAnchor
-                  ),
-                  let nextPrepStart = calendar.date(byAdding: .minute, value: -firstLeadMinutes, to: nextBedtime)
-            else {
-                return wake.addingTimeInterval(24 * 60 * 60)
-            }
-            bedtimeAnchor = nextAnchor
-            prepStart = nextPrepStart
-        }
-
-        return prepStart
+        center.removePendingNotificationRequests(withIdentifiers: Self.obsoleteNotificationIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: Self.obsoleteNotificationIdentifiers)
     }
 
     func scheduleAllNotifications() {
@@ -4399,13 +4248,12 @@ class AppState: ObservableObject {
         // A full schedule rebuild should not leave any prior sleep-window
         // requests behind, especially dynamic "bedtime_prep_<label>" IDs.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        clearObsoleteNotifications()
         if hasCompletedOnboarding {
             scheduleSleepContractRuleNotifications()
         } else {
             scheduleBedtimePrepNotifications()
         }
-        scheduleMorningRatingNotifications()
-        scheduleMidSleepNotification()
         #if DEBUG
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dumpPendingNotifications()

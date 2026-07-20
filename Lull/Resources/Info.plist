@@ -52,9 +52,9 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TenThirty uses your microphone to record your brain dump. Recordings stay on your device and are never shared.</string>
 	<key>NSSupportsLiveActivities</key>
-	<true/>
+	<false/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
-	<true/>
+	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf</string>

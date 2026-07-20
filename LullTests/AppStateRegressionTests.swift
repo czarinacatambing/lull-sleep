@@ -101,6 +101,21 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertTrue(state.sleepContractSnapshot(now: localDate(2026, 6, 28, 17, 1)).actionableItems.isEmpty)
     }
 
+    func testOnboardingActivationAfterMorningSunWindowDoesNotLockImmediately() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
+        state.selectedSleepRules = [.morningSun, .dimLights]
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 20, 40)
+
+        let sameDayItems = state.todaysContractItems(now: localDate(2026, 6, 28, 20, 41))
+
+        XCTAssertEqual(Set(sameDayItems.map(\.rule)), [.morningSun, .dimLights])
+        XCTAssertTrue(sameDayItems.first { $0.rule == .morningSun }?.startsTomorrow == true)
+        XCTAssertTrue(sameDayItems.first { $0.rule == .dimLights }?.startsTomorrow == false)
+        XCTAssertFalse(state.sleepContractSnapshot(now: localDate(2026, 6, 28, 20, 41)).actionableItems.contains { $0.rule == .morningSun })
+    }
+
     func testSleepContractPreviewShowsOnlySelectedRules() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
@@ -233,6 +248,24 @@ final class AppStateRegressionTests: XCTestCase {
         }
     }
 
+    func testSleepWindowAppliesAfterAllCommitmentsCleared() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 21, 50)
+        state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.dimLights]
+
+        state.completeSleepRule(.dimLights, at: localDate(2026, 6, 28, 21, 30))
+
+        XCTAssertTrue(state.hasClearedContractDay(now: localDate(2026, 6, 28, 22, 30)))
+        if case .sleepWindow = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 22, 30)).lockState {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Expected sleep window to lock even after all commitments are cleared")
+        }
+    }
+
     func testOverdueRulesRemainActionableDuringSleepWindow() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
@@ -286,6 +319,40 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertNil(duplicateRecord)
         XCTAssertEqual(state.contractAllClearEvents.count, 1)
         XCTAssertFalse(state.sleepLogs.contains(where: \.completedNightlyFlow))
+    }
+
+    func testCompletedSleepRuleIsNotEligibleForLockNotifications() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.dimLights, .tomorrowsPlan]
+
+        state.completeSleepRule(.dimLights, at: localDate(2026, 6, 28, 20, 50))
+
+        let notificationRules = state.sleepContractNotificationItems(now: localDate(2026, 6, 28, 20, 51))
+            .filter { $0.dayOffset == 0 }
+            .map(\.item.rule)
+
+        XCTAssertFalse(notificationRules.contains(.dimLights))
+        XCTAssertTrue(notificationRules.contains(.tomorrowsPlan))
+    }
+
+    func testSlippedSleepRuleIsNotEligibleForLockNotifications() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.dimLights, .tomorrowsPlan]
+
+        let item = state.todaysContractItems(now: localDate(2026, 6, 28, 20, 50))
+            .first { $0.rule == .dimLights }!
+        state.recordSleepRuleSlip(item, at: localDate(2026, 6, 28, 20, 50))
+
+        let notificationRules = state.sleepContractNotificationItems(now: localDate(2026, 6, 28, 20, 51))
+            .filter { $0.dayOffset == 0 }
+            .map(\.item.rule)
+
+        XCTAssertFalse(notificationRules.contains(.dimLights))
+        XCTAssertTrue(notificationRules.contains(.tomorrowsPlan))
     }
 
     func testSleepWindowEditKeepsAppBlockingWindowInSync() {

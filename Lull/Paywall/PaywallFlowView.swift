@@ -533,8 +533,8 @@ struct RevenueCatPaywallSheet: View {
 
     private var legalLinks: some View {
         HStack(spacing: 18) {
-            legalButton("Terms", url: "https://tenthirty.app/terms")
-            legalButton("Privacy", url: "https://tenthirty.app/privacy")
+            legalButton("Terms", url: TenThirtyLegalLinks.terms)
+            legalButton("Privacy", url: TenThirtyLegalLinks.privacy)
         }
         .font(.mono(10))
         .foregroundColor(.lullInk2)
@@ -544,11 +544,9 @@ struct RevenueCatPaywallSheet: View {
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
     }
 
-    private func legalButton(_ title: String, url: String) -> some View {
+    private func legalButton(_ title: String, url: URL) -> some View {
         Button(title) {
-            if let url = URL(string: url) {
-                openURL(url)
-            }
+            openURL(url)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

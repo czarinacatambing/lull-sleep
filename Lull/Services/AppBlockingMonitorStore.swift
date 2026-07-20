@@ -53,6 +53,13 @@ enum AppBlockingMonitorStore {
         windows().filter { $0.start <= now && now < $0.end }
     }
 
+    static func window(for activityName: DeviceActivityName) -> AppBlockingMonitorWindow? {
+        let prefix = "tenthirty.lock."
+        guard activityName.rawValue.hasPrefix(prefix) else { return nil }
+        let id = String(activityName.rawValue.dropFirst(prefix.count))
+        return windows().first { $0.id == id }
+    }
+
     static func windows() -> [AppBlockingMonitorWindow] {
         guard let data = UserDefaults(suiteName: suiteName)?.data(forKey: windowsDataKey),
               let decoded = try? JSONDecoder().decode([AppBlockingMonitorWindow].self, from: data) else {
@@ -66,6 +73,27 @@ enum AppBlockingMonitorStore {
         let active = activeWindows(now: now)
         guard let window = active.sorted(by: windowSort).first,
               let selection = savedSelection(),
+              (!selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty) else {
+            store.clearAllSettings()
+            return
+        }
+
+        syncShieldContext(for: window)
+        store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
+        store.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
+    }
+
+    static func applyShield(for activityName: DeviceActivityName) {
+        guard let window = window(for: activityName) else {
+            applyCurrentShield()
+            return
+        }
+        applyShield(for: window)
+    }
+
+    private static func applyShield(for window: AppBlockingMonitorWindow) {
+        let store = ManagedSettingsStore()
+        guard let selection = savedSelection(),
               (!selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty) else {
             store.clearAllSettings()
             return

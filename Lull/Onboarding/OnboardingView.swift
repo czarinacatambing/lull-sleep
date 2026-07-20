@@ -14,6 +14,9 @@ struct OnboardingView: View {
     @State private var ctaFramesByStep: [Int: CGRect] = [:]
     @State private var ctaStatesByStep: [Int: FireflyCTAState] = [:]
     @State private var brandDotFrame: CGRect?
+    @State private var draftTargetBedtime = Date()
+    @State private var draftTargetWakeTime = Date()
+    @State private var didHydrateSleepWindowDraft = false
 
     private var showsFireflyCompanion: Bool {
         state.isOnboardingFireflyCompanionActive
@@ -31,9 +34,10 @@ struct OnboardingView: View {
             case 2: OnbBedtimeView(
                 step: $step,
                 kind: .target,
-                bedtime: $state.targetBedtime,
-                wakeTime: $state.targetWakeTime
+                bedtime: $draftTargetBedtime,
+                wakeTime: $draftTargetWakeTime
             )
+            .onAppear(perform: hydrateSleepWindowDraftIfNeeded)
             case 3: OnbRoutineReadyView(step: $step)
             case 4: OnbAppBlockingCommitmentView(step: $step)
             case 5: OnbTrialPaywallView()
@@ -60,6 +64,7 @@ struct OnboardingView: View {
         .transition(.opacity)
         .postHogNoMask()
         .onAppear {
+            hydrateSleepWindowDraftIfNeeded()
             if !didTrackStart {
                 didTrackStart = true
                 state.trackOnboardingStarted()
@@ -96,6 +101,13 @@ struct OnboardingView: View {
         .onPreferenceChange(BrandDotFramePreferenceKey.self) { frame in
             brandDotFrame = frame
         }
+    }
+
+    private func hydrateSleepWindowDraftIfNeeded() {
+        guard !didHydrateSleepWindowDraft else { return }
+        draftTargetBedtime = state.targetBedtime
+        draftTargetWakeTime = state.targetWakeTime
+        didHydrateSleepWindowDraft = true
     }
 
     private func screenName(for step: Int) -> String {
@@ -1390,10 +1402,7 @@ struct OnbBedtimeView: View {
                 Spacer().frame(height: 16)
                 OnbTopBar(step: 3, total: 5, onBack: { step = 1 }, onSkip: {
                     if kind == .target {
-                        state.currentBedtime = state.targetBedtime
-                        state.currentWakeTime = state.targetWakeTime
-                        state.typicalBedtime = state.targetBedtime
-                        state.typicalWakeTime = state.targetWakeTime
+                        commitTargetSleepWindow()
                         state.refreshOnboardingClassifications()
                     }
                     step = 3
@@ -1467,14 +1476,13 @@ struct OnbBedtimeView: View {
 
                 PrimaryCTA(title: "Continue") {
                     if kind == .current {
-                        state.targetBedtime = state.currentBedtime
-                        state.targetWakeTime = state.currentWakeTime
+                        state.currentBedtime = bedtime
+                        state.currentWakeTime = wakeTime
+                        state.targetBedtime = bedtime
+                        state.targetWakeTime = wakeTime
                         step = 3
                     } else {
-                        state.currentBedtime = state.targetBedtime
-                        state.currentWakeTime = state.targetWakeTime
-                        state.typicalBedtime = state.targetBedtime
-                        state.typicalWakeTime = state.targetWakeTime
+                        commitTargetSleepWindow()
                         state.refreshOnboardingClassifications()
                         step = 3
                     }
@@ -1484,6 +1492,15 @@ struct OnbBedtimeView: View {
                 }
             }
         }
+    }
+
+    private func commitTargetSleepWindow() {
+        state.targetBedtime = bedtime
+        state.targetWakeTime = wakeTime
+        state.currentBedtime = bedtime
+        state.currentWakeTime = wakeTime
+        state.typicalBedtime = bedtime
+        state.typicalWakeTime = wakeTime
     }
 }
 
@@ -2801,10 +2818,10 @@ struct OnbTrialPaywallView: View {
 
             HStack(spacing: 26) {
                 footerButton("Terms") {
-                    open("https://tenthirty.app/terms")
+                    open(TenThirtyLegalLinks.terms)
                 }
                 footerButton("Privacy") {
-                    open("https://tenthirty.app/privacy")
+                    open(TenThirtyLegalLinks.privacy)
                 }
                 footerButton(subscriptions.isLoading ? "Restoring" : "Restore") {
                     Task { await restore() }
@@ -2835,8 +2852,7 @@ struct OnbTrialPaywallView: View {
         .disabled(title == "Restoring")
     }
 
-    private func open(_ urlString: String) {
-        guard let url = URL(string: urlString) else { return }
+    private func open(_ url: URL) {
         openURL(url)
     }
 

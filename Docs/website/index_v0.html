@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>TenThirty — The app blocker built for bedtime</title>
-<meta name="description" content="Choose the apps and the hours. TenThirty blocks the bedtime scroll when night-you needs a boundary."/>
-<meta property="og:title" content="TenThirty — No 1am scroll tonight"/>
-<meta property="og:description" content="A bedtime app blocker for the hours when willpower disappears. Choose the apps, set your sleep window, and let TenThirty hold the line."/>
+<title>TenThirty — Stop the bedtime scroll before it steals tomorrow</title>
+<meta name="description" content="TenThirty lets you choose sleep rules, then locks distracting apps when timing matters and throughout your sleep window."/>
+<meta property="og:title" content="TenThirty — Block bedtime scrolling"/>
+<meta property="og:description" content="Choose your sleep rules. TenThirty enforces the timing with scroll-lock when your future self needs backup."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://trytenthirty.com/"/>
 <meta property="og:image" content="https://trytenthirty.com/assets/tenthirty-social-card.png"/>
@@ -14,8 +14,8 @@
 <meta property="og:image:height" content="630"/>
 <meta property="og:image:alt" content="TenThirty social card showing bedtime scroll-lock enforcement"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="TenThirty — No 1am scroll tonight"/>
-<meta name="twitter:description" content="A bedtime app blocker for the hours when willpower disappears. Choose the apps, set your sleep window, and let TenThirty hold the line."/>
+<meta name="twitter:title" content="TenThirty — Block bedtime scrolling"/>
+<meta name="twitter:description" content="Choose your sleep rules. TenThirty enforces the timing with scroll-lock when your future self needs backup."/>
 <meta name="twitter:image" content="https://trytenthirty.com/assets/tenthirty-social-card.png"/>
 <link rel="canonical" href="https://trytenthirty.com/"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,6 +57,7 @@
     --serif:'Fraunces','Iowan Old Style',Georgia,serif;
     --sans:'Inter',ui-sans-serif,system-ui,sans-serif;
     --ease:cubic-bezier(.2,.7,.2,1);
+    --p:0; /* night progress 0..1, set on scroll */
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth;overflow-x:clip}
@@ -72,6 +73,9 @@
 
   .wrap{max-width:1140px;margin:0 auto;padding:0 40px}
   @media (max-width:720px){.wrap{padding:0 22px}}
+  /* left gutter reserved for the fixed Night Clock on wide screens */
+  @media (min-width:1200px){body{padding-left:76px}}
+
   /* ---------- Buttons ---------- */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;font-size:14.5px;font-weight:500;transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .2s,border-color .2s;border:1px solid transparent;white-space:nowrap}
   .btn-primary{background:var(--ember);color:#1a0d06;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,.3) inset,0 14px 42px -14px var(--ember-glow)}
@@ -83,6 +87,19 @@
   .btn:hover .arrow{transform:translateX(3px)}
   .btn .apple{width:17px;height:17px;flex-shrink:0}
 
+  /* ---------- Night Clock rail (signature) ---------- */
+  .night{position:fixed;left:0;top:0;bottom:0;width:76px;z-index:40;display:none;pointer-events:none}
+  @media (min-width:1200px){.night{display:block}}
+  .night-inner{position:absolute;left:26px;top:50%;transform:translateY(-50%);height:min(58vh,600px);width:1px}
+  .night-track{position:absolute;inset:0;width:1px;background:linear-gradient(var(--line),var(--line-strong),var(--line))}
+  .night-fill{position:absolute;left:0;top:0;width:1px;height:calc(var(--p) * 100%);background:linear-gradient(var(--ember-deep),var(--ember));box-shadow:0 0 10px var(--ember-glow)}
+  .night-node{position:absolute;left:-4px;top:calc(var(--p) * 100%);width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--ember);box-shadow:0 0 14px var(--ember-glow),0 0 34px var(--ember-glow);animation:pulse 3.4s ease-in-out infinite}
+  .night-read{position:absolute;left:22px;top:calc(var(--p) * 100%);transform:translateY(-50%);white-space:nowrap;display:flex;flex-direction:column;gap:3px}
+  .night-time{font-size:13px;color:var(--ink-0);letter-spacing:.12em}
+  .night-phase{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember-soft)}
+  .night-cap{position:absolute;left:22px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-4)}
+  .night-cap.is-top{top:-6px}
+  .night-cap.is-bot{bottom:-6px}
   @keyframes pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.16)}}
 
   /* ---------- Nav ---------- */
@@ -101,6 +118,13 @@
   .nav-cta .apple{width:15px;height:15px;flex-shrink:0}
   @media (max-width:720px){.nav-links{display:none}}
 
+  /* ---------- Time eyebrow (ties every section to the night) ---------- */
+  .stamp{display:inline-flex;align-items:center;gap:11px;margin-bottom:22px}
+  .stamp .tick{width:7px;height:7px;border-radius:50%;background:var(--ember);box-shadow:0 0 10px var(--ember-glow);flex-shrink:0}
+  .stamp .t{font-size:12px;color:var(--ink-1);letter-spacing:.14em}
+  .stamp .l{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
+  .stamp .sep{width:16px;height:1px;background:var(--line-strong)}
+
   /* ---------- Hero ---------- */
   .hero{position:relative;padding:36px 0 72px;overflow:hidden}
   .hero-bg{position:absolute;inset:0;z-index:0;
@@ -109,32 +133,21 @@
       radial-gradient(560px 380px at 66% 88%, oklch(72% 0.17 58 / 0.14), transparent 62%),
       linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
   }
-  .hero-inner{position:relative;z-index:1;display:grid;gap:44px;align-items:center;min-height:min(86vh,760px)}
+  .hero-inner{position:relative;z-index:1;display:grid;gap:44px;align-items:center;min-height:min(82vh,720px)}
   .hero-inner>*{min-width:0}
-  @media (min-width:960px){.hero-inner{grid-template-columns:.92fr 1.08fr;gap:34px}}
+  @media (min-width:960px){.hero-inner{grid-template-columns:1.04fr 0.96fr;gap:64px}}
   h1.display{font-family:var(--serif);font-weight:300;font-size:clamp(34px,5.4vw,74px);line-height:1.04;letter-spacing:-0.026em;color:var(--ink-0);margin:0 0 26px}
   h1.display em{font-style:italic;color:var(--ember);font-weight:300}
   .lede{font-size:18px;line-height:1.56;color:var(--ink-2);max-width:44ch;margin:0 0 32px}
   .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
   .tiny{font-size:12.5px;color:var(--ink-3);letter-spacing:.02em;margin-top:18px}
 
-  .phone-stage{position:relative;height:min(80vh,720px);min-height:640px;isolation:isolate}
-  .phone-stage::before{content:"";position:absolute;inset:9% 3% 5%;z-index:-1;border-radius:50%;background:radial-gradient(circle at 48% 46%,var(--ember-glow),transparent 64%);filter:blur(36px);opacity:.5;transform:translate3d(0,var(--glow-y,0px),0);will-change:transform}
-  .hero-phone{position:absolute;display:block;height:auto;filter:drop-shadow(0 42px 58px rgba(0,0,0,.72));will-change:transform;backface-visibility:hidden}
-  .hero-phone.is-contract{z-index:2;width:auto;height:92%;left:2%;top:2%;transform:translate3d(var(--contract-x,-12px),var(--contract-y,-34px),0) rotate(var(--contract-r,-3deg))}
-  .hero-phone.is-blocked{z-index:3;width:auto;height:92%;right:2%;bottom:-4%;transform:translate3d(var(--blocked-x,12px),var(--blocked-y,54px),0) rotate(var(--blocked-r,3deg))}
-  .phone-label{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;text-align:center;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
-  @media (max-width:959px){
-    .hero-inner{min-height:0}
-    .phone-stage{order:-1;height:min(112vw,570px);min-height:430px;width:min(620px,100%);margin:0 auto 24px}
-    .hero-phone.is-contract{width:auto;height:90%;left:10%;top:2%}
-    .hero-phone.is-blocked{width:auto;height:90%;right:8%;bottom:-3%}
-  }
-  @media (max-width:520px){
-    .phone-stage{height:110vw;min-height:390px;max-height:520px;margin-bottom:18px}
-    .hero-phone.is-contract{width:auto;height:88%;left:4%}
-    .hero-phone.is-blocked{width:auto;height:88%;right:4%;bottom:-2%}
-  }
+  .phone-stage{position:relative;display:flex;justify-content:center;align-items:center;isolation:isolate}
+  .phone-image-wrap{position:relative;width:min(400px,90vw);flex-shrink:0}
+  .phone-image-wrap::before{content:"";position:absolute;inset:11% 4% 5%;z-index:-1;border-radius:50px;background:radial-gradient(circle at 50% 48%, var(--ember-glow), transparent 62%);filter:blur(30px);opacity:.55}
+  .phone-image-wrap img{display:block;width:100%;height:auto;filter:drop-shadow(0 52px 74px rgba(0,0,0,.76))}
+  .phone-label{position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;text-align:center;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+  @media (max-width:959px){.phone-stage{order:-1;margin-bottom:14px}.phone-image-wrap{width:min(268px,64vw)}.hero-inner{min-height:0}}
   @media (max-width:520px){.phone-label{white-space:normal;font-size:10px;letter-spacing:.12em;max-width:78vw}}
 
   /* ---------- Section primitives ---------- */
@@ -173,6 +186,7 @@
   .quote{background:#070403;position:relative;overflow:hidden}
   .quote::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;left:50%;top:42%;transform:translate(-50%,-50%);background:radial-gradient(circle,oklch(60% 0.15 60 / .16),transparent 64%);pointer-events:none}
   .quote-inner{position:relative;max-width:760px;margin:0 auto;text-align:center}
+  .quote .stamp{justify-content:center}
   .quote blockquote{font-family:var(--serif);font-weight:300;font-style:italic;font-size:clamp(22px,2.9vw,34px);line-height:1.4;letter-spacing:-0.012em;color:var(--ink-0);margin:0}
   .quote-foot{margin-top:28px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
   .quote-foot strong{color:var(--ink-1);font-weight:500}
@@ -206,6 +220,7 @@
   .final::before{content:"";position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);width:900px;height:900px;border-radius:50%;background:radial-gradient(circle,oklch(62% 0.16 60 / 0.28) 0%, oklch(56% 0.12 58 / 0.11) 32%, transparent 60%);animation:breathe 6.5s ease-in-out infinite}
   @keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.85}50%{transform:translate(-50%,-50%) scale(1.07);opacity:1}}
   .final-inner{position:relative;z-index:1;max-width:720px;margin:0 auto}
+  .final .stamp{justify-content:center}
   .final h2{font-family:var(--serif);font-weight:300;font-size:clamp(38px,5vw,64px);line-height:1.05;letter-spacing:-0.025em;color:var(--ink-0);margin:0 0 24px}
   .final h2 em{font-style:italic;color:var(--ember)}
   .final p{font-size:17px;line-height:1.6;color:var(--ink-2);margin:0 auto 36px;max-width:46ch}
@@ -249,14 +264,24 @@
     html{scroll-behavior:auto}
     *,*::before,*::after{animation:none!important;transition:none!important}
     .js .reveal{opacity:1!important;transform:none!important}
-    .hero-phone.is-contract{transform:rotate(-2.2deg)!important}
-    .hero-phone.is-blocked{transform:rotate(2.4deg)!important}
-    .phone-stage::before{transform:none!important}
   }
 </style>
 <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
+
+<!-- NIGHT CLOCK (signature) -->
+<div class="night" aria-hidden="true">
+  <div class="night-inner">
+    <div class="night-track"></div>
+    <div class="night-fill"></div>
+    <div class="night-node"></div>
+    <div class="night-read">
+      <span class="night-time clock" id="night-time">10:30 PM</span>
+      <span class="night-phase" id="night-phase">Lights down</span>
+    </div>
+  </div>
+</div>
 
 <!-- NAV -->
 <nav>
@@ -269,7 +294,7 @@
           <a href="#benefits">Benefits</a>
           <a href="#faq">FAQ</a>
         </div>
-        <a class="nav-cta" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-app-blocker/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
+        <a class="nav-cta" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-routine/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
           <svg class="apple" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.2 8.5c0-1.4.9-2.1 1-2.2-.6-.8-1.4-.9-1.7-.9-.7-.1-1.4.4-1.8.4s-.9-.4-1.5-.4c-.8 0-1.5.5-1.9 1.2-.8 1.4-.2 3.5.6 4.6.4.6.8 1.2 1.4 1.2.6 0 .8-.4 1.5-.4s.9.4 1.5.4 1-.6 1.3-1.1c.4-.6.6-1.2.6-1.2s-1-.4-1-1.6zM10 4.7c.3-.4.6-1 .5-1.6-.5 0-1.1.4-1.4.7-.3.4-.6 1-.5 1.5.5.1 1.1-.3 1.4-.6z"/></svg>
           Download
         </a>
@@ -283,22 +308,29 @@
   <div class="hero-bg"></div>
   <div class="wrap hero-inner">
     <div>
-      <h1 class="display">No 1am scroll.<br><em>Not tonight.</em></h1>
-      <p class="lede">Choose the apps. Choose your sleep window. TenThirty blocks the late-night feed when night-you needs a boundary.</p>
+      <div class="stamp">
+        <span class="tick"></span>
+        <span class="t clock">10:30 PM</span>
+        <span class="sep"></span>
+        <span class="l">Lights down</span>
+      </div>
+      <h1 class="display">Stop the bedtime scroll<br><em>before it steals tomorrow.</em></h1>
+      <p class="lede">Choose the sleep rules your future self wants. TenThirty locks distracting apps when timing matters — and all through your sleep window.</p>
       <div class="cta-row">
-        <a class="btn btn-primary btn-lg" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-app-blocker/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
+        <a class="btn btn-primary btn-lg" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-routine/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
           <svg class="apple" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.2 8.5c0-1.4.9-2.1 1-2.2-.6-.8-1.4-.9-1.7-.9-.7-.1-1.4.4-1.8.4s-.9-.4-1.5-.4c-.8 0-1.5.5-1.9 1.2-.8 1.4-.2 3.5.6 4.6.4.6.8 1.2 1.4 1.2.6 0 .8-.4 1.5-.4s.9.4 1.5.4 1-.6 1.3-1.1c.4-.6.6-1.2.6-1.2s-1-.4-1-1.6zM10 4.7c.3-.4.6-1 .5-1.6-.5 0-1.1.4-1.4.7-.3.4-.6 1-.5 1.5.5.1 1.1-.3 1.4-.6z"/></svg>
           Download on the App Store
           <span class="arrow">→</span>
         </a>
       </div>
-      <div class="tiny">7 nights free · then $49.99/year · cancel anytime</div>
+      <div class="tiny">7 nights free · No credit card · Premium features in the trial</div>
     </div>
 
-    <div class="phone-stage" aria-label="TenThirty sleep contract and blocked app screens">
-      <img class="hero-phone is-contract" src="assets/tenthirty-contract-cutout.png" alt="TenThirty showing a sleep contract with morning sun and caffeine cutoff rules" loading="eager" decoding="async">
-      <img class="hero-phone is-blocked" src="assets/tenthirty-blocked-cutout.png" alt="TenThirty blocking an app after a missed sleep commitment" loading="eager" decoding="async">
-      <div class="phone-label">Set the plan · TenThirty holds the line</div>
+    <div class="phone-stage">
+      <div class="phone-image-wrap">
+        <img src="assets/tenthirty-model.png" alt="TenThirty sleep contract screen showing sleep rules and scroll-lock on an iPhone" loading="eager" decoding="async">
+      </div>
+      <div class="phone-label">Sleep rules · scroll-lock · no 1am feed</div>
     </div>
   </div>
 </header>
@@ -347,26 +379,29 @@
 <section class="benefits" id="benefits">
   <div class="wrap">
     <div class="sec-head reveal">
-      <h2 class="sec-title">A better boundary for <em>racing minds.</em></h2>
+      <div class="stamp">
+        <span class="tick"></span><span class="t clock">12:40 AM</span><span class="sep"></span><span class="l">What changes</span>
+      </div>
+      <h2 class="sec-title">Three things that actually <em>get better.</em></h2>
     </div>
     <div class="ben-grid">
       <div class="ben reveal">
         <div class="ben-time clock">11:10 PM · falling asleep</div>
         <svg class="ben-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/><path d="M17.7 7.7A2.5 2.5 0 1 1 19.5 12H2"/></svg>
-        <h3>Night-you stops renegotiating</h3>
-        <p>You choose the boundary while you are clear-headed. When bedtime arrives, the decision is already made — no timer to dismiss, no limit to casually ignore.</p>
+        <h3>Your rules happen on time</h3>
+        <p>Morning sun, caffeine cutoff, dim lights, and tomorrow's plan stop being vague intentions. If you miss the grace window, scroll-lock makes the consequence immediate but recoverable.</p>
       </div>
       <div class="ben reveal">
         <div class="ben-time clock">10:30 PM · on time</div>
         <svg class="ben-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
-        <h3>Your sleep window stays protected</h3>
-        <p>The apps that steal bedtime stay blocked until your chosen wake time. The “just one more video” hour finally has an edge.</p>
+        <h3>You stop blowing past bedtime</h3>
+        <p>Scroll-lock blocks the doomscroll during your sleep window and when missed rules need backup. The "just one more video" hour has a real boundary.</p>
       </div>
       <div class="ben reveal">
         <div class="ben-time clock">3:12 AM · back to sleep</div>
         <svg class="ben-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-        <h3>A 3am wake-up stays boring</h3>
-        <p>Mid-Sleep Mode keeps help close without sending you back to the feed: a dim screen, calm guidance, and fewer decisions for half-asleep hands.</p>
+        <h3>You get back to sleep at 3am</h3>
+        <p>Mid-Sleep Mode is one tap from your lock screen: dim sepia screen, a calm voice, no decisions, no feed. Built for half-asleep hands — so a 3am wake-up doesn't cost you the night.</p>
       </div>
     </div>
   </div>
@@ -377,28 +412,27 @@
   <div class="wrap">
     <div class="faq-grid">
       <div class="reveal">
-        <h2 class="sec-title" style="font-size:clamp(28px,3.6vw,44px)">Things people ask before <em>2am.</em></h2>
+        <div class="stamp">
+          <span class="tick"></span><span class="t clock">1:58 AM</span><span class="sep"></span><span class="l">Questions</span>
+        </div>
+        <h2 class="sec-title" style="font-size:clamp(28px,3.6vw,44px);margin-top:14px">Things people ask before <em>2am.</em></h2>
       </div>
       <div class="faq-list reveal">
         <div class="faq-item open">
-          <button class="faq-q">Is this another meditation app?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">No. TenThirty is a bedtime app blocker. It can support your wind-down, but its main job is simpler: keep your selected apps closed during the hours you chose for sleep.</div></div>
+          <button class="faq-q">Is this a meditation app?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">No. TenThirty is a sleep-contract app. You choose a few habits that protect sleep, then TenThirty locks distracting apps when timing matters and throughout your sleep window.</div></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q">How is this different from Apple Screen Time?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">Screen Time manages device use in general. TenThirty is built around one vulnerable moment: bedtime. Your sleep window, wind-down rules, late recovery cooldown, and progress all work together to protect the decision you made before you were tired.</div></div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-q">What if I genuinely need access?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">TenThirty itself stays available so you can complete a late rule or recover. An emergency bypass is available when you truly need it; using it means that night's sleep contract is not counted as kept.</div></div>
+          <button class="faq-q">Will it actually work for me?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">We don't know — and we say so. Every technique is presented as a hypothesis to test against your own data, not a prescription. The whole product is designed to find which variables move the needle for <em>your</em> body and brain.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q">What happens after 7 nights?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">The annual plan renews at $49.99/year unless you cancel before the trial ends. Apple shows the exact trial and renewal terms before you confirm, and you can manage or cancel the subscription in your Apple account settings.</div></div>
+          <div class="faq-a"><div class="faq-a-inner">If you want to continue, Premium is $9.99/month or $49.99/year. If not, nothing happens — no card on file, nothing to cancel, no retention email cascade. We'd rather you leave than feel tricked.</div></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q">Can TenThirty see what I do inside my apps?<span class="plus">+</span></button>
-          <div class="faq-a"><div class="faq-a-inner">No. TenThirty uses Apple's Screen Time frameworks to apply the apps or categories you select. It does not read your messages, passwords, posts, or the content you view. Limited product and subscription data may be processed as explained in our Privacy Policy.</div></div>
+          <button class="faq-q">Does my data leave my phone?<span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">Your sleep rules, check-ins, and routine data sync via CloudKit (encrypted end-to-end on Apple's infrastructure) so you can move phones. No third-party analytics beyond privacy-first aggregate counts.</div></div>
         </div>
       </div>
     </div>
@@ -408,6 +442,9 @@
 <!-- TESTIMONIAL -->
 <section class="quote">
   <div class="wrap quote-inner reveal">
+    <div class="stamp">
+      <span class="tick"></span><span class="t clock">3:30 AM</span><span class="sep"></span><span class="l">The wake-up</span>
+    </div>
     <blockquote>I used to open the same apps after midnight without thinking. TenThirty made the boundary obvious, and I actually kept the phone down.</blockquote>
     <div class="quote-foot"><strong>Beth M.</strong> · Professor · beta tester</div>
   </div>
@@ -418,7 +455,7 @@
   <div class="wrap">
     <div class="obj-band reveal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>
-      <p>Screen Time was too easy to ignore? Give TenThirty <em>7 nights</em> to protect the hours when willpower disappears.</p>
+      <p>Tried every sleep app and given up? Start with <em>7 free nights</em> — no credit card, nothing to cancel. If it's not for you, nothing happens.</p>
     </div>
   </div>
 </section>
@@ -427,10 +464,13 @@
 <!-- FINAL CTA -->
 <section class="final" id="download">
   <div class="wrap final-inner reveal">
-    <h2>Protect tonight<br/><em>from night-you.</em></h2>
-    <p>Start with 7 nights free. Then $49.99/year unless cancelled before the trial ends. Apple shows the terms before you confirm.</p>
+    <div class="stamp">
+      <span class="tick"></span><span class="t clock">7:00 AM</span><span class="sep"></span><span class="l">Morning check-in</span>
+    </div>
+    <h2>Ready to finally sleep<br/><em>when you need to?</em></h2>
+    <p>Download TenThirty on the App Store and start with 7 free nights. No credit card, no surprise renewal.</p>
     <div class="final-cta">
-      <a class="btn btn-primary btn-lg" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-app-blocker/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
+      <a class="btn btn-primary btn-lg" data-download href="https://apps.apple.com/us/app/tenthirty-sleep-routine/id6768480598?itscg=30200&itsct=apps_box_badge&mttnsubad=6768480598">
         <svg class="apple" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.2 8.5c0-1.4.9-2.1 1-2.2-.6-.8-1.4-.9-1.7-.9-.7-.1-1.4.4-1.8.4s-.9-.4-1.5-.4c-.8 0-1.5.5-1.9 1.2-.8 1.4-.2 3.5.6 4.6.4.6.8 1.2 1.4 1.2.6 0 .8-.4 1.5-.4s.9.4 1.5.4 1-.6 1.3-1.1c.4-.6.6-1.2.6-1.2s-1-.4-1-1.6zM10 4.7c.3-.4.6-1 .5-1.6-.5 0-1.1.4-1.4.7-.3.4-.6 1-.5 1.5.5.1 1.1-.3 1.4-.6z"/></svg>
         Download on the App Store
         <span class="arrow">→</span>
@@ -490,25 +530,39 @@
 </footer>
 
 <script>
-  // ---- Hero phones: quiet, scroll-linked depth ----
+  // ---- Night Clock: scroll winds the time from 10:30 PM to 7:00 AM ----
   (function(){
-    var stage = document.querySelector('.phone-stage');
-    if (!stage || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var root  = document.documentElement;
+    var tEl   = document.getElementById('night-time');
+    var pEl   = document.getElementById('night-phase');
+    var START = 22.5 * 60;      // 10:30 PM in minutes
+    var END   = (24 + 7) * 60;  // 7:00 AM next day
+    function fmt(mins){
+      var t = Math.round(mins / 5) * 5;          // round to calm 5-min ticks
+      t = ((t % 1440) + 1440) % 1440;
+      var h = Math.floor(t / 60), m = t % 60;
+      var ap = h < 12 ? 'AM' : 'PM';
+      var h12 = h % 12; if (h12 === 0) h12 = 12;
+      return h12 + ':' + (m < 10 ? '0' + m : m) + ' ' + ap;
+    }
+    function phase(mins){
+      var h = (Math.floor(mins / 60)) % 24;
+      if (h >= 22 || h < 1)  return 'Lights down';
+      if (h < 2)             return 'Winding down';
+      if (h < 4)             return 'The 3 a.m. wake';
+      if (h < 6)             return 'Still dark';
+      return 'Morning';
+    }
     var ticking = false;
     function update(){
       ticking = false;
-      var hero = stage.closest('.hero');
-      var distance = Math.max(hero ? hero.offsetHeight * .75 : window.innerHeight * .75, 1);
-      var p = window.scrollY / distance;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var p = max > 0 ? window.scrollY / max : 0;
       if (p < 0) p = 0; if (p > 1) p = 1;
-      var eased = p * p * (3 - 2 * p);
-      stage.style.setProperty('--contract-x', (-12 + 20 * eased).toFixed(2) + 'px');
-      stage.style.setProperty('--blocked-x', (12 - 20 * eased).toFixed(2) + 'px');
-      stage.style.setProperty('--contract-y', (-34 + 88 * eased).toFixed(2) + 'px');
-      stage.style.setProperty('--blocked-y', (54 - 124 * eased).toFixed(2) + 'px');
-      stage.style.setProperty('--contract-r', (-3 + 1.5 * eased).toFixed(3) + 'deg');
-      stage.style.setProperty('--blocked-r', (3 - 1.8 * eased).toFixed(3) + 'deg');
-      stage.style.setProperty('--glow-y', (-18 * eased).toFixed(2) + 'px');
+      root.style.setProperty('--p', p.toFixed(4));
+      var mins = START + (END - START) * p;
+      if (tEl) tEl.textContent = fmt(mins);
+      if (pEl) pEl.textContent = phase(mins);
     }
     function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
     window.addEventListener('scroll', onScroll, { passive: true });

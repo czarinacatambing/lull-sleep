@@ -8,6 +8,7 @@ import Foundation
 class LiveActivityService {
     static let shared = LiveActivityService()
 
+    private let liveActivitiesEnabled = false
     private let appGroupSuite      = "group.com.trylull.app"
     private let pendingTogglesKey  = "lull_pendingPrepToggles"
     private let pendingRatingKey   = "lull_pendingMorningRating"
@@ -19,6 +20,10 @@ class LiveActivityService {
 
     func startIfNeeded(prepSteps: [RoutineStep], doneIds: Set<UUID>,
                        bedtime: Date, leadTimes: [String: Int]) {
+        guard liveActivitiesEnabled else {
+            end(dismissalPolicy: .immediate)
+            return
+        }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let now = Date()
@@ -122,6 +127,10 @@ class LiveActivityService {
     }
 
     func update(doneIds: Set<UUID>) {
+        guard liveActivitiesEnabled else {
+            end(dismissalPolicy: .immediate)
+            return
+        }
         let doneIdStrings = doneIds.map { $0.uuidString }
         let state = PrepChecklistAttributes.ContentState(
             doneIds: doneIdStrings,
@@ -157,10 +166,14 @@ class LiveActivityService {
     // MARK: - Sleep Companion lifecycle
 
     var isSleepActivityRunning: Bool {
-        !Activity<LullSleepAttributes>.activities.isEmpty
+        liveActivitiesEnabled && !Activity<LullSleepAttributes>.activities.isEmpty
     }
 
     func startSleepActivity(bedtime: Date, wakeTime: Date) {
+        guard liveActivitiesEnabled else {
+            endCurrentSleepActivity(dismissalPolicy: .immediate)
+            return
+        }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             #if DEBUG
             print("[LiveActivity] Sleep activity not started: Live Activities are disabled for TenThirty.")
@@ -253,6 +266,10 @@ class LiveActivityService {
     // flip a still-sleeping activity just because we're past today's typical
     // wake hour (e.g. ritual started in the evening, wakeTime is tomorrow).
     func updateToAwaitingRating() {
+        guard liveActivitiesEnabled else {
+            endCurrentSleepActivity(dismissalPolicy: .immediate)
+            return
+        }
         Task {
             for activity in Activity<LullSleepAttributes>.activities {
                 var state = activity.content.state
@@ -283,6 +300,10 @@ class LiveActivityService {
     // Final phase: push score + delta, then end the activity after ~4s so the
     // confirmation lingers.
     func publishRatedAndEnd(rating: Int, score: Double, deltaVsBaseline: Double?, baselineLabel: String?) {
+        guard liveActivitiesEnabled else {
+            endCurrentSleepActivity(dismissalPolicy: .immediate)
+            return
+        }
         Task {
             for activity in Activity<LullSleepAttributes>.activities {
                 var state = activity.content.state
