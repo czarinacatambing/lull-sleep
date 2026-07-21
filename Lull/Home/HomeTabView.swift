@@ -173,22 +173,20 @@ struct HomeTabView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
 
-                if selectedTab != 2 {
-                    TodayFireflyScene(
-                        mode: sharedFireflyMode,
-                        dates: sharedFireflyDates,
-                        currentDate: currentDate,
-                        loggedShadeDates: sharedLoggedShadeDates,
-                        calendarTopInset: sharedCalendarTopInset,
-                        calendarRange: sharedCalendarRange,
-                        entranceToken: earnedFireflyEntranceToken,
-                        reduceMotion: reduceMotion
-                    )
-                    .ignoresSafeArea()
-                    .opacity(0.86)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
-                }
+                TodayFireflyScene(
+                    mode: sharedFireflyMode,
+                    dates: sharedFireflyDates,
+                    currentDate: currentDate,
+                    loggedShadeDates: sharedLoggedShadeDates,
+                    calendarTopInset: sharedCalendarTopInset,
+                    calendarRange: sharedCalendarRange,
+                    entranceToken: earnedFireflyEntranceToken,
+                    reduceMotion: reduceMotion
+                )
+                .ignoresSafeArea()
+                .opacity(0.86)
+                .allowsHitTesting(false)
+                .transition(.opacity)
             }
 
             TabView(selection: $selectedTab) {
@@ -2073,19 +2071,8 @@ private struct ContractTrendsView: View {
     }
 
     private var trendsCalendar: some View {
-        TodayFireflyScene(
-            mode: .calendar,
-            dates: fireflyDates,
-            currentDate: currentDate,
-            loggedShadeDates: loggedShadeDates,
-            calendarTopInset: 0,
-            calendarRange: range == .week ? .week : .month,
-            entranceToken: 0,
-            reduceMotion: reduceMotion
-        )
-        .opacity(0.90)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        Color.clear
+            .accessibilityHidden(true)
     }
 
     private func trendStat(_ title: String, value: String) -> some View {
