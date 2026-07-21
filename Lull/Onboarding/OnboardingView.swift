@@ -39,8 +39,9 @@ struct OnboardingView: View {
             )
             .onAppear(perform: hydrateSleepWindowDraftIfNeeded)
             case 3: OnbRoutineReadyView(step: $step)
-            case 4: OnbAppBlockingCommitmentView(step: $step)
-            case 5: OnbTrialPaywallView()
+            case 4: OnbAppBlockingHowItWorksView(step: $step)
+            case 5: OnbAppBlockingCommitmentView(step: $step)
+            case 6: OnbTrialPaywallView()
             default: EmptyView()
             }
 
@@ -116,8 +117,9 @@ struct OnboardingView: View {
         case 1: return "sleep_rules"
         case 2: return "sleep_window"
         case 3: return "sleep_contract"
-        case 4: return "app_blocking_commitment"
-        case 5: return "trial_paywall"
+        case 4: return "app_blocking_how_it_works"
+        case 5: return "app_blocking_commitment"
+        case 6: return "trial_paywall"
         default: return "unknown"
         }
     }
@@ -2121,7 +2123,7 @@ struct OnbRoutineReadyView: View {
 
                     VStack(spacing: 0) {
                         PrimaryCTA(
-                            title: "Choose apps to block"
+                            title: "See how app pausing works"
                         ) {
                             step = 4
                         }
@@ -2155,6 +2157,223 @@ struct OnbRoutineReadyView: View {
     }
 }
 
+// MARK: - App Blocking How It Works
+
+struct OnbAppBlockingHowItWorksView: View {
+    @Binding var step: Int
+    @EnvironmentObject var state: AppState
+
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    private var previewItems: [SleepContractItem] {
+        Array(state.sleepContractPreviewItems.prefix(2))
+    }
+
+    private var firstRuleTitle: String {
+        previewItems.first?.rule.title ?? "Dim the lights"
+    }
+
+    private var secondRuleTitle: String {
+        if previewItems.count > 1 {
+            return previewItems[1].rule.title
+        }
+        return "Put the phone down"
+    }
+
+    private var firstRuleTime: String {
+        guard let dueAt = previewItems.first?.dueAt else { return "9:45 PM" }
+        return Self.timeFmt.string(from: dueAt)
+    }
+
+    private var secondRuleTime: String {
+        guard previewItems.count > 1 else { return "10:10 PM" }
+        return Self.timeFmt.string(from: previewItems[1].dueAt)
+    }
+
+    private var sleepWindowText: String {
+        "\(Self.timeFmt.string(from: state.typicalBedtime)) - \(Self.timeFmt.string(from: state.typicalWakeTime))"
+    }
+
+    var body: some View {
+        LullScreen(glow: true, glowX: 0.52, glowY: 0.12, glowRadius: 300, glowOpacity: 0.62) {
+            GeometryReader { geo in
+                let compact = geo.size.height < 740
+
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: compact ? 14 : 18) {
+                            Spacer().frame(height: compact ? 18 : 30)
+                            BrandMark(large: false)
+
+                            VStack(spacing: 12) {
+                                Kicker(text: "How app pausing works", color: .lullAmberSoft)
+
+                                VStack(spacing: compact ? -8 : -10) {
+                                    Text("A boundary")
+                                        .font(.serif(compact ? 32 : 36, weight: .semibold))
+                                        .foregroundColor(.lullInk0)
+                                    Text("you can see coming.")
+                                        .font(.serifItalic(compact ? 34 : 38))
+                                        .foregroundColor(.lullAmber)
+                                }
+                                .multilineTextAlignment(.center)
+
+                                Text("Before iOS asks for Screen Time access, here is the exact flow for tonight.")
+                                    .font(.system(size: 14.5))
+                                    .foregroundColor(.lullInk2)
+                                    .lineSpacing(4)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 318)
+                            }
+                            .padding(.top, compact ? 10 : 18)
+
+                            VStack(spacing: 0) {
+                                OnbAppPauseTimelineRow(
+                                    marker: "NOW",
+                                    icon: "checkmark.circle.fill",
+                                    title: "Choose your plan",
+                                    detail: "Pick 1-3 sleep habits and the scroll apps you want paused."
+                                )
+
+                                OnbAppPauseTimelineRow(
+                                    marker: firstRuleTime,
+                                    icon: "hand.raised.fill",
+                                    title: firstRuleTitle,
+                                    detail: "Hold to confirm when it is done. Your selected apps stay available."
+                                )
+
+                                OnbAppPauseTimelineRow(
+                                    marker: secondRuleTime,
+                                    icon: "lock.fill",
+                                    title: secondRuleTitle,
+                                    detail: "If the grace window passes, selected apps pause. Confirm late and they unlock after a 10-minute cooldown."
+                                )
+
+                                OnbAppPauseTimelineRow(
+                                    marker: "IF MISSED",
+                                    icon: "clock.fill",
+                                    title: "No late confirmation",
+                                    detail: "Tonight's app pause starts 10 minutes before your sleep window."
+                                )
+
+                                OnbAppPauseTimelineRow(
+                                    marker: sleepWindowText,
+                                    icon: "moon.fill",
+                                    title: "Sleep window",
+                                    detail: "Selected apps stay paused until wake time, even if every habit was completed.",
+                                    isLast: true
+                                )
+                            }
+                            .padding(18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .fill(Color.white.opacity(0.04))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .strokeBorder(Color.lullAmber.opacity(0.16), lineWidth: 1)
+                            )
+                            .padding(.horizontal, Lull.horizontalPad)
+
+                            Text("TenThirty itself stays available so you can come back and confirm a late habit.")
+                                .font(.mono(11))
+                                .foregroundColor(.lullInk3)
+                                .lineSpacing(4)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 318)
+
+                            Spacer().frame(height: 116)
+                        }
+                        .frame(maxWidth: 430)
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    bottomBar
+                }
+            }
+        }
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            PrimaryCTA(title: "Choose apps to pause") {
+                step = 5
+            }
+
+            GhostButton(title: "Back") {
+                step = 3
+            }
+        }
+        .padding(.horizontal, Lull.horizontalPad)
+        .padding(.top, 18)
+        .padding(.bottom, 34)
+        .background(
+            LinearGradient(
+                colors: [Color.lullBg.opacity(0), Color.lullBg.opacity(0.96), Color.lullBg],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+}
+
+private struct OnbAppPauseTimelineRow: View {
+    var marker: String
+    var icon: String
+    var title: String
+    var detail: String
+    var isLast = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 13) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.lullAmber.opacity(0.12))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.lullAmber)
+                }
+
+                if !isLast {
+                    Rectangle()
+                        .fill(Color.lullAmber.opacity(0.18))
+                        .frame(width: 1, height: 34)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(marker.uppercased())
+                    .font(.mono(9.5))
+                    .kerning(1.0)
+                    .foregroundColor(.lullInk4)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Text(title)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(.lullInk1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.system(size: 12.8))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.bottom, isLast ? 0 : 14)
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 // MARK: - App Blocking Commitment
 
 struct OnbAppBlockingCommitmentView: View {
@@ -2169,7 +2388,7 @@ struct OnbAppBlockingCommitmentView: View {
     private var categoryCount: Int { selection.categoryTokens.count }
     private var selectedCount: Int { appCount + categoryCount }
     private var hasSelection: Bool { selectedCount > 0 }
-    private var nextStep: Int { 5 }
+    private var nextStep: Int { 6 }
 
     var body: some View {
         LullScreen(glow: true, glowX: 0.48, glowY: 0.16, glowRadius: 290, glowOpacity: 0.64) {
@@ -2183,17 +2402,17 @@ struct OnbAppBlockingCommitmentView: View {
                             BrandMark(large: false)
 
                             VStack(spacing: 12) {
-                                Kicker(text: "Tonight's commitment", color: .lullAmberSoft)
+                                Kicker(text: "Your sleep window", color: .lullAmberSoft)
 
-                                (Text("What should\nTenThirty\n")
+                                (Text("Which apps\nshould pause\n")
                                     .foregroundColor(.lullInk0)
-                                 + Text("lock away?")
+                                 + Text("tonight?")
                                     .font(.serifItalic(compact ? 34 : 38))
                                     .foregroundColor(.lullAmber))
                                     .font(.serif(compact ? 32 : 36, weight: .semibold))
                                     .multilineTextAlignment(.center)
 
-                                Text("When you missed your commitment and during your sleep window, TenThirty blocks the apps that keep you scrolling.")
+                                Text("Choose the apps that tend to pull you past bedtime. TenThirty pauses them after missed grace windows and during your sleep window.")
                                     .font(.system(size: 14.5))
                                     .foregroundColor(.lullInk2)
                                     .lineSpacing(4)
@@ -2228,7 +2447,7 @@ struct OnbAppBlockingCommitmentView: View {
     private var accessCard: some View {
         VStack(alignment: .leading, spacing: probe.isApproved ? 0 : 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("STEP 1 · APP BLOCKING")
+                Text("STEP 1 · SCREEN TIME ACCESS")
                     .font(.mono(10))
                     .kerning(1.3)
                     .foregroundColor(.lullInk3)
@@ -2297,7 +2516,7 @@ struct OnbAppBlockingCommitmentView: View {
         } label: {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 8) {
-                    Text("STEP 2 · CHOOSE APPS")
+                    Text("STEP 2 · CHOOSE APPS TO PAUSE")
                         .font(.mono(10))
                         .kerning(1.3)
                         .foregroundColor(probe.isApproved ? .lullInk1 : .lullInk3)
@@ -2687,7 +2906,7 @@ struct OnbTrialPaywallView: View {
                             trialBenefits(compact: compact)
                             TrialReassuranceCard()
 
-                            Text("7 nights free, then TenThirty is $49.99/yr. Apple will confirm before the trial starts.")
+                            Text("Free for seven nights, then $49.99/year. Cancel anytime in Apple subscriptions.")
                                 .font(.system(size: 13))
                                 .foregroundColor(.lullInk3)
                                 .lineSpacing(4)
@@ -2730,19 +2949,21 @@ struct OnbTrialPaywallView: View {
             Kicker(text: "Your first week", color: .lullAmberSoft)
 
             VStack(spacing: compact ? -15 : -17) {
-                Text("Try 7 nights")
+                Text("Seven nights without")
                     .font(.serif(compact ? 38 : 44, weight: .semibold))
                     .foregroundColor(.lullInk0)
-                    .minimumScaleFactor(0.86)
+                    .minimumScaleFactor(0.72)
                     .lineLimit(1)
-                Text("free")
+                Text("the 1 a.m. scroll")
                     .font(.serifItalic(compact ? 44 : 50))
                     .foregroundColor(.lullAmber)
+                    .minimumScaleFactor(0.78)
+                    .lineLimit(1)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
 
-            Text("Start 7 nights with app-lock enforcement. Your rules, protected when timing matters.")
+            Text("TenThirty protects your sleep window and blocks the apps you choose—even when late-night you wants five more minutes.")
                 .font(.system(size: 14.5))
                 .foregroundColor(.lullInk2)
                 .lineSpacing(4)
@@ -2755,24 +2976,24 @@ struct OnbTrialPaywallView: View {
     private func trialBenefits(compact: Bool) -> some View {
         VStack(spacing: compact ? 10 : 12) {
             TrialBenefit(
-                title: "Hard sleep-window lock",
-                detail: "Selected apps stay blocked through your sleep window"
+                title: "Get to bed when you planned",
+                detail: "Keep chosen distractions out of reach during your sleep window"
             )
             TrialBenefit(
-                title: "Rules with consequences",
-                detail: "Miss a grace window and selected apps lock"
+                title: "Follow through before bedtime",
+                detail: "Timely reminders help you keep the habits that support tonight's sleep"
             )
             TrialBenefit(
-                title: "Late recovery cooldown",
-                detail: "Complete a rule late, then wait 10 minutes before unlock"
+                title: "Turn a missed habit into a reset",
+                detail: "Complete it late, take a short cooldown, and get your evening back"
             )
             TrialBenefit(
-                title: "Tomorrow's plan",
-                detail: "Clear the loops that keep replaying at bedtime"
+                title: "Wake up without scroll regret",
+                detail: "Protect tomorrow from another night lost to “just five more minutes”"
             )
             TrialBenefit(
-                title: "One firefly per kept contract",
-                detail: "Quiet proof that you kept your word tonight"
+                title: "Build proof you can trust yourself",
+                detail: "See each kept commitment become progress you can carry into the next night"
             )
         }
         .padding(16)
@@ -2789,7 +3010,7 @@ struct OnbTrialPaywallView: View {
     private func bottomBar(bottomInset: CGFloat) -> some View {
         VStack(spacing: 12) {
             TrialCTA(
-                title: isStartingTrial ? "Starting..." : "Start TenThirty trial",
+                title: isStartingTrial ? "Starting..." : "Protect my first night",
                 subtitle: "Then $49.99/year. Cancel anytime.",
                 disabled: isStartingTrial || subscriptions.isLoading
             ) {

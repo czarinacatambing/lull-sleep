@@ -56,6 +56,7 @@
 		649DDA0A4D2C92AB4A20BE4D /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89C950D6903593FCCD8E72A0 /* FamilyControls.framework */; };
 		656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3D586CE81D7451C6957C877 /* min-solf.m4a */; };
 		65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */; };
+		6BD49CCF65F42E37FA4D2C56 /* FireflyMascot.riv in Resources */ = {isa = PBXBuildFile; fileRef = 0CD10D2531D75B7D17A2FA30 /* FireflyMascot.riv */; };
 		6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
 		7096381F77E43B8904EC47F2 /* PostHogReplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */; };
 		73787A120AA138EF0644B4E9 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */; };
@@ -176,6 +177,7 @@
 		0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringStoryAudioLibrary.swift; sourceTree = "<group>"; };
 		05BFA1F85B39656D31732381 /* LullTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullTheme.swift; sourceTree = "<group>"; };
 		06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */ = {isa = PBXFileReference; path = "heavy-rain.m4a"; sourceTree = "<group>"; };
+		0CD10D2531D75B7D17A2FA30 /* FireflyMascot.riv */ = {isa = PBXFileReference; path = FireflyMascot.riv; sourceTree = "<group>"; };
 		0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
 		13421008A3E4FB1B007A5B4C /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
 		16E004D9956182579C109650 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -474,6 +476,7 @@
 			isa = PBXGroup;
 			children = (
 				16E004D9956182579C109650 /* Assets.xcassets */,
+				0CD10D2531D75B7D17A2FA30 /* FireflyMascot.riv */,
 				2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */,
 				C5FC6273F34A2E39A7DC747F /* Audio */,
 				0889BE44A4F459812D68550C /* Fonts */,
@@ -830,6 +833,7 @@
 				9A2557E81FC029A50CF3C202 /* 4-7-3-breathing-v2.m4a in Resources */,
 				C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */,
 				113FA7D10848B59AC6679BFA /* Assets.xcassets in Resources */,
+				6BD49CCF65F42E37FA4D2C56 /* FireflyMascot.riv in Resources */,
 				9BC0606547D70FE1048FA38B /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */,
@@ -1130,7 +1134,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.7;
+				MARKETING_VERSION = 2.0.8;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1233,7 +1237,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.7;
+				MARKETING_VERSION = 2.0.8;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
