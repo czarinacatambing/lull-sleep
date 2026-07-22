@@ -610,6 +610,7 @@ private struct RulesContractSummaryCard: View {
         case .dimLights: return "lightbulb.fill"
         case .tomorrowsPlan: return "checklist"
         case .gratitudeJournal: return "heart.text.square.fill"
+        case .inBed: return "bed.double.fill"
         }
     }
 }

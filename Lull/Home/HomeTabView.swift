@@ -162,6 +162,10 @@ struct HomeTabView: View {
         childRequestsSolidTabBar || selectedTab == 3
     }
 
+    private var sharedFireflyAccessibilityIdentifier: String {
+        selectedTab == 2 ? "shared-firefly-scene-calendar" : "shared-firefly-scene-cluster"
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             if showsSharedMeadow {
@@ -187,6 +191,10 @@ struct HomeTabView: View {
                 .opacity(0.86)
                 .allowsHitTesting(false)
                 .transition(.opacity)
+
+                #if DEBUG
+                sharedFireflyUITestMarker
+                #endif
             }
 
             TabView(selection: $selectedTab) {
@@ -366,6 +374,15 @@ struct HomeTabView: View {
             earnedFireflyEntranceToken += 1
         }
     }
+
+    #if DEBUG
+    private var sharedFireflyUITestMarker: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier(sharedFireflyAccessibilityIdentifier)
+    }
+    #endif
 
     private func refreshClockAndDailyState() {
         let now = Date()
@@ -770,7 +787,7 @@ private struct TodayContractQueueView: View {
                     item: hero,
                     now: now,
                     canComplete: state.canCompleteSleepRule(hero, now: now),
-                    requiresBlockedApps: state.requiresBlockedAppsBeforeRuleActions,
+                    requiresBlockedApps: hero.rule != .inBed && state.requiresBlockedAppsBeforeRuleActions,
                     appSelection: state.appBlockingSelection,
                     reduceMotion: reduceMotion,
                     onConfirm: { confirmRule(hero) },
@@ -823,7 +840,7 @@ private struct TodayContractQueueView: View {
     }
 
     private func confirmRule(_ item: SleepContractItem) {
-        guard !state.requiresBlockedAppsBeforeRuleActions else {
+        guard item.rule == .inBed || !state.requiresBlockedAppsBeforeRuleActions else {
             showBlockedAppsRequiredAlert = true
             return
         }
@@ -1128,6 +1145,7 @@ private enum RuleGlyph {
         case .dimLights: return "lightbulb.fill"
         case .tomorrowsPlan: return "checklist"
         case .gratitudeJournal: return "heart.text.square.fill"
+        case .inBed: return "bed.double.fill"
         }
     }
 
@@ -1315,6 +1333,12 @@ private struct HeroRuleCard: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.lullInk3)
                     .fixedSize(horizontal: false, vertical: true)
+            } else if item.rule == .inBed {
+                Text("Confirm you're physically in bed. Then tonight's firefly is yours.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
             } else if hasApps {
                 Text("If missed, these get blocked:")
                     .font(.system(size: 12, weight: .medium))
@@ -1370,7 +1394,7 @@ private struct HeroRuleCard: View {
     }
 
     private var shouldShowSlipAction: Bool {
-        canComplete && !requiresBlockedApps && !item.startsTomorrow
+        item.rule != .inBed && canComplete && !requiresBlockedApps && !item.startsTomorrow
     }
 
     private var slipAction: some View {
@@ -1455,7 +1479,8 @@ private struct HeroRuleCard: View {
     }
 
     private var ctaText: String {
-        now > item.graceEndsAt ? "Hold 3 sec to confirm late (I did it)" : "Hold 3 sec to confirm (I did it)"
+        if item.rule == .inBed { return "Hold 3 sec to confirm I'm in bed" }
+        return now > item.graceEndsAt ? "Hold 3 sec to confirm late (I did it)" : "Hold 3 sec to confirm (I did it)"
     }
 
     private var holdCTAText: String {
@@ -1471,6 +1496,9 @@ private struct HeroRuleCard: View {
     private var metaText: String {
         if item.startsTomorrow { return "STARTS TOMORROW" }
         let due = RuleGlyph.timeFormatter.string(from: item.dueAt)
+        if item.rule == .inBed {
+            return now >= item.dueAt ? "IN-BED CHECK" : "AVAILABLE AT \(due)"
+        }
         if now > item.graceEndsAt {
             return "OVERDUE · WAS DUE \(due)"
         }
@@ -1787,7 +1815,7 @@ private struct RulesContractEditorView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.lullInk0)
 
-            ForEach(SleepRuleKind.allCases) { rule in
+            ForEach(SleepRuleKind.editableCases) { rule in
                 RuleEditorRow(
                     rule: rule,
                     isEditingLocked: isEditingLocked,
@@ -1973,6 +2001,7 @@ private struct RuleEditorRow: View {
         case .dimLights: return "lightbulb.fill"
         case .tomorrowsPlan: return "checklist"
         case .gratitudeJournal: return "heart.text.square.fill"
+        case .inBed: return "bed.double.fill"
         }
     }
 }
@@ -2072,6 +2101,7 @@ private struct ContractTrendsView: View {
 
     private var trendsCalendar: some View {
         Color.clear
+            .accessibilityIdentifier("trends-calendar-reserved-space")
             .accessibilityHidden(true)
     }
 

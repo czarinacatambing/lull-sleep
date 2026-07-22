@@ -147,8 +147,8 @@ private struct OnboardingFireflyCompanion: View {
                 let bobY = reduceMotion ? 0 : cos(time * (ctaReady ? 0.64 : 0.42)) * (ctaReady ? 5 : 12)
                 let flicker = reduceMotion ? 1.0 : 0.90 + (sin(time * 1.7) + 1) * 0.045
 
-                FireflyMascotView(phase: 2, reduceMotion: reduceMotion)
-                    .scaleEffect(ctaReady ? 0.42 : 0.48)
+                FireflyDot(index: displayedStep, reduceMotion: reduceMotion, drifts: !reduceMotion)
+                    .scaleEffect(ctaReady ? 0.88 : 1.02)
                     .opacity((visible ? 1 : 0) * flicker)
                     .position(x: point.x + horizontalTravel + bobX, y: point.y + bobY)
                     .animation(.easeInOut(duration: reduceMotion ? 0.18 : 3.0), value: isCTAReady(for: displayedStep))
@@ -1172,7 +1172,7 @@ struct OnbSleepRulesView: View {
                             .font(.serif(30))
                             .foregroundColor(.lullInk0)
                             .padding(.top, 10)
-                        Text("Pick 1-3. If you miss the grace window, your selected apps lock until you recover, then cool down for 10 minutes.")
+                        Text("Pick 1-3 sleep habits and the apps to pause if you miss them.")
                             .font(.system(size: 14))
                             .foregroundColor(.lullInk2)
                             .lineSpacing(4)
@@ -1182,7 +1182,7 @@ struct OnbSleepRulesView: View {
                     .padding(.bottom, 24)
 
                     VStack(spacing: 10) {
-                        ForEach(SleepRuleKind.allCases) { rule in
+                        ForEach(SleepRuleKind.editableCases) { rule in
                             ChoiceRow(
                                 text: rule.title,
                                 hint: rule.detail,
@@ -2236,35 +2236,35 @@ struct OnbAppBlockingHowItWorksView: View {
                                     marker: "NOW",
                                     icon: "checkmark.circle.fill",
                                     title: "Choose your plan",
-                                    detail: "Pick 1-3 sleep habits and the scroll apps you want paused."
+                                    detail: "Pick 1-3 sleep habits and the apps to pause if you miss them."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: firstRuleTime,
                                     icon: "hand.raised.fill",
                                     title: firstRuleTitle,
-                                    detail: "Hold to confirm when it is done. Your selected apps stay available."
+                                    detail: "When the reminder appears, long press to confirm. Your apps stay available."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: secondRuleTime,
                                     icon: "lock.fill",
                                     title: secondRuleTitle,
-                                    detail: "If the grace window passes, selected apps pause. Confirm late and they unlock after a 10-minute cooldown."
+                                    detail: "You get 10 minutes to confirm. After that, chosen apps pause. Confirm late and they unlock after 10 minutes."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: "IF MISSED",
                                     icon: "clock.fill",
-                                    title: "No late confirmation",
-                                    detail: "Tonight's app pause starts 10 minutes before your sleep window."
+                                    title: "Habit missed",
+                                    detail: "Apps unlock after 10 minutes, then pause again 10 minutes before your sleep window."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: sleepWindowText,
                                     icon: "moon.fill",
                                     title: "Sleep window",
-                                    detail: "Selected apps stay paused until wake time, even if every habit was completed.",
+                                    detail: "Chosen apps pause until wake time to protect your sleep.",
                                     isLast: true
                                 )
                             }

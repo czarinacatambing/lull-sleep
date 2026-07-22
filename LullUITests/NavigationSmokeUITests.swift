@@ -12,4 +12,18 @@ final class NavigationSmokeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Routine"].exists)
         XCTAssertFalse(app.staticTexts["Insights"].exists)
     }
+
+    func testTrendsKeepsSharedFireflySceneInCalendarMode() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitest-completed-onboarding"]
+        app.launch()
+
+        XCTAssertTrue(app.otherElements["shared-firefly-scene-cluster"].waitForExistence(timeout: 8))
+
+        app.buttons["Trends"].tap()
+
+        XCTAssertTrue(app.staticTexts["Trends"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.otherElements["shared-firefly-scene-calendar"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.otherElements["shared-firefly-scene-cluster"].exists)
+    }
 }

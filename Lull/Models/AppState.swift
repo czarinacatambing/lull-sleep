@@ -124,8 +124,13 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
     case dimLights
     case tomorrowsPlan
     case gratitudeJournal
+    case inBed
 
     var id: String { rawValue }
+
+    static var editableCases: [SleepRuleKind] {
+        allCases.filter { $0 != .inBed }
+    }
 
     var title: String {
         switch self {
@@ -136,6 +141,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Dim lights"
         case .tomorrowsPlan: return "Tomorrow's plan"
         case .gratitudeJournal: return "Gratitude journal"
+        case .inBed: return "I'm in bed"
         }
     }
 
@@ -148,6 +154,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Lower lights before your sleepy signal gets crowded out."
         case .tomorrowsPlan: return "Write tomorrow's plan so your brain can stop rehearsing."
         case .gratitudeJournal: return "Write one thing that made the day feel safe or worthwhile."
+        case .inBed: return "Confirm you're physically in bed to earn tonight's firefly."
         }
     }
 
@@ -157,6 +164,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .caffeineCutoff, .workoutCutoff: return 15
         case .warmShower, .dimLights: return 10
         case .tomorrowsPlan, .gratitudeJournal: return 5
+        case .inBed: return 0
         }
     }
 
@@ -169,6 +177,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return 75
         case .tomorrowsPlan: return 30
         case .gratitudeJournal: return 15
+        case .inBed: return 0
         }
     }
 
@@ -181,6 +190,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Mark lights dimmed"
         case .tomorrowsPlan: return "Mark tomorrow's plan done"
         case .gratitudeJournal: return "Mark gratitude journal done"
+        case .inBed: return "Confirm I'm in bed"
         }
     }
 }
@@ -444,6 +454,10 @@ class AppState: ObservableObject {
     @Published var activePaywallVerdict: PaywallVerdict? = nil
     @Published var activeRevenueCatPaywall: RevenueCatPaywallContext? = nil
     @Published var activeStreakMilestone: StreakMilestonePresentation? = nil
+
+    var hasActiveSleepContract: Bool {
+        sleepContractActivatedAt != nil && !selectedSleepRules.subtracting([.inBed]).isEmpty
+    }
 
     // MARK: - Home / Dashboard
     @Published var showNightlyFlow = false
@@ -2478,7 +2492,9 @@ class AppState: ObservableObject {
     }
 
     var orderedSelectedSleepRules: [SleepRuleKind] {
-        selectedSleepRules.sorted { lhs, rhs in
+        selectedSleepRules
+            .filter { $0 != .inBed }
+            .sorted { lhs, rhs in
             sleepContractItem(for: lhs, on: Date()).dueAt < sleepContractItem(for: rhs, on: Date()).dueAt
         }
     }
@@ -2504,7 +2520,11 @@ class AppState: ObservableObject {
     }
 
     func canCompleteSleepRule(_ item: SleepContractItem, now: Date = Date()) -> Bool {
-        !item.startsTomorrow && item.availableAt <= now
+        guard !item.startsTomorrow, item.availableAt <= now else { return false }
+        if item.rule == .inBed {
+            return isInBedCheckpointUnlocked(item)
+        }
+        return true
     }
 
     func setSleepThief(_ thief: SleepThief) {
@@ -2516,6 +2536,7 @@ class AppState: ObservableObject {
     }
 
     func toggleSleepRule(_ rule: SleepRuleKind) {
+        guard rule != .inBed else { return }
         guard !isContractEditingLocked() else {
             trackContractEditBlockedDuringLock("rule_toggle")
             return
@@ -2540,7 +2561,8 @@ class AppState: ObservableObject {
     }
 
     func completeSleepRule(_ item: SleepContractItem, at completedAt: Date = Date()) {
-        let completedWithinGrace = completedAt <= item.graceEndsAt
+        guard canCompleteSleepRule(item, now: completedAt) else { return }
+        let completedWithinGrace = item.rule == .inBed || completedAt <= item.graceEndsAt
         let completion = SleepRuleCompletion(
             rule: item.rule,
             dueAt: item.dueAt,
@@ -2679,7 +2701,7 @@ class AppState: ObservableObject {
         let isSleepWindow = isWithinSleepWindow(now: now)
         let actionableSource = isSleepWindow ? contractItemsAround(now: now) : items
         let actionable = actionableSource
-            .filter { !$0.isResolved && !$0.startsTomorrow && $0.availableAt <= now }
+            .filter { !$0.isResolved && canCompleteSleepRule($0, now: now) }
             .filter { now.timeIntervalSince($0.dueAt) <= 18 * 60 * 60 }
             .sorted { lhs, rhs in
                 if lhs.graceEndsAt != rhs.graceEndsAt { return lhs.graceEndsAt < rhs.graceEndsAt }
@@ -2689,7 +2711,7 @@ class AppState: ObservableObject {
         let lockState: SleepContractEnforcementSnapshot.LockState
         if isSleepWindow {
             lockState = .sleepWindow(until: nextOccurrence(of: appBlockingEndTime, after: now) ?? appBlockingEndTime)
-        } else if let overdue = actionable.first(where: { !$0.isResolved && now >= $0.graceEndsAt }) {
+        } else if let overdue = actionable.first(where: { $0.rule != .inBed && !$0.isResolved && now >= $0.graceEndsAt }) {
             lockState = .lockedByRule(overdue)
         } else if let cooldown = activeSleepContractCooldown(now: now) {
             lockState = .coolingDown(cooldown.item, until: cooldown.until)
@@ -2707,6 +2729,10 @@ class AppState: ObservableObject {
 
     private func sleepRuleWindow(for rule: SleepRuleKind, on date: Date = Date()) -> (start: Date, end: Date) {
         let calendar = Calendar.current
+        if rule == .inBed {
+            return inBedCheckpointWindow(on: date)
+        }
+
         if rule == .morningSun {
             let wakeComponents = calendar.dateComponents([.hour, .minute], from: typicalWakeTime)
             let start = calendar.date(
@@ -2741,6 +2767,24 @@ class AppState: ObservableObject {
         return (due, due)
     }
 
+    private func inBedCheckpointWindow(on date: Date) -> (start: Date, end: Date) {
+        let ruleItems = orderedSelectedSleepRules.map { sleepContractItem(for: $0, on: date) }
+        if !ruleItems.isEmpty, ruleItems.allSatisfy(\.isCompleted),
+           let lastCompletion = ruleItems.compactMap(\.completion?.completedAt).max() {
+            return (lastCompletion, lastCompletion)
+        }
+
+        let bedtimeComponents = Calendar.current.dateComponents([.hour, .minute], from: typicalBedtime)
+        let bedtime = Calendar.current.date(
+            bySettingHour: bedtimeComponents.hour ?? 22,
+            minute: bedtimeComponents.minute ?? 30,
+            second: 0,
+            of: date
+        ) ?? typicalBedtime
+        let lastRuleDue = ruleItems.map(\.dueAt).max() ?? bedtime
+        return (lastRuleDue, lastRuleDue)
+    }
+
     private func sleepContractItem(for rule: SleepRuleKind, on date: Date) -> SleepContractItem {
         let window = sleepRuleWindow(for: rule, on: date)
         let dueAt = window.end
@@ -2773,6 +2817,12 @@ class AppState: ObservableObject {
         }
     }
 
+    private func isInBedCheckpointUnlocked(_ item: SleepContractItem) -> Bool {
+        guard item.rule == .inBed else { return true }
+        let ruleItems = orderedSelectedSleepRules.map { sleepContractItem(for: $0, on: item.dueAt) }
+        return !ruleItems.isEmpty && ruleItems.allSatisfy(\.isCompleted)
+    }
+
     private func contractItemsAround(now: Date) -> [SleepContractItem] {
         let calendar = Calendar.current
         let anchor = contractAnchorDate(for: now)
@@ -2781,12 +2831,17 @@ class AppState: ObservableObject {
                 guard let date = calendar.date(byAdding: .day, value: offset, to: anchor) else { return nil }
                 return sleepContractItem(for: rule, on: date)
             }
+        } + [-1, 0, 1].compactMap { offset -> SleepContractItem? in
+            guard hasActiveSleepContract,
+                  let date = calendar.date(byAdding: .day, value: offset, to: anchor) else { return nil }
+            return sleepContractItem(for: .inBed, on: date)
         }
     }
 
     func todaysContractItems(now: Date = Date()) -> [SleepContractItem] {
         let anchor = contractAnchorDate(for: now)
-        return orderedSelectedSleepRules
+        let rules = orderedSelectedSleepRules + (hasActiveSleepContract ? [.inBed] : [])
+        return rules
             .map { sleepContractItem(for: $0, on: anchor) }
             .sorted { lhs, rhs in
                 if lhs.availableAt != rhs.availableAt { return lhs.availableAt < rhs.availableAt }
@@ -2815,6 +2870,7 @@ class AppState: ObservableObject {
 
     private func activeSleepContractRuleLock(now: Date) -> SleepContractItem? {
         return contractItemsAround(now: now)
+            .filter { $0.rule != .inBed }
             .filter { now.timeIntervalSince($0.dueAt) <= 18 * 60 * 60 }
             .sorted { $0.dueAt < $1.dueAt }
             .first { item in
@@ -2825,6 +2881,7 @@ class AppState: ObservableObject {
     private func activeSleepContractCooldown(now: Date) -> (item: SleepContractItem, until: Date)? {
         let cooldown: TimeInterval = 10 * 60
         return contractItemsAround(now: now)
+            .filter { $0.rule != .inBed }
             .compactMap { item -> (SleepContractItem, Date)? in
                 guard let completion = item.completion, !completion.completedWithinGrace else { return nil }
                 let until = completion.completedAt.addingTimeInterval(cooldown)

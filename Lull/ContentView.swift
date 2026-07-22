@@ -163,7 +163,7 @@ struct ContentView: View {
             GeometryReader { geo in
                 TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
                     let point = position(in: geo, time: timeline.date.timeIntervalSinceReferenceDate)
-                    FireflyMascotView(phase: phase, reduceMotion: reduceMotion)
+                    fireflyView
                         .scaleEffect(scale)
                         .opacity(visible ? opacity : 0)
                         .position(point)
@@ -191,17 +191,26 @@ struct ContentView: View {
             }
         }
 
+        @ViewBuilder
+        private var fireflyView: some View {
+            if phase < 2, !reduceMotion {
+                FireflyMascotView(phase: phase, reduceMotion: reduceMotion)
+            } else {
+                FireflyDot(index: 0, reduceMotion: reduceMotion, drifts: !reduceMotion)
+            }
+        }
+
         private var scale: CGFloat {
-            if exiting { return 0.42 }
+            if exiting { return 0.68 }
             switch phase {
-            case 0: return 0.18
-            case 1: return 0.9
-            default: return 0.48
+            case 0: return 4.9
+            case 1: return 3.15
+            default: return 0.72
             }
         }
 
         private var opacity: Double {
-            exiting ? 0.0 : (phase == 1 ? 0.92 : 1.0)
+            exiting ? 0.0 : (phase == 0 ? 0.08 : 1.0)
         }
 
         private func position(in geo: GeometryProxy, time: TimeInterval) -> CGPoint {
@@ -211,17 +220,14 @@ struct ContentView: View {
 
             switch phase {
             case 0:
+                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.70)
+            case 1:
+                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.48)
+            default:
                 if let brandDotFrame {
                     return CGPoint(x: brandDotFrame.midX, y: brandDotFrame.midY)
                 }
-                return CGPoint(x: geo.size.width * 0.62, y: geo.safeAreaInsets.top + 172)
-            case 1:
-                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.46)
-            default:
-                if let ctaFrame {
-                    return ctaHoverPosition(ctaFrame: ctaFrame, geo: geo, time: time)
-                }
-                return CGPoint(x: geo.size.width - 58, y: geo.size.height - geo.safeAreaInsets.bottom - 132)
+                return CGPoint(x: geo.size.width * 0.16, y: geo.safeAreaInsets.top + 255)
             }
         }
 

@@ -57,11 +57,12 @@ struct BrandDotFramePreferenceKey: PreferenceKey {
 struct FireflyMascotView: View {
     let phase: Int
     let reduceMotion: Bool
+    var usesRiveAsset = true
 
     var body: some View {
         Group {
             #if canImport(RiveRuntime)
-            if Self.hasRiveAsset {
+            if usesRiveAsset, Self.hasRiveAsset {
                 RiveFireflyMascotView()
             } else {
                 FireflyMascotFallbackView(phase: phase, reduceMotion: reduceMotion)
@@ -83,7 +84,7 @@ struct FireflyMascotView: View {
 
 #if canImport(RiveRuntime)
 private struct RiveFireflyMascotView: View {
-    private let viewModel = RiveViewModel(fileName: "FireflyMascot")
+    private let viewModel = RiveViewModel(fileName: "FireflyMascot", stateMachineName: "State Machine 1")
 
     var body: some View {
         viewModel.view()
