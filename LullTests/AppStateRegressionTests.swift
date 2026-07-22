@@ -298,6 +298,50 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertTrue(state.hasClearedContractDay(now: localDate(2026, 6, 28, 21, 31)))
     }
 
+    func testReadyForSleepRemainsActionableDuringSleepWindowAfterRulesAreCleared() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.dimLights]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        state.completeSleepRule(.dimLights, at: localDate(2026, 6, 28, 21, 30))
+        let snapshot = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 23, 0))
+
+        XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.inBed])
+        XCTAssertTrue(state.canCompleteSleepRule(snapshot.actionableItems[0], now: localDate(2026, 6, 28, 23, 0)))
+    }
+
+    func testReadyForSleepIsHiddenUntilEarlierHabitsAreCleared() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+        state.selectedSleepRules = [.warmShower]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let missedHabitSnapshot = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 23, 0))
+
+        XCTAssertEqual(missedHabitSnapshot.allItems.map(\.rule), [.warmShower, .inBed])
+        XCTAssertEqual(
+            SleepContractPresentation.visiblePendingItems(missedHabitSnapshot).map(\.rule),
+            [.warmShower]
+        )
+
+        state.completeSleepRule(.warmShower, at: localDate(2026, 6, 28, 23, 1))
+        let readyForSleepSnapshot = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 23, 2))
+
+        XCTAssertEqual(
+            SleepContractPresentation.visiblePendingItems(readyForSleepSnapshot).map(\.rule),
+            [.inBed]
+        )
+    }
+
     func testInBedCheckpointDoesNotScheduleRuleLockNotifications() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
@@ -375,6 +419,9 @@ final class AppStateRegressionTests: XCTestCase {
         if case .sleepWindow = snapshot.lockState {
             XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.dimLights])
             XCTAssertTrue(state.canCompleteSleepRule(snapshot.actionableItems[0], now: localDate(2026, 6, 28, 22, 5)))
+            let inBedItem = snapshot.allItems.first { $0.rule == .inBed }
+            XCTAssertNotNil(inBedItem)
+            XCTAssertFalse(state.canCompleteSleepRule(inBedItem!, now: localDate(2026, 6, 28, 22, 5)))
         } else {
             XCTFail("Expected sleep window to own enforcement while overdue rules stay actionable")
         }

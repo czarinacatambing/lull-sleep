@@ -40,6 +40,8 @@ struct HomeTabView: View {
     @State private var childRequestsSolidTabBar = false
     @State private var contractTrendRange: ContractTrendRange = .week
     @State private var showSettings = false
+    @State private var readyForBedFireflyToken = 0
+    @State private var readyForBedFireflyVisible = false
     private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     init() { _selectedTab = State(initialValue: 0) }
@@ -147,11 +149,11 @@ struct HomeTabView: View {
     }
 
     private var sharedFireflyMode: TodayFireflyMode {
-        selectedTab == 2 ? .calendar : .cluster
+        .cluster
     }
 
     private var sharedCalendarTopInset: CGFloat {
-        selectedTab == 2 ? insightsPanelTopInset : 0
+        0
     }
 
     private var sharedCalendarRange: TodayFireflyCalendarRange {
@@ -177,24 +179,26 @@ struct HomeTabView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
 
-                TodayFireflyScene(
-                    mode: sharedFireflyMode,
-                    dates: sharedFireflyDates,
-                    currentDate: currentDate,
-                    loggedShadeDates: sharedLoggedShadeDates,
-                    calendarTopInset: sharedCalendarTopInset,
-                    calendarRange: sharedCalendarRange,
-                    entranceToken: earnedFireflyEntranceToken,
-                    reduceMotion: reduceMotion
-                )
-                .ignoresSafeArea()
-                .opacity(0.86)
-                .allowsHitTesting(false)
-                .transition(.opacity)
+                if selectedTab != 2 {
+                    TodayFireflyScene(
+                        mode: sharedFireflyMode,
+                        dates: sharedFireflyDates,
+                        currentDate: currentDate,
+                        loggedShadeDates: sharedLoggedShadeDates,
+                        calendarTopInset: sharedCalendarTopInset,
+                        calendarRange: sharedCalendarRange,
+                        entranceToken: earnedFireflyEntranceToken,
+                        reduceMotion: reduceMotion
+                    )
+                    .ignoresSafeArea()
+                    .opacity(0.86)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
 
-                #if DEBUG
-                sharedFireflyUITestMarker
-                #endif
+                    #if DEBUG
+                    sharedFireflyUITestMarker
+                    #endif
+                }
             }
 
             TabView(selection: $selectedTab) {
@@ -295,6 +299,13 @@ struct HomeTabView: View {
                 .transition(.opacity)
                 .zIndex(3)
             }
+
+            if readyForBedFireflyVisible && selectedTab == 0 {
+                ReadyForBedFireflyEntrance(token: readyForBedFireflyToken, reduceMotion: reduceMotion)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                    .zIndex(3)
+            }
         }
         .ignoresSafeArea(edges: .bottom)
         .animation(.easeInOut(duration: 0.22), value: miniPlayerVisible)
@@ -369,9 +380,22 @@ struct HomeTabView: View {
 
     private func triggerContractFireflyEntrance() {
         guard let event = state.recordContractAllClearIfNeeded() else { return }
-        optimisticContractFireflyDays.insert(Calendar.current.startOfDay(for: event.contractDay))
-        DispatchQueue.main.async {
-            earnedFireflyEntranceToken += 1
+        let contractDay = Calendar.current.startOfDay(for: event.contractDay)
+        guard !reduceMotion else {
+            optimisticContractFireflyDays.insert(contractDay)
+            return
+        }
+
+        readyForBedFireflyToken += 1
+        readyForBedFireflyVisible = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.1) {
+            optimisticContractFireflyDays.insert(contractDay)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7.2) {
+            withAnimation(.easeInOut(duration: 0.45)) {
+                readyForBedFireflyVisible = false
+            }
         }
     }
 
@@ -534,6 +558,75 @@ private struct TodayFirstFireflyCoachmark: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, window == .deck ? 12 : 18)
             .padding(.vertical, window == .deck ? 6 : 14)
+    }
+}
+
+private struct ReadyForBedFireflyEntrance: View {
+    let token: Int
+    let reduceMotion: Bool
+    @State private var sequenceVisible = true
+    @State private var dotVisible = false
+    @State private var dotDrifting = false
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
+                let time = timeline.date.timeIntervalSinceReferenceDate
+                let mascotHeight: CGFloat = 219
+                let bottomEdge = geo.size.height - 88
+                let videoY = bottomEdge - mascotHeight / 2
+                let driftX = reduceMotion || !dotDrifting ? 0 : sin(time * 0.72) * 18 + sin(time * 1.31) * 7
+                let driftY = reduceMotion || !dotDrifting ? 0 : cos(time * 0.64) * 10 + sin(time * 1.08) * 5
+
+                ZStack {
+                    if !reduceMotion {
+                        FireflyMascotView(phase: 1, reduceMotion: reduceMotion, playbackSpeed: 2)
+                            .opacity(sequenceVisible ? 1 : 0)
+                            .position(x: geo.size.width * 0.5, y: videoY)
+                    }
+
+                    FireflyDot(index: 0, reduceMotion: reduceMotion, drifts: !reduceMotion)
+                        .scaleEffect(0.72)
+                        .position(
+                            x: geo.size.width * 0.5 - 1 + (dotVisible ? driftX : 0),
+                            y: videoY + (dotVisible ? driftY : 0)
+                        )
+                        .opacity(dotVisible || reduceMotion ? 1 : 0)
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+            }
+        }
+        .ignoresSafeArea()
+        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.42), value: sequenceVisible)
+        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.45), value: dotVisible)
+        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.55), value: dotDrifting)
+        .onAppear(perform: start)
+        .onChange(of: token) { _, _ in
+            start()
+        }
+    }
+
+    private func start() {
+        sequenceVisible = true
+        dotVisible = reduceMotion
+        dotDrifting = reduceMotion
+        guard !reduceMotion else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.45) {
+            withAnimation(.easeInOut(duration: 0.45)) {
+                dotVisible = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.92) {
+            withAnimation(.easeInOut(duration: 0.42)) {
+                sequenceVisible = false
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.08) {
+            withAnimation(.easeInOut(duration: 0.55)) {
+                dotDrifting = true
+            }
+        }
     }
 }
 
@@ -869,18 +962,30 @@ private struct TodayContractQueueView: View {
     }
 
     private func heroItem(_ snapshot: SleepContractEnforcementSnapshot) -> SleepContractItem? {
-        let pending = snapshot.allItems.filter { !$0.isResolved && !$0.startsTomorrow }
-        let actionable = pending
-            .filter { $0.availableAt <= now }
-            .sorted { $0.graceEndsAt < $1.graceEndsAt }
-        return actionable.first ?? pending.sorted { $0.dueAt < $1.dueAt }.first
+        let pending = visiblePendingItems(snapshot)
+        let actionable = snapshot.actionableItems
+            .filter { pending.map(\.id).contains($0.id) }
+            .sorted(by: sleepRuleDisplaySort)
+        return actionable.first ?? pending.sorted(by: sleepRuleDisplaySort).first
     }
 
     private func upcomingItems(_ snapshot: SleepContractEnforcementSnapshot,
                                excluding hero: SleepContractItem?) -> [SleepContractItem] {
-        snapshot.allItems
-            .filter { !$0.isResolved && !$0.startsTomorrow && $0.id != hero?.id }
-            .sorted { $0.dueAt < $1.dueAt }
+        visiblePendingItems(snapshot)
+            .filter { $0.id != hero?.id }
+            .sorted(by: sleepRuleDisplaySort)
+    }
+
+    private func visiblePendingItems(_ snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
+        SleepContractPresentation.visiblePendingItems(snapshot)
+    }
+
+    private func sleepRuleDisplaySort(_ lhs: SleepContractItem, _ rhs: SleepContractItem) -> Bool {
+        if lhs.rule == .inBed, rhs.rule != .inBed { return false }
+        if lhs.rule != .inBed, rhs.rule == .inBed { return true }
+        if lhs.graceEndsAt != rhs.graceEndsAt { return lhs.graceEndsAt < rhs.graceEndsAt }
+        if lhs.dueAt != rhs.dueAt { return lhs.dueAt < rhs.dueAt }
+        return lhs.rule.rawValue < rhs.rule.rawValue
     }
 
     private func totalCount(_ snapshot: SleepContractEnforcementSnapshot) -> Int {
@@ -964,6 +1069,12 @@ private struct ContractStatusStrip: View {
     let onEditBlockedApps: () -> Void
 
     var body: some View {
+        TimelineView(.periodic(from: Date(), by: 1)) { timeline in
+            content(displayNow: timeline.date)
+        }
+    }
+
+    private func content(displayNow: Date) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Circle()
@@ -974,7 +1085,7 @@ private struct ContractStatusStrip: View {
                     .font(.system(size: 12, weight: .semibold))
                     .kerning(0.8)
                     .foregroundColor(.lullInk1)
-                if let cooldownCountdown {
+                if let cooldownCountdown = cooldownCountdown(displayNow: displayNow) {
                     Text(cooldownCountdown)
                         .font(.system(size: 11.5, weight: .semibold))
                         .monospacedDigit()
@@ -1006,7 +1117,7 @@ private struct ContractStatusStrip: View {
                 .buttonStyle(.plain)
                 .disabled(!canEditBlockedApps)
             }
-            if let subtitle {
+            if let subtitle = subtitle(displayNow: displayNow) {
                 Text(subtitle)
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundColor(.lullInk3)
@@ -1044,12 +1155,12 @@ private struct ContractStatusStrip: View {
         return hasBlockedApps ? "Edit" : "Choose apps"
     }
 
-    private var cooldownCountdown: String? {
+    private func cooldownCountdown(displayNow: Date) -> String? {
         guard case .coolingDown(_, let until) = snapshot.lockState else { return nil }
-        return Self.countdown(until, from: snapshot.now)
+        return Self.countdown(until, from: displayNow)
     }
 
-    private var subtitle: String? {
+    private func subtitle(displayNow: Date) -> String? {
         if !hasBlockedApps {
             return "Choose apps so a missed rule can block them."
         }
@@ -1059,7 +1170,7 @@ private struct ContractStatusStrip: View {
         case .lockedByRule(let item):
             return "\(item.rule.title) was missed. Hold below to confirm late."
         case .coolingDown(let item, let until):
-            return "Apps and blocked-app edits unlock in \(Self.countdown(until, from: snapshot.now)). \(item.rule.title) was late."
+            return "Apps and blocked-app edits unlock in \(Self.countdown(until, from: displayNow)). \(item.rule.title) was late."
         case .sleepWindow(let until):
             return "Apps are blocked until \(Self.timeFormatter.string(from: until))."
         }
@@ -1334,7 +1445,7 @@ private struct HeroRuleCard: View {
                     .foregroundColor(.lullInk3)
                     .fixedSize(horizontal: false, vertical: true)
             } else if item.rule == .inBed {
-                Text("Confirm you're physically in bed. Then tonight's firefly is yours.")
+                Text("Confirm you're ready for sleep. Then tonight's firefly is yours.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(3)
@@ -1479,7 +1590,7 @@ private struct HeroRuleCard: View {
     }
 
     private var ctaText: String {
-        if item.rule == .inBed { return "Hold 3 sec to confirm I'm in bed" }
+        if item.rule == .inBed { return "Hold 3 sec to confirm ready for sleep" }
         return now > item.graceEndsAt ? "Hold 3 sec to confirm late (I did it)" : "Hold 3 sec to confirm (I did it)"
     }
 
@@ -2100,9 +2211,18 @@ private struct ContractTrendsView: View {
     }
 
     private var trendsCalendar: some View {
-        Color.clear
-            .accessibilityIdentifier("trends-calendar-reserved-space")
-            .accessibilityHidden(true)
+        TodayFireflyScene(
+            mode: .calendar,
+            dates: fireflyDates,
+            currentDate: currentDate,
+            loggedShadeDates: loggedShadeDates,
+            calendarTopInset: 0,
+            calendarRange: range == .week ? .week : .month,
+            entranceToken: 0,
+            reduceMotion: reduceMotion
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("trends-firefly-calendar-scene")
     }
 
     private func trendStat(_ title: String, value: String) -> some View {
@@ -2219,5 +2339,21 @@ struct TabBarButton: View {
             .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
+    }
+}
+
+enum SleepContractPresentation {
+    static func visiblePendingItems(_ snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
+        let hasUnclearedRealRule = snapshot.allItems.contains {
+            $0.rule != .inBed && !$0.isCompleted && !$0.startsTomorrow
+        }
+
+        return snapshot.allItems.filter { item in
+            guard !item.isResolved, !item.startsTomorrow else { return false }
+            if item.rule == .inBed, hasUnclearedRealRule {
+                return false
+            }
+            return true
+        }
     }
 }

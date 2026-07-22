@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.10"
   MARKETING_VERSION: "2.0.8"
-  CURRENT_PROJECT_VERSION: "2"
+  CURRENT_PROJECT_VERSION: "4"
   LULL_ANALYTICS_ENABLED: "NO"
   LULL_ANALYTICS_COHORT: ""
   LULL_RESEARCH_DATA_ENABLED: "NO"
@@ -25,9 +25,6 @@ packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios.git
     from: 3.59.3
-  Rive:
-    url: https://github.com/rive-app/rive-ios
-    from: 6.13.0
 
 targets:
   Lull:
@@ -42,7 +39,7 @@ targets:
       - path: Lull/Resources/Assets.xcassets
       - path: Lull/Resources/Audio
       - path: Lull/Resources/Fonts
-      - path: Lull/Resources/FireflyMascot.riv
+      - path: Lull/Resources/FireflyMascotFrames
       - path: Lull/Resources/PrivacyInfo.xcprivacy
     info:
       path: Lull/Resources/Info.plist
@@ -111,8 +108,6 @@ targets:
         product: RevenueCatUI
       - package: PostHog
         product: PostHog
-      - package: Rive
-        product: RiveRuntime
     scheme:
       testTargets:
         - LullTests

@@ -141,7 +141,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Dim lights"
         case .tomorrowsPlan: return "Tomorrow's plan"
         case .gratitudeJournal: return "Gratitude journal"
-        case .inBed: return "I'm in bed"
+        case .inBed: return "Ready for sleep"
         }
     }
 
@@ -154,7 +154,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Lower lights before your sleepy signal gets crowded out."
         case .tomorrowsPlan: return "Write tomorrow's plan so your brain can stop rehearsing."
         case .gratitudeJournal: return "Write one thing that made the day feel safe or worthwhile."
-        case .inBed: return "Confirm you're physically in bed to earn tonight's firefly."
+        case .inBed: return "Confirm you're ready for sleep to earn tonight's firefly."
         }
     }
 
@@ -190,7 +190,7 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .dimLights: return "Mark lights dimmed"
         case .tomorrowsPlan: return "Mark tomorrow's plan done"
         case .gratitudeJournal: return "Mark gratitude journal done"
-        case .inBed: return "Confirm I'm in bed"
+        case .inBed: return "Confirm ready for sleep"
         }
     }
 }

@@ -1,7 +1,4 @@
 import SwiftUI
-#if canImport(RiveRuntime)
-import RiveRuntime
-#endif
 
 private struct LullUsesMeadowBackgroundKey: EnvironmentKey {
     static let defaultValue = false
@@ -57,42 +54,93 @@ struct BrandDotFramePreferenceKey: PreferenceKey {
 struct FireflyMascotView: View {
     let phase: Int
     let reduceMotion: Bool
-    var usesRiveAsset = true
+    var usesFrameSequence = true
+    var playbackSpeed = 1.0
 
     var body: some View {
         Group {
-            #if canImport(RiveRuntime)
-            if usesRiveAsset, Self.hasRiveAsset {
-                RiveFireflyMascotView()
+            if usesFrameSequence, Self.hasFrameSequence {
+                FireflyMascotFrameSequenceView(playbackSpeed: playbackSpeed)
             } else {
                 FireflyMascotFallbackView(phase: phase, reduceMotion: reduceMotion)
             }
-            #else
-            FireflyMascotFallbackView(phase: phase, reduceMotion: reduceMotion)
-            #endif
         }
-        .frame(width: 72, height: 72)
+        .frame(width: 390, height: 219)
         .accessibilityHidden(true)
     }
 
-    #if canImport(RiveRuntime)
-    private static var hasRiveAsset: Bool {
-        Bundle.main.url(forResource: "FireflyMascot", withExtension: "riv") != nil
+    private static var hasFrameSequence: Bool {
+        Bundle.main.url(
+            forResource: "firefly_001",
+            withExtension: "png",
+            subdirectory: "FireflyMascotFrames"
+        ) != nil
     }
-    #endif
 }
 
-#if canImport(RiveRuntime)
-private struct RiveFireflyMascotView: View {
-    private let viewModel = RiveViewModel(fileName: "FireflyMascot", stateMachineName: "State Machine 1")
+private struct FireflyMascotFrameSequenceView: View {
+    let playbackSpeed: Double
+    @State private var startDate = Date()
 
     var body: some View {
-        viewModel.view()
-            .frame(width: 72, height: 72)
-            .allowsHitTesting(false)
+        TimelineView(.animation(minimumInterval: 1.0 / Double(FireflyMascotFrameStore.framesPerSecond))) { timeline in
+            let elapsed = timeline.date.timeIntervalSince(startDate) * playbackSpeed
+            let index = Int((elapsed * Double(FireflyMascotFrameStore.framesPerSecond)).rounded(.down)) % FireflyMascotFrameStore.frameCount
+            Group {
+                if let image = FireflyMascotFrameStore.image(at: index) {
+                    ZStack {
+                        Image(uiImage: image)
+                            .resizable()
+                            .interpolation(.medium)
+                            .scaledToFit()
+                            .blur(radius: 8)
+                            .saturation(1.35)
+                            .opacity(0.42)
+                            .blendMode(.screen)
+
+                        Image(uiImage: image)
+                            .resizable()
+                            .interpolation(.medium)
+                            .scaledToFit()
+                            .brightness(0.09)
+                            .contrast(1.18)
+                            .saturation(1.28)
+                            .shadow(color: .lullAmberGlow.opacity(0.8), radius: 10)
+                    }
+                } else {
+                    Color.clear
+                }
+            }
+            .compositingGroup()
+        }
+        .onAppear {
+            startDate = Date()
+        }
+        .allowsHitTesting(false)
     }
 }
-#endif
+
+private enum FireflyMascotFrameStore {
+    static let frameCount = 240
+    static let framesPerSecond = 24
+    private static var cache: [UIImage?] = Array(repeating: nil, count: frameCount)
+
+    static func image(at zeroBasedIndex: Int) -> UIImage? {
+        let index = min(max(zeroBasedIndex, 0), frameCount - 1)
+        if let cached = cache[index] { return cached }
+
+        let name = String(format: "firefly_%03d", index + 1)
+        guard let url = Bundle.main.url(
+            forResource: name,
+            withExtension: "png",
+            subdirectory: "FireflyMascotFrames"
+        ), let image = UIImage(contentsOfFile: url.path) else {
+            return nil
+        }
+        cache[index] = image
+        return image
+    }
+}
 
 private struct FireflyMascotFallbackView: View {
     let phase: Int

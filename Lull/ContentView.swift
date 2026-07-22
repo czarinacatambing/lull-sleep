@@ -11,6 +11,9 @@ struct ContentView: View {
     @State private var welcomeBrandDotFrame: CGRect?
     @State private var welcomeCTAFrame: CGRect?
     @State private var welcomeFireflyExiting = false
+    @State private var welcomeFireflySequenceActive = true
+    @State private var welcomeFireflyDotVisible = false
+    @State private var welcomeFireflyDotDrifting = false
 
     private var usesOnboardingFireflyCompanion: Bool {
         !state.hasCompletedOnboarding && state.isOnboardingFireflyCompanionActive
@@ -127,21 +130,71 @@ struct ContentView: View {
             }
 
             if usesOnboardingFireflyCompanion {
-                WelcomeFireflyIntro(
-                    brandDotFrame: welcomeBrandDotFrame,
-                    ctaFrame: welcomeCTAFrame,
-                    exiting: welcomeFireflyExiting,
-                    reduceMotion: reduceMotion
-                )
+                GeometryReader { geo in
+                    TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24.0, paused: reduceMotion)) { timeline in
+                        let time = timeline.date.timeIntervalSinceReferenceDate
+                        let mascotHeight: CGFloat = 219
+                        let buttonTop = welcomeCTAFrame?.minY ?? (geo.size.height - 108)
+                        let videoY = max(geo.size.height * 0.52, buttonTop + 4 - mascotHeight / 2)
+                        let handoffX: CGFloat = -1
+                        let handoffY: CGFloat = 0
+                        let driftX = reduceMotion || !welcomeFireflyDotDrifting ? 0 : sin(time * 0.72) * 18 + sin(time * 1.31) * 7
+                        let driftY = reduceMotion || !welcomeFireflyDotDrifting ? 0 : cos(time * 0.64) * 10 + sin(time * 1.08) * 5
+                        let dotY = videoY
+
+                        ZStack {
+                            if !reduceMotion {
+                                FireflyMascotView(phase: 1, reduceMotion: reduceMotion, playbackSpeed: 2)
+                                    .opacity(welcomeFireflySequenceActive ? 1 : 0)
+                                    .position(x: geo.size.width * 0.5, y: videoY)
+                            }
+
+                            FireflyDot(index: 0, reduceMotion: reduceMotion, drifts: !reduceMotion)
+                                .scaleEffect(0.72)
+                                .position(
+                                    x: geo.size.width * 0.5 + handoffX + (welcomeFireflyDotVisible ? driftX : 0),
+                                    y: dotY + handoffY + (welcomeFireflyDotVisible ? driftY : 0)
+                                )
+                                .opacity(welcomeFireflyDotVisible || reduceMotion ? 1 : 0)
+                        }
+                        .frame(width: geo.size.width, height: geo.size.height)
+                    }
+                        .opacity(welcomeFireflyExiting ? 0 : 1)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.42), value: welcomeFireflySequenceActive)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.45), value: welcomeFireflyDotVisible)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.55), value: welcomeFireflyDotDrifting)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.7), value: welcomeFireflyExiting)
+                }
+                .ignoresSafeArea()
                 .allowsHitTesting(false)
+                .zIndex(3)
             }
         }
         .environment(\.lullUsesMeadowBackground, usesOnboardingFireflyCompanion)
         .environment(\.lullHidesBrandDot, usesOnboardingFireflyCompanion)
         .onAppear {
             welcomeFireflyExiting = false
+            welcomeFireflySequenceActive = true
+            welcomeFireflyDotVisible = reduceMotion
+            welcomeFireflyDotDrifting = reduceMotion
             withAnimation(.easeIn(duration: 0.6)) { logoOpacity = 1 }
             withAnimation(.easeIn(duration: 0.5).delay(0.5)) { buttonOpacity = 1 }
+            guard usesOnboardingFireflyCompanion, !reduceMotion else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.45) {
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    welcomeFireflyDotVisible = true
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.92) {
+                withAnimation(.easeInOut(duration: 0.42)) {
+                    welcomeFireflySequenceActive = false
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.08) {
+                withAnimation(.easeInOut(duration: 0.55)) {
+                    welcomeFireflyDotDrifting = true
+                }
+            }
         }
         .onPreferenceChange(BrandDotFramePreferenceKey.self) { frame in
             welcomeBrandDotFrame = frame
@@ -185,7 +238,7 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
                     phase = 1
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 9.6) {
                     phase = 2
                 }
             }
@@ -203,14 +256,14 @@ struct ContentView: View {
         private var scale: CGFloat {
             if exiting { return 0.68 }
             switch phase {
-            case 0: return 4.9
-            case 1: return 3.15
+            case 0: return 1
+            case 1: return 1
             default: return 0.72
             }
         }
 
         private var opacity: Double {
-            exiting ? 0.0 : (phase == 0 ? 0.08 : 1.0)
+            exiting ? 0.0 : 1.0
         }
 
         private func position(in geo: GeometryProxy, time: TimeInterval) -> CGPoint {
@@ -220,9 +273,9 @@ struct ContentView: View {
 
             switch phase {
             case 0:
-                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.70)
+                return CGPoint(x: geo.size.width * 0.50, y: geo.size.height * 0.72)
             case 1:
-                return CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.48)
+                return CGPoint(x: geo.size.width * 0.50, y: geo.size.height * 0.72)
             default:
                 if let brandDotFrame {
                     return CGPoint(x: brandDotFrame.midX, y: brandDotFrame.midY)

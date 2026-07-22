@@ -2724,9 +2724,7 @@ struct TodayFireflyScene: View {
 
     private func fireflyPosition(index: Int, date: Date, size: CGSize, isNewest: Bool, time: TimeInterval) -> CGPoint {
         if isNewest, mode == .cluster, entranceToken > 0, entrancePhase < 2, !reduceMotion {
-            let phasePoint = entrancePhase == 0
-                ? CGPoint(x: 0.50, y: 1.18)
-                : CGPoint(x: 0.52, y: 0.64)
+            let phasePoint = CGPoint(x: 0.52, y: 0.72)
             return CGPoint(x: phasePoint.x * size.width, y: phasePoint.y * size.height)
         }
 
@@ -2782,25 +2780,22 @@ struct TodayFireflyScene: View {
 
     private func fireflyScale(isNewest: Bool) -> CGFloat {
         guard isNewest, mode == .cluster, entranceToken > 0, !reduceMotion else { return 1 }
-        if entrancePhase == 1 { return TodayDeckConstants.fireflyPassScale }
-        return entrancePhase == 0 ? TodayDeckConstants.fireflyEntranceStartScale : 1
+        return entrancePhase < 2 ? 1 : 1
     }
 
     private func fireflyRotation(isNewest: Bool) -> Double {
         guard isNewest, mode == .cluster, entranceToken > 0, !reduceMotion else { return 0 }
-        if entrancePhase == 1 { return 7 }
-        return entrancePhase == 0 ? -18 : 0
+        return entrancePhase < 2 ? 0 : 0
     }
 
     private func fireflyBlur(isNewest: Bool) -> CGFloat {
         guard isNewest, mode == .cluster, entranceToken > 0, !reduceMotion else { return 0 }
-        if entrancePhase == 1 { return 1.2 }
-        return entrancePhase == 0 ? 8 : 0
+        return entrancePhase < 2 ? 0 : 0
     }
 
     private func fireflyOpacity(isNewest: Bool) -> Double {
         guard isNewest, mode == .cluster, entranceToken > 0, !reduceMotion else { return 1 }
-        return entrancePhase == 0 ? 0.08 : 1
+        return 1
     }
 
     private func isEnteringNewestFirefly(_ isNewest: Bool) -> Bool {

@@ -2095,7 +2095,7 @@ struct OnbRoutineReadyView: View {
                                 .font(.system(size: 9))
                                 .foregroundColor(.lullAmber)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Scroll apps locked")
+                                Text("Selected apps locked")
                                     .font(.system(size: 14))
                                     .foregroundColor(.lullInk1)
                                 Text("Until \(OnbRoutineReadyView.timeFmt.string(from: state.typicalWakeTime))")
@@ -2173,17 +2173,6 @@ struct OnbAppBlockingHowItWorksView: View {
         Array(state.sleepContractPreviewItems.prefix(2))
     }
 
-    private var firstRuleTitle: String {
-        previewItems.first?.rule.title ?? "Dim the lights"
-    }
-
-    private var secondRuleTitle: String {
-        if previewItems.count > 1 {
-            return previewItems[1].rule.title
-        }
-        return "Put the phone down"
-    }
-
     private var firstRuleTime: String {
         guard let dueAt = previewItems.first?.dueAt else { return "9:45 PM" }
         return Self.timeFmt.string(from: dueAt)
@@ -2242,14 +2231,14 @@ struct OnbAppBlockingHowItWorksView: View {
                                 OnbAppPauseTimelineRow(
                                     marker: firstRuleTime,
                                     icon: "hand.raised.fill",
-                                    title: firstRuleTitle,
+                                    title: "Your first habit reminder",
                                     detail: "When the reminder appears, long press to confirm. Your apps stay available."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: secondRuleTime,
                                     icon: "lock.fill",
-                                    title: secondRuleTitle,
+                                    title: "Complete your habit",
                                     detail: "You get 10 minutes to confirm. After that, chosen apps pause. Confirm late and they unlock after 10 minutes."
                                 )
 

@@ -13,7 +13,7 @@ final class NavigationSmokeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Insights"].exists)
     }
 
-    func testTrendsKeepsSharedFireflySceneInCalendarMode() {
+    func testTrendsCalendarSceneScrollsWithContent() {
         let app = XCUIApplication()
         app.launchArguments = ["--uitest-completed-onboarding"]
         app.launch()
@@ -23,7 +23,12 @@ final class NavigationSmokeUITests: XCTestCase {
         app.buttons["Trends"].tap()
 
         XCTAssertTrue(app.staticTexts["Trends"].waitForExistence(timeout: 4))
-        XCTAssertTrue(app.otherElements["shared-firefly-scene-calendar"].waitForExistence(timeout: 4))
+        let calendarScene = app.otherElements["trends-firefly-calendar-scene"]
+        XCTAssertTrue(calendarScene.waitForExistence(timeout: 4))
         XCTAssertFalse(app.otherElements["shared-firefly-scene-cluster"].exists)
+
+        let initialY = calendarScene.frame.minY
+        app.swipeUp()
+        XCTAssertLessThan(calendarScene.frame.minY, initialY - 20)
     }
 }

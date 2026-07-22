@@ -1,5 +1,5 @@
 {
-  "originHash" : "d85ec5548924c7edf0e45a0ad0667e9553b3b20016e3ca39c664bc1b55865838",
+  "originHash" : "084d6ae55dc91ebd4bc26a811a5e45585f94a807e8d941b710ea4b70f36875b2",
   "pins" : [
     {
       "identity" : "posthog-ios",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "6935da62be3f33f06ed16e9e49431fe9e10e1426",
         "version" : "5.79.0"
-      }
-    },
-    {
-      "identity" : "rive-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/rive-app/rive-ios",
-      "state" : {
-        "revision" : "c8252fe1f774c4b807d656621d1f93df6c5b92aa",
-        "version" : "6.21.1"
       }
     }
   ],
