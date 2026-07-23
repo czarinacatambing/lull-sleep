@@ -33,7 +33,7 @@ struct ContentView: View {
                 showWelcome = false
                 return
             }
-            if state.requestedTab != nil || state.showMidSleepMode {
+            if state.requestedTab != nil {
                 showWelcome = false
             }
         }
@@ -44,11 +44,6 @@ struct ContentView: View {
         }
         .onChange(of: state.requestedTab) { _, requested in
             if requested != nil {
-                showWelcome = false
-            }
-        }
-        .onChange(of: state.showMidSleepMode) { _, active in
-            if active {
                 showWelcome = false
             }
         }
@@ -128,6 +123,7 @@ struct ContentView: View {
                     .opacity(buttonOpacity)
                 }
             }
+            .zIndex(2)
 
             if usesOnboardingFireflyCompanion {
                 GeometryReader { geo in
@@ -167,7 +163,7 @@ struct ContentView: View {
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-                .zIndex(3)
+                .zIndex(1)
             }
         }
         .environment(\.lullUsesMeadowBackground, usesOnboardingFireflyCompanion)
@@ -333,7 +329,6 @@ struct ContentView: View {
                         .presentationDetents([.large])
                         .presentationDragIndicator(.visible)
                     }
-                    .onShake { state.activateMidSleepFromShake() }
                     .onAppear {
                         if state.shouldPresentDay14Prompt {
                             state.activePaywallRoute = .day14

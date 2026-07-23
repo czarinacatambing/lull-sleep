@@ -18,7 +18,8 @@ struct PersistedState: Codable {
     //   12 — editable sleep-contract rule config and lock event history
     //   13 — contract-native all-clear event history
     //   14 — slipped sleep-contract rule history
-    var schemaVersion: Int = 14
+    //   15 — emergency app access session state
+    var schemaVersion: Int = 15
 
     // Onboarding preferences
     var selectedSleepProblems: Set<Int>
@@ -89,8 +90,9 @@ struct PersistedState: Codable {
     var appBlockingEndTime: Date? = nil
     var appBlockingGraceMinutes: Int = 5
     var gentleBlockingBypassedUntil: Date? = nil
+    var emergencyAppAccessSession: EmergencyAppAccessSession? = nil
 
-    init(schemaVersion: Int = 14,
+    init(schemaVersion: Int = 15,
          testerName: String = "",
          selectedSleepProblems: Set<Int>,
          selectedWakes: Set<Int>,
@@ -142,7 +144,8 @@ struct PersistedState: Codable {
          appBlockingStartTime: Date? = nil,
          appBlockingEndTime: Date? = nil,
          appBlockingGraceMinutes: Int = 5,
-         gentleBlockingBypassedUntil: Date? = nil) {
+         gentleBlockingBypassedUntil: Date? = nil,
+         emergencyAppAccessSession: EmergencyAppAccessSession? = nil) {
         self.schemaVersion            = schemaVersion
         self.testerName               = testerName
         self.selectedSleepProblems    = selectedSleepProblems
@@ -196,6 +199,7 @@ struct PersistedState: Codable {
         self.appBlockingEndTime       = appBlockingEndTime
         self.appBlockingGraceMinutes  = appBlockingGraceMinutes
         self.gentleBlockingBypassedUntil = gentleBlockingBypassedUntil
+        self.emergencyAppAccessSession = emergencyAppAccessSession
     }
 
     init(from decoder: Decoder) throws {
@@ -253,6 +257,7 @@ struct PersistedState: Codable {
         appBlockingEndTime       = try? c.decodeIfPresent(Date.self,                forKey: .appBlockingEndTime)
         appBlockingGraceMinutes  = (try? c.decodeIfPresent(Int.self,                forKey: .appBlockingGraceMinutes)) ?? 5
         gentleBlockingBypassedUntil = try? c.decodeIfPresent(Date.self,             forKey: .gentleBlockingBypassedUntil)
+        emergencyAppAccessSession = try? c.decodeIfPresent(EmergencyAppAccessSession.self, forKey: .emergencyAppAccessSession)
 
         if paywallState.originalGeneratedRoutine == nil {
             paywallState.originalGeneratedRoutine = originalGeneratedRoutine

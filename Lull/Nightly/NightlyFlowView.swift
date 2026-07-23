@@ -1555,7 +1555,7 @@ struct NightlyGoodNightView: View {
                      + Text("Today")
                         .italic()
                         .foregroundColor(Color.lullAmber)
-                     + Text(" during your sleep window to open Mid-sleep mode."))
+                     + Text(" after Ready for sleep to open Mid-sleep mode."))
                         .font(.serif(16))
                         .foregroundColor(Color.lullInk1)
                         .multilineTextAlignment(.center)

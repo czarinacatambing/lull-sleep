@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TenThirty — Slip feedback at tap (mockup)</title>
+<style>
+  :root {
+    --bg: #0c0807;
+    --bg1: #120c0a;
+    --bg2: #1a110e;
+    --bg3: #231612;
+    --ink0: #f5e7d7;
+    --ink1: #e5d3bf;
+    --ink2: #b9a691;
+    --ink3: #8a7a68;
+    --ink4: #5c4f42;
+    --amber: #f0b96b;
+    --amber-soft: #d99a4a;
+    --amber-deep: #a66a2a;
+    --coral: #e89189;
+    --line: rgba(255, 220, 190, 0.08);
+    --line-strong: rgba(255, 220, 190, 0.14);
+    --bg-deep: #1a0d06;
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --sans: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+
+  body {
+    background: radial-gradient(1200px 700px at 50% -10%, #17100b, transparent 55%), #0a0806;
+    color: var(--ink1);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 36px 20px 64px;
+  }
+
+  .page-head {
+    max-width: 1100px;
+    margin: 0 auto 32px;
+    text-align: center;
+  }
+
+  .page-head .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--amber-soft);
+  }
+
+  .page-head h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 32px;
+    color: var(--ink0);
+    margin: 10px 0 8px;
+  }
+
+  .page-head p {
+    color: var(--ink2);
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  .frames {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .frame-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex: 0 1 320px;
+  }
+
+  .frame-label {
+    text-align: center;
+  }
+
+  .frame-label .step {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber-soft);
+    background: rgba(240, 185, 107, 0.08);
+    border: 1px solid rgba(240, 185, 107, 0.18);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-bottom: 6px;
+  }
+
+  .frame-label h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 20px;
+    color: var(--ink0);
+    margin: 0 0 4px;
+  }
+
+  .frame-label p {
+    font-size: 13px;
+    color: var(--ink3);
+    margin: 0;
+    line-height: 1.4;
+    max-width: 280px;
+  }
+
+  .frame-label.recommended h2::after {
+    content: " ★";
+    color: var(--amber);
+    font-size: 14px;
+  }
+
+  /* iPhone device shell */
+  .device {
+    position: relative;
+    width: 300px;
+    height: 640px;
+    border-radius: 42px;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    box-shadow:
+      0 40px 90px -30px rgba(0, 0, 0, 0.92),
+      inset 0 0 0 5px #050403,
+      inset 0 0 0 6px rgba(255, 220, 190, 0.05);
+    background: radial-gradient(120% 62% at 50% 52%, rgba(111, 75, 37, 0.22), transparent 60%),
+                linear-gradient(#2a1d11, #20170e 32%, #141009 62%, #070604 100%);
+  }
+
+  .notch {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 108px;
+    height: 24px;
+    background: #050403;
+    border-radius: 13px;
+    z-index: 60;
+  }
+
+  .statusbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink1);
+    z-index: 50;
+  }
+
+  .meadow-glow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 58%;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(120% 92% at 50% 118%, rgba(172, 118, 52, 0.28), rgba(96, 64, 30, 0.1) 44%, transparent 72%);
+  }
+
+  .ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 130px;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(transparent, #0a0704 78%);
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    padding: 48px 18px 58px;
+    overflow: hidden;
+  }
+
+  .t-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+
+  .t-title {
+    font-family: var(--serif);
+    font-size: 26px;
+    color: var(--ink0);
+  }
+
+  .clock {
+    font-size: 20px;
+    color: var(--ink1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock small {
+    font-size: 11px;
+    color: var(--ink3);
+  }
+
+  .strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(26, 17, 14, 0.5);
+    margin-bottom: 16px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .strip .st {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink1);
+  }
+
+  .strip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7ed4a0;
+    box-shadow: 0 0 8px #7ed4a0;
+  }
+
+  .strip .armed {
+    color: var(--ink3);
+    letter-spacing: 0.08em;
+  }
+
+  /* Rail */
+  .rail {
+    position: relative;
+    padding-left: 24px;
+  }
+
+  .rail::before {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 6px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(var(--amber-deep), var(--line));
+  }
+
+  .row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    padding-left: 0;
+  }
+
+  .row .name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink3);
+  }
+
+  .row .tm {
+    font-size: 12px;
+    color: var(--ink4);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .row.done .name { color: var(--ink3); opacity: 0.85; }
+  .row.done .tm { color: var(--ink4); }
+  .row.missed .tm { color: var(--coral); }
+
+  .bullet {
+    position: absolute;
+    left: -24px;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--ink4);
+    background: var(--bg);
+  }
+
+  .bullet.done {
+    background: var(--amber);
+    border-color: var(--amber);
+    box-shadow: 0 0 8px rgba(240, 185, 107, 0.45);
+  }
+
+  .bullet.active {
+    border-color: var(--amber);
+    background: var(--bg);
+    box-shadow: 0 0 0 3px rgba(240, 185, 107, 0.12), 0 0 10px rgba(240, 185, 107, 0.4);
+  }
+
+  .bullet.upcoming {
+    border-color: var(--ink4);
+  }
+
+  /* Hero card */
+  .hero {
+    position: relative;
+    margin: 4px 0 16px;
+  }
+
+  .hero .bullet { top: 18px; }
+
+  .card {
+    background: rgba(26, 17, 14, 0.62);
+    border: 1px solid rgba(240, 185, 107, 0.34);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 0 28px -8px rgba(240, 185, 107, 0.32);
+  }
+
+  .card.dimmed {
+    border-color: var(--line);
+    box-shadow: none;
+    opacity: 0.72;
+  }
+
+  .hcap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .hicon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--amber-soft);
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .hicon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .meta {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--amber-soft);
+    font-weight: 600;
+  }
+
+  .hname {
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink0);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .iflabel {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-bottom: 6px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .chip {
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 11px;
+    color: var(--ink1);
+  }
+
+  .holdbtn {
+    position: relative;
+    height: 48px;
+    border-radius: 15px;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.045);
+    color: var(--amber);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .slip-link {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .slip-link.tapped {
+    color: var(--ink4);
+    opacity: 0.4;
+    text-decoration: none;
+    pointer-events: none;
+  }
+
+  /* Frame 2: inline morph feedback */
+  .card.feedback {
+    border-color: rgba(240, 185, 107, 0.42);
+    background: rgba(35, 22, 18, 0.78);
+    animation: cardPulse 2.4s ease-in-out infinite;
+    min-height: 148px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 22px 18px;
+  }
+
+  @keyframes cardPulse {
+    0%, 100% { box-shadow: 0 0 24px -6px rgba(240, 185, 107, 0.28); }
+    50% { box-shadow: 0 0 36px -4px rgba(240, 185, 107, 0.42); }
+  }
+
+  .feedback .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber-soft);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .feedback .headline {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink0);
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+
+  .feedback .sub {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    line-height: 1.4;
+  }
+
+  .feedback .timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(240, 185, 107, 0.1);
+    border: 1px solid rgba(240, 185, 107, 0.22);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--amber);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .feedback .timer svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0.85;
+  }
+
+  /* Tap ripple on frame 2 */
+  .tap-hint {
+    position: absolute;
+    right: 12px;
+    bottom: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(240, 185, 107, 0.5);
+    animation: ripple 1.6s ease-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes ripple {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  /* Rejected alternatives (shown as ghost overlays in notes, not in frames) */
+  .upcoming .name { color: var(--ink2); }
+  .upcoming .tm { color: var(--ink3); }
+
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink4);
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Tab bar */
+  .tabbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 58px;
+    display: flex;
+    padding: 0 16px 6px;
+    z-index: 55;
+    background: rgba(18, 12, 10, 0.82);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--ink3);
+    font-size: 10px;
+  }
+
+  .tab.on { color: var(--amber); }
+
+  .tab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Design notes */
+  .notes {
+    max-width: 820px;
+    margin: 48px auto 0;
+    padding: 24px 28px;
+    background: rgba(26, 17, 14, 0.55);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+  }
+
+  .notes h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--ink0);
+    margin: 0 0 14px;
+  }
+
+  .notes p, .notes li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink2);
+  }
+
+  .notes ul {
+    margin: 0 0 16px;
+    padding-left: 20px;
+  }
+
+  .notes li { margin-bottom: 8px; }
+
+  .notes .rec {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(240, 185, 107, 0.07);
+    border: 1px solid rgba(240, 185, 107, 0.2);
+    margin-bottom: 16px;
+  }
+
+  .notes .rec strong {
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  .notes .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+
+  .alt {
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(12, 8, 7, 0.4);
+  }
+
+  .alt h4 {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin: 0 0 6px;
+  }
+
+  .alt p {
+    font-size: 12.5px;
+    margin: 0;
+    color: var(--ink3);
+  }
+
+  .alt.pick {
+    border-color: rgba(240, 185, 107, 0.35);
+    background: rgba(240, 185, 107, 0.05);
+  }
+
+  .alt.pick h4 { color: var(--amber-soft); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card.feedback, .tap-hint { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="eyebrow">Read-only mockup · HomeTabView slip UX</div>
+  <h1>Slip feedback at tap</h1>
+  <p>Brief acknowledgment when the user taps “I didn't keep it” on a hero card — while more habits remain in the queue. Not the full-screen <em>slipsLogged</em> state.</p>
+</header>
+
+<div class="frames">
+
+  <!-- Frame 1: Before -->
+  <div class="frame-wrap">
+    <div class="frame-label">
+      <span class="step">1 · Before</span>
+      <h2>Hero ready</h2>
+      <p>Active checkpoint with hold CTA and slip link visible.</p>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:12</span><span>5G ▪▪▪</span></div>
+      <div class="meadow-glow"></div>
+      <div class="ground"></div>
+      <div class="screen">
+        <div class="t-head">
+          <div class="t-title">Tonight</div>
+          <div class="clock">9:12<small> PM</small></div>
+        </div>
+        <div class="strip">
+          <span class="st"><span class="dot"></span>UNLOCKED</span>
+          <span class="armed">4 APPS ARMED</span>
+        </div>
+        <div class="rail">
+          <div class="row done">
+            <span class="bullet done"></span>
+            <span class="name">No caffeine after 2 PM</span>
+            <span class="tm">2:00 PM</span>
+          </div>
+          <div class="hero">
+            <span class="bullet active"></span>
+            <div class="card">
+              <div class="hcap">
+                <div class="hicon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2v1M4.2 5.2l.7.7M19.1 5.2l-.7.7M2 12h1M21 12h1M7 16a5 5 0 0 1 10 0"/></svg>
+                </div>
+                <span class="meta">DUE BY 9:30 PM</span>
+              </div>
+              <div class="hname">Dim the lights</div>
+              <div class="iflabel">If missed, these get blocked:</div>
+              <div class="chips">
+                <span class="chip">Instagram</span>
+                <span class="chip">TikTok</span>
+                <span class="chip">+2</span>
+              </div>
+              <div class="holdbtn">Hold 3 sec to confirm (I did it)</div>
+              <span class="slip-link">I didn't keep it</span>
+            </div>
+          </div>
+          <div class="row upcoming">
+            <span class="bullet upcoming"></span>
+            <span class="name">Phone in another room</span>
+            <span class="tm">9:45 PM</span>
+          </div>
+          <div class="row upcoming">
+            <span class="bullet upcoming"></span>
+            <span class="name">Ready for sleep</span>
+            <span class="tm">10:30 PM</span>
+          </div>
+        </div>
+        <div class="footer">2 of 4 cleared</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l8 6.5v8.5a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.5L12 3z"/></svg>
+          Home
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+          Rules
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"/></svg>
+          Trends
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 2: At tap (recommended inline morph) -->
+  <div class="frame-wrap">
+    <div class="frame-label recommended">
+      <span class="step">2 · At tap</span>
+      <h2>Inline card morph</h2>
+      <p>Same hero slot — card cross-fades to brief acknowledgment (~1.4s).</p>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:12</span><span>5G ▪▪▪</span></div>
+      <div class="meadow-glow"></div>
+      <div class="ground"></div>
+      <div class="screen">
+        <div class="t-head">
+          <div class="t-title">Tonight</div>
+          <div class="clock">9:12<small> PM</small></div>
+        </div>
+        <div class="strip">
+          <span class="st"><span class="dot"></span>UNLOCKED</span>
+          <span class="armed">4 APPS ARMED</span>
+        </div>
+        <div class="rail">
+          <div class="row done">
+            <span class="bullet done"></span>
+            <span class="name">No caffeine after 2 PM</span>
+            <span class="tm">2:00 PM</span>
+          </div>
+          <div class="hero">
+            <span class="bullet active"></span>
+            <div class="card feedback">
+              <div class="eyebrow">Logged</div>
+              <div class="headline">Thanks for being honest.</div>
+              <div class="sub">Apps unlock in 10 min.</div>
+              <div class="timer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                10:00 cooldown
+              </div>
+            </div>
+            <div class="tap-hint"></div>
+          </div>
+          <div class="row upcoming">
+            <span class="bullet upcoming"></span>
+            <span class="name">Phone in another room</span>
+            <span class="tm">9:45 PM</span>
+          </div>
+          <div class="row upcoming">
+            <span class="bullet upcoming"></span>
+            <span class="name">Ready for sleep</span>
+            <span class="tm">10:30 PM</span>
+          </div>
+        </div>
+        <div class="footer">2 of 4 cleared</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l8 6.5v8.5a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.5L12 3z"/></svg>
+          Home
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+          Rules
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"/></svg>
+          Trends
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 3: After dismiss -->
+  <div class="frame-wrap">
+    <div class="frame-label">
+      <span class="step">3 · After</span>
+      <h2>Queue advances</h2>
+      <p>Slipped habit collapses to done rail; next hero rises.</p>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:12</span><span>5G ▪▪▪</span></div>
+      <div class="meadow-glow"></div>
+      <div class="ground"></div>
+      <div class="screen">
+        <div class="t-head">
+          <div class="t-title">Tonight</div>
+          <div class="clock">9:12<small> PM</small></div>
+        </div>
+        <div class="strip">
+          <span class="st"><span class="dot"></span>UNLOCKED</span>
+          <span class="armed">4 APPS ARMED</span>
+        </div>
+        <div class="rail">
+          <div class="row done">
+            <span class="bullet done"></span>
+            <span class="name">No caffeine after 2 PM</span>
+            <span class="tm">2:00 PM</span>
+          </div>
+          <div class="row done missed">
+            <span class="bullet done"></span>
+            <span class="name">Dim the lights</span>
+            <span class="tm">Missed</span>
+          </div>
+          <div class="hero">
+            <span class="bullet active"></span>
+            <div class="card">
+              <div class="hcap">
+                <div class="hicon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+                </div>
+                <span class="meta">DUE BY 9:45 PM</span>
+              </div>
+              <div class="hname">Phone in another room</div>
+              <div class="iflabel">If missed, these get blocked:</div>
+              <div class="chips">
+                <span class="chip">Instagram</span>
+                <span class="chip">TikTok</span>
+                <span class="chip">+2</span>
+              </div>
+              <div class="holdbtn">Hold 3 sec to confirm (I did it)</div>
+              <span class="slip-link">I didn't keep it</span>
+            </div>
+          </div>
+          <div class="row upcoming">
+            <span class="bullet upcoming"></span>
+            <span class="name">Ready for sleep</span>
+            <span class="tm">10:30 PM</span>
+          </div>
+        </div>
+        <div class="footer">2 of 4 cleared · 1 missed</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l8 6.5v8.5a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.5L12 3z"/></svg>
+          Home
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+          Rules
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"/></svg>
+          Trends
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<section class="notes">
+  <h3>Design notes</h3>
+
+  <div class="rec">
+    <strong>Recommendation: inline card morph</strong> (frame 2). On slip tap, cross-fade the hero card body to a compact acknowledgment state in the same card chrome — reuse the amber accent border and <code>LOGGED</code> eyebrow from <code>slipsLogged</code>, but keep copy to two lines max. Hold ~1.4s (or until user scrolls), then collapse to a <code>DoneRailRow</code> with coral “Missed” and spring the next hero up (mirror confirm poof timing, ~0.5s).
+  </div>
+
+  <p><strong>Copy (at tap):</strong></p>
+  <ul>
+    <li><strong>Eyebrow:</strong> “LOGGED” — matches existing full-screen state</li>
+    <li><strong>Headline:</strong> “Thanks for being honest.” — warm, non-judgmental (same tone as <code>slipsLogged</code>)</li>
+    <li><strong>Subline:</strong> “Apps unlock in 10 min.” — shorter than full-screen; states the consequence without repeating “Habit missed”</li>
+    <li><strong>Optional pill:</strong> live countdown “10:00 cooldown” if enforcement timer is already running</li>
+  </ul>
+
+  <p><strong>When to use full <code>slipsLogged</code>:</strong> Keep the existing centered hero replacement only when the slipped item was the last visible checkpoint (queue empty) — no change needed there.</p>
+
+  <div class="compare">
+    <div class="alt pick">
+      <h4>✓ Inline card morph</h4>
+      <p>Feedback stays anchored to the action. No layout jump, no tab-bar overlap. Mirrors hold-to-confirm poof lifecycle. Best when queue has more items.</p>
+    </div>
+    <div class="alt">
+      <h4>Toast above tab bar</h4>
+      <p>Easy to implement but easy to miss while scrolling the rail. Competes with mini-player / tab chrome. Feels system-generic, not TenThirty.</p>
+    </div>
+    <div class="alt">
+      <h4>Banner under hero</h4>
+      <p>Adds vertical shift and pushes upcoming rows. Duplicates card border weight. Harder to animate cleanly with rail bullet alignment.</p>
+    </div>
+  </div>
+
+  <p style="margin-top:16px;margin-bottom:0;font-size:13px;color:var(--ink3)">
+    Tokens: bg <code>#0c0807</code>, amber <code>#f0b96b</code>, ink <code>#f5e7d7</code>–<code>#5c4f42</code>, missed coral <code>#e89189</code>, card radius 18px, button radius 15px — from <code>LullTheme.swift</code> and <code>HeroRuleCard</code>.
+  </p>
+</section>
+
+</body>
+</html>

@@ -2011,7 +2011,7 @@ struct OnbRoutineReadyView: View {
     }()
 
     private var headlineSub: String {
-        "If you miss a rule, selected apps lock. Complete it late and the lock cools down for 10 minutes."
+        "If you miss a rule, selected apps lock. Confirm completion to unlock, or mark it missed for a 10-minute reset."
     }
 
     var body: some View {
@@ -2239,21 +2239,21 @@ struct OnbAppBlockingHowItWorksView: View {
                                     marker: secondRuleTime,
                                     icon: "lock.fill",
                                     title: "Complete your habit",
-                                    detail: "You get 10 minutes to confirm. After that, chosen apps pause. Confirm late and they unlock after 10 minutes."
+                                    detail: "You get 10 minutes to confirm. After that, chosen apps will lock. Confirm completion to unlock."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: "IF MISSED",
                                     icon: "clock.fill",
                                     title: "Habit missed",
-                                    detail: "Apps unlock after 10 minutes, then pause again 10 minutes before your sleep window."
+                                    detail: "Apps will unlock after 10 minutes."
                                 )
 
                                 OnbAppPauseTimelineRow(
                                     marker: sleepWindowText,
                                     icon: "moon.fill",
                                     title: "Sleep window",
-                                    detail: "Chosen apps pause until wake time to protect your sleep.",
+                                    detail: "Chosen apps pause until wake time to protect your sleep. Emergency access available if truly needed.",
                                     isLast: true
                                 )
                             }
@@ -2974,7 +2974,7 @@ struct OnbTrialPaywallView: View {
             )
             TrialBenefit(
                 title: "Turn a missed habit into a reset",
-                detail: "Complete it late, take a short cooldown, and get your evening back"
+                detail: "Confirm completion to unlock, or mark it missed for a short reset"
             )
             TrialBenefit(
                 title: "Wake up without scroll regret",
@@ -3015,7 +3015,7 @@ struct OnbTrialPaywallView: View {
                 state.trackPaywallPrimaryTapped(product: .monthly)
                 Task { await purchase(.monthly) }
             } label: {
-                Text("I'll skip the trial and go with $6.99/month")
+                Text("I'll skip the trial and go with $9.99/month")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.lullInk2)
                     .underline()

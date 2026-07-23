@@ -1,4 +1,5 @@
 import XCTest
+import FamilyControls
 @testable import TenThirty
 
 @MainActor
@@ -21,6 +22,39 @@ final class AppStateRegressionTests: XCTestCase {
         let result = state.bedtimeDate(for: date(2026, 6, 28, 15, 0), calendar: calendar)
 
         XCTAssertEqual(result, calendar.startOfDay(for: date(2026, 6, 28, 12, 0)))
+    }
+
+    func testBedtimeDateForSameDayWindowRollsForwardAfterWake() {
+        let state = AppState()
+        state.typicalBedtime = date(2026, 6, 28, 17, 30)
+        state.typicalWakeTime = date(2026, 6, 28, 17, 40)
+
+        let beforeBed = state.bedtimeDate(for: date(2026, 6, 28, 17, 20), calendar: calendar)
+        let afterWake = state.bedtimeDate(for: date(2026, 6, 28, 17, 45), calendar: calendar)
+
+        XCTAssertEqual(beforeBed, calendar.startOfDay(for: date(2026, 6, 28, 12, 0)))
+        XCTAssertEqual(afterWake, calendar.startOfDay(for: date(2026, 6, 29, 12, 0)))
+    }
+
+    func testSameDaySleepWindowShowsNextCycleRulesAfterWake() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 17, 30)
+        state.typicalWakeTime = localDate(2026, 6, 28, 17, 40)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 17, 20)
+        state.selectedSleepRules = [.morningSun, .dimLights]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let afterWake = localDate(2026, 6, 28, 17, 45)
+        let items = state.todaysContractItems(now: afterWake)
+        let pending = SleepContractPresentation.visiblePendingItems(state.sleepContractSnapshot(now: afterWake))
+
+        XCTAssertEqual(Set(items.map(\.rule)), [.morningSun, .dimLights, .inBed])
+        XCTAssertFalse(items.contains(where: \.startsTomorrow))
+        XCTAssertFalse(state.hasClearedContractDay(now: afterWake))
+        XCTAssertFalse(pending.isEmpty)
+        XCTAssertTrue(pending.contains(where: { $0.rule == .dimLights || $0.rule == .morningSun }))
     }
 
     func testScheduledRoutineUsesPrepLeadTimesAndFillsSleepWindow() {
@@ -50,6 +84,7 @@ final class AppStateRegressionTests: XCTestCase {
         var completed = SleepLogEntry(date: date(2026, 6, 27, 12, 0), variable: R.noScreens, score: 0)
         completed.completedNightlyFlow = true
         state.sleepLogs = [completed]
+        state.appBlockingSelection = FamilyActivitySelection()
 
         XCTAssertTrue(state.shouldOfferAppBlockingAfterFirstNight)
     }
@@ -71,7 +106,7 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertFalse(state.isWithinAppBlockingWindow(now: date(2026, 6, 28, 17, 0)))
     }
 
-    func testMorningSunUsesWakeToNoonRangeAndCanCompleteDuringMorning() {
+    func testMorningSunUsesFixedMorningRangeAndCanCompleteDuringMorning() {
         let state = AppState()
         state.typicalWakeTime = localDate(2026, 6, 28, 7, 15)
         state.selectedSleepRules = [.morningSun]
@@ -80,13 +115,32 @@ final class AppStateRegressionTests: XCTestCase {
         let start = Calendar.current.dateComponents([.hour, .minute], from: item.availableAt)
         let end = Calendar.current.dateComponents([.hour, .minute], from: item.dueAt)
 
-        XCTAssertEqual(start.hour, 7)
-        XCTAssertEqual(start.minute, 15)
+        XCTAssertEqual(start.hour, 6)
+        XCTAssertEqual(start.minute, 0)
         XCTAssertEqual(end.hour, 12)
         XCTAssertEqual(end.minute, 0)
         XCTAssertTrue(item.isRange)
         XCTAssertTrue(state.canCompleteSleepRule(item, now: localDate(2026, 6, 28, 8, 30)))
-        XCTAssertFalse(state.canCompleteSleepRule(item, now: localDate(2026, 6, 28, 7, 0)))
+        XCTAssertFalse(state.canCompleteSleepRule(item, now: localDate(2026, 6, 28, 5, 59)))
+    }
+
+    func testMorningSunDoesNotMoveToAfternoonWakeTime() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 17, 30)
+        state.typicalWakeTime = localDate(2026, 6, 28, 17, 40)
+        state.selectedSleepRules = [.morningSun]
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 17, 20)
+
+        let item = state.todaysContractItems(now: localDate(2026, 6, 28, 17, 20)).first!
+        let start = Calendar.current.dateComponents([.hour, .minute], from: item.availableAt)
+        let end = Calendar.current.dateComponents([.hour, .minute], from: item.dueAt)
+
+        XCTAssertEqual(start.hour, 6)
+        XCTAssertEqual(start.minute, 0)
+        XCTAssertEqual(end.hour, 12)
+        XCTAssertEqual(end.minute, 0)
+        XCTAssertTrue(item.startsTomorrow)
+        XCTAssertFalse(state.sleepContractSnapshot(now: localDate(2026, 6, 28, 17, 20)).actionableItems.contains { $0.rule == .morningSun })
     }
 
     func testPastRuleAfterOnboardingActivationStartsTomorrow() {
@@ -146,7 +200,7 @@ final class AppStateRegressionTests: XCTestCase {
         }
     }
 
-    func testLateCompletionCreatesTenMinuteCooldownThenUnlocks() {
+    func testLateCompletionUnlocksWithoutCooldown() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
         state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
@@ -154,20 +208,14 @@ final class AppStateRegressionTests: XCTestCase {
 
         state.completeSleepRule(.dimLights, at: localDate(2026, 6, 28, 21, 0))
 
-        if case .coolingDown(let item, _) = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 5)).lockState {
-            XCTAssertEqual(item.rule, .dimLights)
-        } else {
-            XCTFail("Expected late completion cooldown")
-        }
-
-        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 11)).lockState {
+        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 5)).lockState {
             XCTAssertTrue(true)
         } else {
-            XCTFail("Expected cooldown to expire after 10 minutes")
+            XCTFail("Expected late completion to unlock without cooldown")
         }
     }
 
-    func testSlippedRuleStartsSleepWindowTenMinutesEarlyWithoutClearing() {
+    func testSlippedRuleCreatesTenMinuteCooldownWithoutEarlySleepWindow() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
         state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
@@ -183,18 +231,25 @@ final class AppStateRegressionTests: XCTestCase {
         state.recordSleepRuleSlip(item, at: slipTime)
 
         XCTAssertFalse(state.hasClearedContractDay(now: localDate(2026, 6, 28, 21, 16)))
-        XCTAssertEqual(localHourMinute(state.effectiveSleepWindowStart(now: localDate(2026, 6, 28, 21, 16))), "21:50")
+        XCTAssertEqual(localHourMinute(state.effectiveSleepWindowStart(now: localDate(2026, 6, 28, 21, 16))), "22:00")
 
-        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 49)).lockState {
-            XCTAssertTrue(true)
+        if case .coolingDown(let item, let until) = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 16)).lockState {
+            XCTAssertEqual(item.rule, .dimLights)
+            XCTAssertEqual(until, slipTime.addingTimeInterval(10 * 60))
         } else {
-            XCTFail("Expected apps to stay unlocked before the slipped early window")
+            XCTFail("Expected missed habit cooldown")
         }
 
-        if case .sleepWindow = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 55)).lockState {
+        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 26)).lockState {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Expected missed habit cooldown to expire after 10 minutes")
+        }
+
+        if case .unlocked = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 55)).lockState {
             XCTAssertTrue(state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 55)).allItems.first?.isSlipped == true)
         } else {
-            XCTFail("Expected slipped rule to start the sleep-window lock 10 minutes early")
+            XCTFail("Expected missed habit not to start the sleep-window lock early")
         }
     }
 
@@ -226,16 +281,86 @@ final class AppStateRegressionTests: XCTestCase {
 
         let snapshot = state.sleepContractSnapshot(now: localDate(2026, 6, 29, 1, 5))
 
-        XCTAssertEqual(snapshot.allItems.map(\.startsTomorrow), [true, true])
-        XCTAssertTrue(snapshot.actionableItems.isEmpty)
+        XCTAssertEqual(snapshot.allItems.map(\.rule), [.dimLights, .inBed])
+        XCTAssertEqual(snapshot.allItems.map(\.startsTomorrow), [true, false])
+        XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.inBed])
+        XCTAssertEqual(
+            SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule),
+            [.inBed]
+        )
         if case .sleepWindow = snapshot.lockState {
             XCTAssertTrue(true)
         } else {
-            XCTFail("Expected sleep window lock without exposing prior-evening rules")
+            XCTFail("Expected sleep window lock while exposing ready-for-sleep")
         }
     }
 
-    func testSleepWindowOverridesLateCompletionCooldown() {
+    func testSameDaySleepWindowShowsReadyForSleepInsteadOfWakeSideHabit() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 16, 0)
+        state.typicalWakeTime = localDate(2026, 6, 28, 16, 40)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 15, 58)
+        state.selectedSleepRules = [.morningSun]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let duringSleepWindow = localDate(2026, 6, 28, 16, 32)
+        let snapshot = state.sleepContractSnapshot(now: duringSleepWindow)
+        let hero = SleepContractPresentation.visiblePendingItems(snapshot).first
+
+        if case .sleepWindow = snapshot.lockState {
+            XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.inBed])
+            XCTAssertEqual(
+                SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule),
+                [.inBed]
+            )
+            XCTAssertFalse(state.hasClearedContractDay(now: duringSleepWindow))
+            XCTAssertEqual(SleepContractPresentation.deferredCommitments(in: snapshot).map(\.rule), [.morningSun])
+            XCTAssertTrue(
+                SleepContractPresentation.shouldShowOtherCommitmentsStartTomorrow(
+                    hero: hero,
+                    snapshot: snapshot
+                )
+            )
+        } else {
+            XCTFail("Expected the afternoon same-day setup to be in the sleep window")
+        }
+
+        state.completeSleepRule(.inBed, at: duringSleepWindow)
+
+        XCTAssertTrue(state.hasClearedContractDay(now: duringSleepWindow))
+        XCTAssertTrue(
+            SleepContractPresentation.visiblePendingItems(state.sleepContractSnapshot(now: duringSleepWindow)).isEmpty
+        )
+    }
+
+    func testReadyForSleepCanBeCompletedBeforeSleepWindowWhenVisible() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 6, 28, 17, 30)
+        state.typicalWakeTime = localDate(2026, 6, 28, 17, 40)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 17, 20)
+        state.selectedSleepRules = [.morningSun]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let earlySleepTime = localDate(2026, 6, 28, 17, 20)
+        let inBedItem = state.todaysContractItems(now: earlySleepTime)
+            .first { $0.rule == .inBed }!
+
+        XCTAssertEqual(
+            SleepContractPresentation.visiblePendingItems(state.sleepContractSnapshot(now: earlySleepTime)).map(\.rule),
+            [.inBed]
+        )
+        XCTAssertTrue(state.canCompleteSleepRule(inBedItem, now: earlySleepTime))
+
+        state.completeSleepRule(inBedItem, at: earlySleepTime)
+
+        XCTAssertTrue(state.hasClearedContractDay(now: earlySleepTime))
+    }
+
+    func testSleepWindowAppliesAfterLateCompletion() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
         state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
@@ -248,7 +373,7 @@ final class AppStateRegressionTests: XCTestCase {
         if case .sleepWindow = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 22, 5)).lockState {
             XCTAssertTrue(true)
         } else {
-            XCTFail("Expected sleep window lock to override cooldown")
+            XCTFail("Expected sleep window lock after late completion")
         }
     }
 
@@ -387,20 +512,21 @@ final class AppStateRegressionTests: XCTestCase {
         state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
         state.selectedSleepRules = [.dimLights]
 
-        let completedAt = localDate(2026, 6, 28, 21, 0)
+        let missedAt = localDate(2026, 6, 28, 21, 0)
         let displayTick = localDate(2026, 6, 28, 21, 4)
         let displayTickWithSeconds = Calendar.current.date(byAdding: .second, value: 32, to: displayTick)!
-        state.completeSleepRule(.dimLights, at: completedAt)
+        let item = state.todaysContractItems(now: missedAt).first { $0.rule == .dimLights }!
+        state.recordSleepRuleSlip(item, at: missedAt)
 
         let snapshot = state.sleepContractSnapshot(now: displayTickWithSeconds)
 
         XCTAssertEqual(snapshot.now, displayTickWithSeconds)
         if case .coolingDown(let item, let until) = snapshot.lockState {
             XCTAssertEqual(item.rule, .dimLights)
-            XCTAssertEqual(until, completedAt.addingTimeInterval(10 * 60))
+            XCTAssertEqual(until, missedAt.addingTimeInterval(10 * 60))
             XCTAssertEqual(Int(until.timeIntervalSince(displayTickWithSeconds)), 328)
         } else {
-            XCTFail("Expected late completion to expose a precise cooldown window")
+            XCTFail("Expected missed habit to expose a precise cooldown window")
         }
     }
 
@@ -442,6 +568,29 @@ final class AppStateRegressionTests: XCTestCase {
             inSameDayAs: state.contractDay(forLockEvent: afterMidnight)
         ))
         XCTAssertFalse(state.lockEvent(ruleAfterMidnight, matchesContractDayOf: beforeMidnight.occurredAt))
+    }
+
+    func testSetupTimeLocksDoNotSeedTrendLockActivations() {
+        let state = AppState()
+        state.hasCompletedOnboarding = false
+        state.sleepContractActivatedAt = nil
+        state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
+        state.selectedSleepRules = [.dimLights]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let lockedDuringSetup = state.sleepContractSnapshot(now: localDate(2026, 6, 28, 21, 30))
+
+        if case .lockedByRule = lockedDuringSetup.lockState {
+            XCTAssertFalse(state.shouldRecordContractLockActivation(snapshot: lockedDuringSetup, now: lockedDuringSetup.now))
+        } else {
+            XCTFail("Expected a setup-time rule lock snapshot")
+        }
+
+        state.hasCompletedOnboarding = true
+        state.sleepContractActivatedAt = localDate(2026, 6, 28, 8, 0)
+
+        XCTAssertTrue(state.shouldRecordContractLockActivation(snapshot: lockedDuringSetup, now: lockedDuringSetup.now))
     }
 
     func testContractAllClearDoesNotMarkOldRoutineComplete() {

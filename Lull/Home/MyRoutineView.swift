@@ -553,7 +553,7 @@ private struct RulesContractSummaryCard: View {
                 .font(.mono(10.5))
                 .kerning(1.5)
                 .foregroundColor(.lullAmberSoft)
-            Text("Miss a rule → apps lock. Confirm late → cooldown.")
+            Text("Miss a rule → 10-minute reset. Confirm completion → unlock.")
                 .font(.system(size: 13.5, weight: .medium))
                 .foregroundColor(.lullInk2)
                 .lineSpacing(3)

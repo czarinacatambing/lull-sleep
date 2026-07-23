@@ -26,6 +26,7 @@ enum AppBlockingMonitorStore {
     private static let shieldWakeTimeTextKey = "tenthirty_shieldWakeTimeText"
     private static let shieldLockReasonKey = "tenthirty_shieldLockReason"
     private static let shieldRuleTitleKey = "tenthirty_shieldRuleTitle"
+    private static let emergencyAppAccessUntilKey = "tenthirty_emergencyAppAccessUntil"
 
     static func save(selection: FamilyActivitySelection, windows: [AppBlockingMonitorWindow]) {
         let defaults = UserDefaults(suiteName: suiteName)
@@ -70,6 +71,10 @@ enum AppBlockingMonitorStore {
 
     static func applyCurrentShield(now: Date = Date()) {
         let store = ManagedSettingsStore()
+        guard !isEmergencyAccessActive(now: now) else {
+            store.clearAllSettings()
+            return
+        }
         let active = activeWindows(now: now)
         guard let window = active.sorted(by: windowSort).first,
               let selection = savedSelection(),
@@ -93,6 +98,10 @@ enum AppBlockingMonitorStore {
 
     private static func applyShield(for window: AppBlockingMonitorWindow) {
         let store = ManagedSettingsStore()
+        guard !isEmergencyAccessActive() else {
+            store.clearAllSettings()
+            return
+        }
         guard let selection = savedSelection(),
               (!selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty) else {
             store.clearAllSettings()
@@ -102,6 +111,13 @@ enum AppBlockingMonitorStore {
         syncShieldContext(for: window)
         store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
         store.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
+    }
+
+    private static func isEmergencyAccessActive(now: Date = Date()) -> Bool {
+        guard let until = UserDefaults(suiteName: suiteName)?.object(forKey: emergencyAppAccessUntilKey) as? Date else {
+            return false
+        }
+        return now < until
     }
 
     private static func savedSelection() -> FamilyActivitySelection? {

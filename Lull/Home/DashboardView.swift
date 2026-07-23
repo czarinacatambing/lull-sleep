@@ -540,7 +540,7 @@ struct DashboardView: View {
                 }
                 .lineSpacing(2)
 
-                Text("TenThirty blocks your selected apps through the sleep window and after missed rule grace windows. Complete late rules in the app to start the 10-minute cooldown.")
+                Text("TenThirty blocks your selected apps through the sleep window and after missed rule grace windows. Confirm completion to unlock, or mark the habit missed for a 10-minute reset.")
                     .font(.system(size: 14.5))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(4)
@@ -1236,7 +1236,7 @@ private struct TodayCardPreviewView: View {
     private var allowsMidSleepSwipe: Bool {
         shouldShowMeadowForeground
             && !showsMorningRateCard
-            && (isInSleepWindow || hasFinishedRoutine)
+            && state.hasClearedContractDay(now: currentDate)
     }
 
     private var nextPrepReminderMessage: some View {
@@ -4125,6 +4125,7 @@ private struct AppBlockingCardContent: View {
     @State private var endTime = Date()
     @State private var graceMinutes = 5
     @State private var showPicker = false
+    @State private var showEmergencyAccess = false
     @State private var didHydrate = false
     @State private var now = Date()
     private let lockStateTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
@@ -4152,6 +4153,15 @@ private struct AppBlockingCardContent: View {
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.04)))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
         .familyActivityPicker(isPresented: $showPicker, selection: $selection)
+        .sheet(isPresented: $showEmergencyAccess) {
+            EmergencyAppAccessSheet { reason, duration in
+                state.startEmergencyAppAccess(reason: reason, duration: duration)
+                showEmergencyAccess = false
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
         .onAppear {
             now = Date()
             hydrate()
@@ -4192,6 +4202,8 @@ private struct AppBlockingCardContent: View {
                 sleepRuleConfirmRow(item)
             }
 
+            emergencyAccessRow
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(Array(selection.applicationTokens), id: \.self) { token in
@@ -4217,6 +4229,55 @@ private struct AppBlockingCardContent: View {
         }
     }
 
+    private var emergencyAccessRow: some View {
+        Button {
+            showEmergencyAccess = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: state.hasActiveEmergencyAppAccess ? "lock.open.fill" : "exclamationmark.shield.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.lullAmber)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Emergency Access")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundColor(.lullInk1)
+                    Text(emergencyAccessStatusText)
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.lullInk3)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.lullInk3)
+            }
+            .padding(11)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(Color.white.opacity(0.035))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(Color.lullLine, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var emergencyAccessStatusText: String {
+        guard let endsAt = state.activeEmergencyAppAccessEnd(now: now) else {
+            return "For urgent moments only. Pick a reason, choose time, then hold 30 seconds."
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return "Open until \(formatter.string(from: endsAt)). Apps lock again after that."
+    }
+
     private func sleepRuleConfirmRow(_ item: SleepContractItem) -> some View {
         let canComplete = state.canCompleteSleepRule(item)
         return HStack(spacing: 10) {
@@ -4230,7 +4291,7 @@ private struct AppBlockingCardContent: View {
                 Text(item.rule.completionPrompt)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundColor(.lullInk1)
-                Text(canComplete ? "Hold to confirm. Late rules cool down for 10 minutes." : "Available at the rule time.")
+                Text(canComplete ? "Hold to confirm completion and unlock." : "Available at the rule time.")
                     .font(.system(size: 11.5))
                     .foregroundColor(.lullInk3)
             }
@@ -4453,6 +4514,203 @@ private struct AppBlockingEditBadge: View {
                 .foregroundColor(.lullAmberSoft)
                 .frame(width: 54)
         }
+    }
+}
+
+struct EmergencyAppAccessSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedReason: EmergencyAppAccessReason = .work
+    @State private var selectedDuration: EmergencyAppAccessDuration = .five
+    let onComplete: (EmergencyAppAccessReason, EmergencyAppAccessDuration) -> Void
+
+    var body: some View {
+        ZStack {
+            Color.lullBgDeep.ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.lullAmber)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.lullAmber.opacity(0.12)))
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Emergency Access")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.lullInk0)
+                        Text("This briefly opens your locked apps. TenThirty will lock them again when time runs out.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.lullInk2)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.lullInk3)
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close emergency access")
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    EmergencyAppAccessPromptTitle("Reason for access")
+                    EmergencyAppAccessOptionGrid(items: EmergencyAppAccessReason.allCases, selection: $selectedReason) { $0.title }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    EmergencyAppAccessPromptTitle("How much access do you need?")
+                    EmergencyAppAccessOptionGrid(items: EmergencyAppAccessDuration.allCases, selection: $selectedDuration) { $0.title }
+                }
+
+                EmergencyHoldToUnlockButton(holdDuration: 30) {
+                    onComplete(selectedReason, selectedDuration)
+                }
+                .padding(.top, 4)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 24)
+                .padding(.bottom, 18)
+            }
+        }
+    }
+}
+
+struct EmergencyAppAccessPromptTitle: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.mono(10))
+            .kerning(1.4)
+            .foregroundColor(.lullInk3)
+    }
+}
+
+struct EmergencyAppAccessOptionGrid<Item: Hashable>: View {
+    let items: [Item]
+    @Binding var selection: Item
+    let title: (Item) -> String
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
+            ForEach(items, id: \.self) { item in
+                Button {
+                    selection = item
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    Text(title(item))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(selection == item ? .lullBgDeep : .lullInk1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(selection == item ? Color.lullAmber : Color.white.opacity(0.045))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(selection == item ? Color.lullAmber : Color.lullLine, lineWidth: 1)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+struct EmergencyHoldToUnlockButton: View {
+    let holdDuration: TimeInterval
+    let onComplete: () -> Void
+    @State private var pressStartedAt: Date? = nil
+    @State private var progress: Double = 0
+    @State private var didComplete = false
+    private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        VStack(spacing: 9) {
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.06))
+                    .overlay(Capsule().strokeBorder(Color.lullAmber.opacity(0.24), lineWidth: 1))
+
+                GeometryReader { proxy in
+                    Capsule()
+                        .fill(Color.lullAmber.opacity(0.88))
+                        .frame(width: max(0, proxy.size.width * progress))
+                }
+                .clipShape(Capsule())
+                .padding(3)
+
+                HStack(spacing: 8) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.system(size: 13, weight: .bold))
+                    Text(buttonText)
+                        .font(.system(size: 14, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                }
+                .foregroundColor(progress > 0.52 ? .lullBgDeep : .lullInk0)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 14)
+            }
+            .frame(height: 52)
+            .contentShape(Capsule())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard pressStartedAt == nil, !didComplete else { return }
+                        pressStartedAt = Date()
+                    }
+                    .onEnded { _ in
+                        guard !didComplete else { return }
+                        pressStartedAt = nil
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            progress = 0
+                        }
+                    }
+            )
+            .onReceive(timer) { tick in
+                guard let pressStartedAt, !didComplete else { return }
+                let elapsed = tick.timeIntervalSince(pressStartedAt)
+                progress = min(max(elapsed / holdDuration, 0), 1)
+                if elapsed >= holdDuration {
+                    didComplete = true
+                    self.pressStartedAt = nil
+                    progress = 1
+                    onComplete()
+                }
+            }
+
+            Text("Keep holding. Let go and the timer resets.")
+                .font(.system(size: 11.5))
+                .foregroundColor(.lullInk3)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+
+    private var buttonText: String {
+        guard pressStartedAt != nil else {
+            return "Hold for 30 seconds"
+        }
+        let remaining = max(0, Int(ceil(holdDuration * (1 - progress))))
+        return "\(remaining) seconds"
     }
 }
 

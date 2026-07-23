@@ -13,7 +13,6 @@ class LiveActivityService {
     private let pendingTogglesKey  = "lull_pendingPrepToggles"
     private let pendingRatingKey   = "lull_pendingMorningRating"
     private let pendingRatingAtKey = "lull_pendingMorningRatingAt"
-    private let pendingMidSleepKey = "lull_pendingOpenMidSleep"
     private let morningRatingWindow: TimeInterval = 4 * 60 * 60
 
     // MARK: - Lifecycle
@@ -319,13 +318,6 @@ class LiveActivityService {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
         }
-    }
-
-    func consumePendingMidSleepRequest() -> Bool {
-        let defaults = UserDefaults(suiteName: appGroupSuite)
-        guard defaults?.bool(forKey: pendingMidSleepKey) == true else { return false }
-        defaults?.removeObject(forKey: pendingMidSleepKey)
-        return true
     }
 
     func endCurrentSleepActivity(dismissalPolicy: ActivityUIDismissalPolicy = .immediate) {

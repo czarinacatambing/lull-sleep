@@ -157,21 +157,9 @@ private struct SleepingLockCard: View {
                     .font(.system(size: 12.5))
                     .foregroundColor(LullLA.ink3)
                 Spacer()
-                Link(destination: URL(string: "tenthirty://midsleep")!) {
-                    Text("Mid-Sleep mode")
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundColor(LullLA.ink1)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(LullLA.amber.opacity(0.10))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .strokeBorder(LullLA.amber.opacity(0.22), lineWidth: 1)
-                                )
-                        )
-                }
+                Text("Use Today after Ready for sleep")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(LullLA.ink2)
             }
             .padding(.top, 10)
         }
@@ -187,11 +175,6 @@ private struct SleepingLockCard: View {
                 )
             }
         )
-        // Backup tap target: if Link("tenthirty://midsleep") fails for any reason
-        // (Live Activity Link quirks), tapping anywhere else on the card still
-        // navigates to Mid-Sleep mode. widgetURL is iOS's first-class
-        // tap-to-open mechanism for widget surfaces.
-        .widgetURL(URL(string: "tenthirty://midsleep"))
     }
 }
 
@@ -413,13 +396,7 @@ struct DISleepTrailing: View {
 struct DISleepBottom: View {
     var body: some View {
         HStack(spacing: 8) {
-            Text("Need help?")
-                .font(.system(size: 12))
-                .foregroundColor(LullLA.ink3)
             Spacer()
-            Link(destination: URL(string: "tenthirty://midsleep")!) {
-                DIPillButton(title: "Mid-Sleep mode")
-            }
             Link(destination: awakeURL()) {
                 DIPillButton(title: "I'm awake now", filled: true)
             }

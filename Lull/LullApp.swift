@@ -60,9 +60,7 @@ struct LullApp: App {
                 }
                 .onOpenURL { url in
                     guard url.scheme == "tenthirty" else { return }
-                    if url.host == "midsleep" {
-                        state.showMidSleepMode = true
-                    } else if url.host == "awake" {
+                    if url.host == "awake" {
                         state.requestedTab = 0
                         LiveActivityService.shared.endCurrentSleepActivity(dismissalPolicy: .immediate)
                     } else if url.host == "reward" {
@@ -71,8 +69,6 @@ struct LullApp: App {
                         if state.shouldRouteLiveActivityTapToMorning() {
                             state.requestedTab = 0
                             LiveActivityService.shared.endCurrentSleepActivity(dismissalPolicy: .immediate)
-                        } else {
-                            state.showMidSleepMode = true
                         }
                     } else if url.host == "rate" {
                         let ratingValue = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -120,14 +116,6 @@ struct LullApp: App {
                     }
                 } else {
                     LiveActivityService.shared.end(dismissalPolicy: .immediate)
-                }
-                // The Sleep Companion "Mid-Sleep mode" button writes a flag
-                // to the App Group before openAppWhenRun foregrounds us.
-                // Delay slightly so the extension process has time to flush.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    if LiveActivityService.shared.consumePendingMidSleepRequest() {
-                        state.showMidSleepMode = true
-                    }
                 }
                 // Sync the Sleep Companion data state to the wake phase if we
                 // crossed wake time, then pull in any rating tapped from the

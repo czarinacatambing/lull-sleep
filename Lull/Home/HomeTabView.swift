@@ -161,7 +161,7 @@ struct HomeTabView: View {
     }
 
     private var tabBarIsSolid: Bool {
-        childRequestsSolidTabBar || selectedTab == 3
+        childRequestsSolidTabBar
     }
 
     private var sharedFireflyAccessibilityIdentifier: String {
@@ -227,14 +227,6 @@ struct HomeTabView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear
                     .frame(height: miniPlayerVisible ? SleepSoundsMiniPlayerLayout.reservedHeight : 0)
-            }
-
-            if selectedTab == 3 {
-                MidSleepModeView {
-                    selectedTab = 0
-                }
-                    .transition(.opacity)
-                    .zIndex(1)
             }
 
             if !shouldHideTodayForFirstFireflyIntro {
@@ -308,24 +300,8 @@ struct HomeTabView: View {
         .animation(.easeInOut(duration: 0.18), value: tabBarIsSolid)
         .animation(.easeInOut(duration: 0.28), value: showFirstFireflyPrompt)
         .onPreferenceChange(SolidTabBarPreferenceKey.self) { childRequestsSolidTabBar = $0 }
-        // Shake / programmatic activation -> jump to hidden Mid-sleep page.
-        .onChange(of: state.showMidSleepMode) { _, active in
-            if active {
-                sleepSoundsAudio.stop()
-                selectedTab = 3
-                state.showMidSleepMode = false
-            }
-        }
-        // Catch the cold-launch race: if the Live Activity / URL handler set
-        // showMidSleepMode = true before this view mounted (welcome splash up),
-        // onChange never fired. Pick it up on first appear.
         .onAppear {
             refreshClockAndDailyState()
-            if state.showMidSleepMode {
-                sleepSoundsAudio.stop()
-                selectedTab = 3
-                state.showMidSleepMode = false
-            }
             if let requested = state.requestedTab {
                 selectedTab = requested
                 state.requestedTab = nil
@@ -341,14 +317,7 @@ struct HomeTabView: View {
             guard phase == .active else { return }
             refreshClockAndDailyState()
         }
-        // Restore brightness when navigating away from Mid-sleep
-        .onChange(of: selectedTab) { oldTab, newTab in
-            if newTab == 3 {
-                sleepSoundsAudio.stop()
-            }
-            if oldTab == 3 && newTab != 3 {
-                state.restoreBrightnessAfterMidSleep()
-            }
+        .onChange(of: selectedTab) { _, newTab in
             if newTab == 0 {
                 startFirstFireflyHandoffIfNeeded()
             }
@@ -627,55 +596,94 @@ private struct ReadyForBedFireflyEntrance: View {
 
 private struct TodayContractQueueView: View {
     @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var appBlockingAccess = AppBlockingAccessProbe.shared
     @State private var now = Date()
     @State private var didReportAllClear = false
     @State private var appPickerSelection = FamilyActivitySelection()
+    @State private var showMidSleepMode = false
     let onAllClear: () -> Void
     let onFirstDeckInteraction: () -> Void
     private let contractStateTimer = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
     @State private var showAppPicker = false
     @State private var showBlockedAppsRequiredAlert = false
+    @State private var showEmergencyAccess = false
     let onSettings: () -> Void
+
+    private var allowsMidSleepAccess: Bool {
+        state.hasClearedContractDay(now: now)
+            || state.isSleepRuleCompleted(.inBed, now: now)
+    }
 
     var body: some View {
         let snapshot = state.sleepContractSnapshot(now: now)
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                ContractStatusStrip(
-                    snapshot: snapshot,
-                    appSelection: state.appBlockingSelection,
-                    appSummary: appSummary,
-                    hasBlockedApps: state.hasBlockedAppTargets,
-                    canEditBlockedApps: !state.isContractEditingLocked(now: now),
-                    onEditBlockedApps: {
-                        openBlockedAppsPicker()
-                    }
-                )
+        ZStack(alignment: .bottom) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    ContractStatusStrip(
+                        snapshot: snapshot,
+                        appSelection: state.appBlockingSelection,
+                        hasBlockedApps: state.hasBlockedAppTargets,
+                        blockingStartTime: state.effectiveSleepWindowStart(now: now),
+                        canEditBlockedApps: !state.isContractEditingLocked(now: now),
+                        onEditBlockedApps: {
+                            openBlockedAppsPicker()
+                        },
+                        activeEmergencyAccessEnd: state.activeEmergencyAppAccessEnd(now: now),
+                        onEmergencyAccess: {
+                            showEmergencyAccess = true
+                        }
+                    )
 
-                if state.selectedSleepRules.isEmpty {
-                    emptyRules
-                } else if isSleepWindow(snapshot) {
-                    if state.hasClearedContractDay(now: now) {
-                        sleepWindowMessage(snapshot: snapshot)
+                    if state.selectedSleepRules.isEmpty {
+                        emptyRules
+                    } else if isSleepWindow(snapshot) {
+                        if state.hasClearedContractDay(now: now) {
+                            sleepWindowMessage(snapshot: snapshot)
+                        } else {
+                            rail(snapshot: snapshot)
+                        }
                     } else {
                         rail(snapshot: snapshot)
                     }
-                } else {
-                    rail(snapshot: snapshot)
-                }
 
-                Spacer().frame(height: 120)
+                    Spacer().frame(height: 120)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 54)
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 54)
+
+            if allowsMidSleepAccess && !showMidSleepMode {
+                midSleepSwipeHint
+            }
         }
         .preferredColorScheme(.dark)
         .contentShape(Rectangle())
+        .animation(.spring(response: 0.48, dampingFraction: 0.84), value: showMidSleepMode)
+        .highPriorityGesture(showMidSleepMode ? nil : midSleepSwipeUpGesture)
+        .fullScreenCover(isPresented: $showMidSleepMode) {
+            MidSleepModeView(onExit: { showMidSleepMode = false })
+                .environmentObject(state)
+                .environmentObject(sleepSoundsAudio)
+        }
+        .accessibilityAction(named: "Show wind down tools") {
+            guard allowsMidSleepAccess, !showMidSleepMode else { return }
+            showMidSleepMode = true
+        }
         .familyActivityPicker(isPresented: $showAppPicker, selection: $appPickerSelection)
+        .sheet(isPresented: $showEmergencyAccess) {
+            EmergencyAppAccessSheet { reason, duration in
+                state.startEmergencyAppAccess(reason: reason, duration: duration)
+                showEmergencyAccess = false
+                now = Date()
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
         .alert("Choose apps to block first", isPresented: $showBlockedAppsRequiredAlert) {
             Button("Choose apps") { openBlockedAppsPicker() }
             Button("Not now", role: .cancel) {}
@@ -767,6 +775,44 @@ private struct TodayContractQueueView: View {
         .frame(minHeight: 340, alignment: .center)
     }
 
+    private func nextCyclePreview(snapshot: SleepContractEnforcementSnapshot) -> some View {
+        let pending = visiblePendingItems(snapshot).sorted(by: sleepRuleDisplaySort)
+        let nextBedtime = state.effectiveSleepWindowStart(now: now)
+
+        return VStack(spacing: 12) {
+            Text("NEXT SLEEP CYCLE")
+                .font(.system(size: 11, weight: .semibold))
+                .kerning(1.8)
+                .foregroundColor(.lullAmberSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Your full rule list is back.")
+                .font(.serif(28))
+                .foregroundColor(.lullInk0)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+            Text("Apps lock again at \(Self.timeFormatter.string(from: nextBedtime)).")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.lullInk2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            if !pending.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(pending) { item in
+                        RuleRailRow(item: item, now: now)
+                    }
+                }
+                .padding(.top, 8)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 30)
+        .frame(minHeight: 340, alignment: .center)
+    }
+
     private var startsTomorrow: some View {
         VStack(spacing: 12) {
             Text("STARTS TOMORROW")
@@ -806,7 +852,7 @@ private struct TodayContractQueueView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .center)
-            Text("Apps will lock 10 minutes earlier than your sleep window tonight.")
+            Text("Habit missed. Apps will unlock after 10 minutes.")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.lullInk2)
                 .multilineTextAlignment(.center)
@@ -857,6 +903,29 @@ private struct TodayContractQueueView: View {
         return false
     }
 
+    private var midSleepSwipeHint: some View {
+        Text("Swipe up to access tools for wind down")
+            .font(.system(size: 12.5, weight: .medium))
+            .foregroundColor(.lullInk2.opacity(0.72))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 108)
+            .transition(.opacity)
+    }
+
+    private var midSleepSwipeUpGesture: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onEnded { value in
+                guard allowsMidSleepAccess else { return }
+                let dx = value.translation.width
+                let dy = value.translation.height
+                guard -dy > 80, -dy > abs(dx) else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showMidSleepMode = true
+            }
+    }
+
     // MARK: Checkpoint rail
 
     @ViewBuilder
@@ -878,6 +947,7 @@ private struct TodayContractQueueView: View {
                     requiresBlockedApps: hero.rule != .inBed && state.requiresBlockedAppsBeforeRuleActions,
                     appSelection: state.appBlockingSelection,
                     reduceMotion: reduceMotion,
+                    showInlineSlipAcknowledgment: hasAnotherHeroAfterSlip(hero: hero, snapshot: snapshot),
                     onConfirm: { confirmRule(hero) },
                     onSlip: { recordSlip(hero) },
                     onChooseApps: { openBlockedAppsPicker() }
@@ -887,6 +957,10 @@ private struct TodayContractQueueView: View {
                     insertion: .move(edge: .bottom).combined(with: .opacity),
                     removal: .opacity
                 ))
+
+                if shouldShowOtherCommitmentsStartTomorrow(hero: hero, snapshot: snapshot) {
+                    otherCommitmentsStartTomorrowNote
+                }
 
                 ForEach(upcoming) { item in
                     RuleRailRow(item: item, now: now)
@@ -900,8 +974,11 @@ private struct TodayContractQueueView: View {
                 } else if hasSlippedItems(snapshot) {
                     slipsLogged
                     railFooter(cleared: done.count, total: totalCount(snapshot))
-                } else {
+                } else if state.hasClearedContractDay(now: now) {
                     allClear
+                    railFooter(cleared: done.count, total: totalCount(snapshot))
+                } else {
+                    nextCyclePreview(snapshot: snapshot)
                     railFooter(cleared: done.count, total: totalCount(snapshot))
                 }
             }
@@ -938,6 +1015,11 @@ private struct TodayContractQueueView: View {
             now = Date()
         }
         handleAllClearIfNeeded()
+    }
+
+    private func hasAnotherHeroAfterSlip(hero: SleepContractItem,
+                                         snapshot: SleepContractEnforcementSnapshot) -> Bool {
+        visiblePendingItems(snapshot).contains { $0.id != hero.id }
     }
 
     private func recordSlip(_ item: SleepContractItem) {
@@ -997,6 +1079,22 @@ private struct TodayContractQueueView: View {
         snapshot.allItems.contains(where: \.isSlipped)
     }
 
+    private func shouldShowOtherCommitmentsStartTomorrow(hero: SleepContractItem,
+                                                         snapshot: SleepContractEnforcementSnapshot) -> Bool {
+        SleepContractPresentation.shouldShowOtherCommitmentsStartTomorrow(hero: hero, snapshot: snapshot)
+    }
+
+    private var otherCommitmentsStartTomorrowNote: some View {
+        Text("All other commitments start tomorrow.")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.lullInk3)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 24)
+            .padding(.top, 14)
+            .padding(.bottom, 6)
+    }
+
     private var tomorrowFooter: some View {
         Text("Rules start tomorrow · apps blocked \(Self.timeFormatter.string(from: state.effectiveSleepWindowStart(now: now)))")
             .font(.system(size: 11, weight: .medium))
@@ -1005,16 +1103,6 @@ private struct TodayContractQueueView: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, 30)
             .padding(.top, 16)
-    }
-
-    private var appSummary: String {
-        let appCount = state.appBlockingSelection.applicationTokens.count
-        let categoryCount = state.appBlockingSelection.categoryTokens.count
-        let total = appCount + categoryCount
-        if total == 0 { return "No apps selected yet" }
-        if appCount > 0 && categoryCount > 0 { return "\(appCount) apps · \(categoryCount) categories" }
-        if appCount > 0 { return "\(appCount) app\(appCount == 1 ? "" : "s") selected" }
-        return "\(categoryCount) categor\(categoryCount == 1 ? "y" : "ies") selected"
     }
 
     private func handleAllClearIfNeeded() {
@@ -1056,12 +1144,18 @@ private struct TodayContractQueueView: View {
 }
 
 private struct ContractStatusStrip: View {
+    private static let cardFill = Color(hex: "#332619")
+    private static let cardBorder = Color(hex: "#4a3a22")
+    private static let statusUnlocked = Color(hex: "#5fd08a")
+
     let snapshot: SleepContractEnforcementSnapshot
     let appSelection: FamilyActivitySelection
-    let appSummary: String
     let hasBlockedApps: Bool
+    let blockingStartTime: Date
     let canEditBlockedApps: Bool
     let onEditBlockedApps: () -> Void
+    let activeEmergencyAccessEnd: Date?
+    let onEmergencyAccess: () -> Void
 
     var body: some View {
         TimelineView(.periodic(from: Date(), by: 1)) { timeline in
@@ -1070,65 +1164,142 @@ private struct ContractStatusStrip: View {
     }
 
     private func content(displayNow: Date) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: dotColor.opacity(0.7), radius: 5)
-                Text(title.uppercased())
-                    .font(.system(size: 12, weight: .semibold))
-                    .kerning(0.8)
-                    .foregroundColor(.lullInk1)
-                if let cooldownCountdown = cooldownCountdown(displayNow: displayNow) {
-                    Text(cooldownCountdown)
-                        .font(.system(size: 11.5, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundColor(.lullAmber)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(Color.lullAmber.opacity(0.10))
-                        )
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(Color.lullAmber.opacity(0.32), lineWidth: 1)
-                        )
-                        .accessibilityLabel("Cooldown \(cooldownCountdown) remaining")
-                }
-                Spacer(minLength: 8)
-                if hasBlockedApps {
-                    Text(appSummary)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.lullInk3)
-                        .lineLimit(1)
-                }
-                Button(action: onEditBlockedApps) {
-                    Text(editLabel)
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundColor(canEditBlockedApps ? .lullAmber : .lullInk4)
-                }
-                .buttonStyle(.plain)
-                .disabled(!canEditBlockedApps)
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 14) {
+                statusRow(displayNow: displayNow)
+                appRow(displayNow: displayNow)
             }
-            if let subtitle = subtitle(displayNow: displayNow) {
-                Text(subtitle)
-                    .font(.system(size: 12.5, weight: .medium))
-                    .foregroundColor(.lullInk3)
-                    .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 14)
+
+            if hasBlockedApps {
+                Rectangle()
+                    .fill(Self.cardBorder)
+                    .frame(height: 0.5)
+
+                emergencyAccessButton(displayNow: displayNow)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
-        .contractCardBackground(accent: snapshot.isLocked && hasBlockedApps)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Self.cardFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Self.cardBorder, lineWidth: 0.5)
+                )
+        )
+    }
+
+    private func statusRow(displayNow: Date) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: 8, height: 8)
+
+            Text(title.uppercased())
+                .font(.system(size: 13, weight: .medium))
+                .kerning(0.78)
+                .foregroundColor(statusTextColor)
+
+            Spacer(minLength: 8)
+
+            if let timeLabel = statusTimeLabel(displayNow: displayNow) {
+                Text(timeLabel)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private func appRow(displayNow: Date) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            ContractStatusAppIcons(selection: appSelection)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(blockingTitle)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.lullInk0)
+                    .lineLimit(1)
+                Text(blockingSubtitle(displayNow: displayNow))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(action: onEditBlockedApps) {
+                Text(editLabel)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(canEditBlockedApps ? Color(hex: "#e0b968") : .lullInk4)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule()
+                            .strokeBorder(canEditBlockedApps ? Color(hex: "#6b5836") : Color.lullInk4.opacity(0.35), lineWidth: 0.5)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(!canEditBlockedApps)
+        }
+    }
+
+    private func emergencyAccessButton(displayNow: Date) -> some View {
+        Button(action: onEmergencyAccess) {
+            HStack(spacing: 12) {
+                Image(systemName: activeEmergencyAccessEnd.map { displayNow < $0 } == true ? "lock.open.fill" : "shield.lefthalf.filled")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color(hex: "#e0a338"))
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color(hex: "#4a2f16")))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Emergency access")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.lullInk0)
+                    Text(emergencyAccessText(displayNow: displayNow))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.lullInk2)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.lullInk3)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func emergencyAccessText(displayNow: Date) -> String {
+        if let activeEmergencyAccessEnd, displayNow < activeEmergencyAccessEnd {
+            return "Open until \(Self.timeFormatter.string(from: activeEmergencyAccessEnd))"
+        }
+        return "Unlock for 5–30 min"
     }
 
     private var dotColor: Color {
         if !hasBlockedApps { return .lullInk4 }
         switch snapshot.lockState {
-        case .unlocked: return Color(hex: "#7ed4a0")
+        case .unlocked: return Self.statusUnlocked
+        case .lockedByRule: return Color(hex: "#e89189")
+        case .coolingDown: return .lullAmber
+        case .sleepWindow: return .lullAmberSoft
+        }
+    }
+
+    private var statusTextColor: Color {
+        if !hasBlockedApps { return .lullInk2 }
+        switch snapshot.lockState {
+        case .unlocked: return Self.statusUnlocked
         case .lockedByRule: return Color(hex: "#e89189")
         case .coolingDown: return .lullAmber
         case .sleepWindow: return .lullAmberSoft
@@ -1147,33 +1318,51 @@ private struct ContractStatusStrip: View {
 
     private var editLabel: String {
         guard canEditBlockedApps else { return "Locked" }
-        return hasBlockedApps ? "Edit" : "Choose apps"
+        return hasBlockedApps ? "Edit apps" : "Choose apps"
     }
 
-    private func cooldownCountdown(displayNow: Date) -> String? {
-        guard case .coolingDown(_, let until) = snapshot.lockState else { return nil }
-        return Self.countdown(until, from: displayNow)
+    private var blockingTitle: String {
+        let appCount = appSelection.applicationTokens.count
+        let categoryCount = appSelection.categoryTokens.count
+        let total = appCount + categoryCount
+        if total == 0 { return "No apps selected" }
+        if appCount > 0 && categoryCount > 0 {
+            return "Blocking \(appCount) app\(appCount == 1 ? "" : "s") · \(categoryCount) categor\(categoryCount == 1 ? "y" : "ies")"
+        }
+        if appCount > 0 {
+            return "Blocking \(appCount) app\(appCount == 1 ? "" : "s")"
+        }
+        return "Blocking \(categoryCount) categor\(categoryCount == 1 ? "y" : "ies")"
     }
 
-    private func subtitle(displayNow: Date) -> String? {
+    private func blockingSubtitle(displayNow: Date) -> String {
         if !hasBlockedApps {
             return "Choose apps so a missed rule can block them."
         }
         switch snapshot.lockState {
         case .unlocked:
-            return nil
+            return "Starts at \(Self.timeFormatter.string(from: blockingStartTime)) tonight"
         case .lockedByRule(let item):
-            return "\(item.rule.title) was missed. Hold below to confirm late."
-        case .coolingDown(let item, let until):
-            return "Apps and blocked-app edits unlock in \(Self.countdown(until, from: displayNow)). \(item.rule.title) was late."
+            return "\(item.rule.title) needs confirmation to unlock."
+        case .coolingDown(let item, _):
+            return "\(item.rule.title) was missed. Apps unlock in 10 min."
         case .sleepWindow(let until):
-            return "Apps are blocked until \(Self.timeFormatter.string(from: until))."
+            return "Paused until \(Self.timeFormatter.string(from: until)) to protect your sleep."
         }
     }
 
-    private static func countdown(_ end: Date, from start: Date) -> String {
-        let seconds = max(0, Int(end.timeIntervalSince(start)))
-        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    private func statusTimeLabel(displayNow: Date) -> String? {
+        if !hasBlockedApps { return nil }
+        switch snapshot.lockState {
+        case .unlocked:
+            return "until \(Self.timeFormatter.string(from: blockingStartTime))"
+        case .lockedByRule:
+            return nil
+        case .coolingDown:
+            return nil
+        case .sleepWindow(let until):
+            return "until \(Self.timeFormatter.string(from: until))"
+        }
     }
 
     private static let timeFormatter: DateFormatter = {
@@ -1181,6 +1370,66 @@ private struct ContractStatusStrip: View {
         formatter.dateFormat = "h:mm a"
         return formatter
     }()
+}
+
+private struct ContractStatusAppIcons: View {
+    let selection: FamilyActivitySelection
+
+    var body: some View {
+        let apps = Array(selection.applicationTokens.prefix(3))
+        let categoryCount = selection.categoryTokens.count
+
+        HStack(spacing: -6) {
+            ForEach(Array(apps.enumerated()), id: \.offset) { index, token in
+                Label(token)
+                    .labelStyle(.iconOnly)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Color.black.opacity(0.25), lineWidth: 1)
+                    )
+                    .zIndex(Double(apps.count - index))
+            }
+
+            if apps.isEmpty, categoryCount > 0 {
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.lullInk1)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                    )
+            } else if categoryCount > 0 {
+                Text("+\(categoryCount)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.lullInk1)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Color.black.opacity(0.25), lineWidth: 1)
+                    )
+            } else if apps.isEmpty {
+                Image(systemName: "apps.iphone")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.lullInk3)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.04))
+                    )
+            }
+        }
+    }
 }
 
 // MARK: - App chips (real icons + names via FamilyControls Label(token))
@@ -1366,6 +1615,7 @@ private struct HeroRuleCard: View {
     let requiresBlockedApps: Bool
     let appSelection: FamilyActivitySelection
     let reduceMotion: Bool
+    let showInlineSlipAcknowledgment: Bool
     let onConfirm: () -> Void
     let onSlip: () -> Void
     let onChooseApps: () -> Void
@@ -1374,7 +1624,10 @@ private struct HeroRuleCard: View {
     @State private var isHolding = false
     @State private var holdWorkItem: DispatchWorkItem?
     @State private var isPoofing = false
+    @State private var isShowingSlipAcknowledgment = false
+    @State private var slipAckWorkItem: DispatchWorkItem?
     private let holdDuration: TimeInterval = 3
+    private let slipAcknowledgmentDuration: TimeInterval = 1.4
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -1402,9 +1655,23 @@ private struct HeroRuleCard: View {
             }
         }
         .padding(.bottom, 20)
+        .onDisappear {
+            cancelSlipAcknowledgment(resetState: false)
+        }
     }
 
     private var cardBody: some View {
+        Group {
+            if isShowingSlipAcknowledgment {
+                slipAcknowledgmentBody
+            } else {
+                activeCardBody
+            }
+        }
+        .animation(reduceMotion ? .easeInOut(duration: 0.18) : .easeInOut(duration: 0.28), value: isShowingSlipAcknowledgment)
+    }
+
+    private var activeCardBody: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 11) {
                 // Decorative rule icon — engraved/flat so it reads as a label, not a button.
@@ -1467,6 +1734,31 @@ private struct HeroRuleCard: View {
         .contractCardBackground(accent: canComplete)
     }
 
+    private var slipAcknowledgmentBody: some View {
+        VStack(spacing: 8) {
+            Text("LOGGED")
+                .font(.system(size: 11, weight: .semibold))
+                .kerning(0.8)
+                .foregroundColor(.lullAmberSoft)
+            Text("Thanks for being honest.")
+                .font(.serif(22))
+                .foregroundColor(.lullInk0)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Apps unlock in 10 min.")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.lullInk2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 28)
+        .contractCardBackground(accent: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Logged. Thanks for being honest. Apps unlock in 10 minutes.")
+    }
+
     private var holdCTA: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 15, style: .continuous)
@@ -1505,13 +1797,14 @@ private struct HeroRuleCard: View {
 
     private var slipAction: some View {
         VStack(spacing: 5) {
-            Button(action: onSlip) {
+            Button(action: triggerSlip) {
                 Text("I didn't keep it")
                     .font(.system(size: 13.5, weight: .medium))
                     .foregroundColor(.lullInk3)
                     .underline()
             }
             .buttonStyle(.plain)
+            .disabled(isShowingSlipAcknowledgment)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
@@ -1534,7 +1827,7 @@ private struct HeroRuleCard: View {
     }
 
     private func startHoldIfNeeded() {
-        guard !requiresBlockedApps, canComplete, !isHolding, !isPoofing else { return }
+        guard !requiresBlockedApps, canComplete, !isHolding, !isPoofing, !isShowingSlipAcknowledgment else { return }
         isHolding = true
         holdWorkItem?.cancel()
         holdStartedAt = Date()
@@ -1584,9 +1877,37 @@ private struct HeroRuleCard: View {
         }
     }
 
+    // Brief inline acknowledgment, then advance the queue (or show full slipsLogged when last).
+    private func triggerSlip() {
+        guard !isPoofing, !isShowingSlipAcknowledgment else { return }
+        if !showInlineSlipAcknowledgment || reduceMotion {
+            onSlip()
+            return
+        }
+        cancelHold(resetProgress: true)
+        isShowingSlipAcknowledgment = true
+        slipAckWorkItem?.cancel()
+        let workItem = DispatchWorkItem {
+            guard isShowingSlipAcknowledgment else { return }
+            isShowingSlipAcknowledgment = false
+            slipAckWorkItem = nil
+            onSlip()
+        }
+        slipAckWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + slipAcknowledgmentDuration, execute: workItem)
+    }
+
+    private func cancelSlipAcknowledgment(resetState: Bool) {
+        slipAckWorkItem?.cancel()
+        slipAckWorkItem = nil
+        if resetState {
+            isShowingSlipAcknowledgment = false
+        }
+    }
+
     private var ctaText: String {
         if item.rule == .inBed { return "Hold 3 sec to confirm ready for sleep" }
-        return now > item.graceEndsAt ? "Hold 3 sec to confirm late (I did it)" : "Hold 3 sec to confirm (I did it)"
+        return "Hold 3 sec to confirm (I did it)"
     }
 
     private var holdCTAText: String {
@@ -1700,56 +2021,6 @@ private struct TodayCardDustCanvas: View {
             Path(ellipseIn: CGRect(x: x - s / 2, y: y - s / 2, width: s, height: s)),
             with: .color(mote.color.opacity(opacity))
         )
-    }
-}
-
-private struct ContractSleepToolsCard: View {
-    @EnvironmentObject private var state: AppState
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Kicker(text: "Sleep tools", color: .lullAmberSoft)
-                Spacer()
-            }
-            toolsButton("Breathing", icon: "wind") {
-                state.showMidSleepMode = true
-            }
-            toolsButton("Sleep sounds", icon: "waveform") {
-                if state.canUseSleepSounds {
-                    state.showSleepSounds = true
-                } else {
-                    state.presentUpgradePaywall()
-                }
-            }
-            toolsButton("Mid-sleep mode", icon: "moon.zzz.fill") {
-                state.showMidSleepMode = true
-            }
-        }
-        .padding(18)
-        .contractCardBackground()
-    }
-
-    private func toolsButton(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.lullAmber)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(Color.lullAmber.opacity(0.10)))
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.lullInk0)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.lullInk4)
-            }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.035)))
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -1934,7 +2205,7 @@ private struct RulesContractEditorView: View {
     }
 
     private var enforcementNote: some View {
-        Text("If you miss a rule, selected apps lock. If you confirm late, apps go into a 10 minute cooldown. If it's your sleep window, apps stay locked until wake time.")
+        Text("Complete your habit within 10 minutes to keep apps available. After that, confirm completion to unlock, or mark it missed for a 10-minute reset. During your sleep window, chosen apps pause until wake time.")
             .font(.system(size: 12.5, weight: .medium))
             .foregroundColor(.lullInk4.opacity(0.82))
             .multilineTextAlignment(.center)
@@ -2060,7 +2331,7 @@ private struct RuleEditorRow: View {
 
             if isEnabled.wrappedValue {
                 if rule == .morningSun {
-                    Text("Active from wake time to 12:00 PM")
+                    Text("Active from 6:00 AM to 12:00 PM")
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundColor(.lullInk2)
                 } else {
@@ -2325,13 +2596,31 @@ struct TabBarButton: View {
 }
 
 enum SleepContractPresentation {
+    static func deferredCommitments(in snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
+        snapshot.allItems.filter { item in
+            item.startsTomorrow && !item.isResolved && item.rule != .inBed
+        }
+    }
+
+    static func shouldShowOtherCommitmentsStartTomorrow(hero: SleepContractItem?,
+                                                        snapshot: SleepContractEnforcementSnapshot) -> Bool {
+        guard hero?.rule == .inBed else { return false }
+        return !deferredCommitments(in: snapshot).isEmpty
+    }
+
     static func visiblePendingItems(_ snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
         let hasUnclearedRealRule = snapshot.allItems.contains {
-            $0.rule != .inBed && !$0.isCompleted && !$0.startsTomorrow
+            $0.rule.isPreBedRule && !$0.isCompleted && !$0.startsTomorrow
+        }
+        let hasVisibleReadyForSleep = snapshot.allItems.contains {
+            $0.rule == .inBed && !$0.isResolved && !$0.startsTomorrow
         }
 
         return snapshot.allItems.filter { item in
             guard !item.isResolved, !item.startsTomorrow else { return false }
+            if (snapshot.isSleepWindow || hasVisibleReadyForSleep), item.rule != .inBed, !item.rule.isPreBedRule {
+                return false
+            }
             if item.rule == .inBed, hasUnclearedRealRule {
                 return false
             }
