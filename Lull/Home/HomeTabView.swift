@@ -714,7 +714,7 @@ private struct TodayContractQueueView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            Text("Tonight")
+            Text("Today")
                 .font(.serif(30))
                 .foregroundColor(.lullInk0)
             Spacer()
@@ -1248,21 +1248,22 @@ private struct ContractStatusStrip: View {
     }
 
     private func emergencyAccessButton(displayNow: Date) -> some View {
+        let isEnabled = canUseEmergencyAccess
         Button(action: onEmergencyAccess) {
             HStack(spacing: 12) {
                 Image(systemName: activeEmergencyAccessEnd.map { displayNow < $0 } == true ? "lock.open.fill" : "shield.lefthalf.filled")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(Color(hex: "#e0a338"))
+                    .foregroundColor(isEnabled ? Color(hex: "#e0a338") : .lullInk4)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(Color(hex: "#4a2f16")))
+                    .background(Circle().fill(isEnabled ? Color(hex: "#4a2f16") : Color.white.opacity(0.04)))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Emergency access")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.lullInk0)
+                        .foregroundColor(isEnabled ? .lullInk0 : .lullInk3)
                     Text(emergencyAccessText(displayNow: displayNow))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.lullInk2)
+                        .foregroundColor(isEnabled ? .lullInk2 : .lullInk4)
                         .lineLimit(2)
                 }
 
@@ -1270,13 +1271,18 @@ private struct ContractStatusStrip: View {
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.lullInk3)
+                    .foregroundColor(isEnabled ? .lullInk3 : .lullInk4)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+    }
+
+    private var canUseEmergencyAccess: Bool {
+        snapshot.isLocked
     }
 
     private func emergencyAccessText(displayNow: Date) -> String {
