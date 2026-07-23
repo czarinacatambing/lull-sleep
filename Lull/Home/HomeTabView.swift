@@ -149,11 +149,11 @@ struct HomeTabView: View {
     }
 
     private var sharedFireflyMode: TodayFireflyMode {
-        .cluster
+        selectedTab == 2 ? .calendar : .cluster
     }
 
     private var sharedCalendarTopInset: CGFloat {
-        0
+        selectedTab == 2 ? insightsPanelTopInset : 0
     }
 
     private var sharedCalendarRange: TodayFireflyCalendarRange {
@@ -179,26 +179,24 @@ struct HomeTabView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
 
-                if selectedTab != 2 {
-                    TodayFireflyScene(
-                        mode: sharedFireflyMode,
-                        dates: sharedFireflyDates,
-                        currentDate: currentDate,
-                        loggedShadeDates: sharedLoggedShadeDates,
-                        calendarTopInset: sharedCalendarTopInset,
-                        calendarRange: sharedCalendarRange,
-                        entranceToken: earnedFireflyEntranceToken,
-                        reduceMotion: reduceMotion
-                    )
-                    .ignoresSafeArea()
-                    .opacity(0.86)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
+                TodayFireflyScene(
+                    mode: sharedFireflyMode,
+                    dates: sharedFireflyDates,
+                    currentDate: currentDate,
+                    loggedShadeDates: sharedLoggedShadeDates,
+                    calendarTopInset: sharedCalendarTopInset,
+                    calendarRange: sharedCalendarRange,
+                    entranceToken: earnedFireflyEntranceToken,
+                    reduceMotion: reduceMotion
+                )
+                .ignoresSafeArea()
+                .opacity(0.86)
+                .allowsHitTesting(false)
+                .transition(.opacity)
 
-                    #if DEBUG
-                    sharedFireflyUITestMarker
-                    #endif
-                }
+                #if DEBUG
+                sharedFireflyUITestMarker
+                #endif
             }
 
             TabView(selection: $selectedTab) {
@@ -219,10 +217,7 @@ struct HomeTabView: View {
                 ContractTrendsView(
                     currentDate: currentDate,
                     sharedCalendarTopInset: $insightsPanelTopInset,
-                    range: $contractTrendRange,
-                    fireflyDates: sharedFireflyDates,
-                    loggedShadeDates: sharedLoggedShadeDates,
-                    reduceMotion: reduceMotion
+                    range: $contractTrendRange
                 )
                     .tag(2)
             }
@@ -2128,9 +2123,6 @@ private struct ContractTrendsView: View {
     let currentDate: Date
     @Binding var sharedCalendarTopInset: CGFloat
     @Binding var range: ContractTrendRange
-    let fireflyDates: [Date]
-    let loggedShadeDates: Set<Date>
-    let reduceMotion: Bool
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -2211,18 +2203,8 @@ private struct ContractTrendsView: View {
     }
 
     private var trendsCalendar: some View {
-        TodayFireflyScene(
-            mode: .calendar,
-            dates: fireflyDates,
-            currentDate: currentDate,
-            loggedShadeDates: loggedShadeDates,
-            calendarTopInset: 0,
-            calendarRange: range == .week ? .week : .month,
-            entranceToken: 0,
-            reduceMotion: reduceMotion
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("trends-firefly-calendar-scene")
+        Color.clear
+            .accessibilityHidden(true)
     }
 
     private func trendStat(_ title: String, value: String) -> some View {
