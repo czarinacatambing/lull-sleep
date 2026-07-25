@@ -50,9 +50,12 @@ struct LullApp: App {
                     PostHogReplayService.configureIfNeeded(installId: state.installId)
                     state.trackFirstOpenIfNeeded()
                     subscriptions.start(postHogUserID: state.installId)
+                    state.clearObsoleteNotifications()
+                }
+                .onChange(of: subscriptions.hasResolvedInitialCustomerInfo) { _, resolved in
+                    guard resolved else { return }
                     state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
                     state.evaluateTrialStatus()
-                    state.clearObsoleteNotifications()
                 }
                 .onChange(of: subscriptions.isLullProActive) { _, isActive in
                     state.applyRevenueCatEntitlement(isActive: isActive)

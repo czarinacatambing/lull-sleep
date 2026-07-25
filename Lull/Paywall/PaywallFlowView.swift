@@ -447,6 +447,7 @@ struct RevenueCatPaywallSheet: View {
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @Environment(\.openURL) private var openURL
     let context: RevenueCatPaywallContext
+    var allowsDismiss = true
     let onSubscribed: () -> Void
     let onClose: () -> Void
     @State private var showCustomerCenter = false
@@ -494,7 +495,10 @@ struct RevenueCatPaywallSheet: View {
     private func hostedPaywall(offering: Offering) -> some View {
         ZStack(alignment: .topTrailing) {
             PaywallView(offering: offering)
-                .onRequestedDismissal(onClose)
+                .onRequestedDismissal {
+                    guard allowsDismiss else { return }
+                    onClose()
+                }
                 .ignoresSafeArea()
 
             VStack {
@@ -503,31 +507,53 @@ struct RevenueCatPaywallSheet: View {
             }
             .padding(.bottom, 14)
 
-            VStack(alignment: .trailing, spacing: 10) {
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.lullInk0)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(Color.black.opacity(0.36)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
+            if allowsDismiss {
+                VStack(alignment: .trailing, spacing: 10) {
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.lullInk0)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Color.black.opacity(0.36)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close")
 
-                Button {
-                    showCustomerCenter = true
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.lullInk0)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(Color.black.opacity(0.36)))
+                    Button {
+                        showCustomerCenter = true
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.lullInk0)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Color.black.opacity(0.36)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Manage subscription")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Manage subscription")
+                .padding(.top, 16)
+                .padding(.trailing, 16)
+            } else {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showCustomerCenter = true
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.lullInk0)
+                                .frame(width: 34, height: 34)
+                                .background(Circle().fill(Color.black.opacity(0.36)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Manage subscription")
+                    }
+                    Spacer()
+                }
+                .padding(.top, 16)
+                .padding(.trailing, 16)
             }
-            .padding(.top, 16)
-            .padding(.trailing, 16)
         }
     }
 
@@ -556,14 +582,24 @@ struct RevenueCatPaywallSheet: View {
         LullScreen(glow: true, glowX: 0.5, glowY: 0.05, glowRadius: 330, glowOpacity: 0.85) {
             VStack(alignment: .leading, spacing: 18) {
                 Kicker(text: context == .trialExpired ? "TRIAL ENDED" : "TENTHIRTY PREMIUM", color: .lullAmberSoft)
-                Text("TenThirty Premium isn't available right now.")
+                Text(allowsDismiss ? "TenThirty Premium isn't available right now." : "Your free trial has ended.")
                     .font(.serif(30))
                     .foregroundColor(.lullInk0)
-                Text("RevenueCat did not return an active paywall offering for this build. You can keep using TenThirty and try again from Settings later.")
+                Text(
+                    allowsDismiss
+                        ? "RevenueCat did not return an active paywall offering for this build. You can try again from Settings later."
+                        : "Subscribe to keep using your sleep contract, app blocking, and nightly enforcement."
+                )
                     .font(.system(size: 14))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(4)
-                GhostButton(title: "Close", action: onClose)
+                if allowsDismiss {
+                    GhostButton(title: "Close", action: onClose)
+                } else {
+                    GhostButton(title: "Restore purchases") {
+                        Task { await subscriptions.restorePurchases() }
+                    }
+                }
             }
             .padding(24)
         }

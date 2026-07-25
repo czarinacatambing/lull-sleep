@@ -61,6 +61,7 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
     @Published private(set) var currentOffering: Offering?
     @Published private(set) var isLullProActive = false
     @Published private(set) var isLoading = false
+    @Published private(set) var hasResolvedInitialCustomerInfo = false
     @Published var lastErrorMessage: String?
 
     private var hasStarted = false
@@ -133,7 +134,10 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
 
     func refreshCustomerInfo() async {
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasResolvedInitialCustomerInfo = true
+        }
 
         do {
             let info = try await Purchases.shared.customerInfo()

@@ -47,6 +47,11 @@ struct ContentView: View {
                 showWelcome = false
             }
         }
+        .task {
+            #if DEBUG
+            state.applyUITestLaunchArgumentsIfNeeded()
+            #endif
+        }
     }
 
     private var welcomeScreen: some View {
@@ -295,51 +300,77 @@ struct ContentView: View {
     private var mainContent: some View {
         Group {
             if state.hasCompletedOnboarding {
-                HomeTabView(initialTab: state.initialTab)
-                    .fullScreenCover(isPresented: $state.showSleepSounds) {
-                        if state.canUseSleepSounds {
-                            SleepSoundsStep(mode: .standalone)
-                                .environmentObject(sleepSoundsAudio)
-                        } else {
-                            Color.clear
-                                .onAppear {
-                                    state.showSleepSounds = false
-                                    state.presentUpgradePaywall()
-                                }
-                        }
-                    }
-                    .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
-                    .fullScreenCover(item: $state.activeStreakMilestone) { milestone in
-                        StreakMilestoneView(milestone: milestone) {
-                            state.acknowledgeStreakMilestone()
-                        }
-                    }
-                    .fullScreenCover(item: $state.activePaywallRoute) { route in
-                        NightFivePaywallFlow(route: route)
-                    }
-                    .sheet(item: $state.activeRevenueCatPaywall, onDismiss: {
-                        state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
-                    }) { context in
-                        RevenueCatPaywallSheet(context: context) {
-                            state.applyRevenueCatEntitlement(isActive: true)
-                            state.handleRevenueCatPaywallDismissed(isSubscribed: true)
-                        } onClose: {
-                            state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
-                        }
-                        .presentationDetents([.large])
-                        .presentationDragIndicator(.visible)
-                    }
-                    .onAppear {
-                        if state.shouldPresentDay14Prompt {
-                            state.activePaywallRoute = .day14
-                        }
-                        state.evaluateTrialStatus()
-                        state.presentPendingStreakMilestoneIfEligible()
-                    }
+                postOnboardingContent
             } else {
                 OnboardingView()
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var postOnboardingContent: some View {
+        if !subscriptions.hasResolvedInitialCustomerInfo {
+            subscriptionLoadingView
+        } else if subscriptions.isLullProActive || state.hasPremiumAccess {
+            subscribedAppContent
+        } else {
+            TrialExpiredPaywallView()
+                .onAppear {
+                    state.handleSubscriptionLapsed()
+                }
+        }
+    }
+
+    private var subscriptionLoadingView: some View {
+        ZStack {
+            Color.lullBgDeep.ignoresSafeArea()
+            ProgressView()
+                .tint(.lullAmber)
+        }
+    }
+
+    private var subscribedAppContent: some View {
+        HomeTabView(initialTab: state.initialTab)
+            .fullScreenCover(isPresented: $state.showSleepSounds) {
+                if state.canUseSleepSounds {
+                    SleepSoundsStep(mode: .standalone)
+                        .environmentObject(sleepSoundsAudio)
+                } else {
+                    Color.clear
+                        .onAppear {
+                            state.showSleepSounds = false
+                            state.presentUpgradePaywall()
+                        }
+                }
+            }
+            .sheet(isPresented: $state.showMorningCheckIn) { MorningCheckInView() }
+            .fullScreenCover(item: $state.activeStreakMilestone) { milestone in
+                StreakMilestoneView(milestone: milestone) {
+                    state.acknowledgeStreakMilestone()
+                }
+            }
+            .fullScreenCover(item: $state.activePaywallRoute) { route in
+                NightFivePaywallFlow(route: route)
+            }
+            .sheet(item: $state.activeRevenueCatPaywall, onDismiss: {
+                state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
+            }) { context in
+                RevenueCatPaywallSheet(context: context) {
+                    state.applyRevenueCatEntitlement(isActive: true)
+                    state.handleRevenueCatPaywallDismissed(isSubscribed: true)
+                } onClose: {
+                    state.handleRevenueCatPaywallDismissed(isSubscribed: subscriptions.isLullProActive)
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            .onAppear {
+                if state.shouldPresentDay14Prompt {
+                    state.activePaywallRoute = .day14
+                }
+                state.evaluateTrialStatus()
+                state.presentPendingStreakMilestoneIfEligible()
+            }
     }
 }

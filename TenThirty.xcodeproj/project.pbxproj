@@ -9,108 +9,349 @@
 /* Begin PBXBuildFile section */
 		00AA47054E9EB1EE93E12A05 /* LullOpenMidSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */; };
 		01B02E1C8E167E589AFDC22F /* ExperimentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */; };
+		024B47C724BCF278BEA9C5BD /* firefly_151.png in Resources */ = {isa = PBXBuildFile; fileRef = 02CD0032EC215E0D53DCB8AF /* firefly_151.png */; };
+		0315BBB49438FE98B02E6334 /* firefly_222.png in Resources */ = {isa = PBXBuildFile; fileRef = A731624BC250C84D95DB1B05 /* firefly_222.png */; };
+		037D05B2B5540B81F65BBCD1 /* firefly_086.png in Resources */ = {isa = PBXBuildFile; fileRef = 9AB7C88BB1B652FD11875334 /* firefly_086.png */; };
 		042C4AF1CA3D790A3AC763C9 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = EE0B8D64BEA5E3057A1923AB /* RevenueCatUI */; };
+		043CF6CF2839B0AA6915705B /* firefly_182.png in Resources */ = {isa = PBXBuildFile; fileRef = 615C4A8DA1EB8BA250EB30B1 /* firefly_182.png */; };
+		06474E696AEF485F4CF1A446 /* firefly_215.png in Resources */ = {isa = PBXBuildFile; fileRef = 50EBEFE3D51253E30D6C9BD3 /* firefly_215.png */; };
+		0673E2F2F6DD320D60D78BDA /* firefly_206.png in Resources */ = {isa = PBXBuildFile; fileRef = FC98FAAAEE82400E6DA3F321 /* firefly_206.png */; };
+		06FF28F7ADA4D162CD81443A /* firefly_135.png in Resources */ = {isa = PBXBuildFile; fileRef = DE4699ACDBB2B24B424CBD06 /* firefly_135.png */; };
+		09CF50795F8C3D579929A453 /* firefly_170.png in Resources */ = {isa = PBXBuildFile; fileRef = 04654A91FD61AA22868C6398 /* firefly_170.png */; };
+		0A173D2F4FA292A6B7A004E3 /* firefly_191.png in Resources */ = {isa = PBXBuildFile; fileRef = 2D13A7A98C08E82363A8F0ED /* firefly_191.png */; };
+		0A3BA0F8BB7931792F3DB013 /* firefly_099.png in Resources */ = {isa = PBXBuildFile; fileRef = 16590225332D4A989315D094 /* firefly_099.png */; };
+		0AB871A3C06AC50A40767B83 /* firefly_210.png in Resources */ = {isa = PBXBuildFile; fileRef = E8227D7E21D8F8451B1FD1DD /* firefly_210.png */; };
+		0CE64A6801D99DC01A6074A9 /* firefly_202.png in Resources */ = {isa = PBXBuildFile; fileRef = 2E11089C3BC6A59046FD1190 /* firefly_202.png */; };
+		0DE71E29CF1C695D79A8777A /* firefly_184.png in Resources */ = {isa = PBXBuildFile; fileRef = C247230E9CFAF00C7B946682 /* firefly_184.png */; };
 		0EB4E8EDF0C74B9B806FFE4E /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0189BF0E9E9C7558C20A1468 /* PersistenceStore.swift */; };
+		0EDF401186AA71E18E797080 /* firefly_071.png in Resources */ = {isa = PBXBuildFile; fileRef = 85B5B08972224D75C2985CB4 /* firefly_071.png */; };
+		10990949E0E78FED98BE5E49 /* firefly_100.png in Resources */ = {isa = PBXBuildFile; fileRef = 1833280BDB6996026BC9EB7B /* firefly_100.png */; };
 		109C5040A2EDE1A7BF714EB0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77258FA3646EA4ABD3AAF8ED /* AppState.swift */; };
 		110BDB49FDAD19785D92C215 /* LullTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BFA1F85B39656D31732381 /* LullTheme.swift */; };
 		113FA7D10848B59AC6679BFA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 16E004D9956182579C109650 /* Assets.xcassets */; };
+		12203EE6A856230A103DA424 /* firefly_136.png in Resources */ = {isa = PBXBuildFile; fileRef = 85A2D73366D0A4927B5C5EFD /* firefly_136.png */; };
 		12A27A4AA21A841F4AE9B884 /* LullSubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */; };
+		12C2DD4218FFFE2850CEFE4B /* firefly_010.png in Resources */ = {isa = PBXBuildFile; fileRef = AFD5C55552E16D81A8B166CF /* firefly_010.png */; };
+		13DC8819887A6B2CD4D36F52 /* firefly_114.png in Resources */ = {isa = PBXBuildFile; fileRef = E6AF3510B72D66DE7F64D581 /* firefly_114.png */; };
+		1436E28C78AE8C837FBFC2DE /* firefly_167.png in Resources */ = {isa = PBXBuildFile; fileRef = 3870137E3E212282CE198462 /* firefly_167.png */; };
 		145E87A1DEBB99A38488F2EB /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */; };
+		14A51A0F218393546BCB9FBB /* firefly_218.png in Resources */ = {isa = PBXBuildFile; fileRef = 51951CE50DBA401EA00B3C3A /* firefly_218.png */; };
 		163EBBEB1ED3F59F72999EE1 /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */; };
+		17790059E20E10272041DF59 /* firefly_195.png in Resources */ = {isa = PBXBuildFile; fileRef = 90ABC7E32BEB96339155777A /* firefly_195.png */; };
+		184A3D70EDC34C0FAB5465BD /* firefly_186.png in Resources */ = {isa = PBXBuildFile; fileRef = BBB6183759050CD70E6DA704 /* firefly_186.png */; };
+		1976DE3A8B2729ACFE3CD138 /* firefly_238.png in Resources */ = {isa = PBXBuildFile; fileRef = 1640336970AF3A7AB405F283 /* firefly_238.png */; };
+		19A8303B4C9CD5AB586D2422 /* firefly_212.png in Resources */ = {isa = PBXBuildFile; fileRef = 7C640C08D33C758494997F00 /* firefly_212.png */; };
+		1B7C6BEB2C948B0AE5DEDEDD /* firefly_130.png in Resources */ = {isa = PBXBuildFile; fileRef = 05AE68249CDE3D85D1A41F01 /* firefly_130.png */; };
+		1BC2B0D775700B3A0680BACA /* firefly_011.png in Resources */ = {isa = PBXBuildFile; fileRef = A5CE8F5ADF6F4C5B597B2D69 /* firefly_011.png */; };
 		1BD47C6443F351AED487B09B /* solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 90504C0B0DCEF617FA4FC716 /* solf.m4a */; };
+		1BF880F2068E137339254EDC /* firefly_034.png in Resources */ = {isa = PBXBuildFile; fileRef = C84CF9C9258FDB1D5602877C /* firefly_034.png */; };
+		1C27696AE2CDAEE1688A9764 /* firefly_064.png in Resources */ = {isa = PBXBuildFile; fileRef = 68D98C7BD2C0033E5721A96F /* firefly_064.png */; };
+		1CBBE1C59CD103891FFC41EF /* firefly_058.png in Resources */ = {isa = PBXBuildFile; fileRef = A4D262B7FC8CB8D82C898555 /* firefly_058.png */; };
+		1E4F8657B9AE65C5B5BC68C7 /* firefly_115.png in Resources */ = {isa = PBXBuildFile; fileRef = B0697B0CB604FE238C1DC417 /* firefly_115.png */; };
+		1F064C9AA8467BF6C520EC50 /* firefly_111.png in Resources */ = {isa = PBXBuildFile; fileRef = B282A6AD1C8374677BC658D3 /* firefly_111.png */; };
 		1F9D43C73E5C722B5F900AAC /* LiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */; };
+		20678CBC33B37307A146B559 /* firefly_059.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E74D871456C668563DA64A1 /* firefly_059.png */; };
+		2140626420493F625C2B1A7A /* firefly_209.png in Resources */ = {isa = PBXBuildFile; fileRef = 7EB4F6A90D6968F28493405D /* firefly_209.png */; };
+		225FC96A40C73D3445090FA3 /* firefly_105.png in Resources */ = {isa = PBXBuildFile; fileRef = 2097BCFFFD55C28FCB955CB4 /* firefly_105.png */; };
 		24278111E7955F4561A4222E /* birds.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CBF7175F6DA3A7BA38910681 /* birds.m4a */; };
+		25B19F1FD73D664763776D93 /* firefly_053.png in Resources */ = {isa = PBXBuildFile; fileRef = F768D3435548C53F7248FEE9 /* firefly_053.png */; };
+		25B92F39DAA6A6C715A4493C /* firefly_189.png in Resources */ = {isa = PBXBuildFile; fileRef = 8A237FAA04A60330D3163D33 /* firefly_189.png */; };
+		261A076BDE8F9FA849EFF767 /* firefly_050.png in Resources */ = {isa = PBXBuildFile; fileRef = B054318697D7B28B6A77D1FB /* firefly_050.png */; };
+		26687015A638BCDA2AA5A17E /* firefly_082.png in Resources */ = {isa = PBXBuildFile; fileRef = F5BAA0DEE567BD161EF87600 /* firefly_082.png */; };
+		27C842715124AA9EBCE99570 /* firefly_122.png in Resources */ = {isa = PBXBuildFile; fileRef = 351EE6BE6D78A65B6960A088 /* firefly_122.png */; };
+		28C43CE60CA0A932CAE900F9 /* firefly_236.png in Resources */ = {isa = PBXBuildFile; fileRef = B052AC905FF2F40595172146 /* firefly_236.png */; };
+		295F4AD226BC92BDE618A20C /* firefly_187.png in Resources */ = {isa = PBXBuildFile; fileRef = 930469D2DD643070B5B2F472 /* firefly_187.png */; };
 		29D8B59B6D29B3EB96ED70F3 /* LullDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2CF48DB758A4F4F492F353CE /* ResearchDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB18882B975D7347E1D65745 /* ResearchDataService.swift */; };
+		2EDC678E6005B2FD43AD1AD1 /* firefly_230.png in Resources */ = {isa = PBXBuildFile; fileRef = 8884EB9BC8511BDB7F8B13D2 /* firefly_230.png */; };
+		2F3B5001DCABF98FF3B2BD7F /* firefly_133.png in Resources */ = {isa = PBXBuildFile; fileRef = 9E173625F69FC7374D0F38BB /* firefly_133.png */; };
+		2F4FFB436C21300E00DA2432 /* firefly_107.png in Resources */ = {isa = PBXBuildFile; fileRef = C7936C1884E9CBC94A4C0F10 /* firefly_107.png */; };
 		2F88B6C14E75E1D055638CD1 /* AppBlockingMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */; };
+		2FEDBFC282890CDADA5B1B63 /* HoldToConfirmUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CB3C284B89AC20815484A5 /* HoldToConfirmUITests.swift */; };
+		30DE414C0A1D6724C1CD246D /* firefly_178.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F31EA645D9B8D152ED7F53A /* firefly_178.png */; };
 		30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */; };
+		30F6AB4E6668068A842D0159 /* firefly_117.png in Resources */ = {isa = PBXBuildFile; fileRef = 12E242A15AB600A8AF96AA3F /* firefly_117.png */; };
+		31AE6CD2356CA7A3EFDEEE07 /* firefly_093.png in Resources */ = {isa = PBXBuildFile; fileRef = EF7409856ECC4B27D5E8DCB1 /* firefly_093.png */; };
+		326276F9ACDA705099994C68 /* firefly_164.png in Resources */ = {isa = PBXBuildFile; fileRef = 81FA542AE5F0427C5005D4C9 /* firefly_164.png */; };
 		332D984A7A784F8AD67D9B8F /* GetUpPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C163F36C48766A614974E4C /* GetUpPromptView.swift */; };
 		341F0FCC2C410B751C3708AF /* NavigationSmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */; };
 		345AA50FB33BEDDCC6BA1D84 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A2C65D9B9A0F933935914B /* PersistedState.swift */; };
+		34E2AF37DDCCF1D0D5A1B2E8 /* firefly_075.png in Resources */ = {isa = PBXBuildFile; fileRef = B9BA5FB8B52C2E2AE45C5FC6 /* firefly_075.png */; };
+		34F42B1FB019C40A6BDC8A8F /* firefly_190.png in Resources */ = {isa = PBXBuildFile; fileRef = 5A20D2AC291945A57D365F21 /* firefly_190.png */; };
+		34F91DA43525663D8578675F /* firefly_229.png in Resources */ = {isa = PBXBuildFile; fileRef = 588EC471116E1EB5FF16A90B /* firefly_229.png */; };
+		372A5A101D29FAA06A8C1A37 /* firefly_066.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E5D996C30B04EB6CAE1D758 /* firefly_066.png */; };
 		3850298B9C3F8670CBAF5ED2 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B383598ABE5BE7D1191AD6 /* ExportService.swift */; };
 		388FEC5EEF7BEBE2AD6513ED /* NightlyGentleStretchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */; };
+		3939082005688997A2DCFD5B /* firefly_020.png in Resources */ = {isa = PBXBuildFile; fileRef = 01C931D50CF369E7481342F4 /* firefly_020.png */; };
+		3A5398DAC4EDC08FD002E79D /* firefly_177.png in Resources */ = {isa = PBXBuildFile; fileRef = 2815CD18FB1A928CD75267F1 /* firefly_177.png */; };
+		3A97CD277DF809135B5644D9 /* firefly_009.png in Resources */ = {isa = PBXBuildFile; fileRef = B27509CFDE6BFED0A7396F47 /* firefly_009.png */; };
 		3B42A4841631D08BD9BB89ED /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D067205DC708FB6337C2659 /* WidgetKit.framework */; };
+		3C0E146E31DFFF8E8C0B41D3 /* firefly_156.png in Resources */ = {isa = PBXBuildFile; fileRef = 074AA7BEB97AFBCA58852191 /* firefly_156.png */; };
+		3D9A835D71962E636EB4C53B /* TrialPaywallViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474E2CB618C131876FA026D9 /* TrialPaywallViews.swift */; };
+		3EBD103FEFF46F5CEEF04A4A /* firefly_231.png in Resources */ = {isa = PBXBuildFile; fileRef = 33ABDE8C2E3071D77FC84F6F /* firefly_231.png */; };
 		3ED7921CDB4D99E607539A6E /* LullActivitiesBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */; };
+		3F12CCC888A8AC35108BA8A9 /* firefly_078.png in Resources */ = {isa = PBXBuildFile; fileRef = 89D559C60ED9314E2299A8F2 /* firefly_078.png */; };
 		3FD73B619FA7AEB39402B416 /* in captivity.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A0032E2F445A4B5E35EA46FE /* in captivity.m4a */; };
+		40997AECDD899D0811AE6F5E /* firefly_145.png in Resources */ = {isa = PBXBuildFile; fileRef = 2C3D10B28764AF7A89BBDE28 /* firefly_145.png */; };
 		41D12F4B9B795D31547C8E62 /* SleepCompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A98689BCA1F25DC944F269C /* SleepCompanionWidget.swift */; };
 		41F4964232EC966B7E8E6FCA /* ClaudeAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */; };
 		42D9CE908D6DDC0FBA6059F9 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 9168199F664E685FFEA2CA16 /* RevenueCat */; };
+		44347EE87EB37CBAF64D7FB0 /* firefly_023.png in Resources */ = {isa = PBXBuildFile; fileRef = 9FB167D0655BFB505114D558 /* firefly_023.png */; };
+		45F69F4C776C284CC92809E4 /* firefly_006.png in Resources */ = {isa = PBXBuildFile; fileRef = 35E1D323B0AEA520240278B1 /* firefly_006.png */; };
+		462D6B718C277C09D04C7B41 /* firefly_137.png in Resources */ = {isa = PBXBuildFile; fileRef = 8DE1869D350378551D7B8D90 /* firefly_137.png */; };
 		463530595ADA37560F0D7987 /* SleepLogDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689C88C380117A100D1610A0 /* SleepLogDetailView.swift */; };
 		470A36D1317733A12B22688C /* PaywallFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4899657867919D25621A8287 /* PaywallFlowView.swift */; };
 		47996245D051D4B7890CCFB6 /* RoutineGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */; };
 		48D08029BDA8A8DE893D5615 /* NightlyBodyScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */; };
+		48E2DE13000BD6DBACC589F0 /* firefly_180.png in Resources */ = {isa = PBXBuildFile; fileRef = 7475BDA7A404C590FEB47B72 /* firefly_180.png */; };
 		4989127D3F0856E360D7D54D /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA98E7B07449D1F26DE06CF /* LullComponents.swift */; };
+		49E4C8498DCBCB0A7BF7D398 /* firefly_106.png in Resources */ = {isa = PBXBuildFile; fileRef = FEED0DA148E32A10AEA8A10F /* firefly_106.png */; };
+		4A089A70EA8C9539BF33DF8B /* firefly_005.png in Resources */ = {isa = PBXBuildFile; fileRef = 38AC1A59B076C401ACF404F7 /* firefly_005.png */; };
 		4A7647B4EBF6CD411C316D0E /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2385C445922205A436F4B026 /* TTSService.swift */; };
+		4BEF3FC16C9489C40087BA21 /* firefly_068.png in Resources */ = {isa = PBXBuildFile; fileRef = C3F0691BF44E540EF46BC8B1 /* firefly_068.png */; };
+		4CF36D5BBE3C944D6328D0FC /* firefly_224.png in Resources */ = {isa = PBXBuildFile; fileRef = 23443E10395BD2053E994094 /* firefly_224.png */; };
 		4DA13DCEE8863D4187741DA7 /* JetBrainsMono-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */; };
+		4DA5C44FBD3099E1A402E142 /* firefly_056.png in Resources */ = {isa = PBXBuildFile; fileRef = 57E9602CAF732EA4A6B20278 /* firefly_056.png */; };
+		4DE079B79FA17BCCE92B5ADF /* firefly_153.png in Resources */ = {isa = PBXBuildFile; fileRef = DE75EB9C27E907D13C8E983C /* firefly_153.png */; };
 		4E09A57D7261D99C31D09327 /* body-scan.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1C51123AF137B74CCBDA4417 /* body-scan.mp3 */; };
 		4E4502983A48721156A970B5 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C813AB20100CD4B6D67151A /* DeviceActivity.framework */; };
 		5012B8A4B4866DB9C0F6D4E0 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D654C67A1483730850BC0E54 /* HomeTabView.swift */; };
 		5115A9C0AA3C84514F222297 /* LullSleepAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */; };
+		517C8F13D03A8658E083C07A /* firefly_112.png in Resources */ = {isa = PBXBuildFile; fileRef = B207085AD99C5B3E234B8A36 /* firefly_112.png */; };
+		518E72F52B29D47B4A2383DD /* firefly_185.png in Resources */ = {isa = PBXBuildFile; fileRef = EA397D15D390FF366C32D1C0 /* firefly_185.png */; };
 		52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */; };
+		54E509350A537249FFC10DAB /* firefly_129.png in Resources */ = {isa = PBXBuildFile; fileRef = 1F64A529590C4F77A111DB09 /* firefly_129.png */; };
 		554451ECFE6123BC84D7C3D6 /* LullLA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC94C0B9CC0499BBABF4808 /* LullLA.swift */; };
+		56C1364AFA1C90BC9CFDA06E /* firefly_161.png in Resources */ = {isa = PBXBuildFile; fileRef = 3EDA3A3D7FBACC6A66D37D85 /* firefly_161.png */; };
+		577179404391C4B63BD68DAD /* firefly_134.png in Resources */ = {isa = PBXBuildFile; fileRef = 1C3FB1D04C55E90BED3DCF08 /* firefly_134.png */; };
+		57AB4F60CEBF9EE89C80A0CF /* firefly_226.png in Resources */ = {isa = PBXBuildFile; fileRef = 54BDDFB108C07915CB838BDE /* firefly_226.png */; };
+		58F40B7FB9E9452E813E4A1F /* firefly_234.png in Resources */ = {isa = PBXBuildFile; fileRef = 55A64976E2EC5E6CC989C2A1 /* firefly_234.png */; };
+		590317574C91E16FA856C2CF /* firefly_091.png in Resources */ = {isa = PBXBuildFile; fileRef = 449DECEE26942F98F0541B9E /* firefly_091.png */; };
+		59FCC4255763C9DEAB817E54 /* firefly_163.png in Resources */ = {isa = PBXBuildFile; fileRef = 83DDDDFA0CC7764E61215C31 /* firefly_163.png */; };
 		5B0BB5A429CE45EF749E2260 /* heavy-rain.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */; };
+		5B80006179731337947D2BB1 /* firefly_028.png in Resources */ = {isa = PBXBuildFile; fileRef = 37CFB96987DAF72EF531A3D7 /* firefly_028.png */; };
+		5B944DCA1712D41B8B2AD6F6 /* firefly_072.png in Resources */ = {isa = PBXBuildFile; fileRef = 2D136E898D9FB77DA9A0611E /* firefly_072.png */; };
 		5C4FFEA666092B623057CF70 /* MyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */; };
+		5FA6AB0B4F1A3EA6454A2ED8 /* firefly_039.png in Resources */ = {isa = PBXBuildFile; fileRef = 53883010371235B718BE3C09 /* firefly_039.png */; };
+		5FE60120A919ED0CB99878DD /* firefly_121.png in Resources */ = {isa = PBXBuildFile; fileRef = 25E2D0EAF6A9C62AB5E588F8 /* firefly_121.png */; };
 		6044976E016E9F1AF4A07B3B /* SleepSounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */; };
 		6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */; };
 		61969AEEB6ADACC5F82A5E95 /* RoutinePromotedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */; };
+		63F60C132C101F8B0146C414 /* firefly_162.png in Resources */ = {isa = PBXBuildFile; fileRef = 369C5DA38C1F2B5E8550D75E /* firefly_162.png */; };
 		649DDA0A4D2C92AB4A20BE4D /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89C950D6903593FCCD8E72A0 /* FamilyControls.framework */; };
+		656B1D561C2A40005085B0D0 /* firefly_027.png in Resources */ = {isa = PBXBuildFile; fileRef = C8584F0424A1FF22543D651A /* firefly_027.png */; };
 		656C7C6F5ED1F1927DDD0A5F /* min-solf.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3D586CE81D7451C6957C877 /* min-solf.m4a */; };
 		65A946ED29EFACB37A56D1AD /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */; };
-		6BD49CCF65F42E37FA4D2C56 /* FireflyMascotFrames in Resources */ = {isa = PBXBuildFile; fileRef = 0CD10D2531D75B7D17A2FA30 /* FireflyMascotFrames */; };
+		671C3B02DC2CAB0359DAE5FC /* firefly_169.png in Resources */ = {isa = PBXBuildFile; fileRef = F7932336B215FFF1419153A5 /* firefly_169.png */; };
+		67B314D56465B2E488719A8C /* firefly_140.png in Resources */ = {isa = PBXBuildFile; fileRef = 496CFC59FC8FFA9FA825DB9D /* firefly_140.png */; };
+		6827CB6BCFDA8927F5C75CDD /* firefly_225.png in Resources */ = {isa = PBXBuildFile; fileRef = 0DCB057EA1C806CE8072D999 /* firefly_225.png */; };
+		686204016A528F92455CDC0B /* firefly_240.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B6FF888241C400474D0A40 /* firefly_240.png */; };
+		695ED8B7443767C4892E940A /* firefly_176.png in Resources */ = {isa = PBXBuildFile; fileRef = 0CF06354F2663ED9FB7D834D /* firefly_176.png */; };
+		69825FF5F9808B8724A14D3C /* firefly_128.png in Resources */ = {isa = PBXBuildFile; fileRef = 4EA31114BC6DEFC5D2D6CE22 /* firefly_128.png */; };
+		6A06DAC5DA77A1B791202A48 /* firefly_155.png in Resources */ = {isa = PBXBuildFile; fileRef = F0D421C65185A6B0293D2A62 /* firefly_155.png */; };
+		6C4B65A87EE26C92A2E7E95D /* firefly_014.png in Resources */ = {isa = PBXBuildFile; fileRef = 424BB915952DE6F55B07C5D7 /* firefly_014.png */; };
+		6C91FC68B6A28DF170BE03A5 /* firefly_192.png in Resources */ = {isa = PBXBuildFile; fileRef = 43430767A044DD6DF96B1829 /* firefly_192.png */; };
+		6C9A6FD9289B85E86E58DF61 /* firefly_132.png in Resources */ = {isa = PBXBuildFile; fileRef = CA7BB83BDC8B1C8C28DACC1D /* firefly_132.png */; };
 		6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */; };
+		6D85D8469CB5DEF71F073E12 /* firefly_025.png in Resources */ = {isa = PBXBuildFile; fileRef = 8ADC8B28281DC27B12BC66BC /* firefly_025.png */; };
+		6D948FF61B3CFF055771CF7B /* firefly_227.png in Resources */ = {isa = PBXBuildFile; fileRef = 39A8EC05EB339B04DC16E232 /* firefly_227.png */; };
+		6DEEB0702C4AF9B1640007F0 /* firefly_120.png in Resources */ = {isa = PBXBuildFile; fileRef = 1A7DCB0B3A3A272C5F862763 /* firefly_120.png */; };
+		6E5344768E308C5FF08C09BF /* firefly_097.png in Resources */ = {isa = PBXBuildFile; fileRef = C0BEB2FF4C6516708572064A /* firefly_097.png */; };
+		6F2E62745C68F7A6D16822E3 /* firefly_062.png in Resources */ = {isa = PBXBuildFile; fileRef = 8587592CB8CFDF594C6429E0 /* firefly_062.png */; };
+		6F6A135E87FB596B4A93A0A4 /* firefly_193.png in Resources */ = {isa = PBXBuildFile; fileRef = 1FFB3745179ED5B95DFEE9AE /* firefly_193.png */; };
 		7096381F77E43B8904EC47F2 /* PostHogReplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */; };
+		70C2CFD19C64BBAE8F795D5C /* firefly_032.png in Resources */ = {isa = PBXBuildFile; fileRef = E5940F855B7D34711DE8DE9F /* firefly_032.png */; };
+		7105AB9E32DFA2B2E1C6A5A2 /* firefly_069.png in Resources */ = {isa = PBXBuildFile; fileRef = 3F20E526CEA6AFC90146811D /* firefly_069.png */; };
+		71615BD3311638E3B4EE3DA9 /* firefly_109.png in Resources */ = {isa = PBXBuildFile; fileRef = 5997541E0394D2429833F3EE /* firefly_109.png */; };
+		716BF2FE3885BE4BFE49800B /* firefly_233.png in Resources */ = {isa = PBXBuildFile; fileRef = F7FD533B82CD6673A9387298 /* firefly_233.png */; };
+		71AC6C13146F1C38B5EB5A27 /* firefly_127.png in Resources */ = {isa = PBXBuildFile; fileRef = 3796A41A8CE5F0A2F4A7760F /* firefly_127.png */; };
 		73787A120AA138EF0644B4E9 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */; };
+		74129D9111BBFF22610DC7D5 /* firefly_026.png in Resources */ = {isa = PBXBuildFile; fileRef = 321F24B42B51C98D401F2DDC /* firefly_026.png */; };
 		75C7CBA4618563551BF6A40A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */; };
+		762E8EDED151C4AAF8725D00 /* firefly_081.png in Resources */ = {isa = PBXBuildFile; fileRef = 559FF7885F2F861F210A97D2 /* firefly_081.png */; };
+		7842C4E0C065218FF8D50635 /* firefly_037.png in Resources */ = {isa = PBXBuildFile; fileRef = EDF521A5FFBB6D3CC5F6D0C3 /* firefly_037.png */; };
 		7904530FDFA6F96A4F084BAE /* RemedyID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F49348CC68DED7F31C3DFB /* RemedyID.swift */; };
+		796999C2EF95EFF14218702F /* firefly_076.png in Resources */ = {isa = PBXBuildFile; fileRef = 0F596A6A897145D80EE472E0 /* firefly_076.png */; };
 		799BA67A397EA6AB2DD2B04A /* LullShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		79EA7FEA3335642A3BE7F945 /* firefly_022.png in Resources */ = {isa = PBXBuildFile; fileRef = 3DA63B2A15F555FC4115F775 /* firefly_022.png */; };
+		7AB142225C329DB0605AE22A /* firefly_235.png in Resources */ = {isa = PBXBuildFile; fileRef = 14D0253787323E22F309F90C /* firefly_235.png */; };
+		7BF92A726B5DE6896FFF081A /* firefly_052.png in Resources */ = {isa = PBXBuildFile; fileRef = DC243A7EAA90F97D3FD77F5A /* firefly_052.png */; };
 		7C89EEC6A4008BA04F46B13A /* AudioPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */; };
+		7D16A041F9ACE7D97466C531 /* firefly_131.png in Resources */ = {isa = PBXBuildFile; fileRef = 002FE0B7A070DCE4F1C7E18F /* firefly_131.png */; };
+		7D2858C93BFAF6F052EC8F86 /* firefly_228.png in Resources */ = {isa = PBXBuildFile; fileRef = CFC51D4C4CCEC583E75C2E59 /* firefly_228.png */; };
+		7E63FC25FFE9D66E951D79F5 /* firefly_057.png in Resources */ = {isa = PBXBuildFile; fileRef = 70183D8A1867B77AB7FC4837 /* firefly_057.png */; };
+		7EE0477A2115F86F64E019C7 /* firefly_083.png in Resources */ = {isa = PBXBuildFile; fileRef = ED5402FC982B9ACAF1D5C11D /* firefly_083.png */; };
 		80B63035BF11522615698AC4 /* StreakMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944F2D82E309E25515532D12 /* StreakMilestoneView.swift */; };
+		8140D0124978FD988A406A1E /* firefly_088.png in Resources */ = {isa = PBXBuildFile; fileRef = 6D54C75C29F98C57B0A5BAFF /* firefly_088.png */; };
 		81DF6BEDE3C8EBA4DD082D1F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
+		824D8700401FB2B3941C8741 /* firefly_001.png in Resources */ = {isa = PBXBuildFile; fileRef = DE7501CAE4A93EB097A56F00 /* firefly_001.png */; };
+		8329AC37D7038831511EDBF8 /* firefly_029.png in Resources */ = {isa = PBXBuildFile; fileRef = DDC2CFCF785C27A212001887 /* firefly_029.png */; };
+		84137007E100DEF82EC417C9 /* firefly_220.png in Resources */ = {isa = PBXBuildFile; fileRef = 7212983D68D02AE1945B34B3 /* firefly_220.png */; };
 		84237963926BF9387DB4B82F /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */; };
+		843A41C3A9CA5FA7EE12C2D7 /* firefly_007.png in Resources */ = {isa = PBXBuildFile; fileRef = A122E1ED09028AB01D2CDDA2 /* firefly_007.png */; };
 		8674DE3A33B6DC6C9CDC017C /* LullApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6C835AC588EAEA2DEEF43 /* LullApp.swift */; };
+		867A532440CCA0293E9C3A5C /* firefly_219.png in Resources */ = {isa = PBXBuildFile; fileRef = 0C8A9AB59590F9FC8D518DB4 /* firefly_219.png */; };
+		86B5B15CFE1856796EF62D73 /* firefly_197.png in Resources */ = {isa = PBXBuildFile; fileRef = 7EA5EE582C7F1D5BAC57D966 /* firefly_197.png */; };
 		87036F3376907D49536EAE52 /* AppStateRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */; };
+		879F956D7F904B3345BEE7D2 /* firefly_021.png in Resources */ = {isa = PBXBuildFile; fileRef = 65DEF9E8A9CD4A9B6A3C7D35 /* firefly_021.png */; };
+		87EAD69C6B5355FEFF729719 /* firefly_044.png in Resources */ = {isa = PBXBuildFile; fileRef = 6FE4B31D562647501AE0A213 /* firefly_044.png */; };
+		88B06211BAD2A0751A495D1A /* firefly_237.png in Resources */ = {isa = PBXBuildFile; fileRef = 1710FAF6A03428608E49BCA9 /* firefly_237.png */; };
 		8A37E35A931BF2B03C743F3F /* PrepChecklistAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */; };
 		8AA63DA4AE7D3C35D5EE7429 /* MorningRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9313D73408C29C460D31C8C8 /* MorningRewardView.swift */; };
 		8B199E8CBD446DD5F6F405DC /* SleepHistoryLegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */; };
+		8E9CDF39120B4AE6ABE6B3A8 /* firefly_019.png in Resources */ = {isa = PBXBuildFile; fileRef = BD687462F898509170393C16 /* firefly_019.png */; };
 		92220D0F5B9C1E5915B9F5A1 /* LullRateSleepIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */; };
+		9238CEE1D0B9D6CF57B415E3 /* firefly_002.png in Resources */ = {isa = PBXBuildFile; fileRef = CDCC70F3D6A9D3432370460E /* firefly_002.png */; };
 		9368A83C2082734F08D71C7D /* BoringStoryAudioLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */; };
+		947EE729F05B8B8C7A3F6079 /* firefly_116.png in Resources */ = {isa = PBXBuildFile; fileRef = FA38600995707358E46B626F /* firefly_116.png */; };
+		94B738DECD489B553DC49FB8 /* firefly_042.png in Resources */ = {isa = PBXBuildFile; fileRef = 94AA09D2D3FA8F2DA976794C /* firefly_042.png */; };
+		95FBC3BC5C38457CDAD92D31 /* firefly_054.png in Resources */ = {isa = PBXBuildFile; fileRef = A5F60FF5C35ABE899CDF0BB9 /* firefly_054.png */; };
 		9646D060394A5EABF8FA4531 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */; };
+		97A36088C7833E8C93063E36 /* firefly_070.png in Resources */ = {isa = PBXBuildFile; fileRef = 73ED587F01192B5D02655676 /* firefly_070.png */; };
+		97C0CF4F87E2B36C8A409FED /* firefly_013.png in Resources */ = {isa = PBXBuildFile; fileRef = 2E96DDF151786F3D3144C2AD /* firefly_013.png */; };
 		981BDB3543079203B64425EE /* TonightPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07E0E904215B16CDB9F304A /* TonightPreviewCard.swift */; };
+		98FE0D9B39D9EBEB75347CCF /* firefly_126.png in Resources */ = {isa = PBXBuildFile; fileRef = B43FEF3E6653ECBE628AB5B3 /* firefly_126.png */; };
 		9A2557E81FC029A50CF3C202 /* 4-7-3-breathing-v2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 75D74147D3D5E84776E2AC8B /* 4-7-3-breathing-v2.m4a */; };
+		9A60170C79C4DFEB66B0978D /* firefly_045.png in Resources */ = {isa = PBXBuildFile; fileRef = F83DB40CE73F7E65061A8FEA /* firefly_045.png */; };
+		9A8ED2B28D7A62389A7A174E /* firefly_092.png in Resources */ = {isa = PBXBuildFile; fileRef = DE733AD3A75E7F9AA1CF27BA /* firefly_092.png */; };
 		9BC0606547D70FE1048FA38B /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
+		9CE65E85C3D6C0690ADA6EEA /* firefly_149.png in Resources */ = {isa = PBXBuildFile; fileRef = 69E59CF027AB7B36C8B1F701 /* firefly_149.png */; };
+		9D5701959F2A9932E2B36757 /* firefly_179.png in Resources */ = {isa = PBXBuildFile; fileRef = 2B1CFF08D5C037EB6309A055 /* firefly_179.png */; };
+		9D9BFDB57BE48EC8C08DF86C /* firefly_216.png in Resources */ = {isa = PBXBuildFile; fileRef = 2EF1C493075C666B8410C85C /* firefly_216.png */; };
+		9FF52B1B2169EB41BFAB07EB /* firefly_016.png in Resources */ = {isa = PBXBuildFile; fileRef = 1619E98DD86392F9C142DFBB /* firefly_016.png */; };
+		A064F71A0657082533CAA165 /* firefly_080.png in Resources */ = {isa = PBXBuildFile; fileRef = 8218AC892A59D5B2F9C543F3 /* firefly_080.png */; };
+		A103983F1F57B0781BA31650 /* firefly_139.png in Resources */ = {isa = PBXBuildFile; fileRef = D3D903BE9D5FAD070DF0575A /* firefly_139.png */; };
+		A11BDC2184C873B2810D94CE /* firefly_223.png in Resources */ = {isa = PBXBuildFile; fileRef = 959E223B05D41C67130DC86D /* firefly_223.png */; };
+		A13861E7597A2B5644058E86 /* firefly_138.png in Resources */ = {isa = PBXBuildFile; fileRef = FA41724EB389D6CBD0221915 /* firefly_138.png */; };
+		A15CFA252BBEB150C75C7BCB /* firefly_208.png in Resources */ = {isa = PBXBuildFile; fileRef = 2F9B87D74DE5902C59E4928E /* firefly_208.png */; };
+		A1A440A544678374E0DB6E4D /* firefly_087.png in Resources */ = {isa = PBXBuildFile; fileRef = 9CD1E2708A626F2812D65DB5 /* firefly_087.png */; };
 		A1B46F23A027153BC0B73F81 /* PrepChecklistWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */; };
 		A368AE0F8EC5D02DD78805E9 /* NightlyGratitudeJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */; };
+		A431A193C042B646794F601E /* firefly_143.png in Resources */ = {isa = PBXBuildFile; fileRef = AD6CFF572238598C82AE9ADF /* firefly_143.png */; };
 		A51F34060A14A7EF3F681486 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */; };
+		A59BD96E6758DD2DBDAE8E59 /* firefly_018.png in Resources */ = {isa = PBXBuildFile; fileRef = 660676A9D23E82F68F72D17A /* firefly_018.png */; };
+		A688575386DCBAD731F83A62 /* firefly_063.png in Resources */ = {isa = PBXBuildFile; fileRef = 3A277DAB5BD8130015A6AC40 /* firefly_063.png */; };
 		A6905FD9466E534B0BE3BE3C /* BundledStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F93598B84E835FCF4E17F89 /* BundledStories.swift */; };
+		A6CC4D34B45594E1CE664542 /* firefly_098.png in Resources */ = {isa = PBXBuildFile; fileRef = 28D6D01A514D497BCB156A89 /* firefly_098.png */; };
+		AA12313967B358D37130CB16 /* firefly_174.png in Resources */ = {isa = PBXBuildFile; fileRef = 052A924EDF39A6DB39EA171F /* firefly_174.png */; };
 		AA60BF7733940DE231CE47F0 /* PendingPromotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */; };
+		AA93157999FE60F52B85E75E /* firefly_124.png in Resources */ = {isa = PBXBuildFile; fileRef = 9B244E039B8D7AE17D68CC39 /* firefly_124.png */; };
+		AB6B85F65170A00234BAF1B4 /* firefly_159.png in Resources */ = {isa = PBXBuildFile; fileRef = FB0EF4ABB0E27BBD6606572A /* firefly_159.png */; };
 		AB87F53D08D735CA8C3436BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */; };
+		ACD210494E29FE7418418607 /* firefly_024.png in Resources */ = {isa = PBXBuildFile; fileRef = AC9525CA0935317C2BF8C079 /* firefly_024.png */; };
+		AD0CAC9FFA4C75766D5D57BD /* firefly_211.png in Resources */ = {isa = PBXBuildFile; fileRef = EA227AFAF191C948F9EC9835 /* firefly_211.png */; };
+		ADB65979578E8F7D84E613D4 /* firefly_203.png in Resources */ = {isa = PBXBuildFile; fileRef = F33601FB58C5B39D4717AFDA /* firefly_203.png */; };
 		ADF4E69B05C3B8AA71357913 /* TogglePrepItemIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */; };
+		AEAD2585F6009C46AE4024A4 /* firefly_154.png in Resources */ = {isa = PBXBuildFile; fileRef = 6948CB7D28A2F1B4E2A5D99D /* firefly_154.png */; };
 		AEC7841FC9176906B3B6DDEC /* MorningRateHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */; };
+		B07A6D6BE131B66EB5DFD20B /* firefly_194.png in Resources */ = {isa = PBXBuildFile; fileRef = 285DA8B24128213156B425D1 /* firefly_194.png */; };
+		B1D2C6986F2FF5C64CB252CD /* firefly_146.png in Resources */ = {isa = PBXBuildFile; fileRef = 035551BCA5A6D7C583E9445C /* firefly_146.png */; };
+		B222D29E87FA2F759FB10C30 /* firefly_171.png in Resources */ = {isa = PBXBuildFile; fileRef = 8073D1D922850EC882594888 /* firefly_171.png */; };
+		B25A09DBE601D41B87728B84 /* firefly_077.png in Resources */ = {isa = PBXBuildFile; fileRef = 08F35C408AAC83F07782E6C8 /* firefly_077.png */; };
 		B26D1054343CBE0D245DECE6 /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */; };
+		B2F6E98812DAE6816DA92A34 /* firefly_188.png in Resources */ = {isa = PBXBuildFile; fileRef = 1613805F8841FB99191EDD3C /* firefly_188.png */; };
 		B40D3F1C7123258DB31F4B92 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E593F705AAD77F682F02D48 /* AppIntents.framework */; };
+		B4A405DA135991097B86FCEF /* firefly_119.png in Resources */ = {isa = PBXBuildFile; fileRef = BD08E49440CAC3F762429698 /* firefly_119.png */; };
+		B4CBC94A83F56AF22BF20F4A /* firefly_095.png in Resources */ = {isa = PBXBuildFile; fileRef = 46E48E2E85A63BE4E80657D3 /* firefly_095.png */; };
+		B517DB2BF0B9A36005417B50 /* firefly_217.png in Resources */ = {isa = PBXBuildFile; fileRef = BDC2B60AA3A22B9442208FF4 /* firefly_217.png */; };
+		B7754BD384F36D92C3599C32 /* firefly_113.png in Resources */ = {isa = PBXBuildFile; fileRef = 5CBB20C2A16415D98822FC33 /* firefly_113.png */; };
+		B8C6C9E30047EDDF89F8ECBD /* firefly_074.png in Resources */ = {isa = PBXBuildFile; fileRef = 1A36B3344BF3DA5C2F0AD074 /* firefly_074.png */; };
 		B963191E42C7FF2A1CCC744F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5C3E599230C7E37F4484E0C /* ActivityKit.framework */; };
+		B9FFB847BE58A6B552096F99 /* firefly_214.png in Resources */ = {isa = PBXBuildFile; fileRef = 6D318B19E4AEE4C4AF563647 /* firefly_214.png */; };
 		BA2910867BB429F08E777E88 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = D95616AB69110C2AC95DD17E /* PostHog */; };
+		BB3938B4E322B973005229C6 /* firefly_003.png in Resources */ = {isa = PBXBuildFile; fileRef = B3F537C5007DF98B60094EE4 /* firefly_003.png */; };
+		BC1D137083F82DB896EFEA29 /* firefly_110.png in Resources */ = {isa = PBXBuildFile; fileRef = A120BE74E9342492712FC0B1 /* firefly_110.png */; };
+		BC4D14BB52DA7707BF20A6D9 /* firefly_033.png in Resources */ = {isa = PBXBuildFile; fileRef = 1935E2393D442C2516AD2837 /* firefly_033.png */; };
+		BC874384B15C5EBCC66705B6 /* firefly_108.png in Resources */ = {isa = PBXBuildFile; fileRef = 9EC101C88AD0363CE9C0A3C5 /* firefly_108.png */; };
 		BD1DF8C89DDF4E32203B0FFB /* rules of east and west.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 2316827F53961A9543FE7144 /* rules of east and west.m4a */; };
 		BF6F6C79DC2880C582CE60CF /* ShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */; };
+		BF84C3202AB05E15C4E0012D /* firefly_090.png in Resources */ = {isa = PBXBuildFile; fileRef = 5095C59816EB839EEC51B3DD /* firefly_090.png */; };
+		C09F32844B7C03C8346C5C56 /* firefly_051.png in Resources */ = {isa = PBXBuildFile; fileRef = 2E88D6D50ACC57AF5BBE6D0F /* firefly_051.png */; };
 		C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */; };
+		C1E7B0EC13BDC69C623E0395 /* firefly_165.png in Resources */ = {isa = PBXBuildFile; fileRef = 588B7E8CC462F8CCF010E10D /* firefly_165.png */; };
 		C23DD0DBFB430ADA3F49DE3C /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873B7BBBAAB5C557836239AF /* AnalyticsService.swift */; };
+		C250EF25E904CE876CA7770A /* firefly_017.png in Resources */ = {isa = PBXBuildFile; fileRef = 422D800E2B443CC5AB435E43 /* firefly_017.png */; };
+		C2AF3FFCCA064B2880753D20 /* firefly_079.png in Resources */ = {isa = PBXBuildFile; fileRef = 191E48460682830CBE3AB17B /* firefly_079.png */; };
+		C37A68C9F1E4B52CB2818BF1 /* firefly_060.png in Resources */ = {isa = PBXBuildFile; fileRef = 1CCA8992F4D8CD9AFB337D99 /* firefly_060.png */; };
+		C47D56EBEA171B21E345FC50 /* firefly_084.png in Resources */ = {isa = PBXBuildFile; fileRef = C3F7DD17C3B86E944E4473E6 /* firefly_084.png */; };
+		C58FA791B34D64C13CFC26DD /* firefly_175.png in Resources */ = {isa = PBXBuildFile; fileRef = AD200A0564410F51E82EE927 /* firefly_175.png */; };
 		C5DF131067A425ED767AEEDA /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */; };
+		C5F17B6430F39BEF78B67CA5 /* firefly_221.png in Resources */ = {isa = PBXBuildFile; fileRef = 1097F3912AE111823C808B8C /* firefly_221.png */; };
 		C5FAB66EB8F0888EFFEE6FC9 /* MidSleepModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */; };
+		C6E2656CDC16240D6F703D8E /* firefly_101.png in Resources */ = {isa = PBXBuildFile; fileRef = 7EEB7E1455DF48C0911E5461 /* firefly_101.png */; };
+		C7C51D1B4114B60E60129D0E /* firefly_073.png in Resources */ = {isa = PBXBuildFile; fileRef = DB12B40E83CBB767995B61F3 /* firefly_073.png */; };
+		C81F2085647FDE0DA96CDB67 /* firefly_205.png in Resources */ = {isa = PBXBuildFile; fileRef = F911DB3195E0C80D53062DA9 /* firefly_205.png */; };
+		C847F96E8B4CE9FF7928B5ED /* firefly_055.png in Resources */ = {isa = PBXBuildFile; fileRef = D053515DA31403D093AAB495 /* firefly_055.png */; };
+		C8E38351211FDBA96236550C /* firefly_183.png in Resources */ = {isa = PBXBuildFile; fileRef = 35810B30095514351F9F4B1B /* firefly_183.png */; };
 		C91CCD4D2846FDE2D33C77BE /* BrainDumpsBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */; };
+		CAD7B89CB35C427A10C708BB /* firefly_141.png in Resources */ = {isa = PBXBuildFile; fileRef = CBB39CFDE99CE100F06E7F42 /* firefly_141.png */; };
 		CDF607DF39D2A90DFEFD43C0 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6523881C2EC7B58DFCA165D /* UIKit.framework */; };
 		CF52FD25ABC10323B6E0E3B1 /* lake.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 0313A840CBD937B5C481137E /* lake.m4a */; };
+		CFA8BBB2C78A876370F0AB1D /* firefly_200.png in Resources */ = {isa = PBXBuildFile; fileRef = A614FA379A36D0965CFB33DE /* firefly_200.png */; };
+		CFE0CB2E9050893CBC0BDD5C /* firefly_199.png in Resources */ = {isa = PBXBuildFile; fileRef = 4F0EC4EF10A545456B5C4A69 /* firefly_199.png */; };
+		D026BDF784219B626F0630B5 /* firefly_102.png in Resources */ = {isa = PBXBuildFile; fileRef = 4B93B4B91B04635CFB3B8AA5 /* firefly_102.png */; };
+		D02C1C3D473F20156A0897BF /* firefly_012.png in Resources */ = {isa = PBXBuildFile; fileRef = 9D8DAA2828A6009181E64D94 /* firefly_012.png */; };
+		D052C9FB398DC14AF4A71EC2 /* firefly_181.png in Resources */ = {isa = PBXBuildFile; fileRef = D376E3BFAA5A2321B4EB66A5 /* firefly_181.png */; };
+		D27A5D2D1B300BBC88361239 /* firefly_144.png in Resources */ = {isa = PBXBuildFile; fileRef = 2A56033B719EF94CB70EF875 /* firefly_144.png */; };
+		D3020A35121860F65161F91C /* firefly_118.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B4D6A528E22211AE5D1751C /* firefly_118.png */; };
+		D3094840EEE855CBB910AB9D /* firefly_040.png in Resources */ = {isa = PBXBuildFile; fileRef = CD4FBD8F39200A4D1102822A /* firefly_040.png */; };
+		D4183CB5A53F593FDC16C3D7 /* firefly_168.png in Resources */ = {isa = PBXBuildFile; fileRef = C0022BC5D0343CB7229F4E97 /* firefly_168.png */; };
+		D4715BE6A83173A97844D21A /* firefly_041.png in Resources */ = {isa = PBXBuildFile; fileRef = 7D8C6698DB4F54A9762A028A /* firefly_041.png */; };
 		D5300FC22C3AD54B02A512F1 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAB82CAA732FD9E110E374E /* DeviceActivityMonitorExtension.swift */; };
+		D55A3CDE1ADEECD99CCAC287 /* firefly_158.png in Resources */ = {isa = PBXBuildFile; fileRef = 3233319CA73378E0E3CC77FB /* firefly_158.png */; };
+		D5BB30BF731AE9930AF26EAA /* firefly_148.png in Resources */ = {isa = PBXBuildFile; fileRef = B7BAF1C03F2B7CB504D7A07F /* firefly_148.png */; };
 		D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */; };
+		D77155EACAB5107A61F534EE /* firefly_207.png in Resources */ = {isa = PBXBuildFile; fileRef = D2D9B377F8020F2A3034AC05 /* firefly_207.png */; };
+		D7DEE78B5AC0AC2BAA2D9081 /* firefly_152.png in Resources */ = {isa = PBXBuildFile; fileRef = D13562BE3E619D66BC5BA93F /* firefly_152.png */; };
+		D7FE1682E7519CB71BC7D729 /* firefly_047.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F8D7214E58B9983E9C365F8 /* firefly_047.png */; };
+		D855D4C8D111434ED0CAD6E7 /* firefly_125.png in Resources */ = {isa = PBXBuildFile; fileRef = ABD1DA87C57D02FCDA3E823F /* firefly_125.png */; };
+		D8ACA2ACDC29EC36FA764A46 /* firefly_173.png in Resources */ = {isa = PBXBuildFile; fileRef = F0D6CC7C20E4B28629A6FF53 /* firefly_173.png */; };
 		D9184A0EFB741ED93A5126F7 /* NightlyProgressiveMuscleRelaxationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */; };
+		D9C638574AAB6AEC6336D9CF /* firefly_043.png in Resources */ = {isa = PBXBuildFile; fileRef = DD8B637718AD4335EED9D0FD /* firefly_043.png */; };
 		DA3373DF5D8243D14C4D3E76 /* LullActivities.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C2234E45847B2DE54E8990CC /* LullActivities.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DC7278AAA23327175FD8CF44 /* firefly_232.png in Resources */ = {isa = PBXBuildFile; fileRef = 138BD46DDF50339D41A613F2 /* firefly_232.png */; };
+		DD2962E8DF5589014419232D /* firefly_094.png in Resources */ = {isa = PBXBuildFile; fileRef = 499652C96F7DD319C640BAB8 /* firefly_094.png */; };
+		DEFC1084EE1AF80F6272140B /* firefly_067.png in Resources */ = {isa = PBXBuildFile; fileRef = CF1D10161D697CDC6D4746B4 /* firefly_067.png */; };
 		DF2D27730B6251AEB5488051 /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */; };
+		E064C89AE62C5A0CA95F73E5 /* firefly_089.png in Resources */ = {isa = PBXBuildFile; fileRef = 05BD63A46DA79D43578FA045 /* firefly_089.png */; };
+		E1195ACBF9A91ED09450E9F3 /* firefly_198.png in Resources */ = {isa = PBXBuildFile; fileRef = 71698A73D9AEB6F4C02907C2 /* firefly_198.png */; };
+		E3503FA980EA0DD9BE1CB038 /* firefly_142.png in Resources */ = {isa = PBXBuildFile; fileRef = 0498A52B563C9A32E6673529 /* firefly_142.png */; };
+		E3768A6617B38AEE60786C7A /* firefly_008.png in Resources */ = {isa = PBXBuildFile; fileRef = 68667105824859F698475D89 /* firefly_008.png */; };
+		E38D1A08D0AC976E2ED0FD8D /* firefly_147.png in Resources */ = {isa = PBXBuildFile; fileRef = C89BBF3462274ADDA56BFDD6 /* firefly_147.png */; };
+		E3E2FA4D1D1D34222EA38623 /* firefly_096.png in Resources */ = {isa = PBXBuildFile; fileRef = 0D991B44D2DB8706404A4DAE /* firefly_096.png */; };
+		E4114C8931F48A1BA4F36031 /* firefly_160.png in Resources */ = {isa = PBXBuildFile; fileRef = 710FF3928C845CEBE26B7CE0 /* firefly_160.png */; };
 		E4CCDFB04798B6DF6769F6AD /* AppBlockingMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */; };
 		E53A1FB2F48D4BBD02792A51 /* ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A3DDE682D8A92F301E51A601 /* ambient.m4a */; };
+		E6CDBE46CC7A7BF7EEBB7F91 /* firefly_150.png in Resources */ = {isa = PBXBuildFile; fileRef = EBCDAA8155603C5866E1C412 /* firefly_150.png */; };
+		E6FD6047829FFE825B7EFFF7 /* firefly_213.png in Resources */ = {isa = PBXBuildFile; fileRef = B89C6DD1E0EAD8B4D1A3375B /* firefly_213.png */; };
+		E7E2933A8D81DE48ED05A1C3 /* firefly_004.png in Resources */ = {isa = PBXBuildFile; fileRef = 158F6393F5B727DA2BFDAD8A /* firefly_004.png */; };
+		E7EC2E484B3D587D229D8DC5 /* firefly_061.png in Resources */ = {isa = PBXBuildFile; fileRef = 5DF680EC2213FE7D56E9D00B /* firefly_061.png */; };
+		EC96C49DB097154C58B66E54 /* firefly_065.png in Resources */ = {isa = PBXBuildFile; fileRef = E0A11EA983D228EE9065931C /* firefly_065.png */; };
+		ECDD5778E378612C42382DE8 /* firefly_201.png in Resources */ = {isa = PBXBuildFile; fileRef = 22FC8C7DDC970A0E466710B2 /* firefly_201.png */; };
+		ED991F3F8E12FFFBD4F28DEA /* firefly_204.png in Resources */ = {isa = PBXBuildFile; fileRef = 6431985CCF86E926A6314DE6 /* firefly_204.png */; };
 		EF1A784BD5448370F97D31DE /* Confetti.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7D6C4993FCB04901D5BBAF /* Confetti.swift */; };
+		EFD3A5C4BC428A44FA51731D /* firefly_196.png in Resources */ = {isa = PBXBuildFile; fileRef = 5A9CDAF2FF31347205E43244 /* firefly_196.png */; };
+		F0B6667BCCEBE2EC67725D06 /* firefly_085.png in Resources */ = {isa = PBXBuildFile; fileRef = 0B802CB27312B21877E79C83 /* firefly_085.png */; };
+		F0F61EF663FE004EB225F8C0 /* firefly_239.png in Resources */ = {isa = PBXBuildFile; fileRef = 50B59F4CB64999B67871685D /* firefly_239.png */; };
+		F19B5AFFA41D8A64346F4085 /* firefly_103.png in Resources */ = {isa = PBXBuildFile; fileRef = 14F5BE257D9DA22444869AF5 /* firefly_103.png */; };
+		F1CA9320F41C38EA5E9580CA /* firefly_046.png in Resources */ = {isa = PBXBuildFile; fileRef = 6D59E3FF01807528921336BD /* firefly_046.png */; };
+		F2109B9A96C2F5BF27426D81 /* firefly_104.png in Resources */ = {isa = PBXBuildFile; fileRef = 08FDB35A720CF9350C914A0E /* firefly_104.png */; };
+		F29BBB2B88FB77BDB086CA9A /* firefly_036.png in Resources */ = {isa = PBXBuildFile; fileRef = 2E09F8BAEFB87646EB73B7C1 /* firefly_036.png */; };
+		F38BE5A5F69598553D18267D /* firefly_015.png in Resources */ = {isa = PBXBuildFile; fileRef = 84EA6EF82317A5376C4B646D /* firefly_015.png */; };
+		F3ACC41625AA9A6D5E2E05AF /* firefly_166.png in Resources */ = {isa = PBXBuildFile; fileRef = EA1FEB29447BA3375C7E935B /* firefly_166.png */; };
+		F46034502262896D2FFBE1C0 /* firefly_038.png in Resources */ = {isa = PBXBuildFile; fileRef = B99F8EC6195B626B133A9683 /* firefly_038.png */; };
+		F46225D948DB50AB9EC74B2B /* firefly_049.png in Resources */ = {isa = PBXBuildFile; fileRef = 25DDDD98D1A328B72E8D8FDE /* firefly_049.png */; };
 		F5FE49916857AB6746AA1158 /* SleepCompanionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */; };
 		F650DA0A32D9E321DDB46D37 /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176C4201AF8923866534227B /* AmbientLightService.swift */; };
+		F6F43FB3F5F9AB7EFDA91520 /* firefly_035.png in Resources */ = {isa = PBXBuildFile; fileRef = 43FCF4A37B6FD430BA726411 /* firefly_035.png */; };
+		F7247B34812D38BE5922B885 /* firefly_123.png in Resources */ = {isa = PBXBuildFile; fileRef = CF24303833A188365BE0F2DF /* firefly_123.png */; };
 		F77D77A5A237886B69C0A47F /* NightlyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950458402381490A51AB031A /* NightlyFlowView.swift */; };
+		F7B678BA2BED2574F699C96E /* firefly_048.png in Resources */ = {isa = PBXBuildFile; fileRef = 79E4BEC8A6EDEA789918F3A8 /* firefly_048.png */; };
+		F875FE08D0BD35B65C7234A0 /* firefly_030.png in Resources */ = {isa = PBXBuildFile; fileRef = 91501B96E564A61156A660F5 /* firefly_030.png */; };
+		F96C4ADB5A062FC9CAA2F9B3 /* firefly_031.png in Resources */ = {isa = PBXBuildFile; fileRef = 2BC3EB771E0D33C5AF64E0E6 /* firefly_031.png */; };
+		F9B5C5F0AB13CD4E5800DB70 /* firefly_172.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C82D8EFF2CBB14E1666567D /* firefly_172.png */; };
 		FA7C0D3D92D2EA20AF2460CF /* TenThirtyLegalLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2809736068E106B7CBA49441 /* TenThirtyLegalLinks.swift */; };
+		FC3E34E8703B4480BB030366 /* firefly_157.png in Resources */ = {isa = PBXBuildFile; fileRef = FB8C43A6B915D0D8D27F9AD6 /* firefly_157.png */; };
 		FC5359BF6D2C5C428FCBA0B0 /* Natural History of Selborne - letters 7-13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */; };
 		FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */; };
 		FF4B61596848A08BDB4875FA /* Natural History of Selborne - letters 1-6.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */; };
@@ -171,116 +412,357 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		002FE0B7A070DCE4F1C7E18F /* firefly_131.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_131.png; sourceTree = "<group>"; };
 		0189BF0E9E9C7558C20A1468 /* PersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStore.swift; sourceTree = "<group>"; };
+		01C931D50CF369E7481342F4 /* firefly_020.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_020.png; sourceTree = "<group>"; };
+		02CD0032EC215E0D53DCB8AF /* firefly_151.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_151.png; sourceTree = "<group>"; };
 		0313A840CBD937B5C481137E /* lake.m4a */ = {isa = PBXFileReference; path = lake.m4a; sourceTree = "<group>"; };
+		035551BCA5A6D7C583E9445C /* firefly_146.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_146.png; sourceTree = "<group>"; };
 		0382EAA2F75B5036F7CF1E00 /* BoringStoryAudioLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringStoryAudioLibrary.swift; sourceTree = "<group>"; };
+		04654A91FD61AA22868C6398 /* firefly_170.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_170.png; sourceTree = "<group>"; };
+		0498A52B563C9A32E6673529 /* firefly_142.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_142.png; sourceTree = "<group>"; };
+		052A924EDF39A6DB39EA171F /* firefly_174.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_174.png; sourceTree = "<group>"; };
+		05AE68249CDE3D85D1A41F01 /* firefly_130.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_130.png; sourceTree = "<group>"; };
+		05BD63A46DA79D43578FA045 /* firefly_089.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_089.png; sourceTree = "<group>"; };
 		05BFA1F85B39656D31732381 /* LullTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullTheme.swift; sourceTree = "<group>"; };
 		06AD701B1AFA29C7204AD94C /* heavy-rain.m4a */ = {isa = PBXFileReference; path = "heavy-rain.m4a"; sourceTree = "<group>"; };
-		0CD10D2531D75B7D17A2FA30 /* FireflyMascotFrames */ = {isa = PBXFileReference; lastKnownFileType = folder; path = FireflyMascotFrames; sourceTree = "<group>"; };
+		074AA7BEB97AFBCA58852191 /* firefly_156.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_156.png; sourceTree = "<group>"; };
+		08F35C408AAC83F07782E6C8 /* firefly_077.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_077.png; sourceTree = "<group>"; };
+		08FDB35A720CF9350C914A0E /* firefly_104.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_104.png; sourceTree = "<group>"; };
+		0B802CB27312B21877E79C83 /* firefly_085.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_085.png; sourceTree = "<group>"; };
+		0C8A9AB59590F9FC8D518DB4 /* firefly_219.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_219.png; sourceTree = "<group>"; };
+		0CF06354F2663ED9FB7D834D /* firefly_176.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_176.png; sourceTree = "<group>"; };
+		0D991B44D2DB8706404A4DAE /* firefly_096.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_096.png; sourceTree = "<group>"; };
+		0DCB057EA1C806CE8072D999 /* firefly_225.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_225.png; sourceTree = "<group>"; };
 		0E0856A4CA51840ED0D0948E /* RoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineGenerator.swift; sourceTree = "<group>"; };
+		0F596A6A897145D80EE472E0 /* firefly_076.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_076.png; sourceTree = "<group>"; };
+		1097F3912AE111823C808B8C /* firefly_221.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_221.png; sourceTree = "<group>"; };
+		12E242A15AB600A8AF96AA3F /* firefly_117.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_117.png; sourceTree = "<group>"; };
 		13421008A3E4FB1B007A5B4C /* LullActivities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullActivities.entitlements; sourceTree = "<group>"; };
+		138BD46DDF50339D41A613F2 /* firefly_232.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_232.png; sourceTree = "<group>"; };
+		14D0253787323E22F309F90C /* firefly_235.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_235.png; sourceTree = "<group>"; };
+		14F5BE257D9DA22444869AF5 /* firefly_103.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_103.png; sourceTree = "<group>"; };
+		158F6393F5B727DA2BFDAD8A /* firefly_004.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_004.png; sourceTree = "<group>"; };
+		1613805F8841FB99191EDD3C /* firefly_188.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_188.png; sourceTree = "<group>"; };
+		1619E98DD86392F9C142DFBB /* firefly_016.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_016.png; sourceTree = "<group>"; };
+		1640336970AF3A7AB405F283 /* firefly_238.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_238.png; sourceTree = "<group>"; };
+		16590225332D4A989315D094 /* firefly_099.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_099.png; sourceTree = "<group>"; };
 		16E004D9956182579C109650 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1710FAF6A03428608E49BCA9 /* firefly_237.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_237.png; sourceTree = "<group>"; };
 		176C4201AF8923866534227B /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
+		1833280BDB6996026BC9EB7B /* firefly_100.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_100.png; sourceTree = "<group>"; };
+		191E48460682830CBE3AB17B /* firefly_079.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_079.png; sourceTree = "<group>"; };
+		1935E2393D442C2516AD2837 /* firefly_033.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_033.png; sourceTree = "<group>"; };
+		1A36B3344BF3DA5C2F0AD074 /* firefly_074.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_074.png; sourceTree = "<group>"; };
+		1A7DCB0B3A3A272C5F862763 /* firefly_120.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_120.png; sourceTree = "<group>"; };
 		1B7D6C4993FCB04901D5BBAF /* Confetti.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confetti.swift; sourceTree = "<group>"; };
+		1C3FB1D04C55E90BED3DCF08 /* firefly_134.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_134.png; sourceTree = "<group>"; };
 		1C51123AF137B74CCBDA4417 /* body-scan.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "body-scan.mp3"; sourceTree = "<group>"; };
 		1C813AB20100CD4B6D67151A /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = DeviceActivity.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CA2796ED9881E0925C67958 /* TogglePrepItemIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglePrepItemIntent.swift; sourceTree = "<group>"; };
+		1CCA8992F4D8CD9AFB337D99 /* firefly_060.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_060.png; sourceTree = "<group>"; };
+		1F64A529590C4F77A111DB09 /* firefly_129.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_129.png; sourceTree = "<group>"; };
+		1FFB3745179ED5B95DFEE9AE /* firefly_193.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_193.png; sourceTree = "<group>"; };
+		2097BCFFFD55C28FCB955CB4 /* firefly_105.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_105.png; sourceTree = "<group>"; };
 		218526489962E27E1FFAA273 /* 478-breathing-revised.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "478-breathing-revised.mp3"; sourceTree = "<group>"; };
+		22FC8C7DDC970A0E466710B2 /* firefly_201.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_201.png; sourceTree = "<group>"; };
 		2316827F53961A9543FE7144 /* rules of east and west.m4a */ = {isa = PBXFileReference; path = "rules of east and west.m4a"; sourceTree = "<group>"; };
+		23443E10395BD2053E994094 /* firefly_224.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_224.png; sourceTree = "<group>"; };
 		2385C445922205A436F4B026 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		25BB721FBA5279EA549F5BBC /* Natural History of Selborne - letters 1-6.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 1-6.m4a"; sourceTree = "<group>"; };
+		25DDDD98D1A328B72E8D8FDE /* firefly_049.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_049.png; sourceTree = "<group>"; };
+		25E2D0EAF6A9C62AB5E588F8 /* firefly_121.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_121.png; sourceTree = "<group>"; };
 		2809736068E106B7CBA49441 /* TenThirtyLegalLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenThirtyLegalLinks.swift; sourceTree = "<group>"; };
+		2815CD18FB1A928CD75267F1 /* firefly_177.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_177.png; sourceTree = "<group>"; };
+		285DA8B24128213156B425D1 /* firefly_194.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_194.png; sourceTree = "<group>"; };
+		28D6D01A514D497BCB156A89 /* firefly_098.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_098.png; sourceTree = "<group>"; };
 		29924AF99C5CB2A18C0A6392 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
+		2A56033B719EF94CB70EF875 /* firefly_144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_144.png; sourceTree = "<group>"; };
+		2B1CFF08D5C037EB6309A055 /* firefly_179.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_179.png; sourceTree = "<group>"; };
 		2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2BA98E7B07449D1F26DE06CF /* LullComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullComponents.swift; sourceTree = "<group>"; };
+		2BC3EB771E0D33C5AF64E0E6 /* firefly_031.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_031.png; sourceTree = "<group>"; };
+		2C3D10B28764AF7A89BBDE28 /* firefly_145.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_145.png; sourceTree = "<group>"; };
 		2C4A6B0CD546D3FD5FB60C01 /* MorningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInView.swift; sourceTree = "<group>"; };
+		2D136E898D9FB77DA9A0611E /* firefly_072.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_072.png; sourceTree = "<group>"; };
+		2D13A7A98C08E82363A8F0ED /* firefly_191.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_191.png; sourceTree = "<group>"; };
+		2E09F8BAEFB87646EB73B7C1 /* firefly_036.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_036.png; sourceTree = "<group>"; };
+		2E11089C3BC6A59046FD1190 /* firefly_202.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_202.png; sourceTree = "<group>"; };
+		2E88D6D50ACC57AF5BBE6D0F /* firefly_051.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_051.png; sourceTree = "<group>"; };
+		2E96DDF151786F3D3144C2AD /* firefly_013.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_013.png; sourceTree = "<group>"; };
+		2EF1C493075C666B8410C85C /* firefly_216.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_216.png; sourceTree = "<group>"; };
+		2F9B87D74DE5902C59E4928E /* firefly_208.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_208.png; sourceTree = "<group>"; };
 		3090F2BC921D4A6F23DA7FF0 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		321F24B42B51C98D401F2DDC /* firefly_026.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_026.png; sourceTree = "<group>"; };
+		3233319CA73378E0E3CC77FB /* firefly_158.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_158.png; sourceTree = "<group>"; };
+		33ABDE8C2E3071D77FC84F6F /* firefly_231.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_231.png; sourceTree = "<group>"; };
+		351EE6BE6D78A65B6960A088 /* firefly_122.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_122.png; sourceTree = "<group>"; };
+		35810B30095514351F9F4B1B /* firefly_183.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_183.png; sourceTree = "<group>"; };
+		35E1D323B0AEA520240278B1 /* firefly_006.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_006.png; sourceTree = "<group>"; };
+		369C5DA38C1F2B5E8550D75E /* firefly_162.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_162.png; sourceTree = "<group>"; };
+		3796A41A8CE5F0A2F4A7760F /* firefly_127.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_127.png; sourceTree = "<group>"; };
+		37CFB96987DAF72EF531A3D7 /* firefly_028.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_028.png; sourceTree = "<group>"; };
 		37F49348CC68DED7F31C3DFB /* RemedyID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemedyID.swift; sourceTree = "<group>"; };
+		3870137E3E212282CE198462 /* firefly_167.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_167.png; sourceTree = "<group>"; };
+		38AC1A59B076C401ACF404F7 /* firefly_005.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_005.png; sourceTree = "<group>"; };
+		39A8EC05EB339B04DC16E232 /* firefly_227.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_227.png; sourceTree = "<group>"; };
+		3A277DAB5BD8130015A6AC40 /* firefly_063.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_063.png; sourceTree = "<group>"; };
+		3DA63B2A15F555FC4115F775 /* firefly_022.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_022.png; sourceTree = "<group>"; };
+		3E74D871456C668563DA64A1 /* firefly_059.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_059.png; sourceTree = "<group>"; };
 		3EC22EBA08173674FC9843FA /* SleepCompanionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionViews.swift; sourceTree = "<group>"; };
+		3EDA3A3D7FBACC6A66D37D85 /* firefly_161.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_161.png; sourceTree = "<group>"; };
+		3F20E526CEA6AFC90146811D /* firefly_069.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_069.png; sourceTree = "<group>"; };
+		422D800E2B443CC5AB435E43 /* firefly_017.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_017.png; sourceTree = "<group>"; };
+		424BB915952DE6F55B07C5D7 /* firefly_014.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_014.png; sourceTree = "<group>"; };
+		43430767A044DD6DF96B1829 /* firefly_192.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_192.png; sourceTree = "<group>"; };
+		43FCF4A37B6FD430BA726411 /* firefly_035.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_035.png; sourceTree = "<group>"; };
+		449DECEE26942F98F0541B9E /* firefly_091.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_091.png; sourceTree = "<group>"; };
+		46E48E2E85A63BE4E80657D3 /* firefly_095.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_095.png; sourceTree = "<group>"; };
+		474E2CB618C131876FA026D9 /* TrialPaywallViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialPaywallViews.swift; sourceTree = "<group>"; };
 		4899657867919D25621A8287 /* PaywallFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallFlowView.swift; sourceTree = "<group>"; };
+		496CFC59FC8FFA9FA825DB9D /* firefly_140.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_140.png; sourceTree = "<group>"; };
+		499652C96F7DD319C640BAB8 /* firefly_094.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_094.png; sourceTree = "<group>"; };
+		49CB3C284B89AC20815484A5 /* HoldToConfirmUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoldToConfirmUITests.swift; sourceTree = "<group>"; };
 		49CB78C349D618A5911F19B4 /* boring-story-02.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-02.mp3"; sourceTree = "<group>"; };
+		4B93B4B91B04635CFB3B8AA5 /* firefly_102.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_102.png; sourceTree = "<group>"; };
 		4C9512A5D69F553FB68DF95B /* ManagedSettingsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ManagedSettingsUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E593F705AAD77F682F02D48 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppIntents.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E5D996C30B04EB6CAE1D758 /* firefly_066.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_066.png; sourceTree = "<group>"; };
+		4EA31114BC6DEFC5D2D6CE22 /* firefly_128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_128.png; sourceTree = "<group>"; };
+		4F0EC4EF10A545456B5C4A69 /* firefly_199.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_199.png; sourceTree = "<group>"; };
+		5095C59816EB839EEC51B3DD /* firefly_090.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_090.png; sourceTree = "<group>"; };
+		50B59F4CB64999B67871685D /* firefly_239.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_239.png; sourceTree = "<group>"; };
+		50EBEFE3D51253E30D6C9BD3 /* firefly_215.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_215.png; sourceTree = "<group>"; };
+		51951CE50DBA401EA00B3C3A /* firefly_218.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_218.png; sourceTree = "<group>"; };
 		51BEF35915C2F648B22EFF22 /* PendingPromotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingPromotion.swift; sourceTree = "<group>"; };
+		53883010371235B718BE3C09 /* firefly_039.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_039.png; sourceTree = "<group>"; };
 		5425432DFC2889316C6E6599 /* ClaudeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIService.swift; sourceTree = "<group>"; };
+		54BDDFB108C07915CB838BDE /* firefly_226.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_226.png; sourceTree = "<group>"; };
+		559FF7885F2F861F210A97D2 /* firefly_081.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_081.png; sourceTree = "<group>"; };
+		55A64976E2EC5E6CC989C2A1 /* firefly_234.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_234.png; sourceTree = "<group>"; };
 		57E0AF7324FB8536FC78652C /* RoutinePromotedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinePromotedView.swift; sourceTree = "<group>"; };
+		57E9602CAF732EA4A6B20278 /* firefly_056.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_056.png; sourceTree = "<group>"; };
+		588B7E8CC462F8CCF010E10D /* firefly_165.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_165.png; sourceTree = "<group>"; };
+		588EC471116E1EB5FF16A90B /* firefly_229.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_229.png; sourceTree = "<group>"; };
+		5997541E0394D2429833F3EE /* firefly_109.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_109.png; sourceTree = "<group>"; };
+		5A20D2AC291945A57D365F21 /* firefly_190.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_190.png; sourceTree = "<group>"; };
+		5A9CDAF2FF31347205E43244 /* firefly_196.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_196.png; sourceTree = "<group>"; };
 		5AF4AC9E4FA7A676B8FEF67C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5C163F36C48766A614974E4C /* GetUpPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUpPromptView.swift; sourceTree = "<group>"; };
+		5CBB20C2A16415D98822FC33 /* firefly_113.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_113.png; sourceTree = "<group>"; };
 		5DBB43D036295367BF725FF7 /* Natural History of Selborne - letters 7-13.m4a */ = {isa = PBXFileReference; path = "Natural History of Selborne - letters 7-13.m4a"; sourceTree = "<group>"; };
+		5DF680EC2213FE7D56E9D00B /* firefly_061.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_061.png; sourceTree = "<group>"; };
 		5E7C19BA52157666970D1748 /* BrainDumpsBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDumpsBrowser.swift; sourceTree = "<group>"; };
+		615C4A8DA1EB8BA250EB30B1 /* firefly_182.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_182.png; sourceTree = "<group>"; };
 		62D6C835AC588EAEA2DEEF43 /* LullApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullApp.swift; sourceTree = "<group>"; };
 		63428ED4EA5FE1F032D37DF2 /* LullDeviceActivityMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullDeviceActivityMonitor.entitlements; sourceTree = "<group>"; };
+		6431985CCF86E926A6314DE6 /* firefly_204.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_204.png; sourceTree = "<group>"; };
 		64B383598ABE5BE7D1191AD6 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		65109B6F8C6DF23F1B9C9392 /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ManagedSettings.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		65DEF9E8A9CD4A9B6A3C7D35 /* firefly_021.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_021.png; sourceTree = "<group>"; };
+		660676A9D23E82F68F72D17A /* firefly_018.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_018.png; sourceTree = "<group>"; };
+		68667105824859F698475D89 /* firefly_008.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_008.png; sourceTree = "<group>"; };
 		689C88C380117A100D1610A0 /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
+		68D98C7BD2C0033E5721A96F /* firefly_064.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_064.png; sourceTree = "<group>"; };
 		6911C2B22F2B9099B6FB2756 /* TonightInProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightInProgressView.swift; sourceTree = "<group>"; };
+		6948CB7D28A2F1B4E2A5D99D /* firefly_154.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_154.png; sourceTree = "<group>"; };
+		69E59CF027AB7B36C8B1F701 /* firefly_149.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_149.png; sourceTree = "<group>"; };
+		6B4D6A528E22211AE5D1751C /* firefly_118.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_118.png; sourceTree = "<group>"; };
+		6C82D8EFF2CBB14E1666567D /* firefly_172.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_172.png; sourceTree = "<group>"; };
+		6D318B19E4AEE4C4AF563647 /* firefly_214.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_214.png; sourceTree = "<group>"; };
+		6D54C75C29F98C57B0A5BAFF /* firefly_088.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_088.png; sourceTree = "<group>"; };
+		6D59E3FF01807528921336BD /* firefly_046.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_046.png; sourceTree = "<group>"; };
 		6F95ADCAA1CC680485D7FAEA /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		6FE4B31D562647501AE0A213 /* firefly_044.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_044.png; sourceTree = "<group>"; };
+		70183D8A1867B77AB7FC4837 /* firefly_057.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_057.png; sourceTree = "<group>"; };
 		707980425BAB87AF1D3EBBE1 /* PostHogReplayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogReplayService.swift; sourceTree = "<group>"; };
+		710FF3928C845CEBE26B7CE0 /* firefly_160.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_160.png; sourceTree = "<group>"; };
+		71698A73D9AEB6F4C02907C2 /* firefly_198.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_198.png; sourceTree = "<group>"; };
+		7212983D68D02AE1945B34B3 /* firefly_220.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_220.png; sourceTree = "<group>"; };
+		73ED587F01192B5D02655676 /* firefly_070.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_070.png; sourceTree = "<group>"; };
+		7475BDA7A404C590FEB47B72 /* firefly_180.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_180.png; sourceTree = "<group>"; };
 		75D74147D3D5E84776E2AC8B /* 4-7-3-breathing-v2.m4a */ = {isa = PBXFileReference; path = "4-7-3-breathing-v2.m4a"; sourceTree = "<group>"; };
 		76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		77258FA3646EA4ABD3AAF8ED /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		79A2C65D9B9A0F933935914B /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		79E4BEC8A6EDEA789918F3A8 /* firefly_048.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_048.png; sourceTree = "<group>"; };
 		7A98689BCA1F25DC944F269C /* SleepCompanionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepCompanionWidget.swift; sourceTree = "<group>"; };
 		7B0382914836413ACFE6E4A4 /* Lull.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lull.entitlements; sourceTree = "<group>"; };
+		7C640C08D33C758494997F00 /* firefly_212.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_212.png; sourceTree = "<group>"; };
 		7CB28B2CB28CABAE1D8D752A /* green-noise.m4a */ = {isa = PBXFileReference; path = "green-noise.m4a"; sourceTree = "<group>"; };
+		7D8C6698DB4F54A9762A028A /* firefly_041.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_041.png; sourceTree = "<group>"; };
+		7EA5EE582C7F1D5BAC57D966 /* firefly_197.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_197.png; sourceTree = "<group>"; };
+		7EB4F6A90D6968F28493405D /* firefly_209.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_209.png; sourceTree = "<group>"; };
+		7EEB7E1455DF48C0911E5461 /* firefly_101.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_101.png; sourceTree = "<group>"; };
+		7F31EA645D9B8D152ED7F53A /* firefly_178.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_178.png; sourceTree = "<group>"; };
+		7F8D7214E58B9983E9C365F8 /* firefly_047.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_047.png; sourceTree = "<group>"; };
 		7F93598B84E835FCF4E17F89 /* BundledStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledStories.swift; sourceTree = "<group>"; };
 		7FC94C0B9CC0499BBABF4808 /* LullLA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullLA.swift; sourceTree = "<group>"; };
 		7FFEA6473FBBF7C4A38CD373 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf"; sourceTree = "<group>"; };
+		8073D1D922850EC882594888 /* firefly_171.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_171.png; sourceTree = "<group>"; };
+		81FA542AE5F0427C5005D4C9 /* firefly_164.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_164.png; sourceTree = "<group>"; };
 		820FCDADF72AB76B94600AA0 /* LullUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LullUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8218AC892A59D5B2F9C543F3 /* firefly_080.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_080.png; sourceTree = "<group>"; };
+		83DDDDFA0CC7764E61215C31 /* firefly_163.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_163.png; sourceTree = "<group>"; };
+		84EA6EF82317A5376C4B646D /* firefly_015.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_015.png; sourceTree = "<group>"; };
+		8587592CB8CFDF594C6429E0 /* firefly_062.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_062.png; sourceTree = "<group>"; };
+		85A2D73366D0A4927B5C5EFD /* firefly_136.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_136.png; sourceTree = "<group>"; };
+		85B5B08972224D75C2985CB4 /* firefly_071.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_071.png; sourceTree = "<group>"; };
 		873B7BBBAAB5C557836239AF /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		8884EB9BC8511BDB7F8B13D2 /* firefly_230.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_230.png; sourceTree = "<group>"; };
 		89C950D6903593FCCD8E72A0 /* FamilyControls.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FamilyControls.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		89D559C60ED9314E2299A8F2 /* firefly_078.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_078.png; sourceTree = "<group>"; };
+		8A237FAA04A60330D3163D33 /* firefly_189.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_189.png; sourceTree = "<group>"; };
 		8A23CDA9BBE30563F3F47D9F /* Lull.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8ADC8B28281DC27B12BC66BC /* firefly_025.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_025.png; sourceTree = "<group>"; };
+		8DE1869D350378551D7B8D90 /* firefly_137.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_137.png; sourceTree = "<group>"; };
 		8E95C6CE9AFDE2BDD5DB8865 /* LullSubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSubscriptionManager.swift; sourceTree = "<group>"; };
 		90504C0B0DCEF617FA4FC716 /* solf.m4a */ = {isa = PBXFileReference; path = solf.m4a; sourceTree = "<group>"; };
+		90ABC7E32BEB96339155777A /* firefly_195.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_195.png; sourceTree = "<group>"; };
+		91501B96E564A61156A660F5 /* firefly_030.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_030.png; sourceTree = "<group>"; };
+		930469D2DD643070B5B2F472 /* firefly_187.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_187.png; sourceTree = "<group>"; };
 		9313D73408C29C460D31C8C8 /* MorningRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRewardView.swift; sourceTree = "<group>"; };
 		941ECF870CE2E6FDAC91AE61 /* MidSleepModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MidSleepModeView.swift; sourceTree = "<group>"; };
 		944F2D82E309E25515532D12 /* StreakMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakMilestoneView.swift; sourceTree = "<group>"; };
+		94AA09D2D3FA8F2DA976794C /* firefly_042.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_042.png; sourceTree = "<group>"; };
 		950458402381490A51AB031A /* NightlyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyFlowView.swift; sourceTree = "<group>"; };
+		959E223B05D41C67130DC86D /* firefly_223.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_223.png; sourceTree = "<group>"; };
+		9AB7C88BB1B652FD11875334 /* firefly_086.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_086.png; sourceTree = "<group>"; };
+		9B244E039B8D7AE17D68CC39 /* firefly_124.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_124.png; sourceTree = "<group>"; };
+		9CD1E2708A626F2812D65DB5 /* firefly_087.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_087.png; sourceTree = "<group>"; };
 		9D067205DC708FB6337C2659 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WidgetKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9D8DAA2828A6009181E64D94 /* firefly_012.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_012.png; sourceTree = "<group>"; };
+		9E173625F69FC7374D0F38BB /* firefly_133.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_133.png; sourceTree = "<group>"; };
+		9EC101C88AD0363CE9C0A3C5 /* firefly_108.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_108.png; sourceTree = "<group>"; };
 		9F8739D57BDC0E24FABAF164 /* AppBlockingMonitorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingMonitorStore.swift; sourceTree = "<group>"; };
+		9FB167D0655BFB505114D558 /* firefly_023.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_023.png; sourceTree = "<group>"; };
 		A0032E2F445A4B5E35EA46FE /* in captivity.m4a */ = {isa = PBXFileReference; path = "in captivity.m4a"; sourceTree = "<group>"; };
+		A120BE74E9342492712FC0B1 /* firefly_110.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_110.png; sourceTree = "<group>"; };
+		A122E1ED09028AB01D2CDDA2 /* firefly_007.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_007.png; sourceTree = "<group>"; };
 		A3D586CE81D7451C6957C877 /* min-solf.m4a */ = {isa = PBXFileReference; path = "min-solf.m4a"; sourceTree = "<group>"; };
 		A3DDE682D8A92F301E51A601 /* ambient.m4a */ = {isa = PBXFileReference; path = ambient.m4a; sourceTree = "<group>"; };
 		A4C034E5DA6A11A12D3C2E1B /* LullShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LullShieldConfiguration.entitlements; sourceTree = "<group>"; };
+		A4D262B7FC8CB8D82C898555 /* firefly_058.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_058.png; sourceTree = "<group>"; };
 		A4D4B21F6267B8258B55C317 /* LullDeviceActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5CE8F5ADF6F4C5B597B2D69 /* firefly_011.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_011.png; sourceTree = "<group>"; };
+		A5F60FF5C35ABE899CDF0BB9 /* firefly_054.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_054.png; sourceTree = "<group>"; };
+		A614FA379A36D0965CFB33DE /* firefly_200.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_200.png; sourceTree = "<group>"; };
+		A731624BC250C84D95DB1B05 /* firefly_222.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_222.png; sourceTree = "<group>"; };
 		AB18882B975D7347E1D65745 /* ResearchDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDataService.swift; sourceTree = "<group>"; };
+		ABD1DA87C57D02FCDA3E823F /* firefly_125.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_125.png; sourceTree = "<group>"; };
+		AC9525CA0935317C2BF8C079 /* firefly_024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_024.png; sourceTree = "<group>"; };
+		AD200A0564410F51E82EE927 /* firefly_175.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_175.png; sourceTree = "<group>"; };
+		AD6CFF572238598C82AE9ADF /* firefly_143.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_143.png; sourceTree = "<group>"; };
 		ADAC07153B7448BA5EB47218 /* AppStateRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRegressionTests.swift; sourceTree = "<group>"; };
 		AFB52AEDC041CBA75A63033D /* LullRateSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullRateSleepIntent.swift; sourceTree = "<group>"; };
+		AFD5C55552E16D81A8B166CF /* firefly_010.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_010.png; sourceTree = "<group>"; };
 		AFD63484F3DA795DDECA5A5D /* MorningRateHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRateHero.swift; sourceTree = "<group>"; };
+		B052AC905FF2F40595172146 /* firefly_236.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_236.png; sourceTree = "<group>"; };
+		B054318697D7B28B6A77D1FB /* firefly_050.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_050.png; sourceTree = "<group>"; };
+		B0697B0CB604FE238C1DC417 /* firefly_115.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_115.png; sourceTree = "<group>"; };
 		B14F7BDB52B9169C66B34211 /* LullActivitiesBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullActivitiesBundle.swift; sourceTree = "<group>"; };
+		B207085AD99C5B3E234B8A36 /* firefly_112.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_112.png; sourceTree = "<group>"; };
+		B27509CFDE6BFED0A7396F47 /* firefly_009.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_009.png; sourceTree = "<group>"; };
+		B282A6AD1C8374677BC658D3 /* firefly_111.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_111.png; sourceTree = "<group>"; };
 		B3A394644E5A5BF4BC58D0C7 /* AudioPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackService.swift; sourceTree = "<group>"; };
+		B3B6FF888241C400474D0A40 /* firefly_240.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_240.png; sourceTree = "<group>"; };
+		B3F537C5007DF98B60094EE4 /* firefly_003.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_003.png; sourceTree = "<group>"; };
+		B43FEF3E6653ECBE628AB5B3 /* firefly_126.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_126.png; sourceTree = "<group>"; };
 		B48E52E78433AFA800B1FE8E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B558F64F7FD918F51C8FB2D3 /* LullOpenMidSleepIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullOpenMidSleepIntent.swift; sourceTree = "<group>"; };
+		B7BAF1C03F2B7CB504D7A07F /* firefly_148.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_148.png; sourceTree = "<group>"; };
 		B7FAE5FAA3EE42EE6647743D /* NightlyProgressiveMuscleRelaxationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyProgressiveMuscleRelaxationView.swift; sourceTree = "<group>"; };
 		B860F06FFCF6C8C3A0232808 /* NightlyGratitudeJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGratitudeJournalView.swift; sourceTree = "<group>"; };
+		B89C6DD1E0EAD8B4D1A3375B /* firefly_213.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_213.png; sourceTree = "<group>"; };
 		B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationSmokeUITests.swift; sourceTree = "<group>"; };
+		B99F8EC6195B626B133A9683 /* firefly_038.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_038.png; sourceTree = "<group>"; };
+		B9BA5FB8B52C2E2AE45C5FC6 /* firefly_075.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_075.png; sourceTree = "<group>"; };
+		BBB6183759050CD70E6DA704 /* firefly_186.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_186.png; sourceTree = "<group>"; };
+		BD08E49440CAC3F762429698 /* firefly_119.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_119.png; sourceTree = "<group>"; };
+		BD687462F898509170393C16 /* firefly_019.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_019.png; sourceTree = "<group>"; };
+		BDC2B60AA3A22B9442208FF4 /* firefly_217.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_217.png; sourceTree = "<group>"; };
 		BF684E51987B9FFDEBD8A51D /* ExperimentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentEngine.swift; sourceTree = "<group>"; };
+		C0022BC5D0343CB7229F4E97 /* firefly_168.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_168.png; sourceTree = "<group>"; };
+		C0BEB2FF4C6516708572064A /* firefly_097.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_097.png; sourceTree = "<group>"; };
 		C2234E45847B2DE54E8990CC /* LullActivities.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullActivities.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C247230E9CFAF00C7B946682 /* firefly_184.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_184.png; sourceTree = "<group>"; };
 		C3EED391390E6D4557EAE6E5 /* NightlyBodyScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyBodyScanView.swift; sourceTree = "<group>"; };
+		C3F0691BF44E540EF46BC8B1 /* firefly_068.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_068.png; sourceTree = "<group>"; };
+		C3F7DD17C3B86E944E4473E6 /* firefly_084.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_084.png; sourceTree = "<group>"; };
 		C711E1D09B42DC3ACBDE2738 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		C7936C1884E9CBC94A4C0F10 /* firefly_107.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_107.png; sourceTree = "<group>"; };
+		C84CF9C9258FDB1D5602877C /* firefly_034.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_034.png; sourceTree = "<group>"; };
+		C8584F0424A1FF22543D651A /* firefly_027.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_027.png; sourceTree = "<group>"; };
+		C89BBF3462274ADDA56BFDD6 /* firefly_147.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_147.png; sourceTree = "<group>"; };
+		CA7BB83BDC8B1C8C28DACC1D /* firefly_132.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_132.png; sourceTree = "<group>"; };
 		CB540AA3A6C622ECBA1B013F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CB8C9DBBFFC0C17E55F25CDE /* NightlyGentleStretchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightlyGentleStretchingView.swift; sourceTree = "<group>"; };
+		CBB39CFDE99CE100F06E7F42 /* firefly_141.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_141.png; sourceTree = "<group>"; };
 		CBF7175F6DA3A7BA38910681 /* birds.m4a */ = {isa = PBXFileReference; path = birds.m4a; sourceTree = "<group>"; };
 		CCD309C3DF1E4D6BC2292BB0 /* PrepChecklistAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistAttributes.swift; sourceTree = "<group>"; };
+		CD4FBD8F39200A4D1102822A /* firefly_040.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_040.png; sourceTree = "<group>"; };
+		CDCC70F3D6A9D3432370460E /* firefly_002.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_002.png; sourceTree = "<group>"; };
 		CE1B4F153C9E708BB97713B9 /* SleepSounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepSounds.swift; sourceTree = "<group>"; };
+		CF1D10161D697CDC6D4746B4 /* firefly_067.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_067.png; sourceTree = "<group>"; };
+		CF24303833A188365BE0F2DF /* firefly_123.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_123.png; sourceTree = "<group>"; };
+		CFC51D4C4CCEC583E75C2E59 /* firefly_228.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_228.png; sourceTree = "<group>"; };
+		D053515DA31403D093AAB495 /* firefly_055.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_055.png; sourceTree = "<group>"; };
 		D07E0E904215B16CDB9F304A /* TonightPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightPreviewCard.swift; sourceTree = "<group>"; };
 		D13235A83E836D0E50FE29B5 /* LiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityService.swift; sourceTree = "<group>"; };
+		D13562BE3E619D66BC5BA93F /* firefly_152.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_152.png; sourceTree = "<group>"; };
+		D2D9B377F8020F2A3034AC05 /* firefly_207.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_207.png; sourceTree = "<group>"; };
+		D376E3BFAA5A2321B4EB66A5 /* firefly_181.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_181.png; sourceTree = "<group>"; };
+		D3D903BE9D5FAD070DF0575A /* firefly_139.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_139.png; sourceTree = "<group>"; };
 		D3DAE6FCFFB9D41FA78E1A82 /* ShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeDetector.swift; sourceTree = "<group>"; };
 		D654C67A1483730850BC0E54 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
+		DB12B40E83CBB767995B61F3 /* firefly_073.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_073.png; sourceTree = "<group>"; };
+		DC243A7EAA90F97D3FD77F5A /* firefly_052.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_052.png; sourceTree = "<group>"; };
+		DD8B637718AD4335EED9D0FD /* firefly_043.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_043.png; sourceTree = "<group>"; };
+		DDC2CFCF785C27A212001887 /* firefly_029.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_029.png; sourceTree = "<group>"; };
+		DE4699ACDBB2B24B424CBD06 /* firefly_135.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_135.png; sourceTree = "<group>"; };
+		DE733AD3A75E7F9AA1CF27BA /* firefly_092.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_092.png; sourceTree = "<group>"; };
+		DE7501CAE4A93EB097A56F00 /* firefly_001.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_001.png; sourceTree = "<group>"; };
+		DE75EB9C27E907D13C8E983C /* firefly_153.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_153.png; sourceTree = "<group>"; };
+		E0A11EA983D228EE9065931C /* firefly_065.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_065.png; sourceTree = "<group>"; };
 		E2705A407B8C280E7EDF870E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E2E38F1F7C64182F442945AC /* LullShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LullShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3AA54F201C260EE3C452CDE /* MyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutineView.swift; sourceTree = "<group>"; };
+		E5940F855B7D34711DE8DE9F /* firefly_032.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_032.png; sourceTree = "<group>"; };
+		E6AF3510B72D66DE7F64D581 /* firefly_114.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_114.png; sourceTree = "<group>"; };
+		E8227D7E21D8F8451B1FD1DD /* firefly_210.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_210.png; sourceTree = "<group>"; };
 		E8B48DCAA5A690C83971ED1D /* SleepHistoryLegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepHistoryLegendView.swift; sourceTree = "<group>"; };
+		EA1FEB29447BA3375C7E935B /* firefly_166.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_166.png; sourceTree = "<group>"; };
+		EA227AFAF191C948F9EC9835 /* firefly_211.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_211.png; sourceTree = "<group>"; };
+		EA397D15D390FF366C32D1C0 /* firefly_185.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_185.png; sourceTree = "<group>"; };
 		EAAB82CAA732FD9E110E374E /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
+		EBCDAA8155603C5866E1C412 /* firefly_150.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_150.png; sourceTree = "<group>"; };
+		ED5402FC982B9ACAF1D5C11D /* firefly_083.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_083.png; sourceTree = "<group>"; };
 		EDDB3C5549E6F96B89F255B1 /* boring-story-01.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "boring-story-01.mp3"; sourceTree = "<group>"; };
+		EDF521A5FFBB6D3CC5F6D0C3 /* firefly_037.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_037.png; sourceTree = "<group>"; };
+		EF7409856ECC4B27D5E8DCB1 /* firefly_093.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_093.png; sourceTree = "<group>"; };
 		F043DF16AC873A5DE4C8D4F3 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		F0D421C65185A6B0293D2A62 /* firefly_155.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_155.png; sourceTree = "<group>"; };
+		F0D6CC7C20E4B28629A6FF53 /* firefly_173.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_173.png; sourceTree = "<group>"; };
+		F33601FB58C5B39D4717AFDA /* firefly_203.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_203.png; sourceTree = "<group>"; };
 		F5376D5F6A51972EB5945899 /* LullSleepAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LullSleepAttributes.swift; sourceTree = "<group>"; };
+		F5BAA0DEE567BD161EF87600 /* firefly_082.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_082.png; sourceTree = "<group>"; };
 		F5C3E599230C7E37F4484E0C /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ActivityKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F621BE32DE3B11CC7BD82A05 /* JetBrainsMono-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		F6523881C2EC7B58DFCA165D /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = UIKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F768D3435548C53F7248FEE9 /* firefly_053.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_053.png; sourceTree = "<group>"; };
+		F7932336B215FFF1419153A5 /* firefly_169.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_169.png; sourceTree = "<group>"; };
+		F7FD533B82CD6673A9387298 /* firefly_233.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_233.png; sourceTree = "<group>"; };
+		F83DB40CE73F7E65061A8FEA /* firefly_045.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_045.png; sourceTree = "<group>"; };
 		F8EEB18F33B3C458985C4BE3 /* PrepChecklistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistWidget.swift; sourceTree = "<group>"; };
+		F911DB3195E0C80D53062DA9 /* firefly_205.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_205.png; sourceTree = "<group>"; };
+		FA38600995707358E46B626F /* firefly_116.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_116.png; sourceTree = "<group>"; };
+		FA41724EB389D6CBD0221915 /* firefly_138.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_138.png; sourceTree = "<group>"; };
 		FAFF27B8728ACFEDFF0618E5 /* LullTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LullTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB0EF4ABB0E27BBD6606572A /* firefly_159.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_159.png; sourceTree = "<group>"; };
+		FB8C43A6B915D0D8D27F9AD6 /* firefly_157.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_157.png; sourceTree = "<group>"; };
+		FC98FAAAEE82400E6DA3F321 /* firefly_206.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_206.png; sourceTree = "<group>"; };
 		FD26F7109ED0D4C7059E1B1F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FEED0DA148E32A10AEA8A10F /* firefly_106.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = firefly_106.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -347,6 +829,253 @@
 				76D720789E6933C712334DF0 /* JetBrainsMono-VariableFont_wght.ttf */,
 			);
 			path = Fonts;
+			sourceTree = "<group>";
+		};
+		11E8040A2C344346D203BB24 /* FireflyMascotFrames */ = {
+			isa = PBXGroup;
+			children = (
+				DE7501CAE4A93EB097A56F00 /* firefly_001.png */,
+				CDCC70F3D6A9D3432370460E /* firefly_002.png */,
+				B3F537C5007DF98B60094EE4 /* firefly_003.png */,
+				158F6393F5B727DA2BFDAD8A /* firefly_004.png */,
+				38AC1A59B076C401ACF404F7 /* firefly_005.png */,
+				35E1D323B0AEA520240278B1 /* firefly_006.png */,
+				A122E1ED09028AB01D2CDDA2 /* firefly_007.png */,
+				68667105824859F698475D89 /* firefly_008.png */,
+				B27509CFDE6BFED0A7396F47 /* firefly_009.png */,
+				AFD5C55552E16D81A8B166CF /* firefly_010.png */,
+				A5CE8F5ADF6F4C5B597B2D69 /* firefly_011.png */,
+				9D8DAA2828A6009181E64D94 /* firefly_012.png */,
+				2E96DDF151786F3D3144C2AD /* firefly_013.png */,
+				424BB915952DE6F55B07C5D7 /* firefly_014.png */,
+				84EA6EF82317A5376C4B646D /* firefly_015.png */,
+				1619E98DD86392F9C142DFBB /* firefly_016.png */,
+				422D800E2B443CC5AB435E43 /* firefly_017.png */,
+				660676A9D23E82F68F72D17A /* firefly_018.png */,
+				BD687462F898509170393C16 /* firefly_019.png */,
+				01C931D50CF369E7481342F4 /* firefly_020.png */,
+				65DEF9E8A9CD4A9B6A3C7D35 /* firefly_021.png */,
+				3DA63B2A15F555FC4115F775 /* firefly_022.png */,
+				9FB167D0655BFB505114D558 /* firefly_023.png */,
+				AC9525CA0935317C2BF8C079 /* firefly_024.png */,
+				8ADC8B28281DC27B12BC66BC /* firefly_025.png */,
+				321F24B42B51C98D401F2DDC /* firefly_026.png */,
+				C8584F0424A1FF22543D651A /* firefly_027.png */,
+				37CFB96987DAF72EF531A3D7 /* firefly_028.png */,
+				DDC2CFCF785C27A212001887 /* firefly_029.png */,
+				91501B96E564A61156A660F5 /* firefly_030.png */,
+				2BC3EB771E0D33C5AF64E0E6 /* firefly_031.png */,
+				E5940F855B7D34711DE8DE9F /* firefly_032.png */,
+				1935E2393D442C2516AD2837 /* firefly_033.png */,
+				C84CF9C9258FDB1D5602877C /* firefly_034.png */,
+				43FCF4A37B6FD430BA726411 /* firefly_035.png */,
+				2E09F8BAEFB87646EB73B7C1 /* firefly_036.png */,
+				EDF521A5FFBB6D3CC5F6D0C3 /* firefly_037.png */,
+				B99F8EC6195B626B133A9683 /* firefly_038.png */,
+				53883010371235B718BE3C09 /* firefly_039.png */,
+				CD4FBD8F39200A4D1102822A /* firefly_040.png */,
+				7D8C6698DB4F54A9762A028A /* firefly_041.png */,
+				94AA09D2D3FA8F2DA976794C /* firefly_042.png */,
+				DD8B637718AD4335EED9D0FD /* firefly_043.png */,
+				6FE4B31D562647501AE0A213 /* firefly_044.png */,
+				F83DB40CE73F7E65061A8FEA /* firefly_045.png */,
+				6D59E3FF01807528921336BD /* firefly_046.png */,
+				7F8D7214E58B9983E9C365F8 /* firefly_047.png */,
+				79E4BEC8A6EDEA789918F3A8 /* firefly_048.png */,
+				25DDDD98D1A328B72E8D8FDE /* firefly_049.png */,
+				B054318697D7B28B6A77D1FB /* firefly_050.png */,
+				2E88D6D50ACC57AF5BBE6D0F /* firefly_051.png */,
+				DC243A7EAA90F97D3FD77F5A /* firefly_052.png */,
+				F768D3435548C53F7248FEE9 /* firefly_053.png */,
+				A5F60FF5C35ABE899CDF0BB9 /* firefly_054.png */,
+				D053515DA31403D093AAB495 /* firefly_055.png */,
+				57E9602CAF732EA4A6B20278 /* firefly_056.png */,
+				70183D8A1867B77AB7FC4837 /* firefly_057.png */,
+				A4D262B7FC8CB8D82C898555 /* firefly_058.png */,
+				3E74D871456C668563DA64A1 /* firefly_059.png */,
+				1CCA8992F4D8CD9AFB337D99 /* firefly_060.png */,
+				5DF680EC2213FE7D56E9D00B /* firefly_061.png */,
+				8587592CB8CFDF594C6429E0 /* firefly_062.png */,
+				3A277DAB5BD8130015A6AC40 /* firefly_063.png */,
+				68D98C7BD2C0033E5721A96F /* firefly_064.png */,
+				E0A11EA983D228EE9065931C /* firefly_065.png */,
+				4E5D996C30B04EB6CAE1D758 /* firefly_066.png */,
+				CF1D10161D697CDC6D4746B4 /* firefly_067.png */,
+				C3F0691BF44E540EF46BC8B1 /* firefly_068.png */,
+				3F20E526CEA6AFC90146811D /* firefly_069.png */,
+				73ED587F01192B5D02655676 /* firefly_070.png */,
+				85B5B08972224D75C2985CB4 /* firefly_071.png */,
+				2D136E898D9FB77DA9A0611E /* firefly_072.png */,
+				DB12B40E83CBB767995B61F3 /* firefly_073.png */,
+				1A36B3344BF3DA5C2F0AD074 /* firefly_074.png */,
+				B9BA5FB8B52C2E2AE45C5FC6 /* firefly_075.png */,
+				0F596A6A897145D80EE472E0 /* firefly_076.png */,
+				08F35C408AAC83F07782E6C8 /* firefly_077.png */,
+				89D559C60ED9314E2299A8F2 /* firefly_078.png */,
+				191E48460682830CBE3AB17B /* firefly_079.png */,
+				8218AC892A59D5B2F9C543F3 /* firefly_080.png */,
+				559FF7885F2F861F210A97D2 /* firefly_081.png */,
+				F5BAA0DEE567BD161EF87600 /* firefly_082.png */,
+				ED5402FC982B9ACAF1D5C11D /* firefly_083.png */,
+				C3F7DD17C3B86E944E4473E6 /* firefly_084.png */,
+				0B802CB27312B21877E79C83 /* firefly_085.png */,
+				9AB7C88BB1B652FD11875334 /* firefly_086.png */,
+				9CD1E2708A626F2812D65DB5 /* firefly_087.png */,
+				6D54C75C29F98C57B0A5BAFF /* firefly_088.png */,
+				05BD63A46DA79D43578FA045 /* firefly_089.png */,
+				5095C59816EB839EEC51B3DD /* firefly_090.png */,
+				449DECEE26942F98F0541B9E /* firefly_091.png */,
+				DE733AD3A75E7F9AA1CF27BA /* firefly_092.png */,
+				EF7409856ECC4B27D5E8DCB1 /* firefly_093.png */,
+				499652C96F7DD319C640BAB8 /* firefly_094.png */,
+				46E48E2E85A63BE4E80657D3 /* firefly_095.png */,
+				0D991B44D2DB8706404A4DAE /* firefly_096.png */,
+				C0BEB2FF4C6516708572064A /* firefly_097.png */,
+				28D6D01A514D497BCB156A89 /* firefly_098.png */,
+				16590225332D4A989315D094 /* firefly_099.png */,
+				1833280BDB6996026BC9EB7B /* firefly_100.png */,
+				7EEB7E1455DF48C0911E5461 /* firefly_101.png */,
+				4B93B4B91B04635CFB3B8AA5 /* firefly_102.png */,
+				14F5BE257D9DA22444869AF5 /* firefly_103.png */,
+				08FDB35A720CF9350C914A0E /* firefly_104.png */,
+				2097BCFFFD55C28FCB955CB4 /* firefly_105.png */,
+				FEED0DA148E32A10AEA8A10F /* firefly_106.png */,
+				C7936C1884E9CBC94A4C0F10 /* firefly_107.png */,
+				9EC101C88AD0363CE9C0A3C5 /* firefly_108.png */,
+				5997541E0394D2429833F3EE /* firefly_109.png */,
+				A120BE74E9342492712FC0B1 /* firefly_110.png */,
+				B282A6AD1C8374677BC658D3 /* firefly_111.png */,
+				B207085AD99C5B3E234B8A36 /* firefly_112.png */,
+				5CBB20C2A16415D98822FC33 /* firefly_113.png */,
+				E6AF3510B72D66DE7F64D581 /* firefly_114.png */,
+				B0697B0CB604FE238C1DC417 /* firefly_115.png */,
+				FA38600995707358E46B626F /* firefly_116.png */,
+				12E242A15AB600A8AF96AA3F /* firefly_117.png */,
+				6B4D6A528E22211AE5D1751C /* firefly_118.png */,
+				BD08E49440CAC3F762429698 /* firefly_119.png */,
+				1A7DCB0B3A3A272C5F862763 /* firefly_120.png */,
+				25E2D0EAF6A9C62AB5E588F8 /* firefly_121.png */,
+				351EE6BE6D78A65B6960A088 /* firefly_122.png */,
+				CF24303833A188365BE0F2DF /* firefly_123.png */,
+				9B244E039B8D7AE17D68CC39 /* firefly_124.png */,
+				ABD1DA87C57D02FCDA3E823F /* firefly_125.png */,
+				B43FEF3E6653ECBE628AB5B3 /* firefly_126.png */,
+				3796A41A8CE5F0A2F4A7760F /* firefly_127.png */,
+				4EA31114BC6DEFC5D2D6CE22 /* firefly_128.png */,
+				1F64A529590C4F77A111DB09 /* firefly_129.png */,
+				05AE68249CDE3D85D1A41F01 /* firefly_130.png */,
+				002FE0B7A070DCE4F1C7E18F /* firefly_131.png */,
+				CA7BB83BDC8B1C8C28DACC1D /* firefly_132.png */,
+				9E173625F69FC7374D0F38BB /* firefly_133.png */,
+				1C3FB1D04C55E90BED3DCF08 /* firefly_134.png */,
+				DE4699ACDBB2B24B424CBD06 /* firefly_135.png */,
+				85A2D73366D0A4927B5C5EFD /* firefly_136.png */,
+				8DE1869D350378551D7B8D90 /* firefly_137.png */,
+				FA41724EB389D6CBD0221915 /* firefly_138.png */,
+				D3D903BE9D5FAD070DF0575A /* firefly_139.png */,
+				496CFC59FC8FFA9FA825DB9D /* firefly_140.png */,
+				CBB39CFDE99CE100F06E7F42 /* firefly_141.png */,
+				0498A52B563C9A32E6673529 /* firefly_142.png */,
+				AD6CFF572238598C82AE9ADF /* firefly_143.png */,
+				2A56033B719EF94CB70EF875 /* firefly_144.png */,
+				2C3D10B28764AF7A89BBDE28 /* firefly_145.png */,
+				035551BCA5A6D7C583E9445C /* firefly_146.png */,
+				C89BBF3462274ADDA56BFDD6 /* firefly_147.png */,
+				B7BAF1C03F2B7CB504D7A07F /* firefly_148.png */,
+				69E59CF027AB7B36C8B1F701 /* firefly_149.png */,
+				EBCDAA8155603C5866E1C412 /* firefly_150.png */,
+				02CD0032EC215E0D53DCB8AF /* firefly_151.png */,
+				D13562BE3E619D66BC5BA93F /* firefly_152.png */,
+				DE75EB9C27E907D13C8E983C /* firefly_153.png */,
+				6948CB7D28A2F1B4E2A5D99D /* firefly_154.png */,
+				F0D421C65185A6B0293D2A62 /* firefly_155.png */,
+				074AA7BEB97AFBCA58852191 /* firefly_156.png */,
+				FB8C43A6B915D0D8D27F9AD6 /* firefly_157.png */,
+				3233319CA73378E0E3CC77FB /* firefly_158.png */,
+				FB0EF4ABB0E27BBD6606572A /* firefly_159.png */,
+				710FF3928C845CEBE26B7CE0 /* firefly_160.png */,
+				3EDA3A3D7FBACC6A66D37D85 /* firefly_161.png */,
+				369C5DA38C1F2B5E8550D75E /* firefly_162.png */,
+				83DDDDFA0CC7764E61215C31 /* firefly_163.png */,
+				81FA542AE5F0427C5005D4C9 /* firefly_164.png */,
+				588B7E8CC462F8CCF010E10D /* firefly_165.png */,
+				EA1FEB29447BA3375C7E935B /* firefly_166.png */,
+				3870137E3E212282CE198462 /* firefly_167.png */,
+				C0022BC5D0343CB7229F4E97 /* firefly_168.png */,
+				F7932336B215FFF1419153A5 /* firefly_169.png */,
+				04654A91FD61AA22868C6398 /* firefly_170.png */,
+				8073D1D922850EC882594888 /* firefly_171.png */,
+				6C82D8EFF2CBB14E1666567D /* firefly_172.png */,
+				F0D6CC7C20E4B28629A6FF53 /* firefly_173.png */,
+				052A924EDF39A6DB39EA171F /* firefly_174.png */,
+				AD200A0564410F51E82EE927 /* firefly_175.png */,
+				0CF06354F2663ED9FB7D834D /* firefly_176.png */,
+				2815CD18FB1A928CD75267F1 /* firefly_177.png */,
+				7F31EA645D9B8D152ED7F53A /* firefly_178.png */,
+				2B1CFF08D5C037EB6309A055 /* firefly_179.png */,
+				7475BDA7A404C590FEB47B72 /* firefly_180.png */,
+				D376E3BFAA5A2321B4EB66A5 /* firefly_181.png */,
+				615C4A8DA1EB8BA250EB30B1 /* firefly_182.png */,
+				35810B30095514351F9F4B1B /* firefly_183.png */,
+				C247230E9CFAF00C7B946682 /* firefly_184.png */,
+				EA397D15D390FF366C32D1C0 /* firefly_185.png */,
+				BBB6183759050CD70E6DA704 /* firefly_186.png */,
+				930469D2DD643070B5B2F472 /* firefly_187.png */,
+				1613805F8841FB99191EDD3C /* firefly_188.png */,
+				8A237FAA04A60330D3163D33 /* firefly_189.png */,
+				5A20D2AC291945A57D365F21 /* firefly_190.png */,
+				2D13A7A98C08E82363A8F0ED /* firefly_191.png */,
+				43430767A044DD6DF96B1829 /* firefly_192.png */,
+				1FFB3745179ED5B95DFEE9AE /* firefly_193.png */,
+				285DA8B24128213156B425D1 /* firefly_194.png */,
+				90ABC7E32BEB96339155777A /* firefly_195.png */,
+				5A9CDAF2FF31347205E43244 /* firefly_196.png */,
+				7EA5EE582C7F1D5BAC57D966 /* firefly_197.png */,
+				71698A73D9AEB6F4C02907C2 /* firefly_198.png */,
+				4F0EC4EF10A545456B5C4A69 /* firefly_199.png */,
+				A614FA379A36D0965CFB33DE /* firefly_200.png */,
+				22FC8C7DDC970A0E466710B2 /* firefly_201.png */,
+				2E11089C3BC6A59046FD1190 /* firefly_202.png */,
+				F33601FB58C5B39D4717AFDA /* firefly_203.png */,
+				6431985CCF86E926A6314DE6 /* firefly_204.png */,
+				F911DB3195E0C80D53062DA9 /* firefly_205.png */,
+				FC98FAAAEE82400E6DA3F321 /* firefly_206.png */,
+				D2D9B377F8020F2A3034AC05 /* firefly_207.png */,
+				2F9B87D74DE5902C59E4928E /* firefly_208.png */,
+				7EB4F6A90D6968F28493405D /* firefly_209.png */,
+				E8227D7E21D8F8451B1FD1DD /* firefly_210.png */,
+				EA227AFAF191C948F9EC9835 /* firefly_211.png */,
+				7C640C08D33C758494997F00 /* firefly_212.png */,
+				B89C6DD1E0EAD8B4D1A3375B /* firefly_213.png */,
+				6D318B19E4AEE4C4AF563647 /* firefly_214.png */,
+				50EBEFE3D51253E30D6C9BD3 /* firefly_215.png */,
+				2EF1C493075C666B8410C85C /* firefly_216.png */,
+				BDC2B60AA3A22B9442208FF4 /* firefly_217.png */,
+				51951CE50DBA401EA00B3C3A /* firefly_218.png */,
+				0C8A9AB59590F9FC8D518DB4 /* firefly_219.png */,
+				7212983D68D02AE1945B34B3 /* firefly_220.png */,
+				1097F3912AE111823C808B8C /* firefly_221.png */,
+				A731624BC250C84D95DB1B05 /* firefly_222.png */,
+				959E223B05D41C67130DC86D /* firefly_223.png */,
+				23443E10395BD2053E994094 /* firefly_224.png */,
+				0DCB057EA1C806CE8072D999 /* firefly_225.png */,
+				54BDDFB108C07915CB838BDE /* firefly_226.png */,
+				39A8EC05EB339B04DC16E232 /* firefly_227.png */,
+				CFC51D4C4CCEC583E75C2E59 /* firefly_228.png */,
+				588EC471116E1EB5FF16A90B /* firefly_229.png */,
+				8884EB9BC8511BDB7F8B13D2 /* firefly_230.png */,
+				33ABDE8C2E3071D77FC84F6F /* firefly_231.png */,
+				138BD46DDF50339D41A613F2 /* firefly_232.png */,
+				F7FD533B82CD6673A9387298 /* firefly_233.png */,
+				55A64976E2EC5E6CC989C2A1 /* firefly_234.png */,
+				14D0253787323E22F309F90C /* firefly_235.png */,
+				B052AC905FF2F40595172146 /* firefly_236.png */,
+				1710FAF6A03428608E49BCA9 /* firefly_237.png */,
+				1640336970AF3A7AB405F283 /* firefly_238.png */,
+				50B59F4CB64999B67871685D /* firefly_239.png */,
+				B3B6FF888241C400474D0A40 /* firefly_240.png */,
+			);
+			path = FireflyMascotFrames;
 			sourceTree = "<group>";
 		};
 		12E0EE610DC5A34007E56E58 /* SleepSounds */ = {
@@ -457,6 +1186,7 @@
 		59D249DFB593ABC6BFD84709 /* LullUITests */ = {
 			isa = PBXGroup;
 			children = (
+				49CB3C284B89AC20815484A5 /* HoldToConfirmUITests.swift */,
 				B91C804835D315EB2455B1AC /* NavigationSmokeUITests.swift */,
 			);
 			path = LullUITests;
@@ -466,6 +1196,7 @@
 			isa = PBXGroup;
 			children = (
 				4899657867919D25621A8287 /* PaywallFlowView.swift */,
+				474E2CB618C131876FA026D9 /* TrialPaywallViews.swift */,
 			);
 			path = Paywall;
 			sourceTree = "<group>";
@@ -474,9 +1205,9 @@
 			isa = PBXGroup;
 			children = (
 				16E004D9956182579C109650 /* Assets.xcassets */,
-				0CD10D2531D75B7D17A2FA30 /* FireflyMascotFrames */,
 				2B63FB21F0EF5762C4A6748C /* PrivacyInfo.xcprivacy */,
 				C5FC6273F34A2E39A7DC747F /* Audio */,
+				11E8040A2C344346D203BB24 /* FireflyMascotFrames */,
 				0889BE44A4F459812D68550C /* Fonts */,
 			);
 			path = Resources;
@@ -829,7 +1560,6 @@
 				9A2557E81FC029A50CF3C202 /* 4-7-3-breathing-v2.m4a in Resources */,
 				C0F75F60A7038124EE089F6F /* 478-breathing-revised.mp3 in Resources */,
 				113FA7D10848B59AC6679BFA /* Assets.xcassets in Resources */,
-				6BD49CCF65F42E37FA4D2C56 /* FireflyMascotFrames in Resources */,
 				9BC0606547D70FE1048FA38B /* Fraunces-Italic-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				FEAF6D5C97A26FED92454446 /* Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf in Resources */,
 				6CEF3877A67076E2A448A7D8 /* JetBrainsMono-Italic-VariableFont_wght.ttf in Resources */,
@@ -842,6 +1572,246 @@
 				4E09A57D7261D99C31D09327 /* body-scan.mp3 in Resources */,
 				6156C55BBF841CE22DF3D654 /* boring-story-01.mp3 in Resources */,
 				D60F54DC243EB25A2C2236D7 /* boring-story-02.mp3 in Resources */,
+				824D8700401FB2B3941C8741 /* firefly_001.png in Resources */,
+				9238CEE1D0B9D6CF57B415E3 /* firefly_002.png in Resources */,
+				BB3938B4E322B973005229C6 /* firefly_003.png in Resources */,
+				E7E2933A8D81DE48ED05A1C3 /* firefly_004.png in Resources */,
+				4A089A70EA8C9539BF33DF8B /* firefly_005.png in Resources */,
+				45F69F4C776C284CC92809E4 /* firefly_006.png in Resources */,
+				843A41C3A9CA5FA7EE12C2D7 /* firefly_007.png in Resources */,
+				E3768A6617B38AEE60786C7A /* firefly_008.png in Resources */,
+				3A97CD277DF809135B5644D9 /* firefly_009.png in Resources */,
+				12C2DD4218FFFE2850CEFE4B /* firefly_010.png in Resources */,
+				1BC2B0D775700B3A0680BACA /* firefly_011.png in Resources */,
+				D02C1C3D473F20156A0897BF /* firefly_012.png in Resources */,
+				97C0CF4F87E2B36C8A409FED /* firefly_013.png in Resources */,
+				6C4B65A87EE26C92A2E7E95D /* firefly_014.png in Resources */,
+				F38BE5A5F69598553D18267D /* firefly_015.png in Resources */,
+				9FF52B1B2169EB41BFAB07EB /* firefly_016.png in Resources */,
+				C250EF25E904CE876CA7770A /* firefly_017.png in Resources */,
+				A59BD96E6758DD2DBDAE8E59 /* firefly_018.png in Resources */,
+				8E9CDF39120B4AE6ABE6B3A8 /* firefly_019.png in Resources */,
+				3939082005688997A2DCFD5B /* firefly_020.png in Resources */,
+				879F956D7F904B3345BEE7D2 /* firefly_021.png in Resources */,
+				79EA7FEA3335642A3BE7F945 /* firefly_022.png in Resources */,
+				44347EE87EB37CBAF64D7FB0 /* firefly_023.png in Resources */,
+				ACD210494E29FE7418418607 /* firefly_024.png in Resources */,
+				6D85D8469CB5DEF71F073E12 /* firefly_025.png in Resources */,
+				74129D9111BBFF22610DC7D5 /* firefly_026.png in Resources */,
+				656B1D561C2A40005085B0D0 /* firefly_027.png in Resources */,
+				5B80006179731337947D2BB1 /* firefly_028.png in Resources */,
+				8329AC37D7038831511EDBF8 /* firefly_029.png in Resources */,
+				F875FE08D0BD35B65C7234A0 /* firefly_030.png in Resources */,
+				F96C4ADB5A062FC9CAA2F9B3 /* firefly_031.png in Resources */,
+				70C2CFD19C64BBAE8F795D5C /* firefly_032.png in Resources */,
+				BC4D14BB52DA7707BF20A6D9 /* firefly_033.png in Resources */,
+				1BF880F2068E137339254EDC /* firefly_034.png in Resources */,
+				F6F43FB3F5F9AB7EFDA91520 /* firefly_035.png in Resources */,
+				F29BBB2B88FB77BDB086CA9A /* firefly_036.png in Resources */,
+				7842C4E0C065218FF8D50635 /* firefly_037.png in Resources */,
+				F46034502262896D2FFBE1C0 /* firefly_038.png in Resources */,
+				5FA6AB0B4F1A3EA6454A2ED8 /* firefly_039.png in Resources */,
+				D3094840EEE855CBB910AB9D /* firefly_040.png in Resources */,
+				D4715BE6A83173A97844D21A /* firefly_041.png in Resources */,
+				94B738DECD489B553DC49FB8 /* firefly_042.png in Resources */,
+				D9C638574AAB6AEC6336D9CF /* firefly_043.png in Resources */,
+				87EAD69C6B5355FEFF729719 /* firefly_044.png in Resources */,
+				9A60170C79C4DFEB66B0978D /* firefly_045.png in Resources */,
+				F1CA9320F41C38EA5E9580CA /* firefly_046.png in Resources */,
+				D7FE1682E7519CB71BC7D729 /* firefly_047.png in Resources */,
+				F7B678BA2BED2574F699C96E /* firefly_048.png in Resources */,
+				F46225D948DB50AB9EC74B2B /* firefly_049.png in Resources */,
+				261A076BDE8F9FA849EFF767 /* firefly_050.png in Resources */,
+				C09F32844B7C03C8346C5C56 /* firefly_051.png in Resources */,
+				7BF92A726B5DE6896FFF081A /* firefly_052.png in Resources */,
+				25B19F1FD73D664763776D93 /* firefly_053.png in Resources */,
+				95FBC3BC5C38457CDAD92D31 /* firefly_054.png in Resources */,
+				C847F96E8B4CE9FF7928B5ED /* firefly_055.png in Resources */,
+				4DA5C44FBD3099E1A402E142 /* firefly_056.png in Resources */,
+				7E63FC25FFE9D66E951D79F5 /* firefly_057.png in Resources */,
+				1CBBE1C59CD103891FFC41EF /* firefly_058.png in Resources */,
+				20678CBC33B37307A146B559 /* firefly_059.png in Resources */,
+				C37A68C9F1E4B52CB2818BF1 /* firefly_060.png in Resources */,
+				E7EC2E484B3D587D229D8DC5 /* firefly_061.png in Resources */,
+				6F2E62745C68F7A6D16822E3 /* firefly_062.png in Resources */,
+				A688575386DCBAD731F83A62 /* firefly_063.png in Resources */,
+				1C27696AE2CDAEE1688A9764 /* firefly_064.png in Resources */,
+				EC96C49DB097154C58B66E54 /* firefly_065.png in Resources */,
+				372A5A101D29FAA06A8C1A37 /* firefly_066.png in Resources */,
+				DEFC1084EE1AF80F6272140B /* firefly_067.png in Resources */,
+				4BEF3FC16C9489C40087BA21 /* firefly_068.png in Resources */,
+				7105AB9E32DFA2B2E1C6A5A2 /* firefly_069.png in Resources */,
+				97A36088C7833E8C93063E36 /* firefly_070.png in Resources */,
+				0EDF401186AA71E18E797080 /* firefly_071.png in Resources */,
+				5B944DCA1712D41B8B2AD6F6 /* firefly_072.png in Resources */,
+				C7C51D1B4114B60E60129D0E /* firefly_073.png in Resources */,
+				B8C6C9E30047EDDF89F8ECBD /* firefly_074.png in Resources */,
+				34E2AF37DDCCF1D0D5A1B2E8 /* firefly_075.png in Resources */,
+				796999C2EF95EFF14218702F /* firefly_076.png in Resources */,
+				B25A09DBE601D41B87728B84 /* firefly_077.png in Resources */,
+				3F12CCC888A8AC35108BA8A9 /* firefly_078.png in Resources */,
+				C2AF3FFCCA064B2880753D20 /* firefly_079.png in Resources */,
+				A064F71A0657082533CAA165 /* firefly_080.png in Resources */,
+				762E8EDED151C4AAF8725D00 /* firefly_081.png in Resources */,
+				26687015A638BCDA2AA5A17E /* firefly_082.png in Resources */,
+				7EE0477A2115F86F64E019C7 /* firefly_083.png in Resources */,
+				C47D56EBEA171B21E345FC50 /* firefly_084.png in Resources */,
+				F0B6667BCCEBE2EC67725D06 /* firefly_085.png in Resources */,
+				037D05B2B5540B81F65BBCD1 /* firefly_086.png in Resources */,
+				A1A440A544678374E0DB6E4D /* firefly_087.png in Resources */,
+				8140D0124978FD988A406A1E /* firefly_088.png in Resources */,
+				E064C89AE62C5A0CA95F73E5 /* firefly_089.png in Resources */,
+				BF84C3202AB05E15C4E0012D /* firefly_090.png in Resources */,
+				590317574C91E16FA856C2CF /* firefly_091.png in Resources */,
+				9A8ED2B28D7A62389A7A174E /* firefly_092.png in Resources */,
+				31AE6CD2356CA7A3EFDEEE07 /* firefly_093.png in Resources */,
+				DD2962E8DF5589014419232D /* firefly_094.png in Resources */,
+				B4CBC94A83F56AF22BF20F4A /* firefly_095.png in Resources */,
+				E3E2FA4D1D1D34222EA38623 /* firefly_096.png in Resources */,
+				6E5344768E308C5FF08C09BF /* firefly_097.png in Resources */,
+				A6CC4D34B45594E1CE664542 /* firefly_098.png in Resources */,
+				0A3BA0F8BB7931792F3DB013 /* firefly_099.png in Resources */,
+				10990949E0E78FED98BE5E49 /* firefly_100.png in Resources */,
+				C6E2656CDC16240D6F703D8E /* firefly_101.png in Resources */,
+				D026BDF784219B626F0630B5 /* firefly_102.png in Resources */,
+				F19B5AFFA41D8A64346F4085 /* firefly_103.png in Resources */,
+				F2109B9A96C2F5BF27426D81 /* firefly_104.png in Resources */,
+				225FC96A40C73D3445090FA3 /* firefly_105.png in Resources */,
+				49E4C8498DCBCB0A7BF7D398 /* firefly_106.png in Resources */,
+				2F4FFB436C21300E00DA2432 /* firefly_107.png in Resources */,
+				BC874384B15C5EBCC66705B6 /* firefly_108.png in Resources */,
+				71615BD3311638E3B4EE3DA9 /* firefly_109.png in Resources */,
+				BC1D137083F82DB896EFEA29 /* firefly_110.png in Resources */,
+				1F064C9AA8467BF6C520EC50 /* firefly_111.png in Resources */,
+				517C8F13D03A8658E083C07A /* firefly_112.png in Resources */,
+				B7754BD384F36D92C3599C32 /* firefly_113.png in Resources */,
+				13DC8819887A6B2CD4D36F52 /* firefly_114.png in Resources */,
+				1E4F8657B9AE65C5B5BC68C7 /* firefly_115.png in Resources */,
+				947EE729F05B8B8C7A3F6079 /* firefly_116.png in Resources */,
+				30F6AB4E6668068A842D0159 /* firefly_117.png in Resources */,
+				D3020A35121860F65161F91C /* firefly_118.png in Resources */,
+				B4A405DA135991097B86FCEF /* firefly_119.png in Resources */,
+				6DEEB0702C4AF9B1640007F0 /* firefly_120.png in Resources */,
+				5FE60120A919ED0CB99878DD /* firefly_121.png in Resources */,
+				27C842715124AA9EBCE99570 /* firefly_122.png in Resources */,
+				F7247B34812D38BE5922B885 /* firefly_123.png in Resources */,
+				AA93157999FE60F52B85E75E /* firefly_124.png in Resources */,
+				D855D4C8D111434ED0CAD6E7 /* firefly_125.png in Resources */,
+				98FE0D9B39D9EBEB75347CCF /* firefly_126.png in Resources */,
+				71AC6C13146F1C38B5EB5A27 /* firefly_127.png in Resources */,
+				69825FF5F9808B8724A14D3C /* firefly_128.png in Resources */,
+				54E509350A537249FFC10DAB /* firefly_129.png in Resources */,
+				1B7C6BEB2C948B0AE5DEDEDD /* firefly_130.png in Resources */,
+				7D16A041F9ACE7D97466C531 /* firefly_131.png in Resources */,
+				6C9A6FD9289B85E86E58DF61 /* firefly_132.png in Resources */,
+				2F3B5001DCABF98FF3B2BD7F /* firefly_133.png in Resources */,
+				577179404391C4B63BD68DAD /* firefly_134.png in Resources */,
+				06FF28F7ADA4D162CD81443A /* firefly_135.png in Resources */,
+				12203EE6A856230A103DA424 /* firefly_136.png in Resources */,
+				462D6B718C277C09D04C7B41 /* firefly_137.png in Resources */,
+				A13861E7597A2B5644058E86 /* firefly_138.png in Resources */,
+				A103983F1F57B0781BA31650 /* firefly_139.png in Resources */,
+				67B314D56465B2E488719A8C /* firefly_140.png in Resources */,
+				CAD7B89CB35C427A10C708BB /* firefly_141.png in Resources */,
+				E3503FA980EA0DD9BE1CB038 /* firefly_142.png in Resources */,
+				A431A193C042B646794F601E /* firefly_143.png in Resources */,
+				D27A5D2D1B300BBC88361239 /* firefly_144.png in Resources */,
+				40997AECDD899D0811AE6F5E /* firefly_145.png in Resources */,
+				B1D2C6986F2FF5C64CB252CD /* firefly_146.png in Resources */,
+				E38D1A08D0AC976E2ED0FD8D /* firefly_147.png in Resources */,
+				D5BB30BF731AE9930AF26EAA /* firefly_148.png in Resources */,
+				9CE65E85C3D6C0690ADA6EEA /* firefly_149.png in Resources */,
+				E6CDBE46CC7A7BF7EEBB7F91 /* firefly_150.png in Resources */,
+				024B47C724BCF278BEA9C5BD /* firefly_151.png in Resources */,
+				D7DEE78B5AC0AC2BAA2D9081 /* firefly_152.png in Resources */,
+				4DE079B79FA17BCCE92B5ADF /* firefly_153.png in Resources */,
+				AEAD2585F6009C46AE4024A4 /* firefly_154.png in Resources */,
+				6A06DAC5DA77A1B791202A48 /* firefly_155.png in Resources */,
+				3C0E146E31DFFF8E8C0B41D3 /* firefly_156.png in Resources */,
+				FC3E34E8703B4480BB030366 /* firefly_157.png in Resources */,
+				D55A3CDE1ADEECD99CCAC287 /* firefly_158.png in Resources */,
+				AB6B85F65170A00234BAF1B4 /* firefly_159.png in Resources */,
+				E4114C8931F48A1BA4F36031 /* firefly_160.png in Resources */,
+				56C1364AFA1C90BC9CFDA06E /* firefly_161.png in Resources */,
+				63F60C132C101F8B0146C414 /* firefly_162.png in Resources */,
+				59FCC4255763C9DEAB817E54 /* firefly_163.png in Resources */,
+				326276F9ACDA705099994C68 /* firefly_164.png in Resources */,
+				C1E7B0EC13BDC69C623E0395 /* firefly_165.png in Resources */,
+				F3ACC41625AA9A6D5E2E05AF /* firefly_166.png in Resources */,
+				1436E28C78AE8C837FBFC2DE /* firefly_167.png in Resources */,
+				D4183CB5A53F593FDC16C3D7 /* firefly_168.png in Resources */,
+				671C3B02DC2CAB0359DAE5FC /* firefly_169.png in Resources */,
+				09CF50795F8C3D579929A453 /* firefly_170.png in Resources */,
+				B222D29E87FA2F759FB10C30 /* firefly_171.png in Resources */,
+				F9B5C5F0AB13CD4E5800DB70 /* firefly_172.png in Resources */,
+				D8ACA2ACDC29EC36FA764A46 /* firefly_173.png in Resources */,
+				AA12313967B358D37130CB16 /* firefly_174.png in Resources */,
+				C58FA791B34D64C13CFC26DD /* firefly_175.png in Resources */,
+				695ED8B7443767C4892E940A /* firefly_176.png in Resources */,
+				3A5398DAC4EDC08FD002E79D /* firefly_177.png in Resources */,
+				30DE414C0A1D6724C1CD246D /* firefly_178.png in Resources */,
+				9D5701959F2A9932E2B36757 /* firefly_179.png in Resources */,
+				48E2DE13000BD6DBACC589F0 /* firefly_180.png in Resources */,
+				D052C9FB398DC14AF4A71EC2 /* firefly_181.png in Resources */,
+				043CF6CF2839B0AA6915705B /* firefly_182.png in Resources */,
+				C8E38351211FDBA96236550C /* firefly_183.png in Resources */,
+				0DE71E29CF1C695D79A8777A /* firefly_184.png in Resources */,
+				518E72F52B29D47B4A2383DD /* firefly_185.png in Resources */,
+				184A3D70EDC34C0FAB5465BD /* firefly_186.png in Resources */,
+				295F4AD226BC92BDE618A20C /* firefly_187.png in Resources */,
+				B2F6E98812DAE6816DA92A34 /* firefly_188.png in Resources */,
+				25B92F39DAA6A6C715A4493C /* firefly_189.png in Resources */,
+				34F42B1FB019C40A6BDC8A8F /* firefly_190.png in Resources */,
+				0A173D2F4FA292A6B7A004E3 /* firefly_191.png in Resources */,
+				6C91FC68B6A28DF170BE03A5 /* firefly_192.png in Resources */,
+				6F6A135E87FB596B4A93A0A4 /* firefly_193.png in Resources */,
+				B07A6D6BE131B66EB5DFD20B /* firefly_194.png in Resources */,
+				17790059E20E10272041DF59 /* firefly_195.png in Resources */,
+				EFD3A5C4BC428A44FA51731D /* firefly_196.png in Resources */,
+				86B5B15CFE1856796EF62D73 /* firefly_197.png in Resources */,
+				E1195ACBF9A91ED09450E9F3 /* firefly_198.png in Resources */,
+				CFE0CB2E9050893CBC0BDD5C /* firefly_199.png in Resources */,
+				CFA8BBB2C78A876370F0AB1D /* firefly_200.png in Resources */,
+				ECDD5778E378612C42382DE8 /* firefly_201.png in Resources */,
+				0CE64A6801D99DC01A6074A9 /* firefly_202.png in Resources */,
+				ADB65979578E8F7D84E613D4 /* firefly_203.png in Resources */,
+				ED991F3F8E12FFFBD4F28DEA /* firefly_204.png in Resources */,
+				C81F2085647FDE0DA96CDB67 /* firefly_205.png in Resources */,
+				0673E2F2F6DD320D60D78BDA /* firefly_206.png in Resources */,
+				D77155EACAB5107A61F534EE /* firefly_207.png in Resources */,
+				A15CFA252BBEB150C75C7BCB /* firefly_208.png in Resources */,
+				2140626420493F625C2B1A7A /* firefly_209.png in Resources */,
+				0AB871A3C06AC50A40767B83 /* firefly_210.png in Resources */,
+				AD0CAC9FFA4C75766D5D57BD /* firefly_211.png in Resources */,
+				19A8303B4C9CD5AB586D2422 /* firefly_212.png in Resources */,
+				E6FD6047829FFE825B7EFFF7 /* firefly_213.png in Resources */,
+				B9FFB847BE58A6B552096F99 /* firefly_214.png in Resources */,
+				06474E696AEF485F4CF1A446 /* firefly_215.png in Resources */,
+				9D9BFDB57BE48EC8C08DF86C /* firefly_216.png in Resources */,
+				B517DB2BF0B9A36005417B50 /* firefly_217.png in Resources */,
+				14A51A0F218393546BCB9FBB /* firefly_218.png in Resources */,
+				867A532440CCA0293E9C3A5C /* firefly_219.png in Resources */,
+				84137007E100DEF82EC417C9 /* firefly_220.png in Resources */,
+				C5F17B6430F39BEF78B67CA5 /* firefly_221.png in Resources */,
+				0315BBB49438FE98B02E6334 /* firefly_222.png in Resources */,
+				A11BDC2184C873B2810D94CE /* firefly_223.png in Resources */,
+				4CF36D5BBE3C944D6328D0FC /* firefly_224.png in Resources */,
+				6827CB6BCFDA8927F5C75CDD /* firefly_225.png in Resources */,
+				57AB4F60CEBF9EE89C80A0CF /* firefly_226.png in Resources */,
+				6D948FF61B3CFF055771CF7B /* firefly_227.png in Resources */,
+				7D2858C93BFAF6F052EC8F86 /* firefly_228.png in Resources */,
+				34F91DA43525663D8578675F /* firefly_229.png in Resources */,
+				2EDC678E6005B2FD43AD1AD1 /* firefly_230.png in Resources */,
+				3EBD103FEFF46F5CEEF04A4A /* firefly_231.png in Resources */,
+				DC7278AAA23327175FD8CF44 /* firefly_232.png in Resources */,
+				716BF2FE3885BE4BFE49800B /* firefly_233.png in Resources */,
+				58F40B7FB9E9452E813E4A1F /* firefly_234.png in Resources */,
+				7AB142225C329DB0605AE22A /* firefly_235.png in Resources */,
+				28C43CE60CA0A932CAE900F9 /* firefly_236.png in Resources */,
+				88B06211BAD2A0751A495D1A /* firefly_237.png in Resources */,
+				1976DE3A8B2729ACFE3CD138 /* firefly_238.png in Resources */,
+				F0F61EF663FE004EB225F8C0 /* firefly_239.png in Resources */,
+				686204016A528F92455CDC0B /* firefly_240.png in Resources */,
 				30F51019AE5C0F0FF0F5EC48 /* green-noise.m4a in Resources */,
 				5B0BB5A429CE45EF749E2260 /* heavy-rain.m4a in Resources */,
 				3FD73B619FA7AEB39402B416 /* in captivity.m4a in Resources */,
@@ -859,6 +1829,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2FEDBFC282890CDADA5B1B63 /* HoldToConfirmUITests.swift in Sources */,
 				341F0FCC2C410B751C3708AF /* NavigationSmokeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -962,6 +1933,7 @@
 				FA7C0D3D92D2EA20AF2460CF /* TenThirtyLegalLinks.swift in Sources */,
 				52E5BB2CE77B71702EBC2D68 /* TonightInProgressView.swift in Sources */,
 				981BDB3543079203B64425EE /* TonightPreviewCard.swift in Sources */,
+				3D9A835D71962E636EB4C53B /* TrialPaywallViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1110,7 +2082,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1124,8 +2096,8 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LULL_ANALYTICS_COHORT = "";
-				LULL_ANALYTICS_ENABLED = NO;
-				LULL_POSTHOG_API_KEY = "";
+				LULL_ANALYTICS_ENABLED = YES;
+				LULL_POSTHOG_API_KEY = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
 				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
@@ -1207,7 +2179,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1227,8 +2199,8 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LULL_ANALYTICS_COHORT = "";
-				LULL_ANALYTICS_ENABLED = NO;
-				LULL_POSTHOG_API_KEY = "";
+				LULL_ANALYTICS_ENABLED = YES;
+				LULL_POSTHOG_API_KEY = phc_zzucF6fB9hkxnkzGtas3bJ7KkndAKrd9TRSCp7ZNAcVX;
 				LULL_POSTHOG_HOST = "https://us.i.posthog.com";
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";

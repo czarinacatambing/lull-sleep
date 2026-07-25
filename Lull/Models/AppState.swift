@@ -185,6 +185,10 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         self != .inBed && leadMinutesBeforeBed != nil
     }
 
+    var isWakeSideRule: Bool {
+        self != .inBed && !isPreBedRule
+    }
+
     var completionPrompt: String {
         switch self {
         case .caffeineCutoff: return "Done with caffeine for today?"
@@ -196,6 +200,32 @@ enum SleepRuleKind: String, Codable, CaseIterable, Identifiable {
         case .gratitudeJournal: return "Mark gratitude journal done"
         case .inBed: return "Confirm ready for sleep"
         }
+    }
+}
+
+/// Default morning-sun window when the user has not customized it yet.
+enum MorningSunWindowDefaults {
+    static let startHour = 6
+    static let startMinute = 0
+    static let endHour = 12
+    static let endMinute = 0
+
+    static func start(on date: Date, calendar: Calendar = .autoupdatingCurrent) -> Date {
+        calendar.date(
+            bySettingHour: startHour,
+            minute: startMinute,
+            second: 0,
+            of: date
+        ) ?? date
+    }
+
+    static func end(on date: Date, calendar: Calendar = .autoupdatingCurrent) -> Date {
+        calendar.date(
+            bySettingHour: endHour,
+            minute: endMinute,
+            second: 0,
+            of: date
+        ) ?? date
     }
 }
 
@@ -215,6 +245,7 @@ struct SleepRuleSlip: Codable, Identifiable, Equatable {
 }
 
 struct SleepRuleConfiguration: Codable, Equatable {
+    var availableTime: Date?
     var dueTime: Date?
     var graceMinutes: Int?
 }
@@ -496,6 +527,9 @@ class AppState: ObservableObject {
     @Published var sleepRuleSlips: [SleepRuleSlip] = []
     @Published var contractLockEvents: [ContractLockEvent] = []
     @Published var contractAllClearEvents: [ContractAllClearEvent] = []
+    #if DEBUG
+    @Published var uiTestHoldConfirmFixtureActive = false
+    #endif
     @Published var paywallState = PaywallState()
     @Published var activePaywallRoute: PaywallRoute? = nil
     @Published var activePaywallVerdict: PaywallVerdict? = nil
@@ -543,7 +577,7 @@ class AppState: ObservableObject {
     }
 
     var hasPremiumAccess: Bool {
-        isPaidPremium
+        isPaidPremium || isTrialActive
     }
 
     var isFreeAccess: Bool {
@@ -563,7 +597,7 @@ class AppState: ObservableObject {
     }
 
     var canUseHardAppBlocking: Bool {
-        true
+        hasPremiumAccess
     }
 
     var canUseReassessment: Bool {
@@ -692,8 +726,24 @@ class AppState: ObservableObject {
             return
         }
         paywallState.trialExpiredAt = paywallState.trialExpiredAt ?? Date()
+        markSubscriptionRequired(reason: "local_trial_expired")
+    }
+
+    func handleSubscriptionLapsed() {
+        guard hasCompletedOnboarding else { return }
+        guard !hasPremiumAccess else { return }
+        refreshAppBlockingShield()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        clearObsoleteNotifications()
+        LiveActivityService.shared.end(dismissalPolicy: .immediate)
+    }
+
+    private func markSubscriptionRequired(reason: String) {
+        paywallState.trialExpiredAt = paywallState.trialExpiredAt ?? Date()
         activeRevenueCatPaywall = .trialExpired
+        handleSubscriptionLapsed()
         trackAnalytics("trial_expired_paywall_presented", [
+            "reason": reason,
             "logged_night_count": "\(loggedNightCount)",
             "routine_step_count": "\(coreRoutine.count)"
         ])
@@ -716,8 +766,7 @@ class AppState: ObservableObject {
         paywallState.verdictRevealed = false
         restoreFreeRoutine()
         persist()
-        scheduleAllNotifications()
-        refreshAppBlockingShield()
+        handleSubscriptionLapsed()
     }
 
     private func restoreFreeRoutine() {
@@ -2208,8 +2257,26 @@ class AppState: ObservableObject {
 
     // MARK: - Init / Persistence
 
+    #if DEBUG
+    private static func shouldSkipPersistedStateForUITest() -> Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        let environment = ProcessInfo.processInfo.environment
+        let holdFixture = arguments.contains("--uitest-hold-confirm-fixture")
+            || environment["UITEST_HOLD_CONFIRM_FIXTURE"] == "1"
+        let onboardingComplete = arguments.contains("--uitest-completed-onboarding")
+            || environment["UITEST_COMPLETED_ONBOARDING"] == "1"
+        return holdFixture && onboardingComplete
+    }
+    #endif
+
     init() {
-        if let saved = PersistenceStore.shared.load() {
+        #if DEBUG
+        let skipPersistedState = Self.shouldSkipPersistedStateForUITest()
+        #else
+        let skipPersistedState = false
+        #endif
+
+        if !skipPersistedState, let saved = PersistenceStore.shared.load() {
             persistedTimeZoneIdentifier = saved.timeZoneIdentifier
             _testerName               = Published(initialValue: saved.testerName)
             _selectedSleepProblems    = Published(initialValue: saved.selectedSleepProblems)
@@ -2348,11 +2415,18 @@ class AppState: ObservableObject {
             _appBlockingStartTime = Published(initialValue: Self.defaultAppBlockingStart(from: typicalBedtime))
             _appBlockingEndTime = Published(initialValue: Self.defaultAppBlockingEnd(from: typicalWakeTime))
         }
+
+        #if DEBUG
+        applyUITestLaunchArgumentsIfNeeded()
+        #endif
     }
 
     #if DEBUG
     func applyUITestLaunchArgumentsIfNeeded(_ arguments: [String] = ProcessInfo.processInfo.arguments) {
-        guard arguments.contains("--uitest-completed-onboarding") else { return }
+        let environment = ProcessInfo.processInfo.environment
+        let onboardingComplete = arguments.contains("--uitest-completed-onboarding")
+            || environment["UITEST_COMPLETED_ONBOARDING"] == "1"
+        guard onboardingComplete else { return }
 
         hasCompletedOnboarding = true
         pendingOnboardingFireflyHandoff = false
@@ -2407,6 +2481,30 @@ class AppState: ObservableObject {
         sleepRuleSlips = []
         contractLockEvents = []
         contractAllClearEvents = []
+
+        if arguments.contains("--uitest-hold-confirm-fixture")
+            || environment["UITEST_HOLD_CONFIRM_FIXTURE"] == "1" {
+            configureUITestHoldConfirmFixture(calendar: cal)
+        }
+    }
+
+    private func configureUITestHoldConfirmFixture(calendar: Calendar) {
+        uiTestHoldConfirmFixtureActive = true
+        selectedSleepRules = [.morningSun]
+        sleepContractActivatedAt = calendar.date(byAdding: .day, value: -2, to: Date())
+        let day = calendar.startOfDay(for: Date())
+        sleepRuleConfigurations[.morningSun] = SleepRuleConfiguration(
+            availableTime: calendar.date(bySettingHour: 0, minute: 0, second: 0, of: day),
+            dueTime: calendar.date(bySettingHour: 23, minute: 59, second: 0, of: day),
+            graceMinutes: 30
+        )
+        sleepRuleCompletions = []
+        sleepRuleSlips = []
+        appBlockingEnabled = false
+        appBlockingSelection = FamilyActivitySelection()
+        paywallState.tier = .free
+        paywallState.verdictRevealed = false
+        requestedTab = 0
     }
     #endif
 
@@ -2709,10 +2807,36 @@ class AppState: ObservableObject {
         }
         var config = sleepRuleConfigurations[rule] ?? SleepRuleConfiguration()
         config.dueTime = time
+        if rule == .morningSun {
+            config = normalizedMorningSunConfiguration(config)
+        }
         sleepRuleConfigurations[rule] = config
         persist()
         scheduleAllNotifications()
         refreshAppBlockingShield()
+    }
+
+    func setSleepRuleAvailableTime(_ rule: SleepRuleKind, to time: Date) {
+        guard !isContractEditingLocked() else {
+            trackContractEditBlockedDuringLock("rule_time")
+            return
+        }
+        var config = sleepRuleConfigurations[rule] ?? SleepRuleConfiguration()
+        config.availableTime = time
+        if rule == .morningSun {
+            config = normalizedMorningSunConfiguration(config)
+        }
+        sleepRuleConfigurations[rule] = config
+        persist()
+        scheduleAllNotifications()
+        refreshAppBlockingShield()
+    }
+
+    func morningSunWindowLabel(on date: Date = Date()) -> String {
+        let window = morningSunWindow(on: date)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return "Active from \(formatter.string(from: window.start)) to \(formatter.string(from: window.end))"
     }
 
     func setSleepRuleGraceMinutes(_ rule: SleepRuleKind, to minutes: Int) {
@@ -2783,6 +2907,58 @@ class AppState: ObservableObject {
         }
     }
 
+    private func morningSunWindow(on date: Date) -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: date)
+        let config = sleepRuleConfigurations[.morningSun]
+        let start = Self.timeOnDay(
+            config?.availableTime ?? MorningSunWindowDefaults.start(on: day, calendar: calendar),
+            on: day,
+            calendar: calendar
+        )
+        var end = Self.timeOnDay(
+            config?.dueTime ?? MorningSunWindowDefaults.end(on: day, calendar: calendar),
+            on: day,
+            calendar: calendar
+        )
+        if end <= start {
+            end = calendar.date(byAdding: .hour, value: 6, to: start) ?? end
+        }
+        return (start, end)
+    }
+
+    private func normalizedMorningSunConfiguration(_ config: SleepRuleConfiguration) -> SleepRuleConfiguration {
+        var normalized = config
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: Date())
+        let start = Self.timeOnDay(
+            normalized.availableTime ?? MorningSunWindowDefaults.start(on: day, calendar: calendar),
+            on: day,
+            calendar: calendar
+        )
+        var end = Self.timeOnDay(
+            normalized.dueTime ?? MorningSunWindowDefaults.end(on: day, calendar: calendar),
+            on: day,
+            calendar: calendar
+        )
+        if end <= start {
+            end = calendar.date(byAdding: .minute, value: 30, to: start) ?? end
+        }
+        normalized.availableTime = start
+        normalized.dueTime = end
+        return normalized
+    }
+
+    private static func timeOnDay(_ time: Date, on day: Date, calendar: Calendar) -> Date {
+        let components = calendar.dateComponents([.hour, .minute], from: time)
+        return calendar.date(
+            bySettingHour: components.hour ?? 0,
+            minute: components.minute ?? 0,
+            second: 0,
+            of: day
+        ) ?? day
+    }
+
     private func sleepRuleWindow(for rule: SleepRuleKind, on date: Date = Date()) -> (start: Date, end: Date) {
         let calendar = Calendar.current
         if rule == .inBed {
@@ -2790,14 +2966,7 @@ class AppState: ObservableObject {
         }
 
         if rule == .morningSun {
-            let start = calendar.date(
-                bySettingHour: 6,
-                minute: 0,
-                second: 0,
-                of: date
-            ) ?? date
-            let end = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? start
-            return (start, end)
+            return morningSunWindow(on: date)
         }
 
         if let configured = sleepRuleConfigurations[rule]?.dueTime {
@@ -2923,7 +3092,10 @@ class AppState: ObservableObject {
         let anchor = contractAnchorDate(for: now)
         let rules = orderedSelectedSleepRules + (hasActiveSleepContract ? [.inBed] : [])
         return rules
-            .map { sleepContractItem(for: $0, on: anchor) }
+            .map { rule in
+                let date = rule.isWakeSideRule ? wakeSideRuleAnchorDate(for: now) : anchor
+                return sleepContractItem(for: rule, on: date)
+            }
             .sorted { lhs, rhs in
                 if lhs.availableAt != rhs.availableAt { return lhs.availableAt < rhs.availableAt }
                 return lhs.dueAt < rhs.dueAt
@@ -2932,6 +3104,22 @@ class AppState: ObservableObject {
 
     private func contractAnchorDate(for now: Date) -> Date {
         bedtimeDate(for: now)
+    }
+
+    private func wakeSideRuleAnchorDate(for now: Date) -> Date {
+        let calendar = Calendar.current
+        let contractAnchor = contractAnchorDate(for: now)
+        let bedtimeComponents = calendar.dateComponents([.hour, .minute], from: typicalBedtime)
+        let bedMinute = (bedtimeComponents.hour ?? 22) * 60 + (bedtimeComponents.minute ?? 30)
+        let wakeComponents = calendar.dateComponents([.hour, .minute], from: typicalWakeTime)
+        let wakeMinute = (wakeComponents.hour ?? 7) * 60 + (wakeComponents.minute ?? 0)
+        let nowMinute = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+
+        // Before wake during an overnight sleep window, morning habits belong to calendar today.
+        if bedMinute > wakeMinute, nowMinute < wakeMinute {
+            return calendar.startOfDay(for: now)
+        }
+        return contractAnchor
     }
 
     private func contractItemToComplete(for rule: SleepRuleKind, now: Date) -> SleepContractItem {
@@ -3008,6 +3196,12 @@ class AppState: ObservableObject {
 
     func refreshAppBlockingShield(now: Date = Date()) {
         expireEmergencyAppAccessIfNeeded(now: now)
+        guard hasPremiumAccess else {
+            appBlockingStore.clearAllSettings()
+            rescheduleDeviceActivityMonitors(now: now, hasConfiguration: false)
+            scheduleNextAppBlockingShieldRefresh(now: now, hasConfiguration: false)
+            return
+        }
         let hasTargets = !appBlockingSelection.applicationTokens.isEmpty || !appBlockingSelection.categoryTokens.isEmpty
         let bypassed = paywallState.gentleBlockingBypassedUntil.map { now < $0 } ?? false
         let emergencyAccessActive = activeEmergencyAppAccessEnd(now: now) != nil
@@ -3640,6 +3834,7 @@ class AppState: ObservableObject {
 
     func applyRevenueCatEntitlement(isActive: Bool) {
         if isActive {
+            activeRevenueCatPaywall = nil
             let wasFree = paywallState.tier == .free
             let previousTier = paywallState.tier
             paywallState.tier = .subscribed
@@ -3665,7 +3860,7 @@ class AppState: ObservableObject {
             ])
             if paywallState.tier == .free {
                 restoreFreeRoutine()
-                scheduleAllNotifications()
+                markSubscriptionRequired(reason: "revenuecat_entitlement_inactive")
             }
         }
         persist()
@@ -4155,7 +4350,7 @@ class AppState: ObservableObject {
     }
 
     var requiresBlockedAppsBeforeRuleActions: Bool {
-        canUseHardAppBlocking && !hasConfiguredAppBlockingTargets
+        appBlockingEnabled && canUseHardAppBlocking && !hasConfiguredAppBlockingTargets
     }
 
     var shouldOfferAppBlockingSetup: Bool {
@@ -4455,6 +4650,12 @@ class AppState: ObservableObject {
     }
 
     func scheduleAllNotifications() {
+        guard hasPremiumAccess else {
+            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+            clearObsoleteNotifications()
+            return
+        }
+
         #if DEBUG
         print("[NotifDebug] scheduleAllNotifications() called. bedtime=\(typicalBedtime), windDownDuration=\(windDownDurationMinutes)min, prepSteps=\(preWindDownSteps.count), windDownSteps=\(windDownSteps.count)")
         #endif
