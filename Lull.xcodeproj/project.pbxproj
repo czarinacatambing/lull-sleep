@@ -94,6 +94,7 @@
 		E48CFA2EC5402130519FA91B /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92AE10983629698DB935D9 /* PersistedState.swift */; };
 		EDC6C11156BBC9B945FE8FBA /* LullActivitiesBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215C66917069AEA87DB96A67 /* LullActivitiesBundle.swift */; };
 		EE907B664DB2CB15E4144DB9 /* 4-7-3-breathing-v2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5591AF0770E0651D7190F526 /* 4-7-3-breathing-v2.m4a */; };
+		F1A2B3C4D5E6F7890A1B2C3E /* FireflyMascotFrames in Resources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7890A1B2C3D /* FireflyMascotFrames */; };
 		F4B2A497125E5AD3F0411B41 /* MorningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9EDB6CB663B102ED482509 /* MorningCheckInView.swift */; };
 		F9147C3EE6EB7C0898A38E93 /* LullComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B96F9D7A41B8D164E87290B /* LullComponents.swift */; };
 		F925DA874E2FC8346941100A /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F27EAE09500318E6960113 /* AppState.swift */; };
@@ -143,6 +144,7 @@
 		2831CAD8027C26C5065D9A5E /* PrepChecklistAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepChecklistAttributes.swift; sourceTree = "<group>"; };
 		2ACF80872924DF0878268335 /* PaywallFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallFlowView.swift; sourceTree = "<group>"; };
 		2CB21B38E7A84F15B2C8D3F0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7890A1B2C3D /* FireflyMascotFrames */ = {isa = PBXFileReference; lastKnownFileType = folder; path = FireflyMascotFrames; sourceTree = "<group>"; };
 		2DD77CDB91F6518BB26395E1 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		2E94326D623364EFC9F4CEFB /* SleepLogDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepLogDetailView.swift; sourceTree = "<group>"; };
 		314611656FF7FA25CCA486F1 /* body-scan.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "body-scan.mp3"; sourceTree = "<group>"; };
@@ -483,6 +485,7 @@
 			children = (
 				CD947544D9101E2AC407DBAB /* Assets.xcassets */,
 				42D4818E2D276C4FCEFA797D /* Audio */,
+				F1A2B3C4D5E6F7890A1B2C3D /* FireflyMascotFrames */,
 				DC3DACA822328A4904D4CBAC /* Fonts */,
 				2CB21B38E7A84F15B2C8D3F0 /* PrivacyInfo.xcprivacy */,
 			);
@@ -621,6 +624,7 @@
 				89E401D3382DBBA60D5660C1 /* Natural History of Selborne - letters 7-13.m4a in Resources */,
 				D8D1E4A3F1B2238C2E70E4A5 /* rules of east and west.m4a in Resources */,
 				CC86C2BA1B67F32C008D38CC /* solf.m4a in Resources */,
+				F1A2B3C4D5E6F7890A1B2C3E /* FireflyMascotFrames in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -720,7 +724,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
@@ -739,7 +743,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
 				PRODUCT_NAME = TenThirty;
 				SDKROOT = iphoneos;
@@ -781,7 +785,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -796,7 +800,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -842,7 +846,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 2WLHFD257A;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -863,7 +867,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -881,7 +885,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				INFOPLIST_FILE = LullActivities/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -890,7 +894,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -906,7 +910,7 @@
 				CODE_SIGN_ENTITLEMENTS = Lull/Lull.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				INFOPLIST_FILE = Lull/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
@@ -923,7 +927,7 @@
 				LULL_RESEARCH_DATA_ENABLED = NO;
 				LULL_RESEARCH_DATA_ENDPOINT = "";
 				LULL_RESEARCH_DATA_TOKEN = "";
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app;
 				PRODUCT_NAME = TenThirty;
 				SDKROOT = iphoneos;
@@ -937,7 +941,7 @@
 				CODE_SIGN_ENTITLEMENTS = LullActivities/LullActivities.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				INFOPLIST_FILE = LullActivities/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TenThirty;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -946,7 +950,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.trylull.app.activities;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;

@@ -70,11 +70,38 @@ struct FireflyMascotView: View {
     }
 
     private static var hasFrameSequence: Bool {
-        Bundle.main.url(
-            forResource: "firefly_001",
+        FireflyMascotFrameStore.frameURL(forFrameNumber: 1) != nil
+    }
+}
+
+private enum FireflyMascotFrameStore {
+    static let frameCount = 240
+    static let framesPerSecond = 24
+    private static let subdirectory = "FireflyMascotFrames"
+    private static var cache: [UIImage?] = Array(repeating: nil, count: frameCount)
+
+    static func frameURL(forFrameNumber frameNumber: Int) -> URL? {
+        let name = String(format: "firefly_%03d", frameNumber)
+        if let nested = Bundle.main.url(
+            forResource: name,
             withExtension: "png",
-            subdirectory: "FireflyMascotFrames"
-        ) != nil
+            subdirectory: subdirectory
+        ) {
+            return nested
+        }
+        return Bundle.main.url(forResource: name, withExtension: "png")
+    }
+
+    static func image(at zeroBasedIndex: Int) -> UIImage? {
+        let index = min(max(zeroBasedIndex, 0), frameCount - 1)
+        if let cached = cache[index] { return cached }
+
+        guard let url = frameURL(forFrameNumber: index + 1),
+              let image = UIImage(contentsOfFile: url.path) else {
+            return nil
+        }
+        cache[index] = image
+        return image
     }
 }
 
@@ -117,28 +144,6 @@ private struct FireflyMascotFrameSequenceView: View {
             startDate = Date()
         }
         .allowsHitTesting(false)
-    }
-}
-
-private enum FireflyMascotFrameStore {
-    static let frameCount = 240
-    static let framesPerSecond = 24
-    private static var cache: [UIImage?] = Array(repeating: nil, count: frameCount)
-
-    static func image(at zeroBasedIndex: Int) -> UIImage? {
-        let index = min(max(zeroBasedIndex, 0), frameCount - 1)
-        if let cached = cache[index] { return cached }
-
-        let name = String(format: "firefly_%03d", index + 1)
-        guard let url = Bundle.main.url(
-            forResource: name,
-            withExtension: "png",
-            subdirectory: "FireflyMascotFrames"
-        ), let image = UIImage(contentsOfFile: url.path) else {
-            return nil
-        }
-        cache[index] = image
-        return image
     }
 }
 
