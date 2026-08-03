@@ -61,7 +61,9 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
     @Published private(set) var currentOffering: Offering?
     @Published private(set) var isLullProActive = false
     @Published private(set) var isLoading = false
+    @Published private(set) var isLoadingOfferings = false
     @Published private(set) var hasResolvedInitialCustomerInfo = false
+    @Published private(set) var hasResolvedInitialOfferings = false
     @Published var lastErrorMessage: String?
 
     private var hasStarted = false
@@ -149,6 +151,13 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
     }
 
     func refreshOfferings() async {
+        guard !isLoadingOfferings else { return }
+        isLoadingOfferings = true
+        defer {
+            isLoadingOfferings = false
+            hasResolvedInitialOfferings = true
+        }
+
         do {
             let offerings = try await Purchases.shared.offerings()
             currentOffering = offerings.current
@@ -196,6 +205,74 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
             package.storeProduct.productIdentifier == product.productID ||
             package.identifier == product.rawValue
         }
+    }
+
+    func localizedPrice(for product: LullStoreProduct) -> String? {
+        package(for: product)?.storeProduct.localizedPriceString
+    }
+
+    func priceSubtitle(for product: LullStoreProduct) -> String {
+        if let price = localizedPrice(for: product) {
+            switch product {
+            case .yearly:
+                return "\(price)/year"
+            case .monthly:
+                return "\(price)/month"
+            case .lifetime:
+                return price
+            }
+        }
+
+        switch product {
+        case .yearly:
+            return "Billed yearly"
+        case .monthly:
+            return "Billed monthly"
+        case .lifetime:
+            return "Lifetime access"
+        }
+    }
+
+    func yearlyPlanSubtitle() -> String {
+        if let storeProduct = package(for: .yearly)?.storeProduct {
+            return Self.yearlyPlanSubtitle(
+                yearlyPrice: storeProduct.price,
+                localizedYearlyPrice: storeProduct.localizedPriceString,
+                currencyCode: storeProduct.currencyCode
+            )
+        }
+
+        return "Billed yearly"
+    }
+
+    private static func yearlyPlanSubtitle(yearlyPrice: Decimal,
+                                           localizedYearlyPrice: String?,
+                                           currencyCode: String?) -> String {
+        let yearlyLabel: String
+        if let localizedYearlyPrice {
+            yearlyLabel = "\(localizedYearlyPrice)/year"
+        } else if let formattedYearly = localizedPrice(yearlyPrice, currencyCode: currencyCode) {
+            yearlyLabel = "\(formattedYearly)/year"
+        } else {
+            yearlyLabel = "\(yearlyPrice)/year"
+        }
+
+        let monthlyAmount = yearlyPrice / 12
+        let monthlyLabel = localizedPrice(monthlyAmount, currencyCode: currencyCode)
+            ?? "\(monthlyAmount)"
+        return "\(yearlyLabel) or \(monthlyLabel)/mo"
+    }
+
+    private static func localizedPrice(_ amount: Decimal, currencyCode: String?) -> String? {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        formatter.roundingMode = .halfUp
+        if let currencyCode {
+            formatter.currencyCode = currencyCode
+        }
+        return formatter.string(from: amount as NSDecimalNumber)
     }
 
     private static let billingDateFormatter: DateFormatter = {

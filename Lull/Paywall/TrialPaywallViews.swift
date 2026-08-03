@@ -37,12 +37,14 @@ struct TrialPaywallScreen: View {
                             benefits(compact: compact)
                             TrialReassuranceCard()
 
-                            Text(pricingFootnote)
-                                .font(.system(size: 13))
-                                .foregroundColor(.lullInk3)
-                                .lineSpacing(4)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
+                            if let pricingFootnote {
+                                Text(pricingFootnote)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.lullInk3)
+                                    .lineSpacing(4)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                            }
 
                             if let statusMessage {
                                 Text(statusMessage)
@@ -73,6 +75,11 @@ struct TrialPaywallScreen: View {
             didTrackPaywallView = true
             state.trackPaywallViewed(context: analyticsContext)
         }
+        .task {
+            if subscriptions.currentOffering == nil {
+                await subscriptions.refreshOfferings()
+            }
+        }
     }
 
     private var analyticsContext: String {
@@ -82,10 +89,15 @@ struct TrialPaywallScreen: View {
         }
     }
 
-    private var pricingFootnote: String {
+    private var pricingFootnote: String? {
         switch mode {
         case .onboarding:
-            return "Free for seven nights, then $49.99/year. Cancel anytime in Apple subscriptions."
+            guard let yearlyPrice = subscriptions.localizedPrice(for: .yearly) else {
+                return subscriptions.isLoadingOfferings || !subscriptions.hasResolvedInitialOfferings
+                    ? "Fetching your App Store price..."
+                    : "App Store pricing is temporarily unavailable."
+            }
+            return "Free for seven nights, then \(yearlyPrice)/year. Cancel anytime in Apple subscriptions."
         case .subscriptionRequired:
             return "Both plans include a seven-night App Store trial. Cancel anytime in Apple subscriptions."
         }
@@ -245,22 +257,22 @@ struct TrialPaywallScreen: View {
         Group {
             TrialCTA(
                 title: isPurchasing ? "Starting..." : "Protect my first night",
-                subtitle: "Then $49.99/year. Cancel anytime.",
-                disabled: isPurchasing || subscriptions.isLoading
+                subtitle: onboardingYearlySubtitle,
+                disabled: yearlyPurchaseDisabled
             ) {
-                guard !isPurchasing && !subscriptions.isLoading else { return }
+                guard !yearlyPurchaseDisabled else { return }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 state.trackPaywallPrimaryTapped(product: .yearly)
                 Task { await purchase(.yearly) }
             }
 
             Button {
-                guard !isPurchasing && !subscriptions.isLoading else { return }
+                guard !monthlyPurchaseDisabled else { return }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 state.trackPaywallPrimaryTapped(product: .monthly)
                 Task { await purchase(.monthly) }
             } label: {
-                Text("I'll skip the trial and go with $9.99/month")
+                Text(onboardingMonthlyLabel)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.lullInk2)
                     .underline()
@@ -268,8 +280,8 @@ struct TrialPaywallScreen: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
-            .disabled(isPurchasing || subscriptions.isLoading)
-            .opacity(isPurchasing || subscriptions.isLoading ? 0.55 : 1)
+            .disabled(monthlyPurchaseDisabled)
+            .opacity(monthlyPurchaseDisabled ? 0.55 : 1)
         }
     }
 
@@ -277,10 +289,10 @@ struct TrialPaywallScreen: View {
         Group {
             TrialCTA(
                 title: isPurchasing ? "Starting..." : "Start 7-day free trial",
-                subtitle: "Yearly · then $49.99/year",
-                disabled: isPurchasing || subscriptions.isLoading
+                subtitle: subscriptions.yearlyPlanSubtitle(),
+                disabled: yearlyPurchaseDisabled
             ) {
-                guard !isPurchasing && !subscriptions.isLoading else { return }
+                guard !yearlyPurchaseDisabled else { return }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 state.trackPaywallPrimaryTapped(product: .yearly)
                 Task { await purchase(.yearly) }
@@ -288,15 +300,43 @@ struct TrialPaywallScreen: View {
 
             TrialCTA(
                 title: isPurchasing ? "Starting..." : "Start 7-day free trial",
-                subtitle: "Monthly · then $9.99/month",
-                disabled: isPurchasing || subscriptions.isLoading
+                subtitle: subscriptions.priceSubtitle(for: .monthly),
+                disabled: monthlyPurchaseDisabled
             ) {
-                guard !isPurchasing && !subscriptions.isLoading else { return }
+                guard !monthlyPurchaseDisabled else { return }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 state.trackPaywallPrimaryTapped(product: .monthly)
                 Task { await purchase(.monthly) }
             }
         }
+    }
+
+    private var onboardingYearlySubtitle: String {
+        guard let price = subscriptions.localizedPrice(for: .yearly) else {
+            return "Loading App Store price..."
+        }
+        return "Then \(price)/year. Cancel anytime."
+    }
+
+    private var onboardingMonthlyLabel: String {
+        guard let price = subscriptions.localizedPrice(for: .monthly) else {
+            return "Loading monthly plan..."
+        }
+        return "I'll skip the trial and go with \(price)/month"
+    }
+
+    private var yearlyPurchaseDisabled: Bool {
+        isPurchasing
+            || subscriptions.isLoading
+            || subscriptions.isLoadingOfferings
+            || subscriptions.localizedPrice(for: .yearly) == nil
+    }
+
+    private var monthlyPurchaseDisabled: Bool {
+        isPurchasing
+            || subscriptions.isLoading
+            || subscriptions.isLoadingOfferings
+            || subscriptions.localizedPrice(for: .monthly) == nil
     }
 
     private func footerButton(_ title: String, action: @escaping () -> Void) -> some View {
