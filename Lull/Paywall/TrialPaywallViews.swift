@@ -46,6 +46,17 @@ struct TrialPaywallScreen: View {
                                     .frame(maxWidth: .infinity)
                             }
 
+                            if shouldShowPricingRetry {
+                                Button {
+                                    Task { await subscriptions.refreshOfferings() }
+                                } label: {
+                                    Label("Retry App Store pricing", systemImage: "arrow.clockwise")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.lullAmberSoft)
+                                }
+                                .buttonStyle(.plain)
+                            }
+
                             if let statusMessage {
                                 Text(statusMessage)
                                     .font(.system(size: 12))
@@ -337,6 +348,15 @@ struct TrialPaywallScreen: View {
             || subscriptions.isLoading
             || subscriptions.isLoadingOfferings
             || subscriptions.localizedPrice(for: .monthly) == nil
+    }
+
+    private var shouldShowPricingRetry: Bool {
+        subscriptions.hasResolvedInitialOfferings
+            && !subscriptions.isLoadingOfferings
+            && (
+                subscriptions.localizedPrice(for: .yearly) == nil
+                    || subscriptions.localizedPrice(for: .monthly) == nil
+            )
     }
 
     private func footerButton(_ title: String, action: @escaping () -> Void) -> some View {
