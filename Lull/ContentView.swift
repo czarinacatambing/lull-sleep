@@ -1,10 +1,12 @@
 import SwiftUI
+import StoreKit
 
 struct ContentView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject private var subscriptions: LullSubscriptionManager
     @EnvironmentObject private var sleepSoundsAudio: SleepSoundsAudioStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.requestReview) private var requestReview
     @State private var showWelcome = true
     @State private var logoOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
@@ -310,9 +312,11 @@ struct ContentView: View {
 
     @ViewBuilder
     private var postOnboardingContent: some View {
-        if !subscriptions.hasResolvedInitialCustomerInfo {
+        if usesCompletedOnboardingUITestFixture {
+            subscribedAppContent
+        } else if !subscriptions.hasResolvedInitialCustomerInfo {
             subscriptionLoadingView
-        } else if subscriptions.isLullProActive || state.hasPremiumAccess {
+        } else if subscriptions.grantsPremiumAccess || state.hasPremiumAccess {
             subscribedAppContent
         } else {
             TrialExpiredPaywallView()
@@ -320,6 +324,15 @@ struct ContentView: View {
                     state.handleSubscriptionLapsed()
                 }
         }
+    }
+
+    private var usesCompletedOnboardingUITestFixture: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("--uitest-completed-onboarding")
+            || ProcessInfo.processInfo.environment["UITEST_COMPLETED_ONBOARDING"] == "1"
+        #else
+        false
+        #endif
     }
 
     private var subscriptionLoadingView: some View {
@@ -371,6 +384,20 @@ struct ContentView: View {
                 }
                 state.evaluateTrialStatus()
                 state.presentPendingStreakMilestoneIfEligible()
+                requestReviewAfterFirstNightIfNeeded()
             }
+            .onChange(of: state.shouldRequestReviewAfterFirstNight) { _, shouldRequest in
+                guard shouldRequest else { return }
+                requestReviewAfterFirstNightIfNeeded()
+            }
+    }
+
+    private func requestReviewAfterFirstNightIfNeeded() {
+        guard state.shouldRequestReviewAfterFirstNight else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            guard state.shouldRequestReviewAfterFirstNight else { return }
+            requestReview()
+            state.consumeFirstNightReviewRequest()
+        }
     }
 }

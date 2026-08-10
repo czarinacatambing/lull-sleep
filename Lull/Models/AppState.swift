@@ -419,6 +419,9 @@ private func sleepMidpointMinute(bedtime: Date, wakeTime: Date) -> Int {
 }
 
 class AppState: ObservableObject {
+    private static let firstNightReviewRequestKey = "tenthirtyFirstNightReviewRequestQueued"
+    private static let firstNightReviewRequestAttemptedKey = "tenthirtyFirstNightReviewRequestAttempted"
+
     static let maxSleepScore = 5
     private static let obsoleteNotificationIdentifiers =
         ["morning_rating_primary", "morning_rating_noon"] +
@@ -429,6 +432,7 @@ class AppState: ObservableObject {
     private static let shieldLockReasonKey = "tenthirty_shieldLockReason"
     private static let shieldRuleTitleKey = "tenthirty_shieldRuleTitle"
     private static let emergencyAppAccessUntilKey = "tenthirty_emergencyAppAccessUntil"
+    private static let gentleBypassUntilKey = "tenthirty_gentleBypassUntil"
     private static let missedHabitCooldownMinutes = 10
     private let appBlockingStore = ManagedSettingsStore()
     private let deviceActivityCenter = DeviceActivityCenter()
@@ -1104,6 +1108,7 @@ class AppState: ObservableObject {
     @Published var morningHoursSlept: Double = 7.5
     @Published var selectedDotIndex: Int? = nil
     @Published var sleepLogs: [SleepLogEntry] = []
+    @Published var shouldRequestReviewAfterFirstNight = UserDefaults.standard.bool(forKey: AppState.firstNightReviewRequestKey)
 
     // MARK: - Promotion celebration
     // Set when an experimental variable graduates into the core routine; cleared
@@ -1291,6 +1296,29 @@ class AppState: ObservableObject {
 
     func debugSeedSevenNightsAndExpireTrial() {
         debugSeedCompletedNightsAndExpireTrial(count: 7)
+    }
+
+    func debugSimulateCancelledTrialExpired(now: Date = Date()) {
+        hasCompletedOnboarding = true
+        sleepContractActivatedAt = sleepContractActivatedAt ?? now
+        if selectedSleepRules.isEmpty {
+            selectedSleepRules = [.caffeineCutoff, .dimLights, .tomorrowsPlan]
+        }
+
+        paywallState.tier = .subscribed
+        paywallState.trialStartedAt = nil
+        paywallState.trialEndsAt = nil
+        paywallState.trialExpiredAt = now
+        paywallState.verdictRevealed = false
+        applyRevenueCatEntitlement(isActive: false)
+        handleSubscriptionLapsed()
+        persist()
+    }
+
+    func debugClearCancelledTrialSimulation() {
+        paywallState.trialExpiredAt = nil
+        activeRevenueCatPaywall = nil
+        persist()
     }
     #endif
 
@@ -1689,12 +1717,17 @@ class AppState: ObservableObject {
     }
 
     func trackPaywallViewed(context: String) {
-        trackAnalytics("paywall_viewed", [
+        var properties: AnalyticsService.Properties = [
             "context": context,
-            "offer_type": "seven_night_trial",
-            "trial_days": "7",
             "default_product_id": LullStoreProduct.yearly.productID
-        ])
+        ]
+        if context == "trial_expired" {
+            properties["offer_type"] = "paid_resubscribe"
+        } else {
+            properties["offer_type"] = "seven_night_trial"
+            properties["trial_days"] = "7"
+        }
+        trackAnalytics("paywall_viewed", properties)
     }
 
     func trackPurchaseStarted(product: LullStoreProduct) {
@@ -1704,16 +1737,19 @@ class AppState: ObservableObject {
         ])
     }
 
-    func trackPurchaseSucceeded(product: LullStoreProduct, isTrial: Bool) {
+    func trackPurchaseSucceeded(product: LullStoreProduct,
+                              isTrial: Bool,
+                              conversionSource: String = "onboarding_paywall") {
         trackAnalytics("purchase_succeeded", [
             "product_id": product.productID,
             "product": product.rawValue,
-            "is_trial": isTrial ? "true" : "false"
+            "is_trial": isTrial ? "true" : "false",
+            "conversion_source": conversionSource
         ])
         trackAnalytics(isTrial ? "trial_started" : "subscription_started", [
             "product_id": product.productID,
             "product": product.rawValue,
-            "conversion_source": "onboarding_paywall"
+            "conversion_source": conversionSource
         ])
     }
 
@@ -2265,7 +2301,9 @@ class AppState: ObservableObject {
             || environment["UITEST_HOLD_CONFIRM_FIXTURE"] == "1"
         let onboardingComplete = arguments.contains("--uitest-completed-onboarding")
             || environment["UITEST_COMPLETED_ONBOARDING"] == "1"
-        return holdFixture && onboardingComplete
+        let freshInstall = arguments.contains("--uitest-fresh-install")
+            || environment["UITEST_FRESH_INSTALL"] == "1"
+        return freshInstall || (holdFixture && onboardingComplete)
     }
     #endif
 
@@ -2424,6 +2462,15 @@ class AppState: ObservableObject {
     #if DEBUG
     func applyUITestLaunchArgumentsIfNeeded(_ arguments: [String] = ProcessInfo.processInfo.arguments) {
         let environment = ProcessInfo.processInfo.environment
+        let freshInstall = arguments.contains("--uitest-fresh-install")
+            || environment["UITEST_FRESH_INSTALL"] == "1"
+        if freshInstall {
+            hasCompletedOnboarding = false
+            requestedTab = nil
+            showNightlyFlow = false
+            paywallState = PaywallState()
+            return
+        }
         let onboardingComplete = arguments.contains("--uitest-completed-onboarding")
             || environment["UITEST_COMPLETED_ONBOARDING"] == "1"
         guard onboardingComplete else { return }
@@ -2481,28 +2528,35 @@ class AppState: ObservableObject {
         sleepRuleSlips = []
         contractLockEvents = []
         contractAllClearEvents = []
+        paywallState.tier = .subscribed
+        paywallState.trialExpiredAt = nil
 
         if arguments.contains("--uitest-hold-confirm-fixture")
             || environment["UITEST_HOLD_CONFIRM_FIXTURE"] == "1" {
             configureUITestHoldConfirmFixture(calendar: cal)
         }
+        if arguments.contains("--uitest-start-trends")
+            || environment["UITEST_START_TRENDS"] == "1" {
+            requestedTab = 2
+        }
     }
 
     private func configureUITestHoldConfirmFixture(calendar: Calendar) {
         uiTestHoldConfirmFixtureActive = true
-        selectedSleepRules = [.morningSun]
+        selectedSleepRules = [.dimLights]
         sleepContractActivatedAt = calendar.date(byAdding: .day, value: -2, to: Date())
-        let day = calendar.startOfDay(for: Date())
-        sleepRuleConfigurations[.morningSun] = SleepRuleConfiguration(
-            availableTime: calendar.date(bySettingHour: 0, minute: 0, second: 0, of: day),
-            dueTime: calendar.date(bySettingHour: 23, minute: 59, second: 0, of: day),
+        let now = Date()
+        sleepRuleConfigurations[.dimLights] = SleepRuleConfiguration(
+            availableTime: calendar.date(byAdding: .hour, value: -2, to: now),
+            dueTime: calendar.date(byAdding: .minute, value: -1, to: now),
             graceMinutes: 30
         )
         sleepRuleCompletions = []
         sleepRuleSlips = []
         appBlockingEnabled = false
         appBlockingSelection = FamilyActivitySelection()
-        paywallState.tier = .free
+        paywallState.tier = .subscribed
+        paywallState.trialExpiredAt = nil
         paywallState.verdictRevealed = false
         requestedTab = 0
     }
@@ -3240,9 +3294,7 @@ class AppState: ObservableObject {
         }
 
         let hasMonitorConfiguration = appBlockingEnabled &&
-            hasTargets &&
-            (canUseHardAppBlocking || !bypassed) &&
-            !emergencyAccessActive
+            hasTargets
         rescheduleDeviceActivityMonitors(now: now, hasConfiguration: hasMonitorConfiguration)
         scheduleNextAppBlockingShieldRefresh(now: now, hasConfiguration: appBlockingEnabled && hasTargets)
     }
@@ -3353,6 +3405,13 @@ class AppState: ObservableObject {
         } else {
             defaults?.removeObject(forKey: Self.emergencyAppAccessUntilKey)
         }
+        if !canUseHardAppBlocking,
+           let bypassUntil = paywallState.gentleBlockingBypassedUntil,
+           Date() < bypassUntil {
+            defaults?.set(bypassUntil, forKey: Self.gentleBypassUntilKey)
+        } else {
+            defaults?.removeObject(forKey: Self.gentleBypassUntilKey)
+        }
         defaults?.synchronize()
     }
 
@@ -3403,6 +3462,7 @@ class AppState: ObservableObject {
             deviceActivityCenter.stopMonitoring(priorNames)
         }
 
+        var schedulingFailures: [String] = []
         let scheduledNames = windows.compactMap { window -> DeviceActivityName? in
             let activityName = DeviceActivityName("tenthirty.lock.\(window.id)")
             guard let schedule = deviceActivitySchedule(for: window, now: now) else { return nil }
@@ -3410,6 +3470,7 @@ class AppState: ObservableObject {
                 try deviceActivityCenter.startMonitoring(activityName, during: schedule)
                 return activityName
             } catch {
+                schedulingFailures.append(activityName.rawValue)
                 #if DEBUG
                 print("[DeviceActivity] Failed to schedule \(activityName.rawValue): \(error.localizedDescription)")
                 #endif
@@ -3417,54 +3478,88 @@ class AppState: ObservableObject {
             }
         }
         AppBlockingMonitorStore.saveActivityNames(scheduledNames)
+        if !schedulingFailures.isEmpty {
+            trackAnalytics("app_blocking_monitor_schedule_failed", [
+                "expected_count": "\(windows.count)",
+                "scheduled_count": "\(scheduledNames.count)",
+                "failed_activities": schedulingFailures.joined(separator: ",")
+            ])
+        }
     }
 
-    private func appBlockingMonitorWindows(now: Date) -> [AppBlockingMonitorWindow] {
+    func appBlockingMonitorWindows(now: Date) -> [AppBlockingMonitorWindow] {
         let calendar = Calendar.current
-        let horizon = now.addingTimeInterval(48 * 60 * 60)
         let wakeText = formattedAppBlockingWakeTime()
         var windows: [AppBlockingMonitorWindow] = []
 
         let anchor = contractAnchorDate(for: now)
-        let ruleAnchors = [0, 1].compactMap { calendar.date(byAdding: .day, value: $0, to: anchor) }
-        for ruleAnchor in ruleAnchors {
-            for item in orderedSelectedSleepRules.map({ sleepContractItem(for: $0, on: ruleAnchor) }) {
-                guard !item.isResolved, !item.startsTomorrow else { continue }
-                let start = item.graceEndsAt
-                let end = ruleLockMonitorEnd(start: start)
-                guard end > now, start < horizon else { continue }
-                windows.append(AppBlockingMonitorWindow(
-                    id: monitorWindowID(prefix: "rule", rule: item.rule, start: start),
-                    start: start,
-                    end: end,
-                    reason: .rule,
-                    ruleTitle: item.rule.title,
-                    wakeTimeText: wakeText
-                ))
-            }
+        let ruleAnchors = [0, 1, 2].compactMap { calendar.date(byAdding: .day, value: $0, to: anchor) }
+        for rule in orderedSelectedSleepRules {
+            let nextUnresolvedItem = ruleAnchors
+                .map { sleepContractItem(for: rule, on: $0) }
+                .filter { !$0.isResolved && !$0.startsTomorrow }
+                .sorted { $0.graceEndsAt < $1.graceEndsAt }
+                .first { ruleLockMonitorEnd(start: $0.graceEndsAt) > now }
+            guard let item = nextUnresolvedItem else { continue }
+            let start = item.graceEndsAt
+            windows.append(AppBlockingMonitorWindow(
+                id: "rule.\(item.rule.rawValue)",
+                start: start,
+                end: ruleLockMonitorEnd(start: start),
+                reason: .rule,
+                ruleTitle: item.rule.title,
+                wakeTimeText: wakeText,
+                recurrence: .daily
+            ))
         }
 
-        for sleepAnchor in [-1, 0, 1].compactMap({ calendar.date(byAdding: .day, value: $0, to: anchor) }) {
-            let start = sleepWindowStart(onContractDay: sleepAnchor)
-            let end = sleepWindowMonitorEnd(start: start)
-            guard end > now, start < horizon else { continue }
+        let nextSleepWindow = [-1, 0, 1]
+            .compactMap { calendar.date(byAdding: .day, value: $0, to: anchor) }
+            .map { sleepWindowStart(onContractDay: $0) }
+            .map { ($0, sleepWindowMonitorEnd(start: $0)) }
+            .sorted { $0.0 < $1.0 }
+            .first { $0.1 > now }
+        if let (start, end) = nextSleepWindow {
             windows.append(AppBlockingMonitorWindow(
-                id: monitorWindowID(prefix: "sleep", rule: nil, start: start),
+                id: "sleep",
                 start: start,
                 end: end,
                 reason: .sleepWindow,
                 ruleTitle: nil,
-                wakeTimeText: wakeText
+                wakeTimeText: wakeText,
+                recurrence: .daily
             ))
         }
 
-        if let cooldown = activeSleepContractCooldown(now: now) {
+        let cooldown = activeSleepContractCooldown(now: now)
+        if let cooldown {
             windows.append(AppBlockingMonitorWindow(
                 id: monitorWindowID(prefix: "cooldown", rule: cooldown.item.rule, start: now),
                 start: now,
                 end: cooldown.until,
                 reason: .rule,
                 ruleTitle: cooldown.item.rule.title,
+                wakeTimeText: wakeText
+            ))
+        }
+
+        let resumeBoundaries = [
+            activeEmergencyAppAccessEnd(now: now).map { ("emergency", $0) },
+            paywallState.gentleBlockingBypassedUntil.flatMap {
+                !canUseHardAppBlocking && now < $0 ? ("bypass", $0) : nil
+            },
+            cooldown.map { ("cooldown", $0.until) }
+        ].compactMap { $0 }
+        for (kind, start) in resumeBoundaries {
+            windows.append(AppBlockingMonitorWindow(
+                id: "reconcile.\(kind).\(Int(start.timeIntervalSince1970))",
+                start: start,
+                // DeviceActivity rejects intervals shorter than 15 minutes.
+                // This window never shields; its start callback only reconciles
+                // the recurring base windows after temporary access expires.
+                end: start.addingTimeInterval(15 * 60),
+                reason: .reconcile,
+                ruleTitle: nil,
                 wakeTimeText: wakeText
             ))
         }
@@ -3476,11 +3571,25 @@ class AppState: ObservableObject {
             }
     }
 
-    private func deviceActivitySchedule(for window: AppBlockingMonitorWindow, now: Date) -> DeviceActivitySchedule? {
+    func deviceActivitySchedule(for window: AppBlockingMonitorWindow, now: Date) -> DeviceActivitySchedule? {
         let calendar = Calendar.current
+        if window.recurrence == .daily {
+            let startComponents = DateComponents(
+                hour: window.startMinuteOfDay / 60,
+                minute: window.startMinuteOfDay % 60
+            )
+            let endComponents = DateComponents(
+                hour: window.endMinuteOfDay / 60,
+                minute: window.endMinuteOfDay % 60
+            )
+            return DeviceActivitySchedule(intervalStart: startComponents, intervalEnd: endComponents, repeats: true)
+        }
         let start = max(window.start, now.addingTimeInterval(2))
-        let end = window.end
-        guard end > start else { return nil }
+        guard window.end > start else { return nil }
+        // DeviceActivity requires at least a 15-minute interval. A separate
+        // reconciliation window at the semantic boundary prevents padding a
+        // shorter cooldown from extending the actual lock.
+        let end = max(window.end, start.addingTimeInterval(15 * 60))
         var startComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: start)
         startComponents.calendar = calendar
         startComponents.timeZone = calendar.timeZone
@@ -3760,6 +3869,7 @@ class AppState: ObservableObject {
     func logMorningScore() {
         let score = Self.clampedSleepScore(morningScore)
         morningScore = score
+        let shouldQueueFirstNightReview = shouldQueueFirstNightReviewRequest()
         var loggedEntry: SleepLogEntry?
 
         if let idx = ratableEntryIndex {
@@ -3795,7 +3905,26 @@ class AppState: ObservableObject {
         if let loggedEntry {
             recordMorningTelemetry(entry: loggedEntry)
         }
+        if shouldQueueFirstNightReview {
+            UserDefaults.standard.set(true, forKey: Self.firstNightReviewRequestKey)
+            shouldRequestReviewAfterFirstNight = true
+            trackAnalytics("app_review_request_queued", [
+                "trigger": "first_night"
+            ])
+        }
         presentPendingStreakMilestoneIfEligible()
+    }
+
+    private func shouldQueueFirstNightReviewRequest() -> Bool {
+        guard !UserDefaults.standard.bool(forKey: Self.firstNightReviewRequestKey) else { return false }
+        guard !UserDefaults.standard.bool(forKey: Self.firstNightReviewRequestAttemptedKey) else { return false }
+        return !sleepLogs.contains { $0.score > 0 }
+    }
+
+    func consumeFirstNightReviewRequest() {
+        UserDefaults.standard.removeObject(forKey: Self.firstNightReviewRequestKey)
+        UserDefaults.standard.set(true, forKey: Self.firstNightReviewRequestAttemptedKey)
+        shouldRequestReviewAfterFirstNight = false
     }
 
     private func shouldTriggerNightFivePaywall(statusBefore: ExperimentEngine.Status?,

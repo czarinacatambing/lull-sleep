@@ -2662,6 +2662,8 @@ struct TodayFireflyScene: View {
                 ForEach(Array(dates.enumerated()), id: \.element) { index, date in
                     let newest = index == dates.count - 1
                     let entering = isEnteringNewestFirefly(newest)
+                    let isOutsideCalendarRange = mode == .calendar
+                        && calendarUnitPosition(for: date, size: geo.size) == nil
                     let position = fireflyPosition(
                         index: index,
                         date: date,
@@ -2676,7 +2678,11 @@ struct TodayFireflyScene: View {
                                 reduceMotion: reduceMotion
                             )
                         } else {
-                            FireflyDot(index: index, reduceMotion: reduceMotion, drifts: mode == .cluster)
+                            FireflyDot(
+                                index: index,
+                                reduceMotion: reduceMotion,
+                                drifts: mode == .cluster || isOutsideCalendarRange
+                            )
                         }
                     }
                     .scaleEffect(fireflyScale(isNewest: newest))
@@ -2735,7 +2741,10 @@ struct TodayFireflyScene: View {
                 ? TodayDeckConstants.homePositions[index % TodayDeckConstants.homePositions.count]
                 : wanderingUnitPosition(index: index, time: time)
         case .calendar:
-            unit = calendarUnitPosition(for: date, size: size) ?? offCalendarUnitPosition(index: index, size: size)
+            unit = calendarUnitPosition(for: date, size: size)
+                ?? (reduceMotion
+                    ? TodayDeckConstants.homePositions[index % TodayDeckConstants.homePositions.count]
+                    : wanderingUnitPosition(index: index, time: time))
         }
         return CGPoint(x: unit.x * size.width, y: unit.y * size.height)
     }
@@ -2767,15 +2776,6 @@ struct TodayFireflyScene: View {
         case 2: return CGPoint(x: 0.07, y: 0.04)
         default: return CGPoint(x: 0.04, y: 0.07)
         }
-    }
-
-    private func offCalendarUnitPosition(index: Int, size: CGSize) -> CGPoint {
-        let metrics = calendarMetrics(size: size)
-        let railX: CGFloat = index.isMultiple(of: 2) ? 0.045 : 0.955
-        let rows = calendarRange == .week ? 1 : calendarRows
-        let slot = CGFloat((index / 2) % max(rows, 1))
-        let rowStep = rows > 1 ? (metrics.y1 - metrics.y0) / CGFloat(rows - 1) : 0
-        return CGPoint(x: railX, y: metrics.y0 + slot * rowStep)
     }
 
     private func fireflyScale(isNewest: Bool) -> CGFloat {
@@ -5925,6 +5925,35 @@ struct SettingsSheet: View {
                         open(Self.termsURL)
                     }
                 }
+
+                #if DEBUG
+                settingsSection(title: "Debug") {
+                    settingsButton(
+                        icon: "clock.badge.xmark",
+                        title: "Simulate cancelled trial expired",
+                        subtitle: "Shows the post-trial paywall and locks the app"
+                    ) {
+                        subscriptions.debugSimulateExpiredTrial = true
+                        state.debugSimulateCancelledTrialExpired()
+                        dismiss()
+                    }
+
+                    settingsDivider
+
+                    settingsButton(
+                        icon: "arrow.counterclockwise",
+                        title: "Clear trial simulation",
+                        subtitle: "Restore normal RevenueCat entitlement checks"
+                    ) {
+                        subscriptions.debugSimulateExpiredTrial = false
+                        state.debugClearCancelledTrialSimulation()
+                        Task {
+                            await subscriptions.refreshCustomerInfo()
+                            state.applyRevenueCatEntitlement(isActive: subscriptions.isLullProActive)
+                        }
+                    }
+                }
+                #endif
 
                 Spacer().frame(height: 28)
             }

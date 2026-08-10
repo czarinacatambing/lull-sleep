@@ -661,6 +661,7 @@ private struct TodayContractQueueView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .accessibilityIdentifier(state.uiTestHoldConfirmFixtureActive ? "uitest-hold-fixture-active" : "today-contract-queue")
         .contentShape(Rectangle())
         .animation(.spring(response: 0.48, dampingFraction: 0.84), value: showMidSleepMode)
         .highPriorityGesture(showMidSleepMode ? nil : midSleepSwipeUpGesture)
@@ -839,32 +840,6 @@ private struct TodayContractQueueView: View {
         .frame(minHeight: 340, alignment: .center)
     }
 
-    private var slipsLogged: some View {
-        VStack(spacing: 12) {
-            Text("LOGGED")
-                .font(.system(size: 11, weight: .semibold))
-                .kerning(1.8)
-                .foregroundColor(.lullAmberSoft)
-                .frame(maxWidth: .infinity, alignment: .center)
-            Text("Thanks for being honest.")
-                .font(.serif(28))
-                .foregroundColor(.lullInk0)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .center)
-            Text("Habit missed. Apps will unlock after 10 minutes.")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.lullInk2)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .center)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 30)
-        .frame(minHeight: 340, alignment: .center)
-    }
-
     private func sleepWindowMessage(snapshot: SleepContractEnforcementSnapshot) -> some View {
         VStack(spacing: 12) {
             Text("SLEEP WINDOW")
@@ -971,9 +946,6 @@ private struct TodayContractQueueView: View {
                 if allSelectedRulesStartTomorrow(snapshot) {
                     startsTomorrow
                     tomorrowFooter
-                } else if hasSlippedItems(snapshot) {
-                    slipsLogged
-                    railFooter(cleared: done.count, total: totalCount(snapshot))
                 } else if state.hasClearedContractDay(now: now) {
                     allClear
                     railFooter(cleared: done.count, total: totalCount(snapshot))
@@ -1039,11 +1011,7 @@ private struct TodayContractQueueView: View {
     }
 
     private func heroItem(_ snapshot: SleepContractEnforcementSnapshot) -> SleepContractItem? {
-        let pending = visiblePendingItems(snapshot)
-        let actionable = snapshot.actionableItems
-            .filter { pending.map(\.id).contains($0.id) }
-            .sorted(by: sleepRuleDisplaySort)
-        return actionable.first ?? pending.sorted(by: sleepRuleDisplaySort).first
+        SleepContractPresentation.heroItem(in: snapshot, sort: sleepRuleDisplaySort)
     }
 
     private func upcomingItems(_ snapshot: SleepContractEnforcementSnapshot,
@@ -1073,10 +1041,6 @@ private struct TodayContractQueueView: View {
         !state.selectedSleepRules.isEmpty &&
             !snapshot.allItems.isEmpty &&
             snapshot.allItems.allSatisfy(\.startsTomorrow)
-    }
-
-    private func hasSlippedItems(_ snapshot: SleepContractEnforcementSnapshot) -> Bool {
-        snapshot.allItems.contains(where: \.isSlipped)
     }
 
     private func shouldShowOtherCommitmentsStartTomorrow(hero: SleepContractItem,
@@ -1249,7 +1213,7 @@ private struct ContractStatusStrip: View {
 
     private func emergencyAccessButton(displayNow: Date) -> some View {
         let isEnabled = canUseEmergencyAccess
-        Button(action: onEmergencyAccess) {
+        return Button(action: onEmergencyAccess) {
             HStack(spacing: 12) {
                 Image(systemName: activeEmergencyAccessEnd.map { displayNow < $0 } == true ? "lock.open.fill" : "shield.lefthalf.filled")
                     .font(.system(size: 18, weight: .semibold))
@@ -1581,6 +1545,7 @@ private struct DoneRailRow: View {
             }
             .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("today-done-\(item.rule.rawValue)")
     }
 }
 
@@ -1788,6 +1753,7 @@ private struct HeroRuleCard: View {
         .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
         .highPriorityGesture(holdGesture)
+        .accessibilityIdentifier("today-hero-hold-confirm")
         .accessibilityAction {
             guard canComplete else { return }
             triggerConfirm()
@@ -1810,6 +1776,7 @@ private struct HeroRuleCard: View {
                     .underline()
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("today-hero-slip")
             .disabled(isShowingSlipAcknowledgment)
         }
         .frame(maxWidth: .infinity)
@@ -2415,9 +2382,6 @@ private struct ContractTrendsView: View {
                     .frame(height: calendarSpace)
                     .padding(.horizontal, 4)
 
-                insightsCard
-                    .padding(.horizontal, 22)
-
                 Spacer().frame(height: 118)
             }
         }
@@ -2444,35 +2408,30 @@ private struct ContractTrendsView: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                trendStat("Nights protected", value: "\(protectedNights)")
-                trendStat("All-clear days", value: "\(allClearDays)")
-                trendStat("Lock activations", value: "\(lockActivations)")
-                trendStat("Late confirmations", value: "\(lateConfirmations)")
+                trendStat(
+                    "Nights protected",
+                    value: "\(protectedNights)",
+                    explanation: "The number of nights your selected apps were blocked during your sleep window."
+                )
+                trendStat(
+                    "All-clear days",
+                    value: "\(allClearDays)",
+                    explanation: "Days when you completed every scheduled habit within its grace period."
+                )
+                trendStat(
+                    "Lock activations",
+                    value: "\(lockActivations)",
+                    explanation: "Times your selected apps were blocked because a habit was missed."
+                )
+                trendStat(
+                    "Late confirmations",
+                    value: "\(lateConfirmations)",
+                    explanation: "Habits confirmed after their grace period ended."
+                )
             }
         }
         .padding(.horizontal, 22)
         .padding(.top, 54)
-    }
-
-    private var insightsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker(text: "Rule insights", color: .lullAmberSoft)
-            Text("Best rule")
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundColor(.lullInk4)
-            Text(bestRuleText)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.lullInk0)
-            Divider().overlay(Color.lullLine)
-            Text("Needs work")
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundColor(.lullInk4)
-            Text(needsWorkText)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.lullInk0)
-        }
-        .padding(16)
-        .contractCardBackground()
     }
 
     private var calendarSpace: CGFloat {
@@ -2484,19 +2443,8 @@ private struct ContractTrendsView: View {
             .accessibilityHidden(true)
     }
 
-    private func trendStat(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(value)
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundColor(.lullAmber)
-            Text(title)
-                .font(.system(size: 12.5, weight: .medium))
-                .foregroundColor(.lullInk3)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
-        .padding(14)
-        .contractCardBackground()
+    private func trendStat(_ title: String, value: String, explanation: String) -> some View {
+        TrendStatCard(title: title, value: value, explanation: explanation)
     }
 
     private var interval: DateInterval {
@@ -2537,24 +2485,55 @@ private struct ContractTrendsView: View {
         }.count
     }
 
-    private var bestRuleText: String {
-        let completions = completionsByRule
-        guard let best = completions.max(by: { $0.value < $1.value }) else { return "Complete a few rules to see a pattern." }
-        return "\(best.key.title) · completed \(best.value) time\(best.value == 1 ? "" : "s")"
-    }
+}
 
-    private var needsWorkText: String {
-        let late = Dictionary(grouping: state.sleepRuleCompletions.filter {
-            !$0.completedWithinGrace && interval.contains($0.completedAt)
-        }, by: \.rule).mapValues(\.count)
-        guard let worst = late.max(by: { $0.value < $1.value }) else { return "No late pattern yet." }
-        return "\(worst.key.title) · \(worst.value) late confirmation\(worst.value == 1 ? "" : "s")"
-    }
+private struct TrendStatCard: View {
+    let title: String
+    let value: String
+    let explanation: String
+    @State private var isShowingExplanation = false
 
-    private var completionsByRule: [SleepRuleKind: Int] {
-        Dictionary(grouping: state.sleepRuleCompletions.filter {
-            $0.completedWithinGrace && interval.contains($0.completedAt)
-        }, by: \.rule).mapValues(\.count)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(value)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(.lullAmber)
+
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(title)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(.lullInk3)
+                    .lineLimit(2)
+                Button {
+                    isShowingExplanation = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.lullInk3)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("About \(title)")
+                .accessibilityHint("Shows an explanation of this statistic.")
+                .popover(isPresented: $isShowingExplanation, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.lullInk0)
+                        Text(explanation)
+                            .font(.system(size: 14))
+                            .foregroundColor(.lullInk2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(width: 260, alignment: .leading)
+                    .presentationCompactAdaptation(.popover)
+                    .preferredColorScheme(.dark)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .padding(14)
+        .contractCardBackground()
     }
 }
 
@@ -2602,6 +2581,18 @@ struct TabBarButton: View {
 }
 
 enum SleepContractPresentation {
+    static func heroItem(
+        in snapshot: SleepContractEnforcementSnapshot,
+        sort: (SleepContractItem, SleepContractItem) -> Bool
+    ) -> SleepContractItem? {
+        let pending = visiblePendingItems(snapshot)
+        let visibleIDs = Set(pending.map(\.id))
+        let actionable = snapshot.actionableItems
+            .filter { visibleIDs.contains($0.id) }
+            .sorted(by: sort)
+        return actionable.first ?? pending.sorted(by: sort).first
+    }
+
     static func deferredCommitments(in snapshot: SleepContractEnforcementSnapshot) -> [SleepContractItem] {
         snapshot.allItems.filter { item in
             item.startsTomorrow && !item.isResolved && item.rule != .inBed

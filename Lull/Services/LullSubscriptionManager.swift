@@ -68,6 +68,17 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
 
     private var hasStarted = false
 
+    #if DEBUG
+    @Published var debugSimulateExpiredTrial = false
+    #endif
+
+    var grantsPremiumAccess: Bool {
+        #if DEBUG
+        if debugSimulateExpiredTrial { return false }
+        #endif
+        return isLullProActive
+    }
+
     var isInTrial: Bool {
         customerInfo?.entitlements.all[LullRevenueCatConfig.proEntitlementID]?.periodType == .trial
     }
@@ -126,6 +137,17 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
     func start(postHogUserID: String) {
         guard !hasStarted else { return }
         hasStarted = true
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        let environment = ProcessInfo.processInfo.environment
+        if arguments.contains("--uitest-completed-onboarding")
+            || environment["UITEST_COMPLETED_ONBOARDING"] == "1" {
+            isLullProActive = true
+            hasResolvedInitialCustomerInfo = true
+            hasResolvedInitialOfferings = true
+            return
+        }
+        #endif
         Purchases.shared.attribution.setPostHogUserID(postHogUserID)
         Purchases.shared.delegate = self
         Task {
@@ -273,6 +295,10 @@ final class LullSubscriptionManager: NSObject, ObservableObject {
             formatter.currencyCode = currencyCode
         }
         return formatter.string(from: amount as NSDecimalNumber)
+    }
+
+    func purchaseIncludesIntroductoryOffer(for product: LullStoreProduct) -> Bool {
+        package(for: product)?.storeProduct.introductoryDiscount != nil
     }
 
     private static let billingDateFormatter: DateFormatter = {

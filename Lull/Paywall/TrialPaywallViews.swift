@@ -35,7 +35,7 @@ struct TrialPaywallScreen: View {
                             hero(compact: compact)
                             TrialQuoteCard()
                             benefits(compact: compact)
-                            TrialReassuranceCard()
+                            reassuranceCard
 
                             if let pricingFootnote {
                                 Text(pricingFootnote)
@@ -110,7 +110,23 @@ struct TrialPaywallScreen: View {
             }
             return "Free for seven nights, then \(yearlyPrice)/year. Cancel anytime in Apple subscriptions."
         case .subscriptionRequired:
-            return "Both plans include a seven-night App Store trial. Cancel anytime in Apple subscriptions."
+            return "Cancel anytime in Apple subscriptions."
+        }
+    }
+
+    @ViewBuilder
+    private var reassuranceCard: some View {
+        switch mode {
+        case .onboarding:
+            TrialReassuranceCard(
+                title: "Official App Store trial.",
+                detail: "Apple handles payment details securely. You can cancel anytime in your App Store subscriptions."
+            )
+        case .subscriptionRequired:
+            TrialReassuranceCard(
+                title: "Subscribe through the App Store.",
+                detail: "Apple handles payment securely. Your plan renews automatically unless you cancel in subscriptions."
+            )
         }
     }
 
@@ -157,22 +173,22 @@ struct TrialPaywallScreen: View {
         VStack(spacing: compact ? 4 : 6) {
             Kicker(text: "Trial ended", color: .lullAmberSoft)
 
-            VStack(spacing: compact ? -15 : -17) {
-                Text("Your sleep contract")
+            VStack(spacing: compact ? -14 : -16) {
+                Text("Your sleep")
                     .font(.serif(compact ? 38 : 44, weight: .semibold))
                     .foregroundColor(.lullInk0)
                     .minimumScaleFactor(0.72)
                     .lineLimit(1)
-                Text("is paused")
-                    .font(.serifItalic(compact ? 44 : 50))
-                    .foregroundColor(.lullAmber)
-                    .minimumScaleFactor(0.78)
+                Text("contract expired")
+                    .font(.serif(compact ? 38 : 44, weight: .semibold))
+                    .foregroundColor(.lullInk0)
+                    .minimumScaleFactor(0.72)
                     .lineLimit(1)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
 
-            Text("Start another seven-night trial to turn app blocking, rule enforcement, and nightly protection back on.")
+            Text("Subscribe to continue using TenThirty.")
                 .font(.system(size: 14.5))
                 .foregroundColor(.lullInk2)
                 .lineSpacing(4)
@@ -299,7 +315,7 @@ struct TrialPaywallScreen: View {
     private var subscriptionRequiredActions: some View {
         Group {
             TrialCTA(
-                title: isPurchasing ? "Starting..." : "Start 7-day free trial",
+                title: isPurchasing ? "Processing..." : "Yearly plan",
                 subtitle: subscriptions.yearlyPlanSubtitle(),
                 disabled: yearlyPurchaseDisabled
             ) {
@@ -310,7 +326,7 @@ struct TrialPaywallScreen: View {
             }
 
             TrialCTA(
-                title: isPurchasing ? "Starting..." : "Start 7-day free trial",
+                title: isPurchasing ? "Processing..." : "Monthly plan",
                 subtitle: subscriptions.priceSubtitle(for: .monthly),
                 disabled: monthlyPurchaseDisabled
             ) {
@@ -415,7 +431,11 @@ struct TrialPaywallScreen: View {
             }
 
             state.applyRevenueCatEntitlement(isActive: true)
-            state.trackPurchaseSucceeded(product: product, isTrial: subscriptions.isInTrial)
+            state.trackPurchaseSucceeded(
+                product: product,
+                isTrial: subscriptions.isInTrial,
+                conversionSource: conversionSource
+            )
             finishSuccessfulUnlock()
         } catch {
             if error.localizedDescription.localizedCaseInsensitiveContains("cancel") {
@@ -454,7 +474,19 @@ struct TrialPaywallScreen: View {
         case .onboarding:
             state.completeOnboarding()
         case .subscriptionRequired:
-            break
+            #if DEBUG
+            state.debugClearCancelledTrialSimulation()
+            subscriptions.debugSimulateExpiredTrial = false
+            #endif
+        }
+    }
+
+    private var conversionSource: String {
+        switch mode {
+        case .onboarding:
+            return "onboarding_paywall"
+        case .subscriptionRequired:
+            return "trial_expired_paywall"
         }
     }
 }
@@ -534,6 +566,9 @@ struct TrialQuoteCard: View {
 }
 
 struct TrialReassuranceCard: View {
+    var title: String
+    var detail: String
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
@@ -546,10 +581,10 @@ struct TrialReassuranceCard: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Official App Store trial.")
+                Text(title)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.lullInk0)
-                Text("Apple handles payment details securely. You can cancel anytime in your App Store subscriptions.")
+                Text(detail)
                     .font(.system(size: 12))
                     .foregroundColor(.lullInk2)
                     .lineSpacing(2)

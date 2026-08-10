@@ -7,6 +7,12 @@ struct AppBlockingMonitorWindow: Codable, Equatable, Identifiable {
     enum Reason: String, Codable {
         case rule
         case sleepWindow
+        case reconcile
+    }
+
+    enum Recurrence: String, Codable {
+        case oneTime
+        case daily
     }
 
     let id: String
@@ -15,6 +21,50 @@ struct AppBlockingMonitorWindow: Codable, Equatable, Identifiable {
     let reason: Reason
     let ruleTitle: String?
     let wakeTimeText: String?
+    let recurrence: Recurrence
+    let startMinuteOfDay: Int
+    let endMinuteOfDay: Int
+
+    init(id: String,
+         start: Date,
+         end: Date,
+         reason: Reason,
+         ruleTitle: String?,
+         wakeTimeText: String?,
+         recurrence: Recurrence = .oneTime) {
+        self.id = id
+        self.start = start
+        self.end = end
+        self.reason = reason
+        self.ruleTitle = ruleTitle
+        self.wakeTimeText = wakeTimeText
+        self.recurrence = recurrence
+        let calendar = Calendar.current
+        self.startMinuteOfDay = calendar.component(.hour, from: start) * 60
+            + calendar.component(.minute, from: start)
+        self.endMinuteOfDay = calendar.component(.hour, from: end) * 60
+            + calendar.component(.minute, from: end)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, start, end, reason, ruleTitle, wakeTimeText, recurrence, startMinuteOfDay, endMinuteOfDay
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        start = try container.decode(Date.self, forKey: .start)
+        end = try container.decode(Date.self, forKey: .end)
+        reason = try container.decode(Reason.self, forKey: .reason)
+        ruleTitle = try container.decodeIfPresent(String.self, forKey: .ruleTitle)
+        wakeTimeText = try container.decodeIfPresent(String.self, forKey: .wakeTimeText)
+        recurrence = try container.decodeIfPresent(Recurrence.self, forKey: .recurrence) ?? .oneTime
+        let calendar = Calendar.current
+        startMinuteOfDay = try container.decodeIfPresent(Int.self, forKey: .startMinuteOfDay)
+            ?? calendar.component(.hour, from: start) * 60 + calendar.component(.minute, from: start)
+        endMinuteOfDay = try container.decodeIfPresent(Int.self, forKey: .endMinuteOfDay)
+            ?? calendar.component(.hour, from: end) * 60 + calendar.component(.minute, from: end)
+    }
 }
 
 enum AppBlockingMonitorStore {
@@ -27,6 +77,7 @@ enum AppBlockingMonitorStore {
     private static let shieldLockReasonKey = "tenthirty_shieldLockReason"
     private static let shieldRuleTitleKey = "tenthirty_shieldRuleTitle"
     private static let emergencyAppAccessUntilKey = "tenthirty_emergencyAppAccessUntil"
+    private static let gentleBypassUntilKey = "tenthirty_gentleBypassUntil"
 
     static func save(selection: FamilyActivitySelection, windows: [AppBlockingMonitorWindow]) {
         let defaults = UserDefaults(suiteName: suiteName)
@@ -51,7 +102,26 @@ enum AppBlockingMonitorStore {
     }
 
     static func activeWindows(now: Date = Date()) -> [AppBlockingMonitorWindow] {
-        windows().filter { $0.start <= now && now < $0.end }
+        windows().filter { isActive($0, now: now) }
+    }
+
+    static func isActive(_ window: AppBlockingMonitorWindow, now: Date) -> Bool {
+        guard window.reason != .reconcile else { return false }
+        switch window.recurrence {
+        case .oneTime:
+            return window.start <= now && now < window.end
+        case .daily:
+            guard now >= window.start else { return false }
+            let calendar = Calendar.current
+            let nowMinutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+            let startMinutes = window.startMinuteOfDay
+            let endMinutes = window.endMinuteOfDay
+            if startMinutes == endMinutes { return true }
+            if startMinutes < endMinutes {
+                return nowMinutes >= startMinutes && nowMinutes < endMinutes
+            }
+            return nowMinutes >= startMinutes || nowMinutes < endMinutes
+        }
     }
 
     static func window(for activityName: DeviceActivityName) -> AppBlockingMonitorWindow? {
@@ -71,7 +141,7 @@ enum AppBlockingMonitorStore {
 
     static func applyCurrentShield(now: Date = Date()) {
         let store = ManagedSettingsStore()
-        guard !isEmergencyAccessActive(now: now) else {
+        guard !isTemporaryUnlockActive(now: now) else {
             store.clearAllSettings()
             return
         }
@@ -93,12 +163,20 @@ enum AppBlockingMonitorStore {
             applyCurrentShield()
             return
         }
+        if window.reason == .reconcile {
+            applyCurrentShield()
+            return
+        }
         applyShield(for: window)
     }
 
     private static func applyShield(for window: AppBlockingMonitorWindow) {
         let store = ManagedSettingsStore()
-        guard !isEmergencyAccessActive() else {
+        guard isActive(window, now: Date()) else {
+            applyCurrentShield()
+            return
+        }
+        guard !isTemporaryUnlockActive() else {
             store.clearAllSettings()
             return
         }
@@ -113,11 +191,13 @@ enum AppBlockingMonitorStore {
         store.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
     }
 
-    private static func isEmergencyAccessActive(now: Date = Date()) -> Bool {
-        guard let until = UserDefaults(suiteName: suiteName)?.object(forKey: emergencyAppAccessUntilKey) as? Date else {
-            return false
-        }
-        return now < until
+    private static func isTemporaryUnlockActive(now: Date = Date()) -> Bool {
+        let defaults = UserDefaults(suiteName: suiteName)
+        let emergencyUntil = defaults?.object(forKey: emergencyAppAccessUntilKey) as? Date
+        let gentleBypassUntil = defaults?.object(forKey: gentleBypassUntilKey) as? Date
+        return [emergencyUntil, gentleBypassUntil]
+            .compactMap { $0 }
+            .contains { now < $0 }
     }
 
     private static func savedSelection() -> FamilyActivitySelection? {
@@ -136,6 +216,8 @@ enum AppBlockingMonitorStore {
             defaults?.set("rule", forKey: shieldLockReasonKey)
         case .sleepWindow:
             defaults?.set("sleep_window", forKey: shieldLockReasonKey)
+        case .reconcile:
+            break
         }
         defaults?.synchronize()
     }

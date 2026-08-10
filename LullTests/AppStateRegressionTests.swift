@@ -1,4 +1,5 @@
 import XCTest
+import DeviceActivity
 import FamilyControls
 @testable import TenThirty
 
@@ -9,6 +10,8 @@ final class AppStateRegressionTests: XCTestCase {
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("lull_state.json")
         try? FileManager.default.removeItem(at: url)
+        UserDefaults.standard.removeObject(forKey: "tenthirtyFirstNightReviewRequestQueued")
+        UserDefaults.standard.removeObject(forKey: "tenthirtyFirstNightReviewRequestAttempted")
     }
 
     func testBedtimeDateForOvernightWindowBeforeWakeUsesPreviousDay() {
@@ -96,6 +99,42 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertTrue(state.shouldOfferAppBlockingAfterFirstNight)
     }
 
+    func testFirstMorningScoreQueuesNativeReviewRequestOnce() {
+        let state = AppState()
+        state.morningScore = 5
+
+        state.logMorningScore()
+
+        XCTAssertTrue(state.shouldRequestReviewAfterFirstNight)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: "tenthirtyFirstNightReviewRequestQueued"))
+    }
+
+    func testLaterMorningScoresDoNotQueueNativeReviewRequestAgain() {
+        let state = AppState()
+        state.sleepLogs = [
+            SleepLogEntry(date: date(2026, 6, 27, 12, 0), variable: R.noScreens, score: 4)
+        ]
+        state.morningScore = 5
+
+        state.logMorningScore()
+
+        XCTAssertFalse(state.shouldRequestReviewAfterFirstNight)
+    }
+
+    func testConsumedNativeReviewRequestDoesNotQueueAgain() {
+        let state = AppState()
+        state.morningScore = 5
+        state.logMorningScore()
+
+        state.consumeFirstNightReviewRequest()
+        state.morningScore = 4
+        state.logMorningScore()
+
+        XCTAssertFalse(state.shouldRequestReviewAfterFirstNight)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: "tenthirtyFirstNightReviewRequestQueued"))
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: "tenthirtyFirstNightReviewRequestAttempted"))
+    }
+
     func testAppBlockingWindowHandlesOvernightAndSameDayRanges() {
         let state = AppState()
 
@@ -158,7 +197,7 @@ final class AppStateRegressionTests: XCTestCase {
         )
     }
 
-    func testMorningSunStaysVisibleWhenReadyForSleepIsForTonight() {
+    func testReadyForSleepPresentationHidesMorningSunFromTodayQueue() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
         state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
@@ -172,15 +211,15 @@ final class AppStateRegressionTests: XCTestCase {
         let snapshot = state.sleepContractSnapshot(now: morning)
 
         XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.morningSun])
-        XCTAssertTrue(
+        XCTAssertFalse(
             SleepContractPresentation.visiblePendingItems(snapshot).contains { $0.rule == .morningSun }
         )
-        XCTAssertTrue(
+        XCTAssertFalse(
             SleepContractPresentation.visiblePendingItems(snapshot).contains { $0.rule == .inBed }
         )
         XCTAssertEqual(
             SleepContractPresentation.heroItem(in: snapshot, sort: { $0.dueAt < $1.dueAt })?.rule,
-            .morningSun
+            .dimLights
         )
     }
 
@@ -377,7 +416,6 @@ final class AppStateRegressionTests: XCTestCase {
             )
             XCTAssertFalse(state.hasClearedContractDay(now: duringSleepWindow))
             XCTAssertEqual(SleepContractPresentation.deferredCommitments(in: snapshot).map(\.rule), [.morningSun])
-            XCTAssertFalse(SleepContractPresentation.deferredQueueItems(snapshot).isEmpty)
             XCTAssertEqual(hero?.rule, .inBed)
         } else {
             XCTFail("Expected the afternoon same-day setup to be in the sleep window")
@@ -511,7 +549,7 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertEqual(missedHabitSnapshot.allItems.map(\.rule), [.warmShower, .inBed])
         XCTAssertEqual(
             SleepContractPresentation.visiblePendingItems(missedHabitSnapshot).map(\.rule),
-            [.warmShower, .inBed]
+            [.warmShower]
         )
         XCTAssertEqual(
             SleepContractPresentation.heroItem(in: missedHabitSnapshot, sort: { $0.dueAt < $1.dueAt })?.rule,
@@ -756,7 +794,7 @@ final class AppStateRegressionTests: XCTestCase {
         return String(format: "%02d:%02d", comps.hour ?? 0, comps.minute ?? 0)
     }
 
-    func testMorningSunVisibleThroughoutSixToNoonWindow() {
+    func testMorningSunRemainsActionableButIsHiddenWhileReadyForSleepIsVisible() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -776,19 +814,16 @@ final class AppStateRegressionTests: XCTestCase {
         ] {
             let snapshot = state.sleepContractSnapshot(now: moment)
             let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
-            XCTAssertTrue(
-                visible.contains(.morningSun),
-                "Morning sun should show between 6 AM and noon at \(moment); visible=\(visible), sleepWindow=\(snapshot.isSleepWindow)"
-            )
+            XCTAssertTrue(snapshot.actionableItems.contains { $0.rule == .morningSun })
+            XCTAssertFalse(visible.contains(.morningSun))
             XCTAssertEqual(
                 SleepContractPresentation.heroItem(in: snapshot, sort: { $0.availableAt < $1.availableAt })?.rule,
-                .morningSun,
-                "Morning sun should lead the deck at \(moment)"
+                .caffeineCutoff
             )
         }
     }
 
-    func testMorningSunShowsAsOverdueAfternoonWhenMissed() {
+    func testExpiredMorningSunIsHiddenWhenEveningCommitmentsArePresented() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -815,14 +850,11 @@ final class AppStateRegressionTests: XCTestCase {
             return lhs.availableAt < rhs.availableAt
         })
 
-        XCTAssertTrue(
-            visible.contains(.morningSun),
-            "Missed morning sun should stay on Today at 4:17 PM; visible=\(visible), all=\(snapshot.allItems.map { ($0.rule, $0.startsTomorrow, $0.isResolved) })"
-        )
-        XCTAssertEqual(hero?.rule, .morningSun, "Overdue morning sun should be the hero, not tonight's warm shower")
+        XCTAssertFalse(visible.contains(.morningSun))
+        XCTAssertEqual(hero?.rule, .warmShower)
     }
 
-    func testMorningSunShowsBeforeWakeDuringOvernightSleepWindow() {
+    func testSleepWindowHidesMorningSunBeforeWake() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -843,13 +875,10 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertTrue(snapshot.isSleepWindow)
         XCTAssertNotNil(morningSun)
         XCTAssertTrue(Calendar.current.isDate(morningSun!.availableAt, inSameDayAs: preWakeMorning))
-        XCTAssertTrue(
-            visible.contains(.morningSun),
-            "Expected morning sun before wake at \(preWakeMorning); visible=\(visible), all=\(snapshot.allItems.map(\.rule))"
-        )
+        XCTAssertFalse(visible.contains(.morningSun))
         XCTAssertEqual(
             SleepContractPresentation.heroItem(in: snapshot, sort: sleepRuleDisplaySort)?.rule,
-            .morningSun
+            .inBed
         )
     }
 
@@ -861,7 +890,7 @@ final class AppStateRegressionTests: XCTestCase {
         return lhs.rule.rawValue < rhs.rule.rawValue
     }
 
-    func testShortSameDaySleepWindowMorningSunShowsOnSecondCalendarMorning() {
+    func testShortSameDaySleepWindowKeepsMorningSunOutOfReadyForSleepPresentation() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 17, 20)
         state.typicalWakeTime = localDate(2026, 6, 28, 17, 30)
@@ -878,14 +907,12 @@ final class AppStateRegressionTests: XCTestCase {
         for moment in [firstMorning, secondMorning] {
             let snapshot = state.sleepContractSnapshot(now: moment)
             let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
-            XCTAssertTrue(
-                visible.contains(.morningSun),
-                "Expected morning sun on Today at \(moment), visible=\(visible), actionable=\(snapshot.actionableItems.map(\.rule)), startsTomorrow=\(snapshot.allItems.map { ($0.rule, $0.startsTomorrow) })"
-            )
+            XCTAssertFalse(visible.contains(.morningSun))
+            XCTAssertTrue(visible.contains(.inBed))
         }
     }
 
-    func testMissedMorningSunStaysVisibleWhenReadyForSleepBecomesActionable() {
+    func testReadyForSleepPresentationHidesMissedMorningSun() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 17, 20)
         state.typicalWakeTime = localDate(2026, 6, 28, 17, 30)
@@ -906,13 +933,11 @@ final class AppStateRegressionTests: XCTestCase {
         }
 
         let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
-        XCTAssertTrue(
-            visible.contains(.morningSun),
-            "Locked morning sun must stay visible when ready-for-sleep opens; visible=\(visible), actionable=\(snapshot.actionableItems.map(\.rule))"
-        )
+        XCTAssertFalse(visible.contains(.morningSun))
+        XCTAssertTrue(visible.contains(.inBed))
     }
 
-    func testHoldConfirmUITestFixtureShowsMorningSunHero() {
+    func testHoldConfirmUITestFixtureShowsActionableHero() {
         let state = AppState()
         state.applyUITestLaunchArgumentsIfNeeded([
             "--uitest-completed-onboarding",
@@ -923,14 +948,14 @@ final class AppStateRegressionTests: XCTestCase {
         let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
         let hero = SleepContractPresentation.heroItem(in: snapshot, sort: { $0.availableAt < $1.availableAt })
 
-        XCTAssertTrue(visible.contains(.morningSun), "visible=\(visible)")
-        XCTAssertEqual(hero?.rule, .morningSun)
+        XCTAssertTrue(visible.contains(.dimLights), "visible=\(visible)")
+        XCTAssertEqual(hero?.rule, .dimLights)
         XCTAssertTrue(state.canCompleteSleepRule(hero!, now: snapshot.now))
 
         state.completeSleepRule(hero!, at: snapshot.now)
         let after = state.sleepContractSnapshot(now: Date())
-        let completed = after.allItems.first { $0.rule == .morningSun }
-        XCTAssertTrue(completed?.isCompleted == true, "Expected morning sun completed after confirm")
+        let completed = after.allItems.first { $0.rule == .dimLights }
+        XCTAssertTrue(completed?.isCompleted == true, "Expected dim lights completed after confirm")
     }
 
     func testSubscriptionLapseClearsPremiumAccessAndAppBlocking() {
@@ -946,6 +971,274 @@ final class AppStateRegressionTests: XCTestCase {
         XCTAssertFalse(state.hasPremiumAccess)
         XCTAssertFalse(state.canUseHardAppBlocking)
         state.handleSubscriptionLapsed()
+    }
+
+    func testDebugSimulateCancelledTrialExpiredDowngradesAccess() {
+        let state = AppState()
+        state.hasCompletedOnboarding = true
+        state.paywallState.tier = .subscribed
+
+        state.debugSimulateCancelledTrialExpired()
+
+        XCTAssertEqual(state.paywallState.tier, .free)
+        XCTAssertFalse(state.hasPremiumAccess)
+        XCTAssertNotNil(state.paywallState.trialExpiredAt)
+    }
+
+    func testCompletingOnboardingStartsContractAppWithoutLegacyNightlyFlow() {
+        let state = AppState()
+        state.hasCompletedOnboarding = false
+        state.showNightlyFlow = true
+        state.selectedSleepRules = [.dimLights, .inBed]
+        state.sleepContractActivatedAt = nil
+
+        state.completeOnboardingAndStartRitual()
+
+        XCTAssertTrue(state.hasCompletedOnboarding)
+        XCTAssertFalse(state.showNightlyFlow)
+        XCTAssertEqual(state.requestedTab, 0)
+        XCTAssertEqual(state.selectedSleepRules, [.dimLights, .inBed])
+        XCTAssertNotNil(state.sleepContractActivatedAt)
+    }
+
+    func testEmergencyAccessIsActiveOnlyUntilSelectedDurationEnds() {
+        let state = AppState()
+        let startedAt = localDate(2026, 7, 24, 22, 0)
+
+        state.startEmergencyAppAccess(reason: .family, duration: .fifteen, now: startedAt)
+
+        let expectedEnd = startedAt.addingTimeInterval(15 * 60)
+        XCTAssertEqual(state.activeEmergencyAppAccessEnd(now: startedAt), expectedEnd)
+        XCTAssertEqual(state.activeEmergencyAppAccessEnd(now: expectedEnd.addingTimeInterval(-1)), expectedEnd)
+        XCTAssertNil(state.activeEmergencyAppAccessEnd(now: expectedEnd))
+        XCTAssertNil(state.activeEmergencyAppAccessEnd(now: expectedEnd.addingTimeInterval(1)))
+    }
+
+    func testDailyBlockingWindowRemainsActiveAfterAppHasBeenClosedForDays() {
+        let window = AppBlockingMonitorWindow(
+            id: "sleep",
+            start: localDate(2026, 7, 24, 22, 30),
+            end: localDate(2026, 7, 25, 7, 0),
+            reason: .sleepWindow,
+            ruleTitle: nil,
+            wakeTimeText: "7:00 AM",
+            recurrence: .daily
+        )
+
+        XCTAssertTrue(AppBlockingMonitorStore.isActive(
+            window,
+            now: localDate(2026, 8, 3, 23, 0)
+        ))
+        XCTAssertTrue(AppBlockingMonitorStore.isActive(
+            window,
+            now: localDate(2026, 8, 4, 6, 59)
+        ))
+        XCTAssertFalse(AppBlockingMonitorStore.isActive(
+            window,
+            now: localDate(2026, 8, 4, 7, 0)
+        ))
+    }
+
+    func testDailyBlockingWindowDoesNotActivateBeforeItsEffectiveStart() {
+        let window = AppBlockingMonitorWindow(
+            id: "rule.dimLights",
+            start: localDate(2026, 7, 25, 20, 0),
+            end: localDate(2026, 7, 26, 7, 0),
+            reason: .rule,
+            ruleTitle: SleepRuleKind.dimLights.title,
+            wakeTimeText: "7:00 AM",
+            recurrence: .daily
+        )
+
+        XCTAssertFalse(AppBlockingMonitorStore.isActive(
+            window,
+            now: localDate(2026, 7, 24, 21, 0)
+        ))
+        XCTAssertTrue(AppBlockingMonitorStore.isActive(
+            window,
+            now: localDate(2026, 7, 25, 20, 0)
+        ))
+    }
+
+    func testReconcileWindowNeverActsAsASecondShieldWindow() {
+        let start = localDate(2026, 7, 25, 22, 0)
+        let window = AppBlockingMonitorWindow(
+            id: "reconcile.emergency",
+            start: start,
+            end: start.addingTimeInterval(60),
+            reason: .reconcile,
+            ruleTitle: nil,
+            wakeTimeText: "7:00 AM"
+        )
+
+        XCTAssertFalse(AppBlockingMonitorStore.isActive(window, now: start.addingTimeInterval(30)))
+    }
+
+    func testLegacyMonitorWindowWithoutRecurrenceDecodesAsOneTime() throws {
+        let window = AppBlockingMonitorWindow(
+            id: "legacy",
+            start: localDate(2026, 7, 25, 22, 0),
+            end: localDate(2026, 7, 26, 7, 0),
+            reason: .sleepWindow,
+            ruleTitle: nil,
+            wakeTimeText: "7:00 AM"
+        )
+        var json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(window)) as? [String: Any]
+        )
+        json.removeValue(forKey: "recurrence")
+        json.removeValue(forKey: "startMinuteOfDay")
+        json.removeValue(forKey: "endMinuteOfDay")
+
+        let decoded = try JSONDecoder().decode(
+            AppBlockingMonitorWindow.self,
+            from: JSONSerialization.data(withJSONObject: json)
+        )
+
+        XCTAssertEqual(decoded.recurrence, .oneTime)
+    }
+
+    func testBlockingPlanUsesRecurringBaseWindowAndEmergencyReconciliation() throws {
+        let state = AppState()
+        let now = localDate(2026, 7, 24, 21, 0)
+        state.typicalBedtime = localDate(2026, 7, 24, 22, 30)
+        state.typicalWakeTime = localDate(2026, 7, 25, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 7, 24, 18, 0)
+        state.selectedSleepRules = [.dimLights]
+        state.emergencyAppAccessSession = EmergencyAppAccessSession(
+            reason: .health,
+            duration: .fifteen,
+            startedAt: now,
+            endsAt: now.addingTimeInterval(15 * 60)
+        )
+
+        let windows = state.appBlockingMonitorWindows(now: now)
+        let sleepWindow = try XCTUnwrap(windows.first { $0.reason == .sleepWindow })
+        let reconciliation = try XCTUnwrap(windows.first { $0.reason == .reconcile })
+        let schedule = try XCTUnwrap(state.deviceActivitySchedule(for: sleepWindow, now: now))
+
+        XCTAssertEqual(sleepWindow.id, "sleep")
+        XCTAssertEqual(sleepWindow.recurrence, .daily)
+        XCTAssertTrue(schedule.repeats)
+        XCTAssertEqual(reconciliation.start, state.emergencyAppAccessSession?.endsAt)
+        XCTAssertEqual(reconciliation.recurrence, .oneTime)
+        XCTAssertEqual(reconciliation.end.timeIntervalSince(reconciliation.start), 15 * 60)
+    }
+
+    func testShortOneTimeMonitorIsPaddedToDeviceActivityMinimum() throws {
+        let state = AppState()
+        let now = localDate(2026, 7, 24, 21, 0)
+        let window = AppBlockingMonitorWindow(
+            id: "cooldown.dimLights",
+            start: now,
+            end: now.addingTimeInterval(10 * 60),
+            reason: .rule,
+            ruleTitle: SleepRuleKind.dimLights.title,
+            wakeTimeText: "7:00 AM"
+        )
+
+        let schedule = try XCTUnwrap(state.deviceActivitySchedule(for: window, now: now))
+        let scheduledStart = try XCTUnwrap(calendar.date(from: schedule.intervalStart))
+        let scheduledEnd = try XCTUnwrap(calendar.date(from: schedule.intervalEnd))
+
+        XCTAssertFalse(schedule.repeats)
+        XCTAssertGreaterThanOrEqual(scheduledEnd.timeIntervalSince(scheduledStart), 15 * 60)
+    }
+
+    func testGentleBypassBoundaryIsExcludedFromHardBlockingPlan() {
+        let state = AppState()
+        let now = localDate(2026, 7, 24, 21, 0)
+        state.typicalBedtime = localDate(2026, 7, 24, 22, 30)
+        state.typicalWakeTime = localDate(2026, 7, 25, 7, 0)
+        state.sleepContractActivatedAt = localDate(2026, 7, 24, 18, 0)
+        state.paywallState.gentleBlockingBypassedUntil = now.addingTimeInterval(30 * 60)
+
+        state.paywallState.tier = .subscribed
+        XCTAssertFalse(state.appBlockingMonitorWindows(now: now).contains {
+            $0.id.hasPrefix("reconcile.bypass")
+        })
+
+        state.paywallState.tier = .free
+        XCTAssertTrue(state.appBlockingMonitorWindows(now: now).contains {
+            $0.id.hasPrefix("reconcile.bypass")
+        })
+    }
+
+    func testPersistedStateRoundTripsSleepContractFields() throws {
+        let activatedAt = localDate(2026, 7, 24, 20, 0)
+        let emergency = EmergencyAppAccessSession(
+            reason: .health,
+            duration: .five,
+            startedAt: activatedAt,
+            endsAt: activatedAt.addingTimeInterval(5 * 60)
+        )
+        let persisted = persistedStateFixture(
+            activatedAt: activatedAt,
+            selectedRules: [.morningSun, .dimLights],
+            emergencySession: emergency
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(PersistedState.self, from: encoder.encode(persisted))
+
+        XCTAssertEqual(decoded.sleepContractActivatedAt, activatedAt)
+        XCTAssertEqual(decoded.selectedSleepRules, [.morningSun, .dimLights])
+        XCTAssertEqual(decoded.emergencyAppAccessSession, emergency)
+    }
+
+    func testPreContractPersistedStateDefaultsContractFieldsSafely() throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let encoded = try encoder.encode(persistedStateFixture())
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "sleepContractActivatedAt")
+        json.removeValue(forKey: "selectedSleepRules")
+        json.removeValue(forKey: "sleepRuleConfigurations")
+        json.removeValue(forKey: "sleepRuleCompletions")
+        json.removeValue(forKey: "sleepRuleSlips")
+        json.removeValue(forKey: "contractLockEvents")
+        json.removeValue(forKey: "contractAllClearEvents")
+        json.removeValue(forKey: "emergencyAppAccessSession")
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(PersistedState.self, from: legacyData)
+
+        XCTAssertNil(decoded.sleepContractActivatedAt)
+        XCTAssertTrue(decoded.selectedSleepRules.isEmpty)
+        XCTAssertTrue(decoded.sleepRuleConfigurations.isEmpty)
+        XCTAssertTrue(decoded.sleepRuleCompletions.isEmpty)
+        XCTAssertTrue(decoded.sleepRuleSlips.isEmpty)
+        XCTAssertTrue(decoded.contractLockEvents.isEmpty)
+        XCTAssertTrue(decoded.contractAllClearEvents.isEmpty)
+        XCTAssertNil(decoded.emergencyAppAccessSession)
+    }
+
+    private func persistedStateFixture(
+        activatedAt: Date? = nil,
+        selectedRules: [SleepRuleKind] = [],
+        emergencySession: EmergencyAppAccessSession? = nil
+    ) -> PersistedState {
+        PersistedState(
+            selectedSleepProblems: [],
+            selectedWakes: [],
+            sleepWindowMinutes: 30,
+            typicalBedtime: localDate(2026, 7, 24, 22, 30),
+            typicalWakeTime: localDate(2026, 7, 24, 7, 0),
+            selectedPreBedActivities: [],
+            selectedTriedThings: [],
+            coreRoutine: [],
+            routineExplanation: "",
+            sleepLogs: [],
+            sleepContractActivatedAt: activatedAt,
+            selectedSleepRules: selectedRules,
+            emergencyAppAccessSession: emergencySession
+        )
     }
 
     private func step(order: Int,
