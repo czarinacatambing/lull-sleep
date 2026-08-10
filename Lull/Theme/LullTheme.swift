@@ -38,28 +38,16 @@ extension Color {
 }
 
 // MARK: - Typography
-// Serif display follows the mockup fallback order:
-// 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif.
+// Serif display follows the mockup fallback order, using bold weights throughout.
 
 extension Font {
-    private static func lullSerifName(weight: Font.Weight, italic: Bool) -> String {
-        let bold = [.semibold, .bold, .heavy, .black].contains(weight)
-        let candidates: [String]
-        switch (bold, italic) {
-        case (true, true):
-            candidates = ["IowanOldStyle-BoldItalic", "Palatino-BoldItalic", "Georgia-BoldItalic"]
-        case (true, false):
-            candidates = ["IowanOldStyle-Bold", "Palatino-Bold", "Georgia-Bold"]
-        case (false, true):
-            candidates = ["IowanOldStyle-Italic", "Palatino-Italic", "Georgia-Italic"]
-        case (false, false):
-            candidates = ["IowanOldStyle-Roman", "Palatino-Roman", "Georgia"]
-        }
-        return candidates.first { UIFont(name: $0, size: 12) != nil } ?? (italic ? "Georgia-Italic" : "Georgia")
-    }
-
     static func serif(_ size: CGFloat, weight: Font.Weight = .regular, italic: Bool = false) -> Font {
-        .custom(lullSerifName(weight: weight, italic: italic), size: size)
+        let candidates = italic
+            ? ["IowanOldStyle-BoldItalic", "Palatino-BoldItalic", "Georgia-BoldItalic"]
+            : ["IowanOldStyle-Bold", "Palatino-Bold", "Georgia-Bold"]
+        let name = candidates.first { UIFont(name: $0, size: 12) != nil } ?? (italic ? "Georgia-BoldItalic" : "Georgia-Bold")
+        let font = Font.custom(name, size: size)
+        return italic ? font.italic() : font
     }
     static func serifItalic(_ size: CGFloat) -> Font {
         .serif(size, italic: true)

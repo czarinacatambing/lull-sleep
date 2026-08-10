@@ -1047,7 +1047,9 @@ enum ShareCardRenderer {
         if mono {
             font = UIFont.monospacedSystemFont(ofSize: size, weight: .medium)
         } else if serif {
-            font = UIFont(name: italic ? "Fraunces-LightItalic" : "Fraunces-Light", size: size) ?? .systemFont(ofSize: size, weight: .light)
+            let baseFont = UIFont(name: italic ? "Fraunces-LightItalic" : "Fraunces-Light", size: size) ?? .systemFont(ofSize: size, weight: .bold)
+            let traits: UIFontDescriptor.SymbolicTraits = italic ? [.traitBold, .traitItalic] : .traitBold
+            font = UIFont(descriptor: baseFont.fontDescriptor.withSymbolicTraits(traits) ?? baseFont.fontDescriptor, size: size)
         } else {
             font = .systemFont(ofSize: size, weight: .regular)
         }
