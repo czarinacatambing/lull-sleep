@@ -3347,9 +3347,9 @@ class AppState: ObservableObject {
         case .rule:
             content.title = "Apps locked"
             if let rule {
-                content.body = "\(rule.title) was missed. Open TenThirty and hold to confirm it late."
+                content.body = "You missed your \(rule.title.lowercased()). Open TenThirty to check it off late."
             } else {
-                content.body = "A sleep rule was missed. Open TenThirty and hold to confirm it late."
+                content.body = "You missed a sleep rule. Open TenThirty to check it off late."
             }
         case .sleepWindow:
             let formatter = DateFormatter()
@@ -3444,6 +3444,7 @@ class AppState: ObservableObject {
                 deviceActivityCenter.stopMonitoring(priorNames)
             }
             AppBlockingMonitorStore.clearSchedule()
+            AppBlockingMonitorStore.applyCurrentShield(now: now)
             return
         }
 
@@ -3454,13 +3455,17 @@ class AppState: ObservableObject {
             }
             AppBlockingMonitorStore.save(selection: appBlockingSelection, windows: [])
             AppBlockingMonitorStore.saveActivityNames([])
+            AppBlockingMonitorStore.applyCurrentShield(now: now)
             return
         }
 
-        AppBlockingMonitorStore.save(selection: appBlockingSelection, windows: windows)
+        // Stop the old registrations before publishing the replacement plan. A
+        // callback from an old activity must never resolve to a newly edited
+        // rule window that happens to have the same logical rule identifier.
         if !priorNames.isEmpty {
             deviceActivityCenter.stopMonitoring(priorNames)
         }
+        AppBlockingMonitorStore.save(selection: appBlockingSelection, windows: windows)
 
         var schedulingFailures: [String] = []
         let scheduledNames = windows.compactMap { window -> DeviceActivityName? in
@@ -3478,6 +3483,9 @@ class AppState: ObservableObject {
             }
         }
         AppBlockingMonitorStore.saveActivityNames(scheduledNames)
+        // DeviceActivity callbacks can race with schedule replacement. Make the
+        // freshly saved contract plan authoritative once rescheduling finishes.
+        AppBlockingMonitorStore.applyCurrentShield(now: now)
         if !schedulingFailures.isEmpty {
             trackAnalytics("app_blocking_monitor_schedule_failed", [
                 "expected_count": "\(windows.count)",
@@ -3502,10 +3510,16 @@ class AppState: ObservableObject {
                 .first { ruleLockMonitorEnd(start: $0.graceEndsAt) > now }
             guard let item = nextUnresolvedItem else { continue }
             let start = item.graceEndsAt
+            let end = ruleLockMonitorEnd(start: start)
             windows.append(AppBlockingMonitorWindow(
-                id: "rule.\(item.rule.rawValue)",
+                id: recurringMonitorWindowID(
+                    prefix: "rule",
+                    rule: item.rule,
+                    start: start,
+                    end: end
+                ),
                 start: start,
-                end: ruleLockMonitorEnd(start: start),
+                end: end,
                 reason: .rule,
                 ruleTitle: item.rule.title,
                 wakeTimeText: wakeText,
@@ -3521,7 +3535,12 @@ class AppState: ObservableObject {
             .first { $0.1 > now }
         if let (start, end) = nextSleepWindow {
             windows.append(AppBlockingMonitorWindow(
-                id: "sleep",
+                id: recurringMonitorWindowID(
+                    prefix: "sleep",
+                    rule: nil,
+                    start: start,
+                    end: end
+                ),
                 start: start,
                 end: end,
                 reason: .sleepWindow,
@@ -3605,6 +3624,21 @@ class AppState: ObservableObject {
             return "\(prefix).\(rule.rawValue).\(timestamp)"
         }
         return "\(prefix).\(timestamp)"
+    }
+
+    private func recurringMonitorWindowID(prefix: String,
+                                          rule: SleepRuleKind?,
+                                          start: Date,
+                                          end: Date) -> String {
+        let calendar = Calendar.current
+        let startMinute = calendar.component(.hour, from: start) * 60
+            + calendar.component(.minute, from: start)
+        let endMinute = calendar.component(.hour, from: end) * 60
+            + calendar.component(.minute, from: end)
+        if let rule {
+            return "\(prefix).\(rule.rawValue).\(startMinute).\(endMinute)"
+        }
+        return "\(prefix).\(startMinute).\(endMinute)"
     }
 
     private func ruleLockMonitorEnd(start: Date) -> Date {
@@ -4620,8 +4654,8 @@ class AppState: ObservableObject {
                 if item.graceEndsAt > now {
                     scheduleSleepContractNotification(
                         identifier: "sleep_contract_grace_\(item.rule.rawValue)_\(dayOffset)",
-                        title: "Selected apps lock now",
-                        body: "\(item.rule.title) was not confirmed before grace ended. Open TenThirty to complete it late.",
+                        title: "Apps locked",
+                        body: "You missed your \(item.rule.title.lowercased()). Open TenThirty to check it off late.",
                         fireDate: item.graceEndsAt
                     )
                 }
@@ -4657,9 +4691,9 @@ class AppState: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         if item.isRange {
-            return "Confirm by \(formatter.string(from: item.dueAt)) before your selected apps get locked."
+            return "You've got until \(formatter.string(from: item.dueAt)) to check this off."
         }
-        return "Confirm before grace ends at \(formatter.string(from: item.graceEndsAt)) before your selected apps get locked."
+        return "You've got until \(formatter.string(from: item.graceEndsAt)) to check this off."
     }
 
     // Fires 10 min before wind-down ritual starts (i.e. 40 min before typicalBedtime)

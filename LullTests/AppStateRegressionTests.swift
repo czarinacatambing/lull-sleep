@@ -197,7 +197,7 @@ final class AppStateRegressionTests: XCTestCase {
         )
     }
 
-    func testReadyForSleepPresentationHidesMorningSunFromTodayQueue() {
+    func testActionableMorningSunStaysVisibleWhileReadyForSleepIsForTonight() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 22, 0)
         state.typicalWakeTime = localDate(2026, 6, 28, 7, 0)
@@ -211,7 +211,7 @@ final class AppStateRegressionTests: XCTestCase {
         let snapshot = state.sleepContractSnapshot(now: morning)
 
         XCTAssertEqual(snapshot.actionableItems.map(\.rule), [.morningSun])
-        XCTAssertFalse(
+        XCTAssertTrue(
             SleepContractPresentation.visiblePendingItems(snapshot).contains { $0.rule == .morningSun }
         )
         XCTAssertFalse(
@@ -219,7 +219,7 @@ final class AppStateRegressionTests: XCTestCase {
         )
         XCTAssertEqual(
             SleepContractPresentation.heroItem(in: snapshot, sort: { $0.dueAt < $1.dueAt })?.rule,
-            .dimLights
+            .morningSun
         )
     }
 
@@ -794,7 +794,7 @@ final class AppStateRegressionTests: XCTestCase {
         return String(format: "%02d:%02d", comps.hour ?? 0, comps.minute ?? 0)
     }
 
-    func testMorningSunRemainsActionableButIsHiddenWhileReadyForSleepIsVisible() {
+    func testMorningSunVisibleThroughoutConfiguredWindow() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -815,15 +815,15 @@ final class AppStateRegressionTests: XCTestCase {
             let snapshot = state.sleepContractSnapshot(now: moment)
             let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
             XCTAssertTrue(snapshot.actionableItems.contains { $0.rule == .morningSun })
-            XCTAssertFalse(visible.contains(.morningSun))
+            XCTAssertTrue(visible.contains(.morningSun))
             XCTAssertEqual(
                 SleepContractPresentation.heroItem(in: snapshot, sort: { $0.availableAt < $1.availableAt })?.rule,
-                .caffeineCutoff
+                .morningSun
             )
         }
     }
 
-    func testExpiredMorningSunIsHiddenWhenEveningCommitmentsArePresented() {
+    func testExpiredMorningSunStaysVisibleAndOwnsHeroWhenItIsLocking() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -850,11 +850,16 @@ final class AppStateRegressionTests: XCTestCase {
             return lhs.availableAt < rhs.availableAt
         })
 
-        XCTAssertFalse(visible.contains(.morningSun))
-        XCTAssertEqual(hero?.rule, .warmShower)
+        if case .lockedByRule(let item) = snapshot.lockState {
+            XCTAssertEqual(item.rule, .morningSun)
+        } else {
+            XCTFail("Expected overdue Morning Sun to own the lock")
+        }
+        XCTAssertTrue(visible.contains(.morningSun))
+        XCTAssertEqual(hero?.rule, .morningSun)
     }
 
-    func testSleepWindowHidesMorningSunBeforeWake() {
+    func testSleepWindowDoesNotShowMorningSunBeforeItIsAvailable() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 7, 24, 21, 0)
         state.typicalWakeTime = localDate(2026, 7, 24, 7, 0)
@@ -890,7 +895,7 @@ final class AppStateRegressionTests: XCTestCase {
         return lhs.rule.rawValue < rhs.rule.rawValue
     }
 
-    func testShortSameDaySleepWindowKeepsMorningSunOutOfReadyForSleepPresentation() {
+    func testShortSameDayWindowShowsActionableMorningSunOnFollowingMornings() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 17, 20)
         state.typicalWakeTime = localDate(2026, 6, 28, 17, 30)
@@ -907,12 +912,16 @@ final class AppStateRegressionTests: XCTestCase {
         for moment in [firstMorning, secondMorning] {
             let snapshot = state.sleepContractSnapshot(now: moment)
             let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
-            XCTAssertFalse(visible.contains(.morningSun))
+            XCTAssertTrue(visible.contains(.morningSun))
             XCTAssertTrue(visible.contains(.inBed))
+            XCTAssertEqual(
+                SleepContractPresentation.heroItem(in: snapshot, sort: sleepRuleDisplaySort)?.rule,
+                .morningSun
+            )
         }
     }
 
-    func testReadyForSleepPresentationHidesMissedMorningSun() {
+    func testLockedMorningSunStaysVisibleWhenReadyForSleepIsAlsoVisible() {
         let state = AppState()
         state.typicalBedtime = localDate(2026, 6, 28, 17, 20)
         state.typicalWakeTime = localDate(2026, 6, 28, 17, 30)
@@ -933,8 +942,140 @@ final class AppStateRegressionTests: XCTestCase {
         }
 
         let visible = SleepContractPresentation.visiblePendingItems(snapshot).map(\.rule)
-        XCTAssertFalse(visible.contains(.morningSun))
+        XCTAssertTrue(visible.contains(.morningSun))
         XCTAssertTrue(visible.contains(.inBed))
+        XCTAssertEqual(
+            SleepContractPresentation.heroItem(in: snapshot, sort: sleepRuleDisplaySort)?.rule,
+            .morningSun
+        )
+    }
+
+    func testLockedMorningSunCannotBeDisplacedByLaterCutoffCards() {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 8, 10, 23, 30)
+        state.typicalWakeTime = localDate(2026, 8, 10, 7, 0)
+        state.appBlockingStartTime = state.typicalBedtime
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 8, 9, 20, 0)
+        state.selectedSleepRules = [.morningSun, .caffeineCutoff, .workoutCutoff]
+        state.setSleepRuleTime(.caffeineCutoff, to: localDate(2026, 8, 10, 17, 30))
+        state.setSleepRuleTime(.workoutCutoff, to: localDate(2026, 8, 10, 21, 23))
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+
+        let screenshotTime = localDate(2026, 8, 10, 12, 41)
+        let snapshot = state.sleepContractSnapshot(now: screenshotTime)
+        let visible = SleepContractPresentation.visiblePendingItems(snapshot)
+        let hero = SleepContractPresentation.heroItem(in: snapshot, sort: sleepRuleDisplaySort)
+
+        if case .lockedByRule(let item) = snapshot.lockState {
+            XCTAssertEqual(item.rule, .morningSun)
+        } else {
+            XCTFail("Expected Morning Sun to own the lock at the reported failure time")
+        }
+        XCTAssertTrue(visible.contains { $0.rule == .morningSun })
+        XCTAssertEqual(hero?.rule, .morningSun)
+        XCTAssertTrue(state.canCompleteSleepRule(hero!, now: screenshotTime))
+    }
+
+    func testMovingCaffeineCutoffToCurrentMinutePreservesFullGracePeriod() throws {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 8, 10, 23, 30)
+        state.typicalWakeTime = localDate(2026, 8, 10, 7, 0)
+        state.appBlockingStartTime = state.typicalBedtime
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 8, 9, 20, 0)
+        state.selectedSleepRules = [.caffeineCutoff]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+        state.setSleepRuleGraceMinutes(.caffeineCutoff, to: 15)
+
+        let editedDueTime = localDate(2026, 8, 10, 14, 11)
+        state.setSleepRuleTime(.caffeineCutoff, to: editedDueTime)
+
+        let duringGrace = localDate(2026, 8, 10, 14, 11)
+        let beforeGraceEnd = localDate(2026, 8, 10, 14, 25)
+        let graceEnd = localDate(2026, 8, 10, 14, 26)
+        let item = try XCTUnwrap(
+            state.sleepContractSnapshot(now: duringGrace).allItems.first { $0.rule == .caffeineCutoff }
+        )
+        let ruleWindow = try XCTUnwrap(
+            state.appBlockingMonitorWindows(now: duringGrace).first {
+                $0.reason == .rule && $0.ruleTitle == SleepRuleKind.caffeineCutoff.title
+            }
+        )
+
+        XCTAssertEqual(item.dueAt, editedDueTime)
+        XCTAssertEqual(item.graceEndsAt, graceEnd)
+        XCTAssertEqual(ruleWindow.start, graceEnd)
+        XCTAssertFalse(AppBlockingMonitorStore.isActive(ruleWindow, now: duringGrace))
+        XCTAssertFalse(state.sleepContractSnapshot(now: duringGrace).isLocked)
+        XCTAssertFalse(state.sleepContractSnapshot(now: beforeGraceEnd).isLocked)
+        if case .lockedByRule(let lockingItem) = state.sleepContractSnapshot(now: graceEnd).lockState {
+            XCTAssertEqual(lockingItem.rule, .caffeineCutoff)
+        } else {
+            XCTFail("Caffeine cutoff should lock exactly when its 15-minute grace ends")
+        }
+    }
+
+    func testCommittingAfternoonRuleTimePreservesPMAndDoesNotLockFromIntermediateAM() throws {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 8, 10, 23, 30)
+        state.typicalWakeTime = localDate(2026, 8, 10, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 8, 9, 20, 0)
+        state.selectedSleepRules = [.caffeineCutoff]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+        state.setSleepRuleGraceMinutes(.caffeineCutoff, to: 15)
+
+        let now = localDate(2026, 8, 10, 14, 45)
+        let confirmedPMTime = localDate(2026, 8, 10, 14, 46)
+        state.setSleepRuleTime(.caffeineCutoff, to: confirmedPMTime)
+
+        let savedTime = try XCTUnwrap(state.sleepRuleConfigurations[.caffeineCutoff]?.dueTime)
+        let item = try XCTUnwrap(
+            state.sleepContractSnapshot(now: now).allItems.first { $0.rule == .caffeineCutoff }
+        )
+        let components = Calendar.current.dateComponents([.hour, .minute], from: savedTime)
+
+        XCTAssertEqual(components.hour, 14)
+        XCTAssertEqual(components.minute, 46)
+        XCTAssertEqual(item.dueAt, confirmedPMTime)
+        XCTAssertEqual(item.graceEndsAt, localDate(2026, 8, 10, 15, 1))
+        XCTAssertFalse(state.sleepContractSnapshot(now: now).isLocked)
+    }
+
+    func testEditingRuleTimeReplacesDeviceActivityIdentityDuringNewGracePeriod() throws {
+        let state = AppState()
+        state.typicalBedtime = localDate(2026, 8, 10, 23, 30)
+        state.typicalWakeTime = localDate(2026, 8, 10, 7, 0)
+        state.appBlockingEndTime = state.typicalWakeTime
+        state.sleepContractActivatedAt = localDate(2026, 8, 9, 20, 0)
+        state.selectedSleepRules = [.caffeineCutoff]
+        state.sleepRuleCompletions = []
+        state.sleepRuleSlips = []
+        state.setSleepRuleGraceMinutes(.caffeineCutoff, to: 15)
+
+        state.setSleepRuleTime(.caffeineCutoff, to: localDate(2026, 8, 10, 17, 30))
+        let oldWindow = try XCTUnwrap(
+            state.appBlockingMonitorWindows(now: localDate(2026, 8, 10, 14, 11)).first {
+                $0.reason == .rule && $0.ruleTitle == SleepRuleKind.caffeineCutoff.title
+            }
+        )
+
+        state.setSleepRuleTime(.caffeineCutoff, to: localDate(2026, 8, 10, 14, 11))
+        let editedAt = localDate(2026, 8, 10, 14, 11)
+        let newWindow = try XCTUnwrap(
+            state.appBlockingMonitorWindows(now: editedAt).first {
+                $0.reason == .rule && $0.ruleTitle == SleepRuleKind.caffeineCutoff.title
+            }
+        )
+
+        XCTAssertNotEqual(oldWindow.id, newWindow.id)
+        XCTAssertEqual(newWindow.start, localDate(2026, 8, 10, 14, 26))
+        XCTAssertFalse(AppBlockingMonitorStore.isActive(newWindow, now: editedAt))
+        XCTAssertFalse(state.sleepContractSnapshot(now: editedAt).isLocked)
     }
 
     func testHoldConfirmUITestFixtureShowsActionableHero() {
@@ -1118,7 +1259,7 @@ final class AppStateRegressionTests: XCTestCase {
         let reconciliation = try XCTUnwrap(windows.first { $0.reason == .reconcile })
         let schedule = try XCTUnwrap(state.deviceActivitySchedule(for: sleepWindow, now: now))
 
-        XCTAssertEqual(sleepWindow.id, "sleep")
+        XCTAssertTrue(sleepWindow.id.hasPrefix("sleep."))
         XCTAssertEqual(sleepWindow.recurrence, .daily)
         XCTAssertTrue(schedule.repeats)
         XCTAssertEqual(reconciliation.start, state.emergencyAppAccessSession?.endsAt)

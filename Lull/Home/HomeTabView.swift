@@ -658,13 +658,13 @@ private struct TodayContractQueueView: View {
 
             if allowsMidSleepAccess && !showMidSleepMode {
                 midSleepSwipeHint
+                    .contentShape(Rectangle())
+                    .gesture(midSleepSwipeUpGesture)
             }
         }
         .preferredColorScheme(.dark)
-        .accessibilityIdentifier(state.uiTestHoldConfirmFixtureActive ? "uitest-hold-fixture-active" : "today-contract-queue")
-        .contentShape(Rectangle())
+        .accessibilityIdentifier(queueAccessibilityIdentifier)
         .animation(.spring(response: 0.48, dampingFraction: 0.84), value: showMidSleepMode)
-        .highPriorityGesture(showMidSleepMode ? nil : midSleepSwipeUpGesture)
         .fullScreenCover(isPresented: $showMidSleepMode) {
             MidSleepModeView(onExit: { showMidSleepMode = false })
                 .environmentObject(state)
@@ -711,6 +711,14 @@ private struct TodayContractQueueView: View {
             guard !open else { return }
             saveBlockedAppsSelection()
         }
+    }
+
+    private var queueAccessibilityIdentifier: String {
+        #if DEBUG
+        return state.uiTestHoldConfirmFixtureActive ? "uitest-hold-fixture-active" : "today-contract-queue"
+        #else
+        return "today-contract-queue"
+        #endif
     }
 
     private var header: some View {
@@ -1592,8 +1600,6 @@ private struct HeroRuleCard: View {
     let onChooseApps: () -> Void
 
     @State private var holdStartedAt: Date?
-    @State private var isHolding = false
-    @State private var holdWorkItem: DispatchWorkItem?
     @State private var isPoofing = false
     @State private var isShowingSlipAcknowledgment = false
     @State private var slipAckWorkItem: DispatchWorkItem?
@@ -1731,6 +1737,32 @@ private struct HeroRuleCard: View {
     }
 
     private var holdCTA: some View {
+        Button(action: {
+            if requiresBlockedApps {
+                onChooseApps()
+            }
+        }) {
+            holdCTAContent
+        }
+        .buttonStyle(.plain)
+        .highPriorityGesture(holdDragGesture)
+        .accessibilityAction {
+            if requiresBlockedApps {
+                onChooseApps()
+            } else if canComplete {
+                triggerConfirm()
+            }
+        }
+        .onDisappear {
+            cancelHold(resetProgress: false)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("today-hero-hold-confirm")
+        .accessibilityLabel(holdCTAText)
+        .accessibilityAddTraits(canComplete && !requiresBlockedApps ? [.isButton, .allowsDirectInteraction] : [])
+    }
+
+    private var holdCTAContent: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .fill(Color.white.opacity(0.045))
@@ -1741,6 +1773,7 @@ private struct HeroRuleCard: View {
                         .frame(width: proxy.size.width * holdProgress(at: timeline.date))
                 }
             }
+            .allowsHitTesting(false)
             HStack {
                 Spacer()
                 Text(holdCTAText)
@@ -1748,19 +1781,11 @@ private struct HeroRuleCard: View {
                     .foregroundColor(holdCTAColor)
                 Spacer()
             }
+            .allowsHitTesting(false)
         }
         .frame(height: 50)
         .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).strokeBorder(Color.lullLine, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-        .highPriorityGesture(holdGesture)
-        .accessibilityIdentifier("today-hero-hold-confirm")
-        .accessibilityAction {
-            guard canComplete else { return }
-            triggerConfirm()
-        }
-        .onDisappear {
-            cancelHold(resetProgress: false)
-        }
     }
 
     private var shouldShowSlipAction: Bool {
@@ -1783,44 +1808,35 @@ private struct HeroRuleCard: View {
         .padding(.top, 2)
     }
 
-    private var holdGesture: some Gesture {
+    private var holdDragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { _ in
-                if requiresBlockedApps {
-                    guard !isHolding else { return }
-                    isHolding = true
-                    onChooseApps()
-                    return
+                guard !requiresBlockedApps, canComplete, !isPoofing, !isShowingSlipAcknowledgment else { return }
+                if holdStartedAt == nil {
+                    holdStartedAt = Date()
                 }
-                startHoldIfNeeded()
             }
             .onEnded { _ in
-                cancelHold(resetProgress: true)
+                guard !requiresBlockedApps, canComplete, !isPoofing, !isShowingSlipAcknowledgment else {
+                    cancelHold(resetProgress: true)
+                    return
+                }
+                if let holdStartedAt,
+                   Date().timeIntervalSince(holdStartedAt) >= holdDuration {
+                    handleHoldCompleted()
+                } else {
+                    cancelHold(resetProgress: true)
+                }
             }
     }
 
-    private func startHoldIfNeeded() {
-        guard !requiresBlockedApps, canComplete, !isHolding, !isPoofing, !isShowingSlipAcknowledgment else { return }
-        isHolding = true
-        holdWorkItem?.cancel()
-        holdStartedAt = Date()
-
-        let workItem = DispatchWorkItem {
-            guard isHolding else { return }
-            isHolding = false
-            holdWorkItem = nil
-            holdStartedAt = nil
-            triggerConfirm()
-        }
-        holdWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration, execute: workItem)
+    private func handleHoldCompleted() {
+        guard canComplete, !requiresBlockedApps, !isPoofing, !isShowingSlipAcknowledgment else { return }
+        triggerConfirm()
     }
 
     private func cancelHold(resetProgress: Bool) {
-        guard isHolding || holdWorkItem != nil else { return }
-        isHolding = false
-        holdWorkItem?.cancel()
-        holdWorkItem = nil
+        guard holdStartedAt != nil else { return }
         if resetProgress {
             withAnimation(.easeOut(duration: 0.18)) {
                 holdStartedAt = nil
@@ -2244,6 +2260,7 @@ private struct RuleEditorRow: View {
     let isEditingLocked: Bool
     let requiresBlockedApps: Bool
     let onBlockedAppsRequired: () -> Void
+    @State private var showingTimeEditor = false
 
     private var isEnabled: Binding<Bool> {
         Binding(
@@ -2308,9 +2325,35 @@ private struct RuleEditorRow: View {
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundColor(.lullInk2)
                 } else {
-                    DatePicker("Due", selection: timeBinding, displayedComponents: .hourAndMinute)
-                        .tint(.lullAmber)
+                    HStack {
+                        Text("Due")
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundColor(.lullInk2)
+                        Spacer()
+                        Button {
+                            showingTimeEditor = true
+                        } label: {
+                            Text(Self.timeFormatter.string(from: timeBinding.wrappedValue))
+                                .font(.system(size: 13.5, weight: .semibold))
+                                .foregroundColor(.lullInk1)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(Color.white.opacity(0.08))
+                                )
+                        }
+                        .buttonStyle(.plain)
                         .disabled(isConfigurationLocked)
+                    }
+                    .sheet(isPresented: $showingTimeEditor) {
+                        RuleDueTimeEditor(
+                            rule: rule,
+                            initialTime: timeBinding.wrappedValue
+                        ) { confirmedTime in
+                            state.setSleepRuleTime(rule, to: confirmedTime)
+                        }
+                    }
                 }
 
                 Stepper(value: graceBinding, in: 0...60, step: 5) {
@@ -2342,6 +2385,12 @@ private struct RuleEditorRow: View {
         }
     }
 
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
+
     private var icon: String {
         switch rule {
         case .morningSun: return "sun.max.fill"
@@ -2353,6 +2402,63 @@ private struct RuleEditorRow: View {
         case .gratitudeJournal: return "heart.text.square.fill"
         case .inBed: return "bed.double.fill"
         }
+    }
+}
+
+private struct RuleDueTimeEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    let rule: SleepRuleKind
+    let onSave: (Date) -> Void
+    @State private var selectedTime: Date
+
+    init(rule: SleepRuleKind, initialTime: Date, onSave: @escaping (Date) -> Void) {
+        self.rule = rule
+        self.onSave = onSave
+        _selectedTime = State(initialValue: initialTime)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                Text("Choose the time you want \(rule.title.lowercased()) to be due.")
+                    .font(.system(size: 14.5, weight: .medium))
+                    .foregroundColor(.lullInk2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+
+                DatePicker(
+                    "Due time",
+                    selection: $selectedTime,
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+                .datePickerStyle(.wheel)
+                .tint(.lullAmber)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 20)
+            .background(Color.lullBgDeep.ignoresSafeArea())
+            .navigationTitle(rule.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(.lullInk2)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(selectedTime)
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundColor(.lullAmber)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -2586,6 +2692,10 @@ enum SleepContractPresentation {
         sort: (SleepContractItem, SleepContractItem) -> Bool
     ) -> SleepContractItem? {
         let pending = visiblePendingItems(snapshot)
+        if let lockingItem = lockingItem(in: snapshot),
+           let visibleLockingItem = pending.first(where: { $0.id == lockingItem.id }) {
+            return visibleLockingItem
+        }
         let visibleIDs = Set(pending.map(\.id))
         let actionable = snapshot.actionableItems
             .filter { visibleIDs.contains($0.id) }
@@ -2612,16 +2722,35 @@ enum SleepContractPresentation {
         let hasVisibleReadyForSleep = snapshot.allItems.contains {
             $0.rule == .inBed && !$0.isResolved && !$0.startsTomorrow
         }
+        let actionableIDs = Set(snapshot.actionableItems.map(\.id))
+        let lockingItem = lockingItem(in: snapshot)
+        var items = snapshot.allItems
+        if let lockingItem, !items.contains(where: { $0.id == lockingItem.id }) {
+            items.insert(lockingItem, at: 0)
+        }
 
-        return snapshot.allItems.filter { item in
+        return items.filter { item in
             guard !item.isResolved, !item.startsTomorrow else { return false }
-            if (snapshot.isSleepWindow || hasVisibleReadyForSleep), item.rule != .inBed, !item.rule.isPreBedRule {
+            let mustRemainVisible = actionableIDs.contains(item.id) || item.id == lockingItem?.id
+            if !mustRemainVisible,
+               (snapshot.isSleepWindow || hasVisibleReadyForSleep),
+               item.rule != .inBed,
+               !item.rule.isPreBedRule {
                 return false
             }
             if item.rule == .inBed, hasUnclearedRealRule {
                 return false
             }
             return true
+        }
+    }
+
+    private static func lockingItem(in snapshot: SleepContractEnforcementSnapshot) -> SleepContractItem? {
+        switch snapshot.lockState {
+        case .lockedByRule(let item):
+            return item
+        case .unlocked, .coolingDown, .sleepWindow:
+            return nil
         }
     }
 }

@@ -33,7 +33,8 @@ The following must not be surfaced by ordinary navigation: `Routine`, `Insights`
 - Multiple overdue rules remain actionable; completing one cannot silently resolve another.
 - A late completion unlocks without adding a cooldown. A slip produces the current ten-minute cooldown.
 - `Ready for sleep` is the final in-bed checkpoint and becomes visible only after unresolved pre-bed rules leave the queue.
-- Current presentation behavior is preserved: when `Ready for sleep` or the sleep-window presentation owns Today, Morning Sun is not displayed even if the contract engine still reports it actionable.
+- Every actionable rule remains visible on Today. An unresolved rule that currently owns a rule lock must remain visible, become the hero, and expose its completion action even when `Ready for sleep` or another presentation state overlaps it. A rule explicitly slipped into cooldown is resolved and does not expose a completion action during that cooldown.
+- Morning Sun is hidden before its configured availability, but remains visible from availability until it is completed or slipped, including after its deadline.
 - The hold gesture completes the visible hero rule. A normal tap or an incomplete hold must not complete it.
 - Completing the contract records one all-clear event and does not mark the retired nightly routine complete.
 - The firefly reward requires the in-bed confirmation after the other commitments are cleared.
@@ -43,6 +44,8 @@ The following must not be surfaced by ordinary navigation: `Routine`, `Insights`
 - Rules displays the selected contract rules, times, grace state, blocked-app configuration, and emergency-access affordance.
 - Editing the sleep window keeps the app-blocking window in sync where the current behavior requires it.
 - Hard blocking is entitlement gated and requires enabled state, selected Screen Time targets, and an active schedule.
+- Rule-time editing is atomic: scrolling hour, minute, or AM/PM wheels must not persist, reschedule monitoring, or change shielding until the user explicitly saves the final value. Cancelling leaves the existing time unchanged.
+- Editing a rule time starts that rule's configured grace from the new due time. Replacing its Device Activity schedule must not reuse stale interval state or shield during the new grace period.
 - Disabling blocking, removing targets, leaving the window, a valid bypass, or an active emergency-access session must prevent/clear shielding.
 - Daily lock/unlock boundaries must continue after TenThirty is backgrounded, suspended, terminated, or left unopened for more than 48 hours.
 - Temporary emergency access, gentle bypass, and the ten-minute slip cooldown must reconcile at their exact semantic end even when TenThirty is not running; reconciliation callbacks must never create a lock by themselves.
@@ -81,9 +84,11 @@ Phase 0 protects not only what the app does, but what it must not do:
 - no unselected or resolved rule in the actionable queue or notification plan;
 - no in-bed notification lock;
 - no duplicate all-clear event;
-- no Morning Sun card in the current Ready-for-sleep/sleep-window presentation;
+- no mismatch where an unresolved rule-lock banner names a rule whose completion card is hidden or displaced by a later rule;
 - no early completion before a rule is available;
 - no shield outside its valid conditions;
+- no persistence, schedule replacement, or shield change from an intermediate rule-time picker value;
+- no stale shield from a replaced rule schedule, including while the edited rule is in grace;
 - no emergency access at or after its end timestamp;
 - no premium tool access after entitlement loss;
 - no loss or crash when decoding pre-contract persisted data.
